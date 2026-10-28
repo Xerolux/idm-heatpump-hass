@@ -67,7 +67,7 @@ installation test.
    assert manifest["requirements"] == [
        "modbus-connection>=4.12.4",
        "tmodbus[async-serial]>=0.6.2",
-       "idm-heatpump-api[web]==2.14.5",
+       "idm-heatpump-api[web]==2.15.0",
    ]
    assert manifest["version"] == os.environ["RELEASE_VERSION"]
    print("artifact metadata ok")
@@ -89,10 +89,13 @@ installation test.
    the API.
 4. Record the installed integration and dependency versions from diagnostics;
    they must match the candidate and manifest.
-5. Confirm diagnostics identify `source: modbus_connection.tmodbus`,
-   `owns_socket: true`, and `supports_shared_connection: false`. The current
-   runtime uses one private socket per config entry; central Home Assistant
-   cross-entry sharing is not available.
+5. Confirm diagnostics identify the active transport source: on Home Assistant
+   2026.10+ it is `source: homeassistant.modbus`, `owns_socket: false`, and
+   `supports_shared_connection: true` (the entry claims the central shared
+   Modbus connection); on older releases — and whenever the shared claim
+   fails — it stays `source: modbus_connection.tmodbus`, `owns_socket: true`,
+   and `supports_shared_connection: false` (one private socket per config
+   entry).
 
 ## 3. Config Flow and First Poll
 

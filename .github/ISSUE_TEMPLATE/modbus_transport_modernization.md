@@ -1,6 +1,6 @@
 ---
 name: Modbus transport follow-up
-about: Track tmodbus hardware validation and a future Home Assistant shared-connection provider
+about: Track tmodbus hardware validation and the Home Assistant shared-connection provider
 title: "[Modbus transport]: "
 labels: modbus, architecture, blocked-upstream
 assignees: ''
@@ -9,14 +9,14 @@ assignees: ''
 ## Implemented runtime boundary
 
 - [x] `IdmModbusConnectionClient` keeps IDM device logic in
-      `idm-heatpump-api[web]==2.14.5` and routes raw I/O through
+      `idm-heatpump-api[web]==2.15.0` and routes raw I/O through
       `ModbusConnectionTransport`.
 - [x] The direct socket uses the exact
       `modbus-connection>=4.12.4` / `tmodbus[async-serial]>=0.6.2` pair.
 - [x] API `2.0.0` owns its exception hierarchy; the integration's injected
       transport path no longer installs pymodbus.
-- [x] Each config entry owns its socket. Capabilities report
-      `source=modbus_connection.tmodbus`, `owns_socket=True`, and
+- [x] Each config entry owns its socket on the private path. Capabilities
+      report `source=modbus_connection.tmodbus`, `owns_socket=True`, and
       `supports_shared_connection=False`.
 - [x] Diagnostics redact the host and expose transport capabilities and runtime
       versions.
@@ -46,18 +46,33 @@ Validate without writes:
 - [ ] Unload closes only this config entry's socket.
 - [ ] Timeout, refusal, wrong slave ID, and Illegal Address keep their existing
       user-facing classifications.
-- [ ] Diagnostics stay redacted and report
-      `supports_shared_connection: false`.
+- [ ] Diagnostics stay redacted and report the active transport source
+      (`modbus_connection.tmodbus` with `owns_socket=True` on the private
+      path, `homeassistant.modbus` with `owns_socket=False` on the shared
+      path).
 
 Do not perform FC16 or service writes on real hardware unless the owner
 explicitly authorizes the exact register and value.
 
+## Shared-connection hardware validation (Home Assistant 2026.10+)
+
+- [ ] A live entry claims the shared connection and diagnostics report
+      `source=homeassistant.modbus`, `owns_socket=False`,
+      `supports_shared_connection=True`.
+- [ ] The entry's Modbus timeout option is visible in the negotiated link
+      floors.
+- [ ] A deliberate connection loss reconnects on the next operation while
+      another holder keeps the link.
+- [ ] Several config entries on one controller share a single socket and stay
+      independent across reload and unload.
+
 ## Central Home Assistant sharing status
 
-- Home Assistant developer documentation link:
-- Date checked:
-- Is a central shared Modbus connection contract stable for custom
-  integrations? yes / no / unclear
+- Contract shipped with Home Assistant 2026.10:
+  `homeassistant.components.modbus.async_get_unit` /
+  `async_get_temporary_unit` (the YAML-hub `get_hub` path is deprecated and
+  breaks in 2027.10). Provider: `modbus_shared_transport.py` since the
+  2026-10-28 work package.
 - Lifecycle/ownership documentation:
 
 The current tmodbus adapter is already implemented. This section concerns only
