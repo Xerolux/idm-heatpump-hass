@@ -69,7 +69,7 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
 
     _attr_has_entity_name = True
     _attr_translation_key = "water_heater"
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_supported_features = WaterHeaterEntityFeature.TARGET_TEMPERATURE
     _attr_current_operation = STATE_HEAT_PUMP
 
@@ -128,13 +128,13 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
         return numeric if math.isfinite(numeric) else None
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         """Return the current temperature."""
         # Use top sensor as representative
         return self._usable_temperature(self._current_reg)
 
     @property
-    def target_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float | None:
         """Return the temperature we try to reach."""
         return self._usable_temperature(self._target_reg)
 

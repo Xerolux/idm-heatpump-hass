@@ -132,16 +132,16 @@ Konfigurieren → KNX-Bridge**. Alle Details: **[KNX-Bridge-Dokumentation][wiki-
 
 ## ⚡ Schnellstart
 
-**1. Installation – Marketplace (HA 2026.11+) oder HACS (HA 2026.8.1–2026.10)**
+**1. Installation – Marketplace oder HACS (erfordert Home Assistant 2026.11+)**
 
 Die Integration steht im Standard-Katalog von HACS/Marketplace – kein benutzerdefiniertes Repository nötig (ab HA 2026.11 auch kein GitHub-Konto).
 
 <a href="https://my.home-assistant.io/redirect/marketplace_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=Integration" target="_blank" rel="noopener noreferrer"><img src="https://my.home-assistant.io/badges/marketplace_repository.svg" alt="Open your Home Assistant instance and open this repository in the Marketplace (HA 2026.11+)." /></a>
-<a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=Integration" target="_blank" rel="noopener noreferrer"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open a repository inside the Home Assistant Community Store (HA 2026.10 and older)." /></a>
+<a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=Integration" target="_blank" rel="noopener noreferrer"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open a repository inside the Home Assistant Community Store (HACS alternative)." /></a>
 
 ```
-HA 2026.11+:  Einstellungen → Marketplace → „IDM Heatpump" suchen → Herunterladen
-HA ≤ 2026.10: HACS → Integrationen → „IDM Heatpump" suchen → Herunterladen
+Marketplace:  Einstellungen → Marketplace → „IDM Heatpump" suchen → Herunterladen
+HACS:         HACS → Integrationen → „IDM Heatpump" suchen → Herunterladen
 → HA neu starten
 ```
 
@@ -214,7 +214,7 @@ Maintainer sollten vor einem stabilen Release den
 
 ## 🔑 Voraussetzungen
 
-- Home Assistant **2026.8.1+** (ab 2026.11 mit eingebautem Marketplace; 2026.8.1–2026.10 benötigt [HACS](https://hacs.xyz/docs/setup/download))
+- Home Assistant **2026.11.0+** (mit eingebautem Marketplace; [HACS](https://hacs.xyz/docs/setup/download) funktioniert als Alternative)
 - IDM Navigator 2.0 / 10 / Pro Wärmepumpe mit aktiviertem Modbus TCP (Port 502), oder Navigator 10/Pro im Modus `web_only` mit lokaler Web-PIN
 - Lokale Navigator-Web-PIN für optionale Web-Daten und unterstützte Navigator-10/Pro-Steuerungen im reinen Web-Betrieb
 - Python 3.14+ (wird von Home Assistant bereitgestellt)

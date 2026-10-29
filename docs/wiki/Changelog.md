@@ -5,6 +5,15 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.25.0-b1 — 2026-10-29
+
+The Home Assistant 2026.11 line: the minimum is now HA 2026.11.0. Climate and
+water-heater cards use the 2026.11 `native_` temperature properties, the
+config-entry lifecycle returns `None` and unloading fails loudly, sub-devices
+register as `ChildDeviceInfo` (converting in place, keeping device IDs) and
+every repair issue is linked to its config entry so Home Assistant cleans it
+up automatically.
+
 ## v0.24.0-b2 — 2026-10-28
 
 The onboarding/Assist/dashboard beta, updated: on top of the shared Modbus

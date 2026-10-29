@@ -87,11 +87,13 @@ async def smoke_hass(tmp_path: Path) -> AsyncIterator[HomeAssistant]:
     _expose_custom_components(tmp_path)
     hass = HomeAssistant(str(tmp_path))
     loader.async_setup(hass)
+    # The registries wait on config entries while loading (2026.11), so the
+    # config_entries manager has to exist and be initialized first.
+    hass.config_entries = ConfigEntries(hass, {})
+    await hass.config_entries.async_initialize()
     dr.async_setup(hass)
     await dr.async_load(hass)
     await er.async_load(hass)
-    hass.config_entries = ConfigEntries(hass, {})
-    await hass.config_entries.async_initialize()
     yield hass
     await hass.async_stop()
 

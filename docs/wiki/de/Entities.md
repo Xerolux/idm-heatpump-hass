@@ -723,7 +723,7 @@ Assist](Configuration#assist-text-und-sprache).
 
 ## Gerätegruppen (Gerätehierarchie)
 
-Mit aktivierter **Gerätehierarchie** (Konfigurieren → Funktionen) verteilt die Integration ihre Entitäten auf Untergeräte, damit das Hauptgerät der Wärmepumpe beim Regler bleibt. Ab Home Assistant 2026.9 sind diese Gruppen *Child-Devices* der Wärmepumpe; auf 2026.8 greift der `via_device`-Fallback, der beim Upgrade automatisch konvertiert wird. Zonenmodule bleiben gewöhnliche verknüpfte Geräte — eigene Hardware, kein logischer Teil — und ihre Räume sind Kinder des Moduls.
+Mit aktivierter **Gerätehierarchie** (Konfigurieren → Funktionen) verteilt die Integration ihre Entitäten auf Untergeräte, damit das Hauptgerät der Wärmepumpe beim Regler bleibt. Diese Gruppen sind *Child-Devices* der Wärmepumpe; ein Upgrade von einer älteren Integrationsversion konvertiert die vorher über `via_device` verknüpften Geräte an Ort und Stelle und behält ihre Geräte-IDs. Zonenmodule bleiben gewöhnliche verknüpfte Geräte — eigene Hardware, kein logischer Teil — und ihre Räume sind Kinder des Moduls.
 
 | Gruppe | Erstellt wenn | Enthält |
 |--------|---------------|---------|

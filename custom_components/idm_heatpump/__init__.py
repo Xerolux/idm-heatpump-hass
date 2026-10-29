@@ -451,7 +451,7 @@ async def _async_setup_web_only_entry(
     zone_count: int = 0,
     zone_rooms: dict[int, int] | None = None,
     enable_cascade: bool = False,
-) -> bool:
+) -> None:
     """Set up a web-only integration entry (no Modbus)."""
     _LOGGER.info(
         "Setting up IDM heat pump %s in web-only mode via %s (Modbus will not be used)",
@@ -645,15 +645,14 @@ async def _async_setup_web_only_entry(
     )
 
     _register_update_listener(entry)
-    return True
 
 
-async def async_migrate_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
+async def async_migrate_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
     """Migrate entity IDs and preserve existing device placement safely."""
     if entry.version != 1:
-        return True
+        return
     if entry.minor_version >= 3:
-        return True
+        return
 
     if entry.minor_version < 2:
         entity_registry = er.async_get(hass)
@@ -677,7 +676,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> boo
         version=1,
         minor_version=3,
     )
-    return True
+    return
 
 
 async def _async_optional_platforms(hass: HomeAssistant) -> tuple[Platform, ...]:
@@ -712,7 +711,7 @@ async def _async_optional_platforms(hass: HomeAssistant) -> tuple[Platform, ...]
     return tuple(available)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
     integration = await async_get_integration(hass, DOMAIN)
     versions = await async_runtime_versions(integration.manifest.get("version"))
     _LOGGER.info(
@@ -818,6 +817,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             hass,
             DOMAIN,
             scoped_issue_id(entry.entry_id, "web_pin_missing"),
+            config_entry_id=entry.entry_id,
             is_fixable=True,
             severity=ir.IssueSeverity.WARNING,
             translation_key="web_pin_missing",
@@ -828,7 +828,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))
 
     if connection_mode == CONNECTION_MODE_WEB_ONLY:
-        return await _async_setup_web_only_entry(
+        await _async_setup_web_only_entry(
             hass,
             entry,
             host,
@@ -844,12 +844,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             zone_rooms=zone_rooms,
             enable_cascade=enable_cascade,
         )
+        return
 
     # Use the library via the adapter (migration Option B). Home Assistant
-    # 2026.10+ can share one Modbus socket between entries and integrations;
-    # the entry claims that connection when available and keeps its own
-    # private socket otherwise (older Home Assistant, unloadable modbus
-    # component, conflicting link settings).
+    # shares one Modbus socket between entries and integrations; the entry
+    # claims that connection when available and keeps its own private socket
+    # otherwise (unloadable modbus component, conflicting link settings).
     endpoint = ModbusTcpEndpoint(
         host=host,
         port=port,
@@ -1358,7 +1358,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
 
     _register_update_listener(entry)
 
-    return True
+    return
 
 
 async def _async_teardown_partial_setup(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
@@ -1431,54 +1431,54 @@ async def _async_cancel_entry_tasks(runtime: Any) -> None:
             await scheduler.async_stop()
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
     platforms = getattr(entry.runtime_data, "loaded_platforms", None) or tuple(PLATFORMS)
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, list(platforms))
-    if unload_ok:
-        operation_analysis = getattr(entry.runtime_data, "operation_analysis", None)
-        if isinstance(operation_analysis, OperationAnalysis):
-            try:
-                await operation_analysis.async_save()
-            except Exception:
-                _LOGGER.warning("Failed to persist IDM operation analysis during unload", exc_info=True)
-        energy_statistics = getattr(entry.runtime_data, "energy_statistics", None)
-        if isinstance(energy_statistics, EnergyStatistics):
-            try:
-                await energy_statistics.async_save()
-            except Exception:
-                _LOGGER.warning("Failed to persist IDM energy statistics during unload", exc_info=True)
-        predictive_advisor = getattr(entry.runtime_data, "predictive_advisor", None)
-        if isinstance(predictive_advisor, PredictiveAdvisor):
-            try:
-                await predictive_advisor.async_save()
-            except Exception:
-                _LOGGER.warning("Failed to persist IDM predictive advisor during unload", exc_info=True)
-        advisor_analytics = getattr(entry.runtime_data, "advisor_analytics", None)
-        if isinstance(advisor_analytics, AdvisorAnalytics):
-            try:
-                await advisor_analytics.async_save()
-            except Exception:
-                _LOGGER.warning("Failed to persist IDM advisor analytics during unload", exc_info=True)
-        coordinator = getattr(entry.runtime_data, "coordinator", None)
-        shutdown = getattr(coordinator, "async_shutdown", None)
-        if callable(shutdown):
-            try:
-                await shutdown()
-            except TypeError:
-                # Non-awaitable mock or sync cleanup callback; not fatal on unload.
-                pass
-        await _async_cancel_entry_tasks(entry.runtime_data)
-        knx_bridge = getattr(entry.runtime_data, "knx_bridge", None)
-        if knx_bridge is not None:
-            try:
-                await knx_bridge.async_stop()
-            except Exception:
-                _LOGGER.debug("Error stopping the KNX bridge for %s", entry.title, exc_info=True)
+    # Raises a translated ConfigEntryError instead of reporting a bare False,
+    # so a platform that refuses to unload fails the entry loudly (2026.11).
+    await hass.config_entries.async_unload_platforms_or_raise(entry, list(platforms))
+    operation_analysis = getattr(entry.runtime_data, "operation_analysis", None)
+    if isinstance(operation_analysis, OperationAnalysis):
         try:
-            await entry.runtime_data.client.disconnect()
+            await operation_analysis.async_save()
         except Exception:
-            _LOGGER.debug("Error disconnecting client for %s", entry.title, exc_info=True)
-    return unload_ok
+            _LOGGER.warning("Failed to persist IDM operation analysis during unload", exc_info=True)
+    energy_statistics = getattr(entry.runtime_data, "energy_statistics", None)
+    if isinstance(energy_statistics, EnergyStatistics):
+        try:
+            await energy_statistics.async_save()
+        except Exception:
+            _LOGGER.warning("Failed to persist IDM energy statistics during unload", exc_info=True)
+    predictive_advisor = getattr(entry.runtime_data, "predictive_advisor", None)
+    if isinstance(predictive_advisor, PredictiveAdvisor):
+        try:
+            await predictive_advisor.async_save()
+        except Exception:
+            _LOGGER.warning("Failed to persist IDM predictive advisor during unload", exc_info=True)
+    advisor_analytics = getattr(entry.runtime_data, "advisor_analytics", None)
+    if isinstance(advisor_analytics, AdvisorAnalytics):
+        try:
+            await advisor_analytics.async_save()
+        except Exception:
+            _LOGGER.warning("Failed to persist IDM advisor analytics during unload", exc_info=True)
+    coordinator = getattr(entry.runtime_data, "coordinator", None)
+    shutdown = getattr(coordinator, "async_shutdown", None)
+    if callable(shutdown):
+        try:
+            await shutdown()
+        except TypeError:
+            # Non-awaitable mock or sync cleanup callback; not fatal on unload.
+            pass
+    await _async_cancel_entry_tasks(entry.runtime_data)
+    knx_bridge = getattr(entry.runtime_data, "knx_bridge", None)
+    if knx_bridge is not None:
+        try:
+            await knx_bridge.async_stop()
+        except Exception:
+            _LOGGER.debug("Error stopping the KNX bridge for %s", entry.title, exc_info=True)
+    try:
+        await entry.runtime_data.client.disconnect()
+    except Exception:
+        _LOGGER.debug("Error disconnecting client for %s", entry.title, exc_info=True)
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:

@@ -8,8 +8,8 @@ a normal changelog.
 
 **0.23.2** is the stable cut of the five-beta line (b1–b5, 2026-10-24
 through 2026-10-27). Every beta of the line passed the full quality gate
-before its merge — the four-leg CI matrix (Python 3.14 × HA
-2026.8.1/2026.10.0 × manifest-pinned/api-main) with the coverage gates,
+before its merge — the two-leg CI matrix (Python 3.14 × HA
+2026.11.0 × manifest-pinned/api-main) with the coverage gates,
 strict mypy against the real Home Assistant runtime, ruff, hassfest, the
 real-Home-Assistant lifecycle smoke leg and the credential scan — and the
 cut itself re-ran the whole suite against the promoted stable API pin
@@ -75,8 +75,8 @@ dates, not the current issue status. Neither issue is claimed fixed by this beta
 **0.23.1** is a stable fix release straight off main, no prerelease line:
 both fixes are small, locally bounded and carried by focused tests. The
 full quality gate passed on both pull requests before the merge
-(#579, #580): the four-leg CI matrix (Python 3.14 × HA
-2026.8.1/2026.10.0 × manifest-pinned/api-main) with the coverage gates,
+(#579, #580): the two-leg CI matrix (Python 3.14 × HA
+2026.11.0 × manifest-pinned/api-main) with the coverage gates,
 strict mypy against the real Home Assistant runtime, ruff, hassfest, the
 real-Home-Assistant lifecycle smoke leg and the credential scan. The
 register-map correction was reproduced locally against the pure resolver
@@ -89,8 +89,8 @@ reporter confirms auto mode on his hybrid plant.
 
 **0.23.0** is the stable cut of the line that ran through fourteen
 prereleases (b1–b14, 2026-10-17 through 2026-10-20). For the cut, the
-full quality gate passed on the release tree: the four-leg CI matrix
-(Python 3.14 × HA 2026.8.1/2026.10.0 × manifest-pinned/api-main) with the
+full quality gate passed on the release tree: the two-leg CI matrix
+(Python 3.14 × HA 2026.11.0 × manifest-pinned/api-main) with the
 coverage gates, strict mypy against the real Home Assistant runtime,
 ruff, hassfest, HACS, the real-Home-Assistant lifecycle smoke leg and the
 release workflow's package-to-tag verification. The line was exercised in
@@ -184,7 +184,7 @@ hardware capture).
 **0.22.0** is the stable cut of the resilience line that ran through seven
 prereleases (b1–b7, 2026-10-13 through 2026-10-15) and absorbed the
 never-promoted 0.21.3 line. For the cut, the full quality gate passed on the
-tagged tree: the four-leg matrix (Python 3.14 × HA 2026.8.1/2026.10.0 ×
+tagged tree: the two-leg matrix (Python 3.14 × HA 2026.11.0 ×
 manifest-pinned/api-main) with coverage 95 % and `config_flow` 100 %, strict
 mypy against the real Home Assistant runtime, ruff, hassfest, HACS, the
 real-Home-Assistant lifecycle smoke including the no-leaked-tasks assertion,
@@ -252,7 +252,7 @@ four prereleases (b1–b4, 2026-10-07 through 2026-10-11). The advisor is
 strictly read-only by construction — its module owns no write path, and the
 accepting of a recommendation records only an acknowledgment — and it is fully
 local and deterministic. For the cut, the full quality gate passed on the
-tagged tree: the four-leg matrix (Python 3.14 × HA 2026.8.1/2026.10.0 ×
+tagged tree: the two-leg matrix (Python 3.14 × HA 2026.11.0 ×
 manifest-pinned/api-main) with coverage 95 % and `config_flow` 100 %, strict
 mypy against the real Home Assistant runtime, ruff 0.17, hassfest, HACS, the
 real-Home-Assistant lifecycle smoke including the no-leaked-tasks assertion,
@@ -329,7 +329,7 @@ independently of this cut.
 **0.20.1** is the stable cut of the self-healing line that ran through five
 prereleases (b1–b5, 2026-09-30 through 2026-10-02); the stable tag changed
 no code against b5. For the cut, automated CI — including the
-real-Home-Assistant lifecycle suite on both the minimum 2026.8.1 and the
+real-Home-Assistant lifecycle suite on both the minimum 2026.11.0 and the
 2026.10.0 beta — plus HACS, Hassfest, security checks, release packaging,
 published checksum verification and package-to-tag comparison passed. The
 line ran on the maintainer's Navigator 10 plant from 2026-09-30; the
@@ -400,7 +400,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.24.0-b2` and `idm-heatpump-api` `2.15.1` form the current
+Source-tree integration `0.25.0-b1` and `idm-heatpump-api` `2.15.1` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

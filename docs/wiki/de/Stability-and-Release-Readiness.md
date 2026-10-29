@@ -59,7 +59,7 @@ beansprucht keine Behebung dieser beiden Issues.
 **0.23.2** ist der stabile Schnitt der fünf Betas b1–b5 (2026-10-24 bis
 2026-10-27). Jedes Beta der Linie lief vor dem Merge durch das volle
 Qualitäts-Gate — die vierbeinige CI-Matrix (Python 3.14 × HA
-2026.8.1/2026.10.0 × manifest-gepinnt/api-main) mit den Coverage-Gates,
+2026.11.0 × manifest-gepinnt/api-main) mit den Coverage-Gates,
 strict mypy gegen die echte Home-Assistant-Runtime, ruff, hassfest, die
 echte Lifecycle-Smoke-Strecke und der Credentials-Scan — und der Schnitt
 selbst lief die komplette Suite erneut gegen den beförderten stabilen
@@ -80,7 +80,7 @@ auf Reporter-Felddaten und werden hier nicht als gefixt beansprucht.
 Prerelease-Linie: Beide Fixes sind klein, lokal begrenzt und von
 fokussierten Tests getragen. Das volle Qualitäts-Gate lief vor dem Merge
 über beide Pull Requests (#579, #580): die vierbeinige CI-Matrix
-(Python 3.14 × HA 2026.8.1/2026.10.0 × manifest-gepinnt/api-main) mit
+(Python 3.14 × HA 2026.11.0 × manifest-gepinnt/api-main) mit
 den Coverage-Gates, strict mypy gegen die echte Home-Assistant-Runtime,
 ruff, hassfest, die echte Lifecycle-Smoke-Strecke und der
 Credentials-Scan. Die Registerkarten-Korrektur wurde vor der
@@ -95,7 +95,7 @@ Hybrid-Anlage bestätigt hat.
 **0.23.0** ist der stabile Schnitt der Linie aus vierzehn Prereleases
 (b1–b14, 17.–20.10.2026). Für den Schnitt bestand das volle Qualitäts-Gate
 auf dem Release-Baum: die vierbeinige CI-Matrix (Python 3.14 ×
-HA 2026.8.1/2026.10.0 × manifest-gepinnt/api-main) mit den Coverage-Gates,
+HA 2026.11.0 × manifest-gepinnt/api-main) mit den Coverage-Gates,
 strict mypy gegen die echte Home-Assistant-Runtime, ruff, hassfest, HACS,
 die echte Lifecycle-Smoke-Strecke und die Paket-zu-Tag-Verifikation des
 Release-Workflows. Die Linie lief durchgehend im Feld: Jede Beta lief beim
@@ -194,7 +194,7 @@ kein Hardware-Capture).
 **0.22.0** ist der stabile Schnitt der Resilienz-Linie aus sieben Prereleases
 (b1–b7, 13.–15.10.2026) inklusive der nie beförderten 0.21.3-Linie. Für den
 Schnitt bestand die vollständige Qualitätsprüfung auf dem getaggten Baum:
-die Vier-Beine-Matrix (Python 3.14 × HA 2026.8.1/2026.10.0 ×
+die Zwei-Beine-Matrix (Python 3.14 × HA 2026.11.0 ×
 manifest-pinned/api-main) mit Coverage 95 % und `config_flow` 100 %, strict
 mypy gegen die echte Home-Assistant-Runtime, ruff, hassfest, HACS, der
 Lifecycle-Smoke mit echtem Home Assistant inkl. der Assertion gegen
@@ -264,8 +264,8 @@ Prereleases (b1–b4, 07.–11.10.2026). Der Advisor ist konstruktionsbedingt
 strikt nur lesend — sein Modul besitzt keinen Schreibpfad, und das Annehmen
 einer Empfehlung vermerkt lediglich eine Bestätigung — und arbeitet voll
 lokal und deterministisch. Für den Schnitt bestand die vollständige
-Qualitätsprüfung auf dem getaggten Baum: die Vier-Beine-Matrix (Python 3.14 ×
-HA 2026.8.1/2026.10.0 × manifest-pinned/api-main) mit Coverage 95 % und
+Qualitätsprüfung auf dem getaggten Baum: die Zwei-Beine-Matrix (Python 3.14 ×
+HA 2026.11.0 × manifest-pinned/api-main) mit Coverage 95 % und
 `config_flow` 100 %, strict mypy gegen die echte Home-Assistant-Runtime,
 ruff 0.17, hassfest, HACS, der Lifecycle-Smoke mit echtem Home Assistant inkl.
 der Assertion gegen leckende Tasks, Paketierung, Prüfsummen- und
@@ -346,7 +346,7 @@ trägt. Die 0.21.0-Linie läuft von diesem Schnitt unabhängig weiter.
 **0.20.1** ist der stabile Schnitt der selbstheilenden Linie aus fünf
 Prereleases (b1–b5, 30.09.–02.10.2026); am stabilen Tag änderte sich gegen
 b5 kein Code. Für den Schnitt waren automatisierte CI — inklusive der
-Lifecycle-Suite mit echtem Home Assistant sowohl auf dem Minimum 2026.8.1
+Lifecycle-Suite mit echtem Home Assistant sowohl auf dem Minimum 2026.11.0
 als auch auf der 2026.10.0-Beta — sowie HACS, Hassfest,
 Sicherheitsprüfungen, Release-Paketierung, Verifikation der veröffentlichten
 Prüfsummen und der Paket-zu-Tag-Vergleich erfolgreich. Die Linie lief ab
@@ -424,7 +424,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.24.0-b2` und `idm-heatpump-api` `2.15.1` bilden das aktuelle exakt
+Integration im Quellstand `0.25.0-b1` und `idm-heatpump-api` `2.15.1` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

@@ -2,27 +2,25 @@
 
 ## Requirements
 
-- **Home Assistant** 2026.8.1 or newer
-- **Home Assistant 2026.11 or newer**: nothing extra — the built-in
-  **Marketplace** (HACS's successor, same catalog) ships with Home Assistant
-- **Home Assistant 2026.8.1 – 2026.10**: the
-  [HACS](https://hacs.xyz/docs/setup/download) custom integration
+- **Home Assistant** 2026.11.0 or newer
+- **Marketplace** (built into Home Assistant) or
+  [HACS](https://hacs.xyz/docs/setup/download) as an alternative
 - **IDM Navigator 2.0 / 10 / Pro** heat pump with Modbus TCP enabled
 - Modbus TCP must be enabled in the Navigator controller (Port 502, Slave ID 1)
 
 ## Installation via Marketplace or HACS (recommended)
 
 The integration is listed in the default HACS/Marketplace catalog. No custom
-repository is needed, and from Home Assistant 2026.11 no GitHub account either.
+repository is needed, and no GitHub account either.
 
-**Home Assistant 2026.11 and newer (Marketplace):**
+**Home Assistant Marketplace (recommended):**
 
 1. Go to **Settings → Marketplace**
 2. Search for **"IDM Heatpump"**
 3. Open the entry and click **Download**
 4. **Restart Home Assistant**
 
-**Home Assistant 2026.8.1 – 2026.10 (HACS):**
+**Alternatively via HACS:**
 
 1. Open **HACS** in Home Assistant
 2. Go to **Integrations** and search for **"IDM Heatpump"**
@@ -31,8 +29,8 @@ repository is needed, and from Home Assistant 2026.11 no GitHub account either.
 
 Direct links — they open the repository page in your own Home Assistant:
 
-- [Open IDM Heatpump in the Marketplace](https://my.home-assistant.io/redirect/marketplace_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=Integration) (Home Assistant 2026.11+)
-- [Open IDM Heatpump in HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=Integration) (Home Assistant 2026.10 and older)
+- [Open IDM Heatpump in the Marketplace](https://my.home-assistant.io/redirect/marketplace_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=Integration) (recommended)
+- [Open IDM Heatpump in HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=Integration) (alternative)
 
 When Home Assistant is upgraded from 2026.10 or older to 2026.11 or newer,
 HACS migrates to the Marketplace automatically: installed downloads and update
@@ -45,8 +43,8 @@ is the normal installation channel. The new guided setup and Smart Energy &
 Comfort features described in this wiki are available in
 [0.17.2-b6 beta](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.17.2-b6).
 
-To try the beta, open the IDM Heatpump entry in the Marketplace (or in HACS
-on Home Assistant 2026.10 and older), use its version
+To try the beta, open the IDM Heatpump entry in the Marketplace (or in HACS),
+use its version
 selection/download action, enable prerelease versions if needed and select
 `0.17.2-b6`. Back up Home Assistant before upgrading and restart Home Assistant
 after downloading. A newer documentation page does not update the installed
@@ -213,7 +211,7 @@ setting.
 
 ## Upgrade
 
-Via the Marketplace (Home Assistant 2026.11+) or HACS (2026.10 and older):
+Via the Marketplace (recommended) or HACS:
 open the IDM Heatpump entry and choose **Update**, then restart Home
 Assistant. New versions also appear as an update entity in Home Assistant's
 **Updates** panel.

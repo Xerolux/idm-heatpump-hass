@@ -365,35 +365,35 @@ class TestIdmWaterHeater:
 
     def test_current_temperature(self):
         wh, _ = self._make(data={"dhw_temp_top": 52.5})
-        assert wh.current_temperature == 52.5
+        assert wh.native_current_temperature == 52.5
 
     def test_current_temperature_none_when_missing(self):
         wh, _ = self._make(data={})
-        assert wh.current_temperature is None
+        assert wh.native_current_temperature is None
 
     def test_current_temperature_none_when_data_none(self):
         wh, _ = self._make(data=None)
-        assert wh.current_temperature is None
+        assert wh.native_current_temperature is None
 
     def test_current_temperature_none_when_register_is_unused(self):
         """An unused storage sensor must not be published as a temperature."""
         wh, coord = self._make(data={"dhw_temp_top": -1})
         coord.unused_registers = {"dhw_temp_top"}
-        assert wh.current_temperature is None
+        assert wh.native_current_temperature is None
 
     def test_current_temperature_none_when_value_is_not_finite(self):
         """NaN reached the water heater card as a literal 'nan' reading."""
         wh, _ = self._make(data={"dhw_temp_top": float("nan")})
-        assert wh.current_temperature is None
+        assert wh.native_current_temperature is None
 
     def test_target_temperature_none_when_register_is_unused(self):
         wh, coord = self._make(data={"dhw_setpoint": 65535})
         coord.unused_registers = {"dhw_setpoint"}
-        assert wh.target_temperature is None
+        assert wh.native_target_temperature is None
 
     def test_target_temperature(self):
         wh, _ = self._make(data={"dhw_setpoint": 55.0})
-        assert wh.target_temperature == 55.0
+        assert wh.native_target_temperature == 55.0
 
     def test_min_max_temp_from_register_bounds(self):
         target = _make_register("dhw_setpoint", 200, min_val=45.0, max_val=65.0)
@@ -806,8 +806,8 @@ class TestClimateSharedBehaviour:
     def test_temperatures_are_none_without_data(self):
         climate, _coord = self._hc(data={})
 
-        assert climate.current_temperature is None
-        assert climate.target_temperature is None
+        assert climate.native_current_temperature is None
+        assert climate.native_target_temperature is None
         assert climate.hvac_action is None
 
     def test_hvac_action_follows_this_circuit_not_the_plant(self):
@@ -874,7 +874,7 @@ class TestClimateSharedBehaviour:
         )
         coord.unused_registers = {"hc_a_room_temp"}
 
-        assert climate.current_temperature is None
+        assert climate.native_current_temperature is None
         assert climate.available is True, "the circuit stays usable without a room sensor"
 
     def test_current_temperature_none_when_the_reading_is_not_finite(self):
@@ -886,7 +886,7 @@ class TestClimateSharedBehaviour:
             }
         )
 
-        assert climate.current_temperature is None
+        assert climate.native_current_temperature is None
 
     def test_zone_room_current_temperature_none_when_unused(self):
         climate, coord = self._zone(
@@ -898,7 +898,7 @@ class TestClimateSharedBehaviour:
         )
         coord.unused_registers = set()
 
-        assert climate.current_temperature is None
+        assert climate.native_current_temperature is None
 
     async def test_a_translated_write_error_is_passed_through(self):
         from homeassistant.exceptions import HomeAssistantError
@@ -1074,7 +1074,7 @@ class TestClimateNonNumericReadings:
             }
         )
 
-        assert climate.current_temperature is None
+        assert climate.native_current_temperature is None
 
     def test_target_temperature_none_when_the_setpoint_is_not_numeric(self):
         climate, _coord = _hc_climate(
@@ -1084,7 +1084,7 @@ class TestClimateNonNumericReadings:
             }
         )
 
-        assert climate.target_temperature is None
+        assert climate.native_target_temperature is None
 
     def test_hvac_action_idle_when_the_circuit_active_mode_is_not_numeric(self):
         """A garbled per-circuit state is an idle circuit, not a crash."""

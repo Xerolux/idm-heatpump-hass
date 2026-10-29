@@ -2502,12 +2502,12 @@ class TestWaterHeaterEntityEdges:
     def test_current_temperature_none_when_the_reading_is_not_numeric(self):
         wh, _coord = self._make(data={"dhw_temp_top": "sensor error", "dhw_setpoint": 55})
 
-        assert wh.current_temperature is None
+        assert wh.native_current_temperature is None
 
     def test_target_temperature_none_when_the_setpoint_is_not_numeric(self):
         wh, _coord = self._make(data={"dhw_temp_top": 50.0, "dhw_setpoint": "-"})
 
-        assert wh.target_temperature is None
+        assert wh.native_target_temperature is None
 
 
 # ---------------------------------------------------------------------------

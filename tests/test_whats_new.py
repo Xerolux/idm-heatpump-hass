@@ -159,7 +159,7 @@ async def test_setup_fires_notice_only_on_update_transition(mock_hass: Any) -> N
     """Entry last ran 0.20.1, the running version is 0.5.0: notice fires."""
     entry = _make_entry(options={}, data={"host": "h", "port": 502, "slave_id": 1, "last_run_version": "0.20.1"})
     ensure = MagicMock()
-    assert await _setup_with_patches(mock_hass, entry, ensure) is True
+    assert await _setup_with_patches(mock_hass, entry, ensure) is None
     ensure.assert_called_once()
     assert entry.runtime_data.predictive_advisor is not None
 
@@ -172,7 +172,7 @@ async def test_setup_skips_notice_on_same_or_fresh_version(mock_hass: Any) -> No
     ):
         entry = _make_entry(options={}, data=dict(data))
         ensure = MagicMock()
-        assert await _setup_with_patches(mock_hass, entry, ensure) is True
+        assert await _setup_with_patches(mock_hass, entry, ensure) is None
         ensure.assert_not_called()  # stamping may run, the notice never fires
 
 
@@ -183,7 +183,7 @@ async def test_setup_skips_advisor_and_notice_when_disabled(mock_hass: Any) -> N
         data={"host": "h", "port": 502, "slave_id": 1, "last_run_version": "0.20.1"},
     )
     ensure = MagicMock()
-    assert await _setup_with_patches(mock_hass, entry, ensure) is True
+    assert await _setup_with_patches(mock_hass, entry, ensure) is None
     ensure.assert_not_called()
     assert entry.runtime_data.predictive_advisor is None
     assert entry.runtime_data.advisor_engine is None

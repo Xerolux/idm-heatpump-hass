@@ -7,11 +7,11 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.24.0-b2` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
+- **Current Version**: `0.25.0-b1` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
-- **Min HA Version**: 2026.8.1
-- **Python**: 3.14+ (Home Assistant 2026.8 requires `>=3.14.2`)
+- **Min HA Version**: 2026.11.0b0 (bump to 2026.11.0 when the stable ships)
+- **Python**: 3.14+ (Home Assistant 2026.11 requires `>=3.14.2`)
 - **Direct Modbus Runtime**: `modbus-connection>=4.12.4`, `tmodbus[async-serial]>=0.6.2`
 - **Device Logic**: `idm-heatpump-api[web]==2.15.1` (owns its own exception hierarchy; pymodbus is no longer a dependency)
 - **Completed audit**: `docs/dev/code-audit-2026-09.md` — the September 2026 full-read audit.
@@ -54,7 +54,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── model_resolution.py           # Pure rules deciding the Navigator model and register map from probe/stored/web/override
 │   ├── modbus_client.py              # API client adapter routing raw I/O through the local transport
 │   ├── modbus_transport.py           # Backend-neutral contract + modbus-connection/tmodbus implementation
-│   ├── modbus_shared_transport.py    # Claims Home Assistant's shared Modbus connection (2026.10+), private-socket fallback
+│   ├── modbus_shared_transport.py    # Claims Home Assistant's shared Modbus connection, private-socket fallback
 │   ├── versions.py                   # Runtime dependency versions for logs, sensors, and diagnostics
 │   ├── ha_compat.py                  # Version-tolerant imports across the supported HA range (vol/probatio, moved enums)
 │   ├── recovery_watchdog.py          # Self-healing reload for entries in setup retry once the endpoint answers again
@@ -258,7 +258,7 @@ Home Assistant
     │       │
     │       ├── IdmModbusConnectionClient (modbus_client.py)
     │       │       ├── idm-heatpump-api 2.15.1 (device logic)
-    │       │       ├── SharedModbusUnitTransport (HA shared connection, 2026.10+)
+    │       │       ├── SharedModbusUnitTransport (HA shared connection)
     │       │       └── ModbusConnectionTransport (modbus-connection + tmodbus socket, fallback/probe)
     │       │
     │       ├── Entity Descriptions from registers.py / library_adapter.py
@@ -305,7 +305,7 @@ Home Assistant
 
 6. **Async I/O**: All Modbus and web communication is async. The adapter keeps the API request lock, and `modbus-connection` serializes physical requests and reconnects on demand.
 
-7. **Socket Ownership**: On Home Assistant 2026.10+ each config entry claims a unit on Home Assistant's shared Modbus connection (`modbus.async_get_unit`, reference-counted per entry, requests of all holders serialized behind one link lock) via `modbus_shared_transport.py`, reporting `owns_socket=False` / `supports_shared_connection=True`. On older releases — and whenever the shared claim fails — the entry owns a private tmodbus-backed socket (`supports_shared_connection=False`). The config-flow probe always uses the private short-lived socket.
+7. **Socket Ownership**: Each config entry claims a unit on Home Assistant's shared Modbus connection (`modbus.async_get_unit`, reference-counted per entry, requests of all holders serialized behind one link lock) via `modbus_shared_transport.py`, reporting `owns_socket=False` / `supports_shared_connection=True`. Whenever the shared claim fails (unloadable `modbus` component, conflicting link settings), the entry owns a private tmodbus-backed socket (`supports_shared_connection=False`). The config-flow probe always uses the private short-lived socket.
 
 8. **Optimistic Updates**: Write operations update the coordinator data immediately before the device confirms the change.
 
@@ -362,7 +362,7 @@ mypy). Recreate it and check through it with:
 
 ```bash
 py -3.14 -m venv test_ha
-test_ha/Scripts/python -m pip install homeassistant==2026.8.1 \
+test_ha/Scripts/python -m pip install homeassistant==2026.11.0b0 \
     "modbus-connection>=4.12.4" "tmodbus[async-serial]>=0.6.2" \
     "idm-heatpump-api[web]==2.15.1" mypy
 test_ha/Scripts/python -m mypy custom_components/idm_heatpump/
@@ -571,7 +571,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Web-only fallback | `__init__.py`, `config_flow.py` | Runs without Modbus when only web access is available |
 | Connection entities | `connection_entities.py` | Diagnostic sensor for the effective connection mode plus web liveness; the *Verbindung neu laden* diagnostic button (`connection_reload`) reloads the config entry immediately instead of waiting out HA's setup-retry backoff |
 | Self-healing Modbus outages | `recovery_watchdog.py`, `coordinator.py` | Calm auto-clearing repair notice while web data flows; background watchdog reloads entries stuck in HA's setup-retry backoff once the endpoint answers again (only runs while an entry waits) |
-| tmodbus transport | `modbus_client.py`, `modbus_transport.py`, `modbus_shared_transport.py` | Shared central connection on HA 2026.10+ (`modbus.async_get_unit`, timeout/pacing negotiated per unit); private per-entry socket as fallback and for the config-flow probe |
+| tmodbus transport | `modbus_client.py`, `modbus_transport.py`, `modbus_shared_transport.py` | Shared central connection (`modbus.async_get_unit`, timeout/pacing negotiated per unit); private per-entry socket as fallback and for the config-flow probe |
 | KNX bridge | `knx_bridge.py`, `knx_catalog.py` | Optional. Serves the 654 IDM KNX communication objects through the **Home Assistant `knx` integration** (`knx.send`, `knx.event_register`, `knx_event`) so the Weinzierl BAOS gateway module is not needed. Never implement a KNX stack here — tunnelling, routing and KNX Secure belong to the `knx` integration. Group addresses are `base + object number`, with per-register overrides |
 | Room temp forwarding | `room_temp_forwarding.py` | Forwards HA room sensor temps (per heating circuit) to GLT registers |
 | Humidity forwarding | `room_temp_forwarding.py` | Forwards one HA humidity sensor (global `ext_humidity`) to the GLT humidity register |
@@ -582,7 +582,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Diagnostics export | `diagnostics.py` | Redacts host/port/slave for privacy |
 | Unused register filtering | `entity.py`, `coordinator.py` | Entities become unavailable when their register indicates "unused" |
 | Repair issues | `repairs.py`, `coordinator.py` | User-fixable issues (e.g. missing web PIN) |
-| Device hierarchy | `device_hierarchy.py` | Opt-in sub-devices. Heating circuits, optional modules and rooms are *child devices* (`parent_device_id`) on HA 2026.9+; zone modules stay ordinary `via_device_id` devices, because a child device can't parent another child. `child_devices_supported()` falls back to `via_device_id` on 2026.8 |
+| Device hierarchy | `device_hierarchy.py` | Opt-in sub-devices. Heating circuits, optional modules and rooms are *child devices* (`ChildDeviceInfo` with `parent_device_id`); zone modules stay ordinary `via_device_id` devices, because a child device can't parent another child |
 | API register-failure log filter | `log_filter.py` | Suppresses repeated retry-exhaustion warnings for unsupported registers |
 | PV surplus operation | `calculated_sensors.py`, `web_demand_reason.py`, `web_demand_reason_entities.py` | Derived diagnostic binary sensor (issue #353): `on` when surplus is signalled (`pv_surplus` ≥ 0.05 kW or SG-Ready *Supergreen*) **and** the heat pump draws power (`power_consumption_hp` ≥ 0.05 kW, fallback `hp_operating_mode` ≠ Off). Base profile; only created when both source halves exist. OR-shaped source registers must stay listed in `polling_plan.py`. Navigator 10 web supplement additionally exposes the controller's own demand reason (`web_demand_reason`, `web_demand_reason_pv`) from the WebSocket `home/detail` frame |
 | Smart Energy & Comfort | `energy_statistics.py`, `health_monitor.py`, `comfort_advisory.py`, `comfort_scheduler.py`, `energy_manager.py`, `external_power_forwarding.py` | Opt-in Smart-profile package: persistent energy/COP/CO₂ totals, read-only health checks, comfort advice and scheduling, fail-closed PV-surplus DHW boost (needs exclusive-controller confirmation), optional forwarding of HA PV/house/battery sensors to GLT registers |

@@ -4,6 +4,7 @@ import contextlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers import issue_registry as ir
 from idm_heatpump import FEATURE_SOLAR, MODEL_UNKNOWN, IdmModelInfo
 
@@ -93,7 +94,7 @@ class TestAsyncMigrateEntry:
         ):
             result = await async_migrate_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         registry.async_update_entity.assert_called_once_with(
             "sensor.outdoor_temperature",
             new_unique_id="entry-123_outdoor_temp",
@@ -123,7 +124,7 @@ class TestAsyncMigrateEntry:
         ):
             result = await async_migrate_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         registry.async_update_entity.assert_not_called()
         mock_hass.config_entries.async_update_entry.assert_called_once_with(
             entry,
@@ -155,7 +156,7 @@ class TestAsyncMigrateEntry:
         ):
             result = await async_migrate_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         assert registry.async_update_entity.call_count == 2
         registry.async_update_entity.assert_any_call(
             "sensor.host_prefix",
@@ -171,7 +172,7 @@ class TestAsyncMigrateEntry:
         entry.version = 1
         entry.minor_version = 3
 
-        assert await async_migrate_entry(mock_hass, entry) is True
+        assert await async_migrate_entry(mock_hass, entry) is None
         mock_hass.config_entries.async_update_entry.assert_not_called()
 
 
@@ -245,7 +246,7 @@ class TestAsyncSetupEntry:
         ):
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         assert entry.runtime_data is not None
         assert isinstance(entry.runtime_data, IdmHeatpumpData)
         assert entry.runtime_data.coordinator is mock_coordinator
@@ -454,7 +455,7 @@ class TestAsyncSetupWebOnlyEntry:
         ):
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         assert isinstance(entry.runtime_data, IdmHeatpumpData)
         assert isinstance(entry.runtime_data.coordinator, IdmCoordinator)
         # Web-only mode exposes only web sensors: the register map is loaded
@@ -487,7 +488,7 @@ class TestAsyncSetupWebOnlyEntry:
         ):
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         mock_hass.async_add_executor_job.assert_any_call(warm_error_code_database)
 
     async def test_web_only_uses_detected_navigator_version_as_model_hint(self, mock_hass):
@@ -504,7 +505,7 @@ class TestAsyncSetupWebOnlyEntry:
         ):
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         assert read_web.call_args.kwargs.get("model_hint") == "Navigator 10"
 
     async def test_web_only_continues_when_initial_web_read_fails(self, mock_hass):
@@ -524,7 +525,7 @@ class TestAsyncSetupWebOnlyEntry:
             result = await async_setup_entry(mock_hass, entry)
 
         # Setup must still succeed with the generic model; the web loop retries.
-        assert result is True
+        assert result is None
         assert isinstance(entry.runtime_data.coordinator, IdmCoordinator)
         assert entry.runtime_data.coordinator.model_name == MODEL
 
@@ -575,7 +576,7 @@ class TestWebOnlyRegisterBridge:
             entry = self._make_web_only_entry()
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         coordinator = entry.runtime_data.coordinator
         # The register map resolved real register names (metadata-only)...
         assert coordinator.get_register("outdoor_temp") is not None
@@ -601,7 +602,7 @@ class TestWebOnlyRegisterBridge:
             entry = self._make_web_only_entry(knx=True)
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         bridge.async_start.assert_awaited_once()
         assert entry.runtime_data.knx_bridge is bridge
         # Bus commands follow the receive option (default: enabled); the
@@ -674,7 +675,7 @@ class TestConnectionMode:
         ):
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         mock_client = client_factory.return_value
         mock_client.connect.assert_not_called()
         # Web-only forwards sensor, select, number, button, climate and
@@ -705,7 +706,7 @@ class TestConnectionMode:
 
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         read_web.assert_not_called()
         web_loop.assert_not_called()
         assert entry.runtime_data.web_task is None
@@ -760,7 +761,7 @@ class TestConnectionMode:
             stack.enter_context(patch("custom_components.idm_heatpump.ir"))
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         mock_client.connect.assert_awaited_once()
         read_web.assert_awaited_once()
 
@@ -771,12 +772,11 @@ class TestAsyncUnloadEntry:
         entry.runtime_data = MagicMock()
         entry.runtime_data.client = AsyncMock()
         entry.runtime_data.client.disconnect = AsyncMock()
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
 
         result = await async_unload_entry(mock_hass, entry)
 
-        assert result is True
-        mock_hass.config_entries.async_unload_platforms.assert_called_once()
+        assert result is None
+        mock_hass.config_entries.async_unload_platforms_or_raise.assert_called_once()
         # #171: domain services must NOT be removed during entry unload.
         mock_hass.services.async_remove.assert_not_called()
 
@@ -786,34 +786,26 @@ class TestAsyncUnloadEntry:
         mock_client.disconnect = AsyncMock()
         entry.runtime_data = MagicMock()
         entry.runtime_data.client = mock_client
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
 
         await async_unload_entry(mock_hass, entry)
 
         mock_client.disconnect.assert_called_once()
 
-    async def test_does_not_disconnect_on_unload_failure(self, mock_hass):
+    async def test_raises_and_skips_cleanup_when_a_platform_fails_to_unload(self, mock_hass):
+        """2026.11: a failing platform unload raises instead of returning False."""
         entry = MagicMock()
         mock_client = AsyncMock()
         mock_client.disconnect = AsyncMock()
         entry.runtime_data = MagicMock()
         entry.runtime_data.client = mock_client
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=False)
+        mock_hass.config_entries.async_unload_platforms_or_raise = AsyncMock(
+            side_effect=ConfigEntryError("platform unload failed")
+        )
 
-        result = await async_unload_entry(mock_hass, entry)
+        with pytest.raises(ConfigEntryError):
+            await async_unload_entry(mock_hass, entry)
 
-        assert result is False
         mock_client.disconnect.assert_not_called()
-
-    async def test_returns_unload_result(self, mock_hass):
-        entry = MagicMock()
-        entry.runtime_data = MagicMock()
-        entry.runtime_data.client = AsyncMock()
-        entry.runtime_data.client.disconnect = AsyncMock()
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=False)
-
-        result = await async_unload_entry(mock_hass, entry)
-        assert result is False
 
     async def test_shuts_down_coordinator_on_unload(self, mock_hass):
         entry = MagicMock()
@@ -822,11 +814,10 @@ class TestAsyncUnloadEntry:
         entry.runtime_data.client.disconnect = AsyncMock()
         mock_coordinator = AsyncMock()
         entry.runtime_data.coordinator = mock_coordinator
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
 
         result = await async_unload_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         mock_coordinator.async_shutdown.assert_awaited_once()
 
     async def test_services_survive_entry_unload(self, mock_hass):
@@ -841,7 +832,7 @@ class TestAsyncUnloadEntry:
         entry.runtime_data = MagicMock()
         entry.runtime_data.client = AsyncMock()
         entry.runtime_data.client.disconnect = AsyncMock()
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+        mock_hass.config_entries.async_unload_platforms_or_raise = AsyncMock()
 
         await async_unload_entry(mock_hass, entry)
 
@@ -856,7 +847,7 @@ class TestAsyncUnloadEntry:
         entry.runtime_data = MagicMock()
         entry.runtime_data.client = AsyncMock()
         entry.runtime_data.client.disconnect = AsyncMock()
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+        mock_hass.config_entries.async_unload_platforms_or_raise = AsyncMock()
 
         await async_unload_entry(mock_hass, entry)
         # Idempotent re-registration (has_service now reports registered).
@@ -965,6 +956,7 @@ class TestAsyncSetupEntryOptions:
             mock_hass,
             "idm_heatpump",
             f"web_pin_missing_{entry.entry_id}",
+            config_entry_id=entry.entry_id,
             is_fixable=True,
             severity=ir.IssueSeverity.WARNING,
             translation_key="web_pin_missing",
@@ -2277,9 +2269,9 @@ class TestUnloadCancelsBackgroundTasks:
         for name, task in tasks.items():
             setattr(entry.runtime_data, name, task)
         entry.runtime_data.knx_bridge = None
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+        mock_hass.config_entries.async_unload_platforms_or_raise = AsyncMock()
 
-        assert await async_unload_entry(mock_hass, entry) is True
+        assert await async_unload_entry(mock_hass, entry) is None
 
         for name, task in tasks.items():
             assert task.cancelled(), f"{name} was left running"
@@ -2327,7 +2319,7 @@ class TestWebOnlyModelOverride:
         ):
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         assert isinstance(entry.runtime_data.coordinator, IdmCoordinator)
         # The user-selected model wins even though the web supplement
         # reported a different controller.
@@ -2381,7 +2373,7 @@ class TestWebOnlyKnxInvalidBaseAddress:
         ):
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         bridge.async_start.assert_awaited_once()
         # The failed bridge is not reachable for teardown later on.
         assert entry.runtime_data.knx_bridge is None
@@ -2393,7 +2385,7 @@ class TestAsyncMigrateEntryOtherVersions:
         entry.version = 2
         entry.minor_version = 0
 
-        assert await async_migrate_entry(mock_hass, entry) is True
+        assert await async_migrate_entry(mock_hass, entry) is None
         mock_hass.config_entries.async_update_entry.assert_not_called()
 
 
@@ -2477,7 +2469,7 @@ class TestAsyncSetupEntryResilience:
                 stack.enter_context(item)
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         assert entry.runtime_data is not None
 
     async def test_disconnect_failure_after_connect_failure_is_tolerated(self, mock_hass):
@@ -2514,7 +2506,7 @@ class TestAsyncSetupEntryResilience:
             stack.enter_context(patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()))
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         assert entry.runtime_data is not None
 
     async def test_unreachable_web_interface_during_setup_keeps_modbus_running(self, mock_hass):
@@ -2533,7 +2525,7 @@ class TestAsyncSetupEntryResilience:
             stack.enter_context(patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()))
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         assert entry.runtime_data is not None
 
     async def test_invalid_knx_base_address_disables_the_bridge_but_not_setup(self, mock_hass):
@@ -2551,7 +2543,7 @@ class TestAsyncSetupEntryResilience:
             stack.enter_context(patch("custom_components.idm_heatpump.KnxBridge", return_value=bridge))
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         bridge.async_start.assert_awaited_once()
         bridge.async_stop.assert_awaited_once()
         # The failed bridge must not stay reachable for the unload teardown.
@@ -2683,7 +2675,7 @@ class TestOptionalFeatureStartup:
             mock_hass, entry, [patch("custom_components.idm_heatpump.RoomTempForwarder", side_effect=_make_forwarder)]
         )
 
-        assert result is True
+        assert result is None
         assert entry.runtime_data.room_temp_forwarding_task is task
         config = constructed[0][0][2]
         # Blank entity ids are filtered before the forwarder is built.
@@ -2723,7 +2715,7 @@ class TestOptionalFeatureStartup:
             mock_hass, entry, [patch("custom_components.idm_heatpump.HumidityForwarder", side_effect=_make_forwarder)]
         )
 
-        assert result is True
+        assert result is None
         assert entry.runtime_data.humidity_forwarding_task is task
         config = constructed[0][0][2]
         assert config.entity_id == "sensor.living_room_humidity"
@@ -2763,7 +2755,7 @@ class TestOptionalFeatureStartup:
             mock_hass, entry, [patch("custom_components.idm_heatpump.RoomTempForwarder", side_effect=_make_forwarder)]
         )
 
-        assert result is True
+        assert result is None
         assert entry.runtime_data.storage_temp_forwarding_task is task
         args, kwargs = constructed[0]
         config = args[2]
@@ -2810,7 +2802,7 @@ class TestOptionalFeatureStartup:
             [patch("custom_components.idm_heatpump.ExternalPowerForwarder", side_effect=_make_forwarder)],
         )
 
-        assert result is True
+        assert result is None
         assert entry.runtime_data.external_power_forwarding_task is task
         config = constructed[0][0][2]
         assert config.entities == {
@@ -2859,7 +2851,7 @@ class TestOptionalFeatureStartup:
             mock_hass, entry, [patch("custom_components.idm_heatpump.EnergyManager", side_effect=_make_manager)]
         )
 
-        assert result is True
+        assert result is None
         assert entry.runtime_data.energy_manager is manager
         manager.start.assert_called_once_with()
         config = constructed[0][0][2]
@@ -2891,7 +2883,7 @@ class TestOptionalFeatureStartup:
             mock_hass, entry, [patch("custom_components.idm_heatpump.EnergyManager", return_value=manager)]
         )
 
-        assert result is True
+        assert result is None
         # Blank sources never construct the manager, let alone start it.
         manager.start.assert_not_called()
         assert entry.runtime_data.energy_manager is None
@@ -2934,7 +2926,7 @@ class TestOptionalFeatureStartup:
             stack.enter_context(patch("custom_components.idm_heatpump.ComfortScheduler", side_effect=_make_scheduler))
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         assert len(schedulers) == 2
         assert entry.runtime_data.comfort_schedulers == (schedulers[0],)
         assert entry.runtime_data.comfort_scheduler is schedulers[0]
@@ -2988,7 +2980,7 @@ class TestOptionalFeatureStartup:
             stack.enter_context(patch("custom_components.idm_heatpump.ComfortScheduler", side_effect=_make_scheduler))
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         assert len(constructed) == 1
         args, kwargs = constructed[0]
         assert args[2] == "b"
@@ -3033,7 +3025,7 @@ class TestOptionalFeatureStartup:
             stack.enter_context(patch("custom_components.idm_heatpump.ComfortScheduler", side_effect=_make_scheduler))
             result = await async_setup_entry(mock_hass, entry)
 
-        assert result is True
+        assert result is None
         # The invalid rows are dropped and the default circuit schedule remains.
         assert len(constructed) == 1
         assert constructed[0][0][2] == "a"
@@ -3083,9 +3075,9 @@ class TestUnloadPersistsAndStopsSmartComponents:
             runtime.advisor_analytics,
         ) = components
         entry = self._make_entry(runtime)
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+        mock_hass.config_entries.async_unload_platforms_or_raise = AsyncMock()
 
-        assert await async_unload_entry(mock_hass, entry) is True
+        assert await async_unload_entry(mock_hass, entry) is None
 
         for component in components:
             component.async_save.assert_awaited_once()
@@ -3109,9 +3101,9 @@ class TestUnloadPersistsAndStopsSmartComponents:
             component.async_save = AsyncMock(side_effect=RuntimeError("disk full"))
             setattr(runtime, attribute, component)
         entry = self._make_entry(runtime)
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+        mock_hass.config_entries.async_unload_platforms_or_raise = AsyncMock()
 
-        assert await async_unload_entry(mock_hass, entry) is True
+        assert await async_unload_entry(mock_hass, entry) is None
 
     async def test_unload_stops_the_energy_manager(self, mock_hass):
         from custom_components.idm_heatpump import EnergyManager
@@ -3121,9 +3113,9 @@ class TestUnloadPersistsAndStopsSmartComponents:
         manager.async_stop = AsyncMock()
         runtime.energy_manager = manager
         entry = self._make_entry(runtime)
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+        mock_hass.config_entries.async_unload_platforms_or_raise = AsyncMock()
 
-        assert await async_unload_entry(mock_hass, entry) is True
+        assert await async_unload_entry(mock_hass, entry) is None
 
         manager.async_stop.assert_awaited_once()
 
@@ -3138,9 +3130,9 @@ class TestUnloadPersistsAndStopsSmartComponents:
             schedulers.append(scheduler)
         runtime.comfort_schedulers = tuple(schedulers)
         entry = self._make_entry(runtime)
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+        mock_hass.config_entries.async_unload_platforms_or_raise = AsyncMock()
 
-        assert await async_unload_entry(mock_hass, entry) is True
+        assert await async_unload_entry(mock_hass, entry) is None
 
         for scheduler in schedulers:
             scheduler.async_stop.assert_awaited_once()
@@ -3153,9 +3145,9 @@ class TestUnloadPersistsAndStopsSmartComponents:
         scheduler.async_stop = AsyncMock()
         runtime.comfort_scheduler = scheduler
         entry = self._make_entry(runtime)
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+        mock_hass.config_entries.async_unload_platforms_or_raise = AsyncMock()
 
-        assert await async_unload_entry(mock_hass, entry) is True
+        assert await async_unload_entry(mock_hass, entry) is None
 
         scheduler.async_stop.assert_awaited_once()
 
@@ -3163,9 +3155,9 @@ class TestUnloadPersistsAndStopsSmartComponents:
         runtime = self._make_runtime()
         runtime.client.disconnect = AsyncMock(side_effect=Exception("close failed"))
         entry = self._make_entry(runtime)
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+        mock_hass.config_entries.async_unload_platforms_or_raise = AsyncMock()
 
-        assert await async_unload_entry(mock_hass, entry) is True
+        assert await async_unload_entry(mock_hass, entry) is None
 
         runtime.client.disconnect.assert_awaited_once()
 
@@ -3181,7 +3173,7 @@ class TestUnloadPersistsAndStopsSmartComponents:
         await asyncio.sleep(0)
         runtime.advisor_forecast_task = forecast_task
         entry = self._make_entry(runtime)
-        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+        mock_hass.config_entries.async_unload_platforms_or_raise = AsyncMock()
 
-        assert await async_unload_entry(mock_hass, entry) is True
+        assert await async_unload_entry(mock_hass, entry) is None
         assert forecast_task.cancelled()
