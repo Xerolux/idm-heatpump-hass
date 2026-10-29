@@ -13,7 +13,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.24.0-b1] - 2026-10-28
+## [0.24.0-b2] - 2026-10-28
 
 > **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
 > different Navigator models, firmware versions and normal operating states help
@@ -32,7 +32,7 @@ All notable changes to this project will be documented in this file.
 ### ⚠️ Upgrade notes
 
 - **Home Assistant 2026.10+ shares one Modbus socket across integrations**: each entry now claims the central connection through `modbus.async_get_unit`, so several IDM entries on one controller — and other Modbus integrations on the same device — share a socket instead of opening competing TCP connections. The entry keeps its own private socket on older releases and whenever the shared claim fails.
-- **The API pin moves to `idm-heatpump-api[web]==2.15.0`** for the shared-connection transport contract (`connects_lazily`); device behaviour is unchanged, and rollback simply keeps the private socket path of the release you return to.
+- **The API pin moves to `idm-heatpump-api[web]==2.15.1`** for the shared-connection transport contract (`connects_lazily`) and the Navigator 2.0 structured-JSON temperature schema; device behaviour is unchanged, and rollback simply keeps the private socket path of the release you return to.
 - **Transport diagnostics name the active source**: `owns_socket` becomes `false` with source `homeassistant.modbus` on the shared path — the capability flags already published in diagnostics change accordingly, so dashboards reading them should expect both shapes.
 - **Rollback is safe**: no configuration migration, no stored-setting change and no new unique IDs; a reload after downgrading rebuilds the private socket exactly as before.
 
@@ -51,6 +51,8 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bugfixes
 
 - **GLT controls remain usable without automatic forwarding** (#493): external-power and zone-room input Numbers retain readback polling when their companion Sensors are disabled or absent. Documented unset values, such as battery SoC −1, leave the Number writable with an unknown state; invalid measurements remain unavailable. This does not establish a fix for controller-side SoC flicker.
+
+- **Navigator 2.0 structured JSON temperatures** (API 2.15.1): the web supplement reads the controller's structured JSON temperature schema alongside the legacy HTML tables, preserving existing sensor names while ignoring ambiguous circuit IDs or missing readings, so Nav 2.0 web values keep flowing when the controller ships the newer page format.
 
 ### 💼 Maintenance
 

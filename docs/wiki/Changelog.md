@@ -5,18 +5,16 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
-## v0.24.0-b1 — 2026-10-28
+## v0.24.0-b2 — 2026-10-28
 
-Four features on top of the shared-connection API release `2.15.0`: a
-shared Modbus connection provider (HA 2026.10+) that claims Home
-Assistant's central connection instead of opening a competing socket,
-with the private per-entry socket as fallback; live plant detection
-during onboarding (the connection test reads model, heating circuits,
-zone modules and cascade read-only and prefills every setup profile); a
-deterministic local Assist agent answering plant questions in German or
-English; and the `generate_dashboard` service composing a ready-to-use
-Lovelace dashboard from your real entity IDs. Also fixes the
-time-of-day dependence in the advisor anomaly retraction test (#622).
+The onboarding/Assist/dashboard beta, updated: on top of the shared Modbus
+connection provider (HA 2026.10+), live plant detection during onboarding,
+the deterministic local Assist agent and the `generate_dashboard` service,
+the GLT input Numbers keep readback polling and stay writable without
+automatic forwarding (#493), the API pin moves to `2.15.1` (the
+shared-connection transport contract plus the Navigator 2.0
+structured-JSON temperature schema), and the advisor anomaly retraction
+test runs at fixed times of day (#622).
 
 ## v0.23.2 — 2026-10-27
 
