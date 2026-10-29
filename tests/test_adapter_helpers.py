@@ -57,6 +57,19 @@ def test_enum_slug_helpers_keep_stable_translation_keys() -> None:
     assert active_slugs == circuit_slugs
 
 
+def test_valve_hc_heat_cool_slug_map_matches_documented_positions() -> None:
+    """The changeover valve (1110) reports the official Heating/Cooling pair.
+
+    The map stays inert while the installed idm-heatpump-api release models
+    the valve as a raw register: the sensor builder consults it only once the
+    register carries ``enum_options`` (API with the documented enum).
+    """
+    slugs, key = get_slug_map_and_key("valve_hc_heat_cool")
+
+    assert key == "valve_hc_heat_cool"
+    assert slugs == {0: "heating", 1: "cooling"}
+
+
 def test_enum_translation_keys_are_present_in_english_and_german() -> None:
     strings = json.loads((ROOT / "custom_components" / "idm_heatpump" / "strings.json").read_text(encoding="utf-8"))
     english = json.loads(

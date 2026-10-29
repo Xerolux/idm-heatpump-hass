@@ -2646,7 +2646,11 @@
         "name": "Gesamte Wärmemenge (Vortex)"
       },
       "valve_hc_heat_cool": {
-        "name": "Umschaltventil Heizkreis Heizen/Kühlen"
+        "name": "Umschaltventil Heizkreis Heizen/Kühlen",
+        "state": {
+          "heating": "Heizen",
+          "cooling": "Kühlen"
+        }
       },
       "valve_heat_dhw": {
         "name": "Umschaltventil Heizen/Warmwasser"
