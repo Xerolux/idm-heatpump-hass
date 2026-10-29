@@ -77,7 +77,7 @@ class _IdmWebClimateEntityBase(CoordinatorEntity[IdmCoordinator]):
 class IdmWebHeatingCircuitClimate(_IdmWebClimateEntityBase, ClimateEntity):
     """One heating circuit as a climate card, web-only."""
 
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_min_hvac_setpoint = 15.0
     _attr_max_hvac_setpoint = 30.0
 
@@ -100,14 +100,14 @@ class IdmWebHeatingCircuitClimate(_IdmWebClimateEntityBase, ClimateEntity):
         return super().available and self._circuit() is not None
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         value = getattr(self._circuit(), "room_temperature", None)
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             return None
         return float(value)
 
     @property
-    def target_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float | None:
         setpoint = getattr(self._circuit(), "setpoint_normal", None)
         value = getattr(setpoint, "value", None)
         if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -178,7 +178,7 @@ class IdmWebHeatingCircuitClimate(_IdmWebClimateEntityBase, ClimateEntity):
 class IdmWebWaterHeater(_IdmWebClimateEntityBase, WaterHeaterEntity):
     """The hot-water storage as a water-heater card, web-only."""
 
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_operation_list: list[str] | None = None
 
     def __init__(self, coordinator: IdmCoordinator) -> None:
@@ -203,7 +203,7 @@ class IdmWebWaterHeater(_IdmWebClimateEntityBase, WaterHeaterEntity):
         return float(top)
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         return self._current_temperature_value()
 
     @property
@@ -223,15 +223,15 @@ class IdmWebWaterHeater(_IdmWebClimateEntityBase, WaterHeaterEntity):
         return getattr(supplement, "dhw_setpoint", None) if supplement is not None else None
 
     @property
-    def target_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float | None:
         value = getattr(self._setpoint(), "value", None)
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             return None
         return float(value)
 
     @property
-    def target_temperature_high(self) -> float | None:
-        return self.target_temperature
+    def native_target_temperature_high(self) -> float | None:
+        return self.native_target_temperature
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         temperature = kwargs.get(ATTR_TEMPERATURE)

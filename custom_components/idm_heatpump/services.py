@@ -517,6 +517,7 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
             hass,
             DOMAIN,
             scoped_issue_id(entry_id, "write_rejected"),
+            config_entry_id=entry_id,
             is_fixable=False,
             severity=ir.IssueSeverity.WARNING,
             translation_key="write_rejected",

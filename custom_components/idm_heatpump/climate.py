@@ -99,7 +99,7 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
     """Base class for IDM climate entities."""
 
     _attr_has_entity_name = True
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
 
     def __init__(
         self,
@@ -164,12 +164,12 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         return numeric if math.isfinite(numeric) else None
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         """Return the current temperature."""
         return self._usable_temperature(self._current_reg)
 
     @property
-    def target_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float | None:
         """Return the target temperature."""
         return self._usable_temperature(self._target_reg)
 
@@ -413,8 +413,8 @@ class IdmZoneRoomClimate(IdmClimateBase):
         if self.hvac_mode == HVACMode.OFF:
             return HVACAction.OFF
         # We assume heating if target > current + some tolerance, else idle
-        target = self.target_temperature
-        current = self.current_temperature
+        target = self.native_target_temperature
+        current = self.native_current_temperature
         if target is not None and current is not None and target > current + 0.2:
             return HVACAction.HEATING
         return HVACAction.IDLE

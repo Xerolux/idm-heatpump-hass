@@ -232,6 +232,7 @@ class KnxBridge:
                 self._hass,
                 DOMAIN,
                 self._issue_id(),
+                config_entry_id=self._entry_id,
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key="knx_not_available",

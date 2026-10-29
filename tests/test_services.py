@@ -524,6 +524,7 @@ class TestWriteRegister:
             mock_hass,
             "idm_heatpump",
             "write_rejected_entry-1",
+            config_entry_id="entry-1",
             is_fixable=False,
             severity=mock_ir.IssueSeverity.WARNING,
             translation_key="write_rejected",

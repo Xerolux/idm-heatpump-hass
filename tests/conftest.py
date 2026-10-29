@@ -340,7 +340,7 @@ def _stub_homeassistant() -> None:
     ha.util.dt.as_local = lambda value: value.astimezone()
 
     # homeassistant.util.unit_conversion.TemperatureConverter, reproduced from
-    # the real implementation (homeassistant 2026.8.1): the temperature scales
+    # the real implementation: the temperature scales
     # do not share a zero point, so each pair has its own formula, and an
     # unknown unit raises rather than returning a wrong number.
     ha.util.unit_conversion = _make_module("homeassistant.util.unit_conversion")
@@ -463,9 +463,13 @@ def _stub_homeassistant() -> None:
     class _ConfigEntryNotReady(Exception):
         pass
 
+    class _ConfigEntryError(_HomeAssistantError):
+        pass
+
     ha.exceptions.HomeAssistantError = _HomeAssistantError
     ha.exceptions.ServiceValidationError = _ServiceValidationError
     ha.exceptions.ConfigEntryNotReady = _ConfigEntryNotReady
+    ha.exceptions.ConfigEntryError = _ConfigEntryError
     sys.modules["homeassistant.exceptions"] = ha.exceptions
 
     # homeassistant.config_entries
@@ -782,10 +786,13 @@ def _stub_homeassistant() -> None:
     device_registry_mod.DeviceInfo = _DeviceInfo
 
     class _ChildDeviceInfo(dict):
-        """Child device info, as Home Assistant 2026.9 and newer define it.
+        """Child device info, as Home Assistant 2026.11 defines it.
 
         A child device is a logical part of its parent, so it carries no
-        manufacturer, model, connections or via_device_id.
+        manufacturer, model, connections or via_device_id. The real class is a
+        dataclass since 2026.11 (a TypedDict before); the integration only ever
+        constructs it with keyword arguments, which both shapes accept, so a
+        dict subclass mirrors what entity code observes.
         """
 
         def __init__(self, identifiers=None, name=None, parent_device_id=None, **kwargs):
@@ -1160,6 +1167,16 @@ def _stub_homeassistant() -> None:
     water_heater_mod.WaterHeaterEntity = _WaterHeaterEntity
     water_heater_mod.WaterHeaterEntityFeature = _WaterHeaterEntityFeature
     components.water_heater = water_heater_mod
+
+    # Per-component const modules: Home Assistant moved the component enums
+    # into them (2026.10+) and ha_compat re-exports from there.
+    binary_sensor_const_mod = _make_module("homeassistant.components.binary_sensor.const")
+    binary_sensor_const_mod.BinarySensorDeviceClass = MagicMock()
+    components.binary_sensor.BinarySensorDeviceClass = binary_sensor_const_mod.BinarySensorDeviceClass
+
+    water_heater_const_mod = _make_module("homeassistant.components.water_heater.const")
+    water_heater_const_mod.WaterHeaterEntityFeature = _WaterHeaterEntityFeature
+    water_heater_mod.WaterHeaterEntityFeature = _WaterHeaterEntityFeature
 
     ha.loader.async_get_integration = AsyncMock(return_value=MagicMock(manifest={"version": "0.5.0"}))
 
@@ -1758,6 +1775,7 @@ def mock_hass():
     hass.config_entries = MagicMock()
     hass.config_entries.async_forward_entry_setups = AsyncMock()
     hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+    hass.config_entries.async_unload_platforms_or_raise = AsyncMock(return_value=None)
     hass.config_entries.async_reload = AsyncMock()
     hass.config_entries.async_entries = MagicMock(return_value=[])
     hass.config_entries.async_update_entry = MagicMock()

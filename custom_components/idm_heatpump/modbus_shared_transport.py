@@ -91,9 +91,9 @@ def shared_modbus_supported(hass: HomeAssistant) -> bool:
 def _load_async_get_unit() -> Any | None:
     """Return ``modbus.async_get_unit``, or ``None`` when unavailable.
 
-    Imported lazily so this module loads on every supported Home Assistant;
-    ``import_module`` keeps strict mypy content on both the 2026.8 and the
-    2026.10 trees, where the attribute exists on only one of them.
+    Imported lazily so this module still loads when the ``modbus`` component
+    itself is unavailable; the ``getattr`` fallback keeps the module content
+    on trees where the attribute is missing.
     """
     try:
         module = import_module("homeassistant.components.modbus")

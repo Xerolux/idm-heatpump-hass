@@ -375,7 +375,7 @@ rules:
     comment: >
       mypy.ini is plain "strict = true": no disabled error code and no relaxed
       strictness flag. The CI matrix runs it against the real runtime (Home
-      Assistant 2026.8.1 and the next beta, the pinned idm-heatpump-api and the
+      Assistant 2026.11.0 and the next beta, the pinned idm-heatpump-api and the
       API main branch) - without the runtime installed every Home Assistant
       import would be Any and the check would pass without checking anything.
       idm-heatpump-api ships py.typed.

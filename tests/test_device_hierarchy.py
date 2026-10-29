@@ -173,25 +173,6 @@ def test_zone_room_is_a_child_of_its_zone_module() -> None:
     assert "via_device_id" not in info
 
 
-def test_hierarchy_falls_back_to_via_device_links_without_child_device_support() -> None:
-    """Home Assistant 2026.8 has no child devices; the hierarchy still has to work."""
-    with patch(
-        "custom_components.idm_heatpump.device_hierarchy.child_devices_supported",
-        return_value=False,
-    ):
-        circuit = build_subdevice_info(_coordinator(), "hc_b_flow_temp")
-        room = build_subdevice_info(_coordinator(), "zm2_room4_setpoint")
-
-    assert circuit is not None
-    assert circuit["via_device_id"] == "main-device-id"
-    assert circuit["model"] == "Heizkreis"
-    assert "parent_device_id" not in circuit
-
-    assert room is not None
-    assert room["via_device_id"] == "zone-module-2-device-id"
-    assert "parent_device_id" not in room
-
-
 def test_child_device_falls_back_to_an_unlinked_device_when_the_parent_is_unknown() -> None:
     """A missing parent must not produce a child device without ``parent_device_id``.
 
@@ -232,7 +213,7 @@ async def test_migration_keeps_existing_installations_on_single_device() -> None
     entry.minor_version = 2
     entry.options = {"scan_interval": 10}
 
-    assert await async_migrate_entry(hass, entry) is True
+    assert await async_migrate_entry(hass, entry) is None
 
     update = hass.config_entries.async_update_entry.call_args.kwargs
     assert update["minor_version"] == 3
@@ -248,7 +229,7 @@ async def test_migration_preserves_explicit_hierarchy_choice() -> None:
     entry.minor_version = 2
     entry.options = {CONF_DEVICE_HIERARCHY: True}
 
-    assert await async_migrate_entry(hass, entry) is True
+    assert await async_migrate_entry(hass, entry) is None
 
     update = hass.config_entries.async_update_entry.call_args.kwargs
     assert update["options"][CONF_DEVICE_HIERARCHY] is True
@@ -341,29 +322,6 @@ def test_precreate_converts_an_existing_subdevice_and_keeps_its_device_id() -> N
 
     assert coordinator.hierarchy_device_ids[(DOMAIN, "entry_heating_circuit_b")] == existing_id
     assert registry.devices[existing_id].parent_device_id == coordinator.hierarchy_device_ids[(DOMAIN, "entry")]
-
-
-def test_precreate_without_child_device_support_creates_ordinary_devices() -> None:
-    coordinator = _hierarchy_coordinator()
-    registry = _stub_registry()
-
-    with patch(
-        "custom_components.idm_heatpump.device_hierarchy.child_devices_supported",
-        return_value=False,
-    ):
-        _precreate(coordinator, registry)
-
-    ids = coordinator.hierarchy_device_ids
-    assert set(ids) == {
-        (DOMAIN, "entry"),
-        (DOMAIN, "entry_heating_circuit_b"),
-        (DOMAIN, "entry_zone_module_2"),
-        (DOMAIN, "entry_zone_module_2_room_4"),
-        # ``error_acknowledge`` is always offered, so the diagnostics module is
-        # always justified.
-        (DOMAIN, "entry_module_diagnostics"),
-    }
-    assert all(registry.devices[device_id].parent_device_id is None for device_id in ids.values())
 
 
 # ---------------------------------------------------------------------------

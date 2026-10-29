@@ -60,8 +60,8 @@ class TestWebClimateEntities:
     def test_state_comes_from_the_circuit_detail(self):
         climate = web_climate_entities(_coordinator())[0]
 
-        assert climate.current_temperature == 21.4
-        assert climate.target_temperature == 21.5
+        assert climate.native_current_temperature == 21.4
+        assert climate.native_target_temperature == 21.5
         assert climate.hvac_mode is HVACMode.HEAT
         assert climate.hvac_action is HVACAction.IDLE  # mode on, pump off
 
@@ -106,8 +106,8 @@ class TestWebWaterHeater:
     def test_entity_exists_with_current_and_target(self):
         heater = web_water_heater_entities(_coordinator())[0]
 
-        assert heater.current_temperature == 56.3
-        assert heater.target_temperature == 48.0
+        assert heater.native_current_temperature == 56.3
+        assert heater.native_target_temperature == 48.0
         assert heater.min_temp == 30.0
         assert heater.max_temp == 60.0
 
@@ -127,7 +127,7 @@ class TestWebWaterHeater:
         )
         heater = web_water_heater_entities(coordinator)[0]
 
-        assert heater.current_temperature == 56.3
+        assert heater.native_current_temperature == 56.3
 
 
 class TestWebClimateEntityCreationGates:
@@ -178,8 +178,8 @@ class TestWebClimateAvailability:
 
         assert climate.available is False
         assert climate._circuit() is None
-        assert climate.current_temperature is None
-        assert climate.target_temperature is None
+        assert climate.native_current_temperature is None
+        assert climate.native_target_temperature is None
         assert climate.hvac_mode is None
         assert climate.hvac_action is None
 
@@ -207,21 +207,21 @@ class TestWebClimateStateGuards:
         climate = web_climate_entities(coordinator)[0]
         _supplement_with_circuits(coordinator, _circuit_a_with(room_temperature=None))
 
-        assert climate.current_temperature is None
+        assert climate.native_current_temperature is None
 
     def test_current_temperature_none_for_a_boolean_room_value(self):
         coordinator = _coordinator()
         climate = web_climate_entities(coordinator)[0]
         _supplement_with_circuits(coordinator, _circuit_a_with(room_temperature=True))
 
-        assert climate.current_temperature is None
+        assert climate.native_current_temperature is None
 
     def test_current_temperature_converts_integer_readings(self):
         coordinator = _coordinator()
         climate = web_climate_entities(coordinator)[0]
         _supplement_with_circuits(coordinator, _circuit_a_with(room_temperature=21))
 
-        assert climate.current_temperature == 21.0
+        assert climate.native_current_temperature == 21.0
 
     def test_target_temperature_none_when_the_setpoint_value_is_missing(self):
         coordinator = _coordinator()
@@ -231,14 +231,14 @@ class TestWebClimateStateGuards:
             _circuit_a_with(setpoint_normal=IdmWebHeatingCircuitValue(parameter_id="HKA04")),
         )
 
-        assert climate.target_temperature is None
+        assert climate.native_target_temperature is None
 
     def test_target_temperature_adopts_the_device_declared_bounds(self):
         coordinator = _coordinator()
         climate = web_climate_entities(coordinator)[0]
         _supplement_with_circuits(coordinator, _circuit("A", setpoint=21.5, minimum=16.0, maximum=24.0))
 
-        assert climate.target_temperature == 21.5
+        assert climate.native_target_temperature == 21.5
         assert climate._attr_min_hvac_setpoint == 16.0
         assert climate._attr_max_hvac_setpoint == 24.0
 
@@ -327,8 +327,8 @@ class TestWebWaterHeaterState:
 
         assert heater.available is False
         # The last bridged register value still answers for the temperature.
-        assert heater.current_temperature == 56.3
-        assert heater.target_temperature is None
+        assert heater.native_current_temperature == 56.3
+        assert heater.native_target_temperature is None
 
     def test_current_temperature_none_without_any_source(self):
         coordinator = _coordinator()
@@ -339,7 +339,7 @@ class TestWebWaterHeaterState:
         )
         coordinator.data = {}
 
-        assert heater.current_temperature is None
+        assert heater.native_current_temperature is None
 
     def test_target_temperature_none_without_a_value(self):
         coordinator = _coordinator()
@@ -348,12 +348,12 @@ class TestWebWaterHeaterState:
             coordinator.web_supplement, dhw_setpoint=_setpoint_parameter(value=None)
         )
 
-        assert heater.target_temperature is None
+        assert heater.native_target_temperature is None
 
     def test_target_temperature_high_follows_the_target(self):
         heater = web_water_heater_entities(_coordinator())[0]
 
-        assert heater.target_temperature_high == heater.target_temperature == 48.0
+        assert heater.native_target_temperature_high == heater.native_target_temperature == 48.0
 
     async def test_set_temperature_without_a_temperature_is_ignored(self):
         coordinator = _coordinator()
