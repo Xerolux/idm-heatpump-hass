@@ -46,8 +46,8 @@ Upgrading to beta 11 leaves this new switch off; provider settings are retained.
    have a separate switch and are off by default.
 5. Review and save. The **iDM KI-Anlagenberater** logical device contains the
    report sensor, learning/storage/coverage/COP sensors and four report buttons.
-   It uses a child device on HA 2026.9+, with a linked-device fallback on 2026.8,
-   independently of the general optional device grouping setting.
+   It uses a child device, independently of the general optional device
+   grouping setting.
 
 For Ollama, only literal private LAN or loopback IP addresses are accepted. Hostnames,
 public addresses, embedded credentials, URL paths and redirects are rejected.

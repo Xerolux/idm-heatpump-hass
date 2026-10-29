@@ -50,9 +50,8 @@ Schalter deaktiviert; Anbieter-Einstellungen bleiben erhalten.
    Benachrichtigungen haben einen eigenen Schalter und sind standardmäßig deaktiviert.
 5. Prüfe die Einstellungen und speichere. Das logische Gerät **iDM KI-Anlagenberater**
    enthält den Berichts-Sensor, Lern-/Speicher-/Abdeckungs-/COP-Sensoren und vier
-   Berichts-Buttons. Es nutzt auf HA 2026.9+ ein untergeordnetes Gerät, mit einem
-   Fallback über verknüpfte Geräte auf 2026.8 – unabhängig von der allgemeinen
-   Einstellung für die optionale Gerätegruppierung.
+   Berichts-Buttons. Es nutzt ein untergeordnetes Gerät – unabhängig von der
+   allgemeinen Einstellung für die optionale Gerätegruppierung.
 
 Für Ollama werden nur literale private LAN- oder Loopback-IP-Adressen akzeptiert.
 Hostnamen, öffentliche Adressen, eingebettete Zugangsdaten, URL-Pfade und Redirects

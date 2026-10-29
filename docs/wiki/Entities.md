@@ -880,11 +880,11 @@ Assist](Configuration#assist-text-and-voice).
 
 With **Device hierarchy** enabled (Configure → Features), the integration
 distributes its entities over sub-devices so the main heat-pump device stays
-focused on the controller. On Home Assistant 2026.9+ these groups are *child
-devices* of the heat pump; on 2026.8 they fall back to `via_device` links and
-convert automatically on upgrade. Zone modules stay ordinary linked devices —
-separate hardware, not a logical part — and their rooms are children of the
-module.
+focused on the controller. These groups are *child devices* of the heat pump;
+an upgrade from an older integration release converts the previously
+`via_device`-linked devices in place, keeping their device IDs. Zone modules
+stay ordinary linked devices — separate hardware, not a logical part — and
+their rooms are children of the module.
 
 | Group | Created when | Contains |
 |-------|--------------|----------|

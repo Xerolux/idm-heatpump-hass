@@ -13,6 +13,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.25.0-b1] - 2026-10-29
+
+### ⚠️ Upgrade notes
+
+- **Home Assistant 2026.11.0 is the new minimum**: the 2026.8.1–2026.10 line is no longer supported. Installations on those releases keep running the previously installed integration version; only update the integration after updating Home Assistant. There is no configuration migration — settings, entities and dashboards survive the update untouched.
+- **Sub-devices convert once on the first setup**: heating circuits, rooms and modules that were linked with `via_device` become child devices in place, keeping their device IDs, so device-targeted automations, areas and dashboards continue to work without changes. Zone modules stay ordinary linked devices as before.
+- **Rollback is safe**: the previous 0.24.x release runs on Home Assistant 2026.8.1 through 2026.10 and rebuilds the previous device links automatically. No stored setting, unique ID or entity registry entry changes in either direction.
+
+### 💼 Maintenance
+
+- **Home Assistant 2026.11 entity models**: climate and water-heater cards implement the renamed `native_` temperature properties (`native_current_temperature`, `native_target_temperature`, `native_target_temperature_high`), removing the deprecation warnings the 2026.11 release logs for the old property names. `min_temp`, `max_temp` and the step are unchanged.
+- **Config-entry lifecycle matches core**: `async_setup_entry`, `async_unload_entry` and `async_migrate_entry` return `None`, and unloading goes through `async_unload_platforms_or_raise`, so a platform that refuses to unload fails the entry loudly instead of reporting a bare `False`. Component-level `async_setup` still returns a boolean as before.
+- **Sub-devices register as `ChildDeviceInfo`**: the hierarchy builds typed child-device info instead of a `parent_device_id` key inside a plain mapping, which the 2026.11 dataclass conversion no longer accepts; the `via_device_id` value moves into the `DeviceInfo` constructor, and the `child_devices_supported()` feature probe is gone with the 2026.8 fallback.
+- **Repair issues belong to their config entry**: every issue the integration raises — web PIN, connectivity, scan interval, write rejections, KNX availability, the solar suggestion — is created with `config_entry_id`, so Home Assistant deletes them when the entry is removed and hides them while it is disabled.
+
 ## [0.24.0-b2] - 2026-10-28
 
 > **Help improve IDM Heatpump: share a diagnostic capture.** More captures from

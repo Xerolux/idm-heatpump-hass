@@ -23,8 +23,8 @@ Die **IDM-Heatpump-Home-Assistant-Integration** verbindet [Home Assistant](https
 |---------|---------|
 | **Protokoll** | Modbus TCP (Port 502, Slave-ID 1) |
 | **Optionales Supplement** | Lokale Navigator-Web-API; PIN für Web-Zugriff erforderlich, unterstützte Steuerungen im Navigator-10/Pro-Modus `web_only` |
-| **Dokumentationsversion** | Quellstand `0.24.0-b2`; [aktuellstes stabiles Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
-| **Unterstützte/getestete HA-Baseline** | 2026.8.1 |
+| **Dokumentationsversion** | Quellstand `0.25.0-b1`; [aktuellstes stabiles Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
+| **Unterstützte/getestete HA-Baseline** | 2026.11.0 |
 | **Python** | 3.14+ (von Home Assistant verwaltet) |
 | **Verbindungsbibliothek** | modbus-connection>=4.12.4 |
 | **Socket-Backend** | tmodbus[async-serial]>=0.6.2 |

@@ -5,6 +5,15 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.25.0-b1 — 2026-10-29
+
+Die Home-Assistant-2026.11-Linie: Minimum ist jetzt HA 2026.11.0. Klima- und
+Warmwasser-Karten nutzen die `native_`-Temperatureigenschaften von 2026.11,
+der Config-Entry-Lebenszyklus gibt `None` zurück und das Entladen schlägt
+laut fehl, Untergeräte registrieren sich als `ChildDeviceInfo` (In-place-
+Konvertierung, Geräte-IDs bleiben) und jede Reparaturmeldung ist an ihren
+Config-Eintrag gebunden, damit Home Assistant sie automatisch aufräumt.
+
 ## v0.24.0-b2 — 2026-10-28
 
 Das Onboarding-/Assist-/Dashboard-Beta, aktualisiert: zusätzlich zum
