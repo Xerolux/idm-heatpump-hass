@@ -67,6 +67,15 @@ _SOLAR_OPERATING_MODE_17_SLUGS: dict[int, str] = {
     4: "heat_source_pool",
 }
 
+#: Heating-circuit changeover valve (M61, address 1110). The official
+#: Navigator 10 table labels the two positions explicitly. The map stays
+#: inert against idm-heatpump-api releases without the valve enum: the
+#: sensor builder only consults it when the register carries enum_options.
+_VALVE_HC_HEAT_COOL_SLUGS: dict[int, str] = {
+    0: "heating",
+    1: "cooling",
+}
+
 _HP_OPERATING_MODE_DE: dict[int, str] = {
     0: "Aus",
     1: "Heizbetrieb",
@@ -101,6 +110,8 @@ def _slug_map(name: str) -> dict[int, str] | None:
         return _SOLAR_MODE_SLUGS
     if name == "solar_operating_mode_17":
         return _SOLAR_OPERATING_MODE_17_SLUGS
+    if name == "valve_hc_heat_cool":
+        return _VALVE_HC_HEAT_COOL_SLUGS
     return None
 
 

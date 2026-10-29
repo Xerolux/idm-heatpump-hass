@@ -2646,7 +2646,11 @@
         "name": "Total heat energy (Vortex)"
       },
       "valve_hc_heat_cool": {
-        "name": "Heating circuit changeover valve heating/cooling"
+        "name": "Heating circuit changeover valve heating/cooling",
+        "state": {
+          "heating": "Heating",
+          "cooling": "Cooling"
+        }
       },
       "valve_heat_dhw": {
         "name": "Changeover valve heating/hot water"
