@@ -374,10 +374,11 @@ rules:
     status: done
     comment: >
       mypy.ini is plain "strict = true": no disabled error code and no relaxed
-      strictness flag. The CI matrix runs it against the real runtime (Home
-      Assistant 2026.11.0 and the next beta, the pinned idm-heatpump-api and the
-      API main branch) - without the runtime installed every Home Assistant
-      import would be Any and the check would pass without checking anything.
+      strictness flag. The CI matrix runs it against the real runtime (the
+      Home Assistant 2026.11 beta and, once it ships, the stable 2026.11.0,
+      the pinned idm-heatpump-api and the API main branch) - without the
+      runtime installed every Home Assistant import would be Any and the
+      check would pass without checking anything.
       idm-heatpump-api ships py.typed.
   # ── FOR HA CORE SUBMISSION (additional requirements) ──────────────────────
   #

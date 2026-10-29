@@ -17,7 +17,7 @@ All notable changes to this project will be documented in this file.
 
 ### ⚠️ Upgrade notes
 
-- **Home Assistant 2026.11.0 is the new minimum**: the 2026.8.1–2026.10 line is no longer supported. Installations on those releases keep running the previously installed integration version; only update the integration after updating Home Assistant. There is no configuration migration — settings, entities and dashboards survive the update untouched.
+- **Home Assistant 2026.11 is the new minimum**: the 2026.8.1–2026.10 line is no longer supported, and this beta validates against the 2026.11.0b0 beta — the HACS minimum tracks the beta until the stable ships. No configuration migration: settings, entities and dashboards survive the update untouched.
 - **Sub-devices convert once on the first setup**: heating circuits, rooms and modules that were linked with `via_device` become child devices in place, keeping their device IDs, so device-targeted automations, areas and dashboards continue to work without changes. Zone modules stay ordinary linked devices as before.
 - **Rollback is safe**: the previous 0.24.x release runs on Home Assistant 2026.8.1 through 2026.10 and rebuilds the previous device links automatically. No stored setting, unique ID or entity registry entry changes in either direction.
 

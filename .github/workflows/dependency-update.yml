@@ -63,7 +63,7 @@ permissions:
 env:
   # The declared minimum in hacs.json/manifest.json, and the version the release
   # workflow validates against.
-  MINIMUM_HOME_ASSISTANT: "2026.11.0"
+  MINIMUM_HOME_ASSISTANT: "2026.11.0b0"
 
 jobs:
   update:

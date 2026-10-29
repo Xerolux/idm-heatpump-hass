@@ -8,7 +8,7 @@ This file is a short pointer for Claude-compatible agents.
 
 - **Domain**: `idm_heatpump`
 - **Version**: `0.21.0-b1` (previous stable: `0.20.1`; the `0.15.1` line was the last with pymodbus)
-- **Min HA**: 2026.11.0
+- **Min HA**: 2026.11.0b0 (bump to 2026.11.0 at stable)
 - **Python**: 3.14+ (Home Assistant 2026.11 requires 3.14.2)
 - **Dependencies**: `modbus-connection>=4.12.4`, `tmodbus[async-serial]>=0.6.2`,
   `idm-heatpump-api[web]==2.15.1`

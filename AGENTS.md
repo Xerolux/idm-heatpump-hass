@@ -10,7 +10,7 @@ This file provides guidance for AI assistants working on this codebase.
 - **Current Version**: `0.25.0-b1` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
-- **Min HA Version**: 2026.11.0
+- **Min HA Version**: 2026.11.0b0 (bump to 2026.11.0 when the stable ships)
 - **Python**: 3.14+ (Home Assistant 2026.11 requires `>=3.14.2`)
 - **Direct Modbus Runtime**: `modbus-connection>=4.12.4`, `tmodbus[async-serial]>=0.6.2`
 - **Device Logic**: `idm-heatpump-api[web]==2.15.1` (owns its own exception hierarchy; pymodbus is no longer a dependency)
@@ -362,7 +362,7 @@ mypy). Recreate it and check through it with:
 
 ```bash
 py -3.14 -m venv test_ha
-test_ha/Scripts/python -m pip install homeassistant==2026.11.0 \
+test_ha/Scripts/python -m pip install homeassistant==2026.11.0b0 \
     "modbus-connection>=4.12.4" "tmodbus[async-serial]>=0.6.2" \
     "idm-heatpump-api[web]==2.15.1" mypy
 test_ha/Scripts/python -m mypy custom_components/idm_heatpump/
