@@ -5,6 +5,16 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.25.0-b2 — 2026-10-30
+
+Das Gate-und-Semantik-Beta: das Setup verweigert Home-Assistant-Builds älter
+als 2026.11.0b0 jetzt sauber mit einer klaren Meldung, statt beim Anlegen der
+Klima- und Warmwasser-Entitäten abzustürzen (#632).
+Der API-Pin wechselt auf `idm-heatpump-api[web]==2.16.0b1` — das
+Umschaltventil meldet die dokumentierten Positionen Heizen/Kühlen als
+Enum-Sensor, die Wärmequellen-Störung wird zum Binary-Sensor (beide erhalten
+neue Entitäts-IDs; Automationen einmalig umziehen).
+
 ## v0.25.0-b1 — 2026-10-29
 
 Die Home-Assistant-2026.11-Linie: Minimum ist jetzt HA 2026.11.0. Klima- und

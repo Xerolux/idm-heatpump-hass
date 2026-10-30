@@ -18,7 +18,7 @@ from typing import Any, TypeAlias, cast
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
@@ -427,8 +427,16 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     Services are registered here (action-setup rule) so they are available
     as soon as the domain loads, independently of config entries.
     """
+    from .ha_compat import ha_running_version, ha_version_supported
     from .log_filter import install_library_log_filter
     from .services import async_setup_services
+
+    if not ha_version_supported():
+        raise HomeAssistantError(
+            "IDM Heatpump requires Home Assistant 2026.11.0b0 or newer; "
+            f"found {ha_running_version() or 'an unknown version'}. Update Home "
+            "Assistant, or use integration 0.24.x for the 2026.8-2026.10 line."
+        )
 
     install_library_log_filter()
 

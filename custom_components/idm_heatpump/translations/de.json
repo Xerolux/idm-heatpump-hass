@@ -1624,6 +1624,9 @@
       "dhw_demand": {
         "name": "Warmwasseranforderung"
       },
+      "fault_heat_source_circuit": {
+        "name": "Störung Wärmequellenkreis"
+      },
       "health_communication": {
         "name": "Kommunikationsproblem"
       },
@@ -2422,9 +2425,6 @@
       },
       "fault_charging_pump_2_intermediate": {
         "name": "Störung Ladepumpe 2 Zwischenkreis"
-      },
-      "fault_heat_source_circuit": {
-        "name": "Störung Wärmequellenkreis"
       },
       "fault_heat_source_pressure_switch": {
         "name": "Störung Druckschalter Wärmequellenkreis"

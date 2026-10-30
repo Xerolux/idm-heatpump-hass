@@ -1624,6 +1624,9 @@
       "dhw_demand": {
         "name": "Hot water demand"
       },
+      "fault_heat_source_circuit": {
+        "name": "Heat source circuit fault"
+      },
       "health_communication": {
         "name": "Communication problem"
       },
@@ -2422,9 +2425,6 @@
       },
       "fault_charging_pump_2_intermediate": {
         "name": "Charging pump 2 intermediate circuit fault"
-      },
-      "fault_heat_source_circuit": {
-        "name": "Heat source circuit fault"
       },
       "fault_heat_source_pressure_switch": {
         "name": "Heat source pressure switch fault"
