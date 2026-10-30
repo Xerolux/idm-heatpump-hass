@@ -18,6 +18,5 @@
     "tmodbus[async-serial]>=0.6.2",
     "idm-heatpump-api[web]==2.16.0b1"
   ],
-  "version": "0.25.0-b2",
-  "homeassistant": "2026.11.0b0"
+  "version": "0.25.0-b2"
 }

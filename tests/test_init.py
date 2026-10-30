@@ -69,6 +69,61 @@ class TestAsyncSetup:
         assert result is True
 
 
+class TestAsyncSetupVersionGate:
+    """The 2026.11 gate rejects old builds before any service registers (#632)."""
+
+    async def test_refuses_home_assistant_below_2026_11(self, mock_hass):
+        from homeassistant.exceptions import HomeAssistantError
+
+        mock_setup_services = AsyncMock()
+        with (
+            patch(
+                "custom_components.idm_heatpump.ha_compat.ha_version_supported",
+                return_value=False,
+            ),
+            patch(
+                "custom_components.idm_heatpump.ha_compat.ha_running_version",
+                return_value="2026.10.4",
+            ),
+            patch(
+                "custom_components.idm_heatpump.services.async_setup_services",
+                mock_setup_services,
+            ),
+            pytest.raises(HomeAssistantError, match="2026.11.0b0 or newer; found 2026.10.4"),
+        ):
+            await async_setup(mock_hass, {})
+        mock_setup_services.assert_not_awaited()
+
+    @pytest.mark.parametrize(
+        ("version", "supported"),
+        [
+            ("2026.11.0b0", True),
+            ("2026.11.0", True),
+            ("2026.12.0b1", True),
+            ("2027.1.0", True),
+            ("2026.10.4", False),
+            ("2026.9.1", False),
+            ("2025.12.3", False),
+        ],
+    )
+    def test_ha_version_supported_compares_major_minor(self, version, supported):
+        from custom_components.idm_heatpump.ha_compat import ha_version_supported
+
+        assert ha_version_supported(version) is supported
+
+    def test_ha_version_supported_fails_open_on_unparseable_versions(self):
+        from custom_components.idm_heatpump.ha_compat import ha_version_supported
+
+        assert ha_version_supported("") is True
+        assert ha_version_supported("unknown") is True
+        assert ha_version_supported(None) is True  # stubbed HA has no __version__
+
+    def test_ha_running_version_reads_the_home_assistant_version(self):
+        from custom_components.idm_heatpump.ha_compat import ha_running_version
+
+        assert ha_running_version() == ""
+
+
 class TestAsyncMigrateEntry:
     async def test_migrates_legacy_entity_and_config_entry_unique_ids(self, mock_hass):
         entry = MagicMock()

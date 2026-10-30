@@ -17,13 +17,13 @@ All notable changes to this project will be documented in this file.
 
 ### ⚠️ Upgrade notes
 
-- **Home Assistant now enforces the 2026.11 minimum at setup**: the manifest declares `homeassistant: 2026.11.0b0`, so older Home Assistant builds refuse the integration with a clear message instead of crashing while adding climate and water-heater entities (#632). The HACS minimum was already 2026.11.0b0; no configuration migration.
+- **Home Assistant now enforces the 2026.11 minimum at setup**: component setup refuses builds older than `2026.11.0b0` with a clear message instead of crashing while adding climate and water-heater entities (#632). The check lives in the integration because hassfest rejects prerelease manifest minimums and a stable key would also lock out the 2026.11 beta. No configuration migration.
 - **Two Navigator 10/2.0 entities change type with the API pin `2.16.0b1`**: the heating-circuit changeover valve becomes an enum sensor showing the documented Heating/Cooling positions, and the heat-source circuit fault becomes a binary sensor — both get new entity IDs, so automations or dashboards targeting the old numeric sensors need a one-time retarget.
 - **Rollback is safe**: 0.25.0-b1 restores the previous numeric sensor shape for both entities, and 0.24.x keeps running on the 2026.8–2026.10 line; no stored setting, unique ID beyond the two retargets, or registry cleanup changes.
 
 ### 🐛 Bugfixes
 
-- **Unsupported Home Assistant builds fail loudly at setup instead of half-loading**: 0.25.0-b1 relied on the HACS minimum alone, so a 2026.10 installation could install the beta and then die mid-platform with `AttributeError`s in climate and water-heater (#632). The manifest requirement now gates every setup path, including manual ZIP installs and HACS down- and redownloads.
+- **Unsupported Home Assistant builds fail loudly at setup instead of half-loading**: 0.25.0-b1 relied on the HACS minimum alone, so a 2026.10 installation could install the beta and then die mid-platform with `AttributeError`s in climate and water-heater (#632). Component setup now gates every path, including manual ZIP installs and HACS down- and redownloads, and names the running version in the error.
 
 ### 💼 Maintenance
 

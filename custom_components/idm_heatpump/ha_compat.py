@@ -42,3 +42,44 @@ else:
     from homeassistant.components.water_heater.const import (  # noqa: F401
         WaterHeaterEntityFeature,
     )
+
+
+MIN_HA_MAJOR_MINOR: tuple[int, int] = (2026, 11)
+#: Human-readable form of the minimum for error messages: the beta the
+#: integration validates against, and the stable that supersedes it.
+MIN_HA_VERSION_LABEL: str = "2026.11.0b0"
+
+
+def ha_running_version() -> str:
+    """Return the running Home Assistant version, or '' when unavailable."""
+    try:
+        from homeassistant.const import __version__
+    except ImportError:  # stubbed unit-test builds carry no __version__
+        return ""
+    return __version__
+
+
+def ha_version_supported(version: str | None = None) -> bool:
+    """Return whether the running Home Assistant meets the 2026.11 minimum.
+
+    The 2026.11 adoption replaced the last cross-version compatibility
+    layer, so older builds must not set the integration up: their climate
+    and water-heater platforms crash with ``AttributeError`` half-way
+    through (idm-heatpump-hass#632). The manifest ``homeassistant`` key
+    cannot express a beta minimum (hassfest rejects prereleases, and a
+    stable key would also lock out the 2026.11 beta the release targets),
+    so the gate runs here at component setup.
+
+    Only major.minor is compared, so the ``2026.11.0b0`` beta and the
+    ``2026.11.0`` stable both pass while every 2026.10.x build fails.
+    Unparseable or missing versions fail open: the gate exists to reject
+    the known-unsupported 2026.8-2026.10 line, not to guess about unknown
+    future formats.
+    """
+    if version is None:
+        version = ha_running_version()
+    try:
+        major, minor = (int(part) for part in version.split("-")[0].split(".")[:2])
+    except (ValueError, IndexError, AttributeError):
+        return True
+    return (major, minor) >= MIN_HA_MAJOR_MINOR

@@ -7,9 +7,9 @@ Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
 ## v0.25.0-b2 — 2026-10-30
 
-Das Gate-und-Semantik-Beta: das Manifest deklariert jetzt das Minimum
-2026.11.0b0, sodass ältere Home-Assistant-Builds das Setup sauber verweigern,
-statt beim Anlegen der Klima- und Warmwasser-Entitäten abzustürzen (#632).
+Das Gate-und-Semantik-Beta: das Setup verweigert Home-Assistant-Builds älter
+als 2026.11.0b0 jetzt sauber mit einer klaren Meldung, statt beim Anlegen der
+Klima- und Warmwasser-Entitäten abzustürzen (#632).
 Der API-Pin wechselt auf `idm-heatpump-api[web]==2.16.0b1` — das
 Umschaltventil meldet die dokumentierten Positionen Heizen/Kühlen als
 Enum-Sensor, die Wärmequellen-Störung wird zum Binary-Sensor (beide erhalten

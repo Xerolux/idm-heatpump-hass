@@ -7,9 +7,9 @@ This page only summarizes recent milestones.
 
 ## v0.25.0-b2 — 2026-10-30
 
-The gate-and-semantics beta: the manifest now declares the 2026.11.0b0 minimum
-so older Home Assistant builds refuse setup cleanly instead of crashing while
-adding climate and water-heater entities (#632). The API pin moves to
+The gate-and-semantics beta: component setup now refuses Home Assistant builds
+older than 2026.11.0b0 with a clear message instead of crashing while adding
+climate and water-heater entities (#632). The API pin moves to
 `idm-heatpump-api[web]==2.16.0b1` — the changeover valve reports the documented
 Heating/Cooling positions as an enum sensor and the heat-source circuit fault
 becomes a binary sensor (both get new entity IDs; retarget automations once).
