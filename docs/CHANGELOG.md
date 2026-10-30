@@ -13,6 +13,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.25.0-b2] - 2026-10-30
+
+### ⚠️ Upgrade notes
+
+- **Home Assistant now enforces the 2026.11 minimum at setup**: the manifest declares `homeassistant: 2026.11.0b0`, so older Home Assistant builds refuse the integration with a clear message instead of crashing while adding climate and water-heater entities (#632). The HACS minimum was already 2026.11.0b0; no configuration migration.
+- **Two Navigator 10/2.0 entities change type with the API pin `2.16.0b1`**: the heating-circuit changeover valve becomes an enum sensor showing the documented Heating/Cooling positions, and the heat-source circuit fault becomes a binary sensor — both get new entity IDs, so automations or dashboards targeting the old numeric sensors need a one-time retarget.
+- **Rollback is safe**: 0.25.0-b1 restores the previous numeric sensor shape for both entities, and 0.24.x keeps running on the 2026.8–2026.10 line; no stored setting, unique ID beyond the two retargets, or registry cleanup changes.
+
+### 🐛 Bugfixes
+
+- **Unsupported Home Assistant builds fail loudly at setup instead of half-loading**: 0.25.0-b1 relied on the HACS minimum alone, so a 2026.10 installation could install the beta and then die mid-platform with `AttributeError`s in climate and water-heater (#632). The manifest requirement now gates every setup path, including manual ZIP installs and HACS down- and redownloads.
+
+### 💼 Maintenance
+
+- **The API pin moves to `idm-heatpump-api[web]==2.16.0b1`** for the documented value semantics audit ([API #157](https://github.com/Xerolux/idm-heatpump-api/pull/157)): the changeover valve (1110) gains the official Heating/Cooling enum, the heat-source circuit fault (1680) its inverted 0 = fault polarity through library binary metadata. Unmapped read values keep the established rejection; undocumented 0/1 neighbours stay raw pending field captures.
+- **Entity translations follow the platform move**: the fault entity's name block moves from sensor to binary sensor, and the changeover valve carries English/German state translations (Heating/Cooling, Heizen/Kühlen), so both render localized in Home Assistant from day one of the new pin.
+
 ## [0.25.0-b1] - 2026-10-29
 
 ### ⚠️ Upgrade notes
