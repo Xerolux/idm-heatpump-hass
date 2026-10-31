@@ -7,13 +7,13 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.25.0-b2` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
+- **Current Version**: `0.25.0-b3` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.11.0b0 (bump to 2026.11.0 when the stable ships)
 - **Python**: 3.14+ (Home Assistant 2026.11 requires `>=3.14.2`)
 - **Direct Modbus Runtime**: `modbus-connection>=4.12.4`, `tmodbus[async-serial]>=0.6.2`
-- **Device Logic**: `idm-heatpump-api[web]==2.16.0b1` (owns its own exception hierarchy; pymodbus is no longer a dependency)
+- **Device Logic**: `idm-heatpump-api[web]==2.16.0b2` (owns its own exception hierarchy; pymodbus is no longer a dependency)
 - **Completed audit**: `docs/dev/code-audit-2026-09.md` — the September 2026 full-read audit.
   Every work package shipped (D5 was attempted and closed as won't-fix); the document stays as
   the historical record of what was reviewed and why each change was made. The 0.20.0 web-first
@@ -257,7 +257,7 @@ Home Assistant
     ├── IdmCoordinator (DataUpdateCoordinator) [coordinator.py]
     │       │
     │       ├── IdmModbusConnectionClient (modbus_client.py)
-    │       │       ├── idm-heatpump-api 2.16.0b1 (device logic)
+    │       │       ├── idm-heatpump-api 2.16.0b2 (device logic)
     │       │       ├── SharedModbusUnitTransport (HA shared connection)
     │       │       └── ModbusConnectionTransport (modbus-connection + tmodbus socket, fallback/probe)
     │       │
@@ -364,7 +364,7 @@ mypy). Recreate it and check through it with:
 py -3.14 -m venv test_ha
 test_ha/Scripts/python -m pip install homeassistant==2026.11.0b0 \
     "modbus-connection>=4.12.4" "tmodbus[async-serial]>=0.6.2" \
-    "idm-heatpump-api[web]==2.16.0b1" mypy
+    "idm-heatpump-api[web]==2.16.0b2" mypy
 test_ha/Scripts/python -m mypy custom_components/idm_heatpump/
 ```
 
@@ -533,7 +533,7 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
   same. Tag the API repository with the PEP 440 version (`v2.0.0b1`).
 - **The manifest pins the exact published API version** in PEP 440 form,
   because that is what pip resolves. The manifest currently pins
-  `idm-heatpump-api[web]==2.16.0b1`.
+  `idm-heatpump-api[web]==2.16.0b2`.
 
 #### Release notes
 

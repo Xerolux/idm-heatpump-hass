@@ -5,6 +5,15 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.25.0-b3 — 2026-10-31
+
+Hotfix für das Ventil-Semantik-Beta: auf Anlagen ohne Heiz-/Kühlfunktion
+antwortet das Umschaltventil (1110) mit dem UINT16-Sentinel „nicht
+konfiguriert" (65535), den das neue Enum als not_in_enum abwies und die
+Entität aus jeder Aktualisierung flog. Der API-Pin wechselt auf 2.16.0b2,
+der Sentinel passiert die validierten Polls, und die Entität meldet wieder
+unavailable.
+
 ## v0.25.0-b2 — 2026-10-30
 
 Das Gate-und-Semantik-Beta: das Setup verweigert Home-Assistant-Builds älter
