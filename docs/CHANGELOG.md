@@ -13,6 +13,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.25.0-b4] - 2026-10-31
+
+### ⚠️ Upgrade notes
+
+- **Legacy differential-circuit entity IDs are shortened once at setup (#429)**: IDs registered while the circuit name carried the retired "(Differenztemperaturgeregelt)" suffix in 0.20.1-b1…b4 are rewritten to the short `heizkreis_x_` form. Automations and dashboards still targeting a long ID need a one-time retarget; all other installations are untouched, and rolling back keeps working.
+
+### 🐛 Bugfixes
+
+- **Web-only plants keep their heating-circuit controls**: the select platform registers the web heating-circuit selects again for `modbus_web` and `web_only` entries, climate cards expose correct min/max target-temperature ranges, and a partially failing setup tears down what it already added instead of leaving half a platform behind.
+
+- **Service calls resolve devices and speak translated errors**: `device_id` targets resolve through the device registry, `set_controller_clock`, `start_dhw_boost` and `cancel_dhw_boost` offer a real config-entry selector instead of a text field, and `write_register` accepts addresses up to 65535 and parses boolean strings such as "ein" or "off".
+
+- **Navigator 1.7 accepts system-mode service calls again**: `set_system_mode` falls back to the Navigator 1.7 system-mode register when the 2.0 register is absent, so mode changes no longer fail on 1.x plants.
+
+- **Comfort scheduler and DHW boost respect stale data and register steps**: scheduling skips rounds with failed coordinator updates or unused registers, targets are rounded to the register's step so writes don't bounce off validation, and the DHW boost checks sentinel values and its lifecycle guards before writing.
+
+- **Advisor baselines align to local midnight and guard the math**: day boundaries in the rolling analytics align to local midnight, the DHW daily-minutes tracking is corrected, and non-finite or implausible samples are discarded before they enter the COP map or building model.
+
+- **The Assist agent matches keywords on word boundaries**: intent routing no longer triggers on substrings inside unrelated words, responses stay localized, and plant-side errors are reported to the conversation instead of disappearing.
+
+### 💼 Maintenance
+
+- **Entity icons and translations line up with the audit**: stale icon keys point at their current entities again, EntityCategory imports follow the enums moved by Home Assistant 2026.11, and the CI dependency-pin tracker, test coverage and documentation were brought back in sync as part of the October code audit.
+
+- **Rollback is safe**: 0.25.0-b3 keeps running with the same API pin and configuration; no stored setting, register write path, or unique ID changes beyond the one-time differential rename covered above.
+
 ## [0.25.0-b3] - 2026-10-31
 
 ### ⚠️ Upgrade notes

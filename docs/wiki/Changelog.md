@@ -5,6 +5,17 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.25.0-b4 — 2026-10-31
+
+The October code-audit beta: fixes across web-only controls, services and
+Navigator 1.7 — heating-circuit selects and correct climate ranges come
+back in web-only mode, `device_id` targets resolve through the device
+registry, `write_register` parses boolean strings and accepts addresses
+up to 65535, and `set_system_mode` works on Navigator 1.7 again. Advisor
+analytics align to local midnight, the Assist agent matches word
+boundaries, and legacy differential-circuit entity IDs (#429) are
+shortened once at setup.
+
 ## v0.25.0-b3 — 2026-10-31
 
 Hotfix for the valve semantics beta: on plants without the heating/cooling
