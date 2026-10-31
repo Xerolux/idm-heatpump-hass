@@ -280,13 +280,13 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
 
         if is_fault_query:
             return (
-                "Es liegt aktuell keine Störung vor."
-                if language == "de"
-                else "There are no active faults right now."
+                "Es liegt aktuell keine Störung vor." if language == "de" else "There are no active faults right now."
             )
 
         mode = data.get("hp_operating_mode")
-        mode = mode if isinstance(mode, int) and not isinstance(mode, bool) and "hp_operating_mode" not in unused else None
+        mode = (
+            mode if isinstance(mode, int) and not isinstance(mode, bool) and "hp_operating_mode" not in unused else None
+        )
         if mode is None:
             return (
                 "Ich kann den Betriebsmodus gerade nicht lesen."

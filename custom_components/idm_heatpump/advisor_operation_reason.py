@@ -165,9 +165,7 @@ def compose_operation_reason(
             label="Abtauen" if is_de else "Defrosting",
             mode_label=mode_label,
             explanation=(
-                "Die Wärmepumpe läuft im Modus 'Abtauen'."
-                if is_de
-                else "The heat pump runs in mode 'Defrosting'."
+                "Die Wärmepumpe läuft im Modus 'Abtauen'." if is_de else "The heat pump runs in mode 'Defrosting'."
             ),
             details={"operating_mode": mode, "outdoor_temp": outdoor, "power_consumption_kw": power},
         )
@@ -218,9 +216,7 @@ def compose_operation_reason(
                     if short_room is not None and short_room > 0
                     else ""
                 )
-                explanation = (
-                    f"Heizkreis {circuit_upper} fordert Wärme an: Die Vorlauftemperatur liegt unter dem Sollwert{room_str}."
-                )
+                explanation = f"Heizkreis {circuit_upper} fordert Wärme an: Die Vorlauftemperatur liegt unter dem Sollwert{room_str}."
             else:
                 label = f"Heating circuit {circuit_upper}"
                 room_str = (
@@ -228,9 +224,7 @@ def compose_operation_reason(
                     if short_room is not None and short_room > 0
                     else ""
                 )
-                explanation = (
-                    f"Heating circuit {circuit_upper} requests flow: the flow temperature is below its setpoint{room_str}."
-                )
+                explanation = f"Heating circuit {circuit_upper} requests flow: the flow temperature is below its setpoint{room_str}."
             return OperationReason(
                 label=label,
                 mode_label=mode_label,
@@ -261,9 +255,7 @@ def compose_operation_reason(
         )
 
     explanation = (
-        f"Die Wärmepumpe läuft im Modus '{mode_label}'."
-        if is_de
-        else f"The heat pump runs in mode '{mode_label}'."
+        f"Die Wärmepumpe läuft im Modus '{mode_label}'." if is_de else f"The heat pump runs in mode '{mode_label}'."
     )
     return OperationReason(
         label=mode_label,

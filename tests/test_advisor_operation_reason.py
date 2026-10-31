@@ -214,7 +214,9 @@ def test_dhw_mode_above_setpoint_never_emits_negative_shortfall() -> None:
 
 
 def test_operation_reason_german_language() -> None:
-    off = compose_operation_reason({"hp_operating_mode": 0, "power_consumption_hp": 0.0}, demand_reason=None, language="de")
+    off = compose_operation_reason(
+        {"hp_operating_mode": 0, "power_consumption_hp": 0.0}, demand_reason=None, language="de"
+    )
     assert off is not None
     assert off.label == "Aus"
     assert "Die Wärmepumpe läuft nicht." in off.explanation
@@ -253,4 +255,3 @@ def test_operation_reason_unused_registers_and_sentinels() -> None:
     assert reason is not None
     assert reason.label == "Heating circuit A"
     assert "under target" not in reason.explanation
-

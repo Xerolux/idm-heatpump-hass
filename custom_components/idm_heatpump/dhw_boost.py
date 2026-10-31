@@ -221,12 +221,7 @@ class DhwBoostManager:
                 )
             previous_mode = self._safe_int(data.get("system_mode"))
             previous_setpoint = self._safe_int(data.get("dhw_setpoint"))
-            if (
-                previous_mode is None
-                or previous_mode == 255
-                or previous_setpoint is None
-                or previous_setpoint == -1
-            ):
+            if previous_mode is None or previous_mode == 255 or previous_setpoint is None or previous_setpoint == -1:
                 raise DhwBoostError(
                     "The system mode or the previous domestic hot water setpoint is not available",
                     translation_key="dhw_boost_no_previous_state",

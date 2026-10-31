@@ -73,10 +73,7 @@ class _IdmWebClimateEntityBase(CoordinatorEntity[IdmCoordinator]):
 
     @property
     def available(self) -> bool:
-        return (
-            self.coordinator.web_supplement is not None
-            and getattr(self.coordinator, "web_alive", True) is not False
-        )
+        return self.coordinator.web_supplement is not None and getattr(self.coordinator, "web_alive", True) is not False
 
     @property
     def device_info(self) -> DeviceInfo:

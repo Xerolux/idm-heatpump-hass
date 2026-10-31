@@ -204,4 +204,3 @@ async def test_why_running_german_translation() -> None:
 def test_short_keywords_do_not_falsely_match_substrings() -> None:
     assert _route_intent("is the telescope working?") == "help"
     assert _route_intent("check the statement") == "help"
-

@@ -413,9 +413,7 @@ class AdvisorEngine:
                 share = _number(analysis.operating_share("dhw"))
                 dhw_mins = (share / 100.0 * 1440.0) if share is not None else None
             if dhw_mins is not None and dhw_mins > 0:
-                self._analytics.observe_metric(
-                    "dhw_charge_minutes", dhw_mins, current, mode="max", outdoor=outdoor
-                )
+                self._analytics.observe_metric("dhw_charge_minutes", dhw_mins, current, mode="max", outdoor=outdoor)
 
         self._compressor_on = compressor_on
         self._last_sample_at = current
@@ -922,7 +920,9 @@ class AdvisorEngine:
             indoor = room if room is not None else 21.0
             deltas = [indoor - temperature for _at, temperature in self._weather_hours[:24]]
             if deltas:
-                plan["predicted_heat_demand_kwh"] = max(0.0, round(heat_loss / 1000.0 * (sum(deltas) / len(deltas)) * 24.0, 1))
+                plan["predicted_heat_demand_kwh"] = max(
+                    0.0, round(heat_loss / 1000.0 * (sum(deltas) / len(deltas)) * 24.0, 1)
+                )
         if self._pv_hours:
             plan["expected_pv_kwh"] = round(sum(value for _at, value in self._pv_hours[:24]), 2)
         if self._price_hours:

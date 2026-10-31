@@ -1682,8 +1682,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             from .model_resolution import resolved_model_override
 
             override_active = bool(
-                resolved_model_override(self.config_entry.options)
-                or resolved_model_override(self.config_entry.data)
+                resolved_model_override(self.config_entry.options) or resolved_model_override(self.config_entry.data)
             )
 
         if web_model_name and not model_conflicts:

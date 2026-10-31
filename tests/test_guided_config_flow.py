@@ -213,22 +213,26 @@ async def test_weather_requires_entity_and_comfort_windows_are_validated() -> No
     await flow.async_step_guided_mode({CONF_SETUP_LEVEL: "expert"})
     await flow.async_step_guided_choose({"selected_features": ["ai_advisor"]})
     assert (await flow.async_step_guided_toggle({"ai_advisor": True}))["step_id"] == "guided_detail"
-    result = await flow.async_step_guided_detail({
-        "ai_unverified_text": True,
-        "ai_provider": "ollama",
-        "ai_url": "ftp://bad-url",
-        "ai_openai_key": "-",
-    })
+    result = await flow.async_step_guided_detail(
+        {
+            "ai_unverified_text": True,
+            "ai_provider": "ollama",
+            "ai_url": "ftp://bad-url",
+            "ai_openai_key": "-",
+        }
+    )
     assert "base" in result["errors"]
 
     # AI advisor with valid settings and cloud validation
-    result = await flow.async_step_guided_detail({
-        "ai_unverified_text": True,
-        "ai_provider": "ha_task",
-        "ai_cloud_consent": True,
-        "ai_task_entity": "ai_task.test",
-        "ai_api_key": "-",
-    })
+    result = await flow.async_step_guided_detail(
+        {
+            "ai_unverified_text": True,
+            "ai_provider": "ha_task",
+            "ai_cloud_consent": True,
+            "ai_task_entity": "ai_task.test",
+            "ai_api_key": "-",
+        }
+    )
     assert result["step_id"] == "guided_review"
 
     # AI advisor without unverified text skips validation
@@ -237,10 +241,12 @@ async def test_weather_requires_entity_and_comfort_windows_are_validated() -> No
     await flow.async_step_guided_mode({CONF_SETUP_LEVEL: "expert"})
     await flow.async_step_guided_choose({"selected_features": ["ai_advisor"]})
     assert (await flow.async_step_guided_toggle({"ai_advisor": True}))["step_id"] == "guided_detail"
-    result = await flow.async_step_guided_detail({
-        "ai_unverified_text": False,
-        "ai_provider": "ollama",
-    })
+    result = await flow.async_step_guided_detail(
+        {
+            "ai_unverified_text": False,
+            "ai_provider": "ollama",
+        }
+    )
     assert result["step_id"] == "guided_review"
 
 

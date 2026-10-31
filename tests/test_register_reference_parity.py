@@ -91,9 +91,7 @@ def test_committed_register_references_match_generator_output() -> None:
         ("idm-heatpump-api==2.16.0rc3", "2.16.0rc3"),
     ],
 )
-def test_pinned_api_version_accepts_stable_and_prerelease_pins(
-    tmp_path: Path, requirement: str, expected: str
-) -> None:
+def test_pinned_api_version_accepts_stable_and_prerelease_pins(tmp_path: Path, requirement: str, expected: str) -> None:
     manifest = tmp_path / "manifest.json"
     manifest.write_text(json.dumps({"requirements": [requirement]}), encoding="utf-8")
 

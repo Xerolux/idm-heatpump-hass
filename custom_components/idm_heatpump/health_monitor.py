@@ -71,10 +71,7 @@ def _implausible_sensor(coordinator: IdmCoordinator, _analysis: Any) -> bool | N
     if not data:
         return None
     unused: frozenset[str] = getattr(coordinator, "unused_registers", frozenset())
-    candidates = [
-        value for key, value in data.items()
-        if ("temp" in key or "temperature" in key) and key not in unused
-    ]
+    candidates = [value for key, value in data.items() if ("temp" in key or "temperature" in key) and key not in unused]
     numeric = []
     for value in candidates:
         if isinstance(value, bool):

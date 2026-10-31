@@ -237,7 +237,9 @@ class IdmOperationSensor(IdmCoordinatorEntityBase, SensorEntity):
             "recording_scope": "observed_since_feature_activation",
             "compressor_counting_method": "aggregate_any_compressor_off_to_on",
         }
-        if self._definition.key.startswith("analysis_compressor") or self._definition.key.startswith("analysis_average_cycle"):
+        if self._definition.key.startswith("analysis_compressor") or self._definition.key.startswith(
+            "analysis_average_cycle"
+        ):
             attributes["completed_cycles_used_for_average"] = len(self._analysis.completed_cycle_durations)
         return attributes
 

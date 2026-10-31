@@ -152,10 +152,7 @@ class _IdmWebControlEntityBase(CoordinatorEntity[IdmCoordinator]):
     def available(self) -> bool:
         # Web controls are refreshed with the web supplement, independently
         # of the Modbus coordinator result (see IdmWebSensor.available).
-        return (
-            self.coordinator.web_supplement is not None
-            and getattr(self.coordinator, "web_alive", True) is not False
-        )
+        return self.coordinator.web_supplement is not None and getattr(self.coordinator, "web_alive", True) is not False
 
     @property
     def device_info(self) -> DeviceInfo:
