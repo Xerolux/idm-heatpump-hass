@@ -77,6 +77,20 @@ def _entity_dependencies(unique_suffix: str) -> set[str]:
         return set(_CALCULATED_DEPENDENCIES[unique_suffix])
     if unique_suffix.startswith("ai_"):
         return {"outdoor_temp", "hp_flow_temp", "hp_return_temp", "hp_operating_mode", "dhw_temp_top", "dhw_setpoint"}
+    if unique_suffix == "assist_agent":
+        return {
+            "outdoor_temp",
+            "hp_flow_temp",
+            "hp_return_temp",
+            "dhw_temp_top",
+            "dhw_setpoint",
+            "power_consumption_hp",
+            "thermal_power_flow_sensor",
+            "calculated_cop",
+            "hp_operating_mode",
+            "hp_sum_alarm",
+            "error_number",
+        }
     if unique_suffix == "water_heater":
         # dhw_temp is the Navigator 1.0/1.7 equivalent of the shared family's
         # dhw_temp_top; the intersection with the known register names keeps

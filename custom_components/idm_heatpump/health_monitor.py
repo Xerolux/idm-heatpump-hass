@@ -53,12 +53,15 @@ def _dhw_not_reaching_target(coordinator: IdmCoordinator, _analysis: Any) -> boo
     data = coordinator.data
     if not data or "dhw_temp_top" not in data or "dhw_setpoint" not in data:
         return None
+    unused: frozenset[str] = getattr(coordinator, "unused_registers", frozenset())
+    if "dhw_temp_top" in unused or "dhw_setpoint" in unused:
+        return None
     try:
         current = float(data["dhw_temp_top"])
         target = float(data["dhw_setpoint"])
     except (TypeError, ValueError):
         return None
-    if not all(math.isfinite(value) for value in (current, target)) or target in (-1.0, 0.0):
+    if not all(math.isfinite(value) for value in (current, target)) or target in (-1.0, 0.0) or current <= -1.0:
         return None
     return current < target - 5.0
 
@@ -67,7 +70,11 @@ def _implausible_sensor(coordinator: IdmCoordinator, _analysis: Any) -> bool | N
     data = coordinator.data
     if not data:
         return None
-    candidates = [value for key, value in data.items() if "temp" in key or "temperature" in key]
+    unused: frozenset[str] = getattr(coordinator, "unused_registers", frozenset())
+    candidates = [
+        value for key, value in data.items()
+        if ("temp" in key or "temperature" in key) and key not in unused
+    ]
     numeric = []
     for value in candidates:
         if isinstance(value, bool):
@@ -76,7 +83,7 @@ def _implausible_sensor(coordinator: IdmCoordinator, _analysis: Any) -> bool | N
             number = float(value)
         except (TypeError, ValueError):
             continue
-        if math.isfinite(number) and number not in (-1.0, 0.0):
+        if math.isfinite(number) and number not in (-1.0, 0.0, 6553.5, 65535.0):
             numeric.append(number)
     return any(value < -50.0 or value > 130.0 for value in numeric)
 
@@ -159,6 +166,8 @@ class IdmHealthBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
 
     @property
     def available(self) -> bool:
+        if self._check.key == "health_communication":
+            return self.is_on is not None
         return super().available and self.is_on is not None
 
 
@@ -178,6 +187,10 @@ class IdmHealthReportSensor(IdmCoordinatorEntityBase, SensorEntity):
             entity_category=EntityCategory.DIAGNOSTIC,
             device_class=SensorDeviceClass.ENUM,
         )
+
+    @property
+    def available(self) -> bool:
+        return True
 
     @property
     def native_value(self) -> str:

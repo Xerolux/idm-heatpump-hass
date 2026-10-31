@@ -47,7 +47,7 @@ class ExternalPowerForwardingConfig:
     """Runtime configuration for external power forwarding."""
 
     entities: dict[str, str]
-    interval: int
+    interval: int = 60
     battery_sign: str = "as_is"
     #: Sign convention of the ``grid_power`` mapping key: "import" means the
     #: source reports grid draw positive, "export" means feed-in positive.

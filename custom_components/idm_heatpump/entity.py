@@ -7,6 +7,7 @@ from __future__ import annotations
 # Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # SPDX-License-Identifier: MIT
 import logging
+import math
 from typing import Any
 
 from homeassistant.exceptions import HomeAssistantError
@@ -180,13 +181,17 @@ class IdmEntity(IdmCoordinatorEntityBase):
     def _value_is_sentinel(self) -> bool:
         """Return True if the current register value is an unset sentinel.
 
-        Reuses ``is_register_unused`` so no new sentinel literals are introduced
-        and the read-only filter stays the single authority. Returns False when
-        ``hide_unused`` is off (the user has opted into showing raw values).
+        Reuses ``unused_registers`` / ``is_register_unused`` so no new sentinel
+        literals are introduced and the read-only filter stays the single
+        authority. Returns False when ``hide_unused`` is off (the user has opted
+        into showing raw values).
         """
         data = self.coordinator.data
         if not data:
             return False
+        unused = getattr(self.coordinator, "unused_registers", None)
+        if isinstance(unused, (set, frozenset)):
+            return self._register.name in unused
         return self.coordinator.is_register_unused(self._register.name, data.get(self._register.name))
 
     def _value_out_of_documented_range(self) -> bool:
@@ -197,15 +202,19 @@ class IdmEntity(IdmCoordinatorEntityBase):
         (Rev.0-era firmware on register 1502, issue #364); a reading outside
         the official MIN/MAX columns is garbage, not a measurement. Like the
         sentinel filter, it stays out of the way when ``hide_unused`` is off:
-        users who opted into raw values keep seeing them.
+        users who opted into raw values keep seeing them. Non-finite IEEE-754
+        values (NaN / Inf) are never serializable by Home Assistant regardless
+        of ``hide_unused``.
         """
-        if not self.coordinator.hide_unused:
-            return False
         data = self.coordinator.data
         if not data:
             return False
         value = data.get(self._register.name)
         if value is None or isinstance(value, bool) or not isinstance(value, (int, float)):
+            return False
+        if not math.isfinite(float(value)):
+            return True
+        if not self.coordinator.hide_unused:
             return False
         min_val = self._register.min_val
         max_val = self._register.max_val

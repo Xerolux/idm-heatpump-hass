@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import math
+import time
 from datetime import UTC, datetime
 from typing import Any, Final
 
@@ -92,6 +93,7 @@ class EnergyStatistics:
         self._last_electric: float | None = None
         self._last_thermal: float | None = None
         self._last_domain: str | None = None
+        self._last_save_schedule: float | None = None
 
     async def async_load(self) -> None:
         try:
@@ -274,7 +276,10 @@ class EnergyStatistics:
                     self.total_cost_eur += electrical * price
                     self.today_cost_eur += electrical * price
                     self.month_cost_eur += electrical * price
-                self._store.async_delay_save(self._serialize, 10)
+                now_mono = time.monotonic()
+                if self._last_save_schedule is None or now_mono - self._last_save_schedule >= 30.0:
+                    self._last_save_schedule = now_mono
+                    self._store.async_delay_save(self._serialize, 10)
         self._last_sample_at = observed_at
         self._last_electric = electric
         self._last_thermal = thermal

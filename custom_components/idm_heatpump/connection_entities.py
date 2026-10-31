@@ -9,6 +9,7 @@ and when the web path last answered.
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from homeassistant.components.button import ButtonEntity
@@ -17,7 +18,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorEntityDescription,
 )
-from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
+from homeassistant.const import EntityCategory
 
 from .const import (
     connection_state_label,
@@ -36,8 +37,8 @@ def connection_sensor_entities(coordinator: IdmCoordinator) -> list[ConnectionSe
 
 
 def _modbus_transport_active(coordinator: IdmCoordinator) -> bool:
-    """Modbus polling is active unless the entry runs in web-only mode."""
-    return coordinator.update_interval is not None
+    """Modbus polling is live when configured and the coordinator is not in outage."""
+    return coordinator.update_interval is not None and coordinator.last_update_success is not False
 
 
 def _web_transport_active(coordinator: IdmCoordinator) -> bool:
@@ -65,6 +66,13 @@ class IdmConnectionModeSensor(IdmCoordinatorEntityBase, SensorEntity):
             key="connection_mode",
             translation_key="connection_mode",
         )
+
+    @property
+    def available(self) -> bool:
+        coordinator = self.coordinator
+        if coordinator.update_interval is None:
+            return coordinator.web_alive is not False
+        return _modbus_transport_active(coordinator) or _web_transport_active(coordinator)
 
     @property
     def native_value(self) -> str:
@@ -104,7 +112,7 @@ class IdmWebLastSuccessSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and self.coordinator.web_last_success is not None
+        return self.coordinator.web_last_success is not None
 
 
 def connection_button_entities(coordinator: IdmCoordinator) -> list[ButtonEntity]:
@@ -132,13 +140,24 @@ class IdmConnectionReloadButton(IdmCoordinatorEntityBase, ButtonEntity):
         self._attr_unique_id = build_entity_unique_id(entry_id, "connection_reload")
         self._attr_translation_key = "connection_reload"
 
+    @property
+    def available(self) -> bool:
+        return True
+
     async def async_press(self) -> None:
         """Schedule the reload; the press returns before the platform unloads."""
         entry = self.coordinator.config_entry
         if entry is None:
             return
         hass = self.coordinator.hass
-        hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
+        create_bg = getattr(type(hass), "async_create_background_task", None)
+        coro = hass.config_entries.async_reload(entry.entry_id)
+        if callable(create_bg):
+            create_bg(hass, coro, f"idm_heatpump_reload_{entry.entry_id}")
+        elif hasattr(hass, "async_create_task"):
+            hass.async_create_task(coro)
+        else:
+            asyncio.create_task(coro)
 
 
 ConnectionSensorEntity = IdmConnectionModeSensor | IdmWebLastSuccessSensor

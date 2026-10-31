@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -234,6 +235,18 @@ def scan_file(path: Path, allowlist: frozenset[str], repo_root: Path) -> list[Fi
     return findings
 
 
+def _is_git_tracked(path: Path) -> bool:
+    try:
+        proc = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", str(path)],
+            capture_output=True,
+            check=False,
+        )
+        return proc.returncode == 0
+    except (OSError, FileNotFoundError):
+        return False
+
+
 def scan_tree(root: Path, allowlist_path: Path | None = None) -> list[Finding]:
     """Scan every scannable file under ``root``."""
     if allowlist_path is None:
@@ -244,7 +257,18 @@ def scan_tree(root: Path, allowlist_path: Path | None = None) -> list[Finding]:
     for path in sorted(root.rglob("*")):
         if not path.is_file():
             continue
-        if path.name in (ALLOWLIST_FILENAME, SCRIPT_FILENAME, ".env"):
+        if path.name == ".env":
+            if _is_git_tracked(path):
+                findings.append(
+                    Finding(
+                        path=path.relative_to(root),
+                        line=1,
+                        category="env-file",
+                        value=".env file is tracked in git and must not be committed",
+                    )
+                )
+            continue
+        if path.name in (ALLOWLIST_FILENAME, SCRIPT_FILENAME):
             continue
         if any(part in SKIP_DIRS or part.startswith((".venv", "venv")) for part in path.parts):
             continue

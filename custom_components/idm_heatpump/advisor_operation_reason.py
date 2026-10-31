@@ -15,7 +15,9 @@ from typing import Any, Final
 from .calculated_sensors import evaluate_pv_surplus_state
 from .web_demand_reason import REASON_LABELS
 
-_MODE_LABELS: Final[dict[int, str]] = {1: "Heating", 2: "Cooling", 4: "Hot water", 8: "Defrosting"}
+_MODE_LABELS_EN: Final[dict[int, str]] = {1: "Heating", 2: "Cooling", 4: "Hot water", 8: "Defrosting"}
+_MODE_LABELS_DE: Final[dict[int, str]] = {1: "Heizen", 2: "Kühlen", 4: "Warmwasser", 8: "Abtauen"}
+_MODE_LABELS: Final[dict[int, str]] = _MODE_LABELS_EN
 _IDLE_DEMAND_REASONS: Final[frozenset[str]] = frozenset(
     {
         REASON_LABELS["no_info"],
@@ -46,17 +48,46 @@ _WEB_DEMAND_LABELS_EN: Final[dict[str, str]] = {
     REASON_LABELS["dhw_booster"]: "DHW booster",
 }
 
+_WEB_DEMAND_LABELS_DE: Final[dict[str, str]] = {
+    **{REASON_LABELS[f"hc_{letter}"]: f"Heizkreis {letter.upper()}" for letter in "abcdefg"},
+    REASON_LABELS["pv"]: "PV-Überschuss",
+    REASON_LABELS["more_demands"]: "Mehrere Anforderungen",
+    REASON_LABELS["external_input"]: "Externer Eingang",
+    REASON_LABELS["external_bus"]: "Externer Bus",
+    REASON_LABELS["frost_protection"]: "Frostschutz",
+    REASON_LABELS["ion"]: "ION",
+    REASON_LABELS["single_loading"]: "Warmwasser-Einmalladung",
+    REASON_LABELS["single_loading_boost"]: "Warmwasser-Einmalladung Boost",
+    REASON_LABELS["schedule"]: "Zeitprogramm",
+    REASON_LABELS["schedule_boost"]: "Zeitprogramm Boost",
+    REASON_LABELS["dhw_comfort"]: "Warmwasser-Komfort",
+    REASON_LABELS["cascade"]: "Kaskade",
+    REASON_LABELS["dhw_booster"]: "Warmwasser-Zusatzheizung",
+}
 
-def _normalize_web_demand_label(label: str) -> str:
-    """Map a controller web label onto the composer's English vocabulary."""
+
+def _normalize_web_demand_label(label: str, language: str = "en") -> str:
+    """Map a controller web label onto the composer's vocabulary."""
+    if language.lower().startswith("de"):
+        return _WEB_DEMAND_LABELS_DE.get(label, label)
     return _WEB_DEMAND_LABELS_EN.get(label, label)
 
 
-def _number(value: Any) -> float | None:
+def _number(
+    value: Any,
+    key: str | None = None,
+    unused_registers: set[str] | frozenset[str] = frozenset(),
+) -> float | None:
+    if key is not None and key in unused_registers:
+        return None
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
     numeric = float(value)
-    return numeric if math.isfinite(numeric) else None
+    if not math.isfinite(numeric):
+        return None
+    if numeric <= -1.0 and key is not None and ("temp" in key or key.endswith("_setpoint")):
+        return None
+    return numeric
 
 
 @dataclass(frozen=True)
@@ -74,6 +105,8 @@ def compose_operation_reason(
     *,
     demand_reason: str | None,
     circuits: tuple[str, ...] = ("a",),
+    unused_registers: set[str] | frozenset[str] = frozenset(),
+    language: str = "en",
 ) -> OperationReason | None:
     """Explain the current operation from one snapshot.
 
@@ -81,34 +114,45 @@ def compose_operation_reason(
     circuit → active controller demand reason → the operating mode itself.
     Returns None when neither the operating mode nor the power draw is readable.
     """
+    is_de = language.lower().startswith("de")
     mode = data.get("hp_operating_mode")
-    mode = mode if isinstance(mode, int) and not isinstance(mode, bool) else None
-    power = _number(data.get("power_consumption_hp"))
+    mode = (
+        mode
+        if isinstance(mode, int) and not isinstance(mode, bool) and "hp_operating_mode" not in unused_registers
+        else None
+    )
+    power = _number(data.get("power_consumption_hp"), "power_consumption_hp", unused_registers)
     if mode is None and power is None:
         return None
 
     # The ``is not None`` guard is a type guard: the labels are keyed by int,
     # and ``mode`` legitimately reaches here as None (power-only snapshots).
-    mode_label = _MODE_LABELS.get(mode, "Unknown") if mode is not None else "Unknown"
-    outdoor = _number(data.get("outdoor_temp"))
-    flow = _number(data.get("hp_flow_temp"))
-    dhw_temp = _number(data.get("dhw_temp_top"))
-    dhw_setpoint = _number(data.get("dhw_setpoint"))
+    mode_labels = _MODE_LABELS_DE if is_de else _MODE_LABELS_EN
+    unknown_label = "Unbekannt" if is_de else "Unknown"
+    mode_label = mode_labels.get(mode, unknown_label) if mode is not None else unknown_label
+    outdoor = _number(data.get("outdoor_temp"), "outdoor_temp", unused_registers)
+    flow = _number(data.get("hp_flow_temp"), "hp_flow_temp", unused_registers)
+    dhw_temp = _number(data.get("dhw_temp_top"), "dhw_temp_top", unused_registers)
+    dhw_setpoint = _number(data.get("dhw_setpoint"), "dhw_setpoint", unused_registers)
 
     if mode == 0 or (power is not None and power < 0.05 and mode is None):
         return OperationReason(
-            label="Off",
+            label="Aus" if is_de else "Off",
             mode_label=mode_label,
-            explanation="The heat pump is not running.",
+            explanation="Die Wärmepumpe läuft nicht." if is_de else "The heat pump is not running.",
             details={"operating_mode": mode, "power_consumption_kw": power},
         )
 
     pv = evaluate_pv_surplus_state(data)
     if pv.is_on:
         return OperationReason(
-            label="PV surplus",
+            label="PV-Überschuss" if is_de else "PV surplus",
             mode_label=mode_label,
-            explanation="A photovoltaic surplus is signalled while the heat pump draws power.",
+            explanation=(
+                "PV-Überschuss wird signalisiert, während die Wärmepumpe Strom bezieht."
+                if is_de
+                else "A photovoltaic surplus is signalled while the heat pump draws power."
+            ),
             details={
                 "operating_mode": mode,
                 "power_consumption_kw": power,
@@ -118,22 +162,28 @@ def compose_operation_reason(
 
     if mode == 8:
         return OperationReason(
-            label="Defrosting",
+            label="Abtauen" if is_de else "Defrosting",
             mode_label=mode_label,
-            explanation="The heat pump runs in mode 'Defrosting'.",
+            explanation=(
+                "Die Wärmepumpe läuft im Modus 'Abtauen'."
+                if is_de
+                else "The heat pump runs in mode 'Defrosting'."
+            ),
             details={"operating_mode": mode, "outdoor_temp": outdoor, "power_consumption_kw": power},
         )
 
     if mode == 4 or (mode != 2 and dhw_temp is not None and dhw_setpoint is not None and dhw_temp < dhw_setpoint - 3.0):
         short = dhw_setpoint - dhw_temp if dhw_temp is not None and dhw_setpoint is not None else None
+        if is_de:
+            diff_str = f" um {short:.1f} K" if short is not None and short > 0 else ""
+            explanation = f"Der Warmwasserspeicher liegt{diff_str} unter dem Sollwert."
+        else:
+            diff_str = f" by {short:.1f} K" if short is not None and short > 0 else ""
+            explanation = f"The hot-water tank is below its setpoint{diff_str}."
         return OperationReason(
-            label="Hot water",
+            label="Warmwasser" if is_de else "Hot water",
             mode_label=mode_label,
-            explanation=(
-                "The hot-water tank is below its setpoint"
-                + (f" by {short:.1f} K" if short is not None and short > 0 else "")
-                + "."
-            ),
+            explanation=explanation,
             details={
                 "operating_mode": mode,
                 "dhw_temp_top": dhw_temp,
@@ -142,28 +192,49 @@ def compose_operation_reason(
         )
 
     for circuit in circuits:
-        room = _number(data.get(f"hc_{circuit}_room_temp"))
-        room_setpoint = _number(data.get(f"hc_{circuit}_room_setpoint_heat_normal"))
-        circuit_flow = _number(data.get(f"hc_{circuit}_flow_temp"))
-        circuit_setpoint = _number(data.get(f"hc_{circuit}_setpoint_flow_temp"))
+        room = _number(data.get(f"hc_{circuit}_room_temp"), f"hc_{circuit}_room_temp", unused_registers)
+        room_setpoint = _number(
+            data.get(f"hc_{circuit}_room_setpoint_heat_normal"),
+            f"hc_{circuit}_room_setpoint_heat_normal",
+            unused_registers,
+        )
+        circuit_flow = _number(data.get(f"hc_{circuit}_flow_temp"), f"hc_{circuit}_flow_temp", unused_registers)
+        circuit_setpoint = _number(
+            data.get(f"hc_{circuit}_setpoint_flow_temp"),
+            f"hc_{circuit}_setpoint_flow_temp",
+            unused_registers,
+        )
         if (
             circuit_setpoint is not None
             and circuit_setpoint > 0
             and (circuit_flow is None or circuit_flow < circuit_setpoint - 0.3)
         ):
             short_room = room_setpoint - room if room is not None and room_setpoint is not None else None
+            circuit_upper = circuit.upper()
+            if is_de:
+                label = f"Heizkreis {circuit_upper}"
+                room_str = (
+                    f" und der Raum liegt um {short_room:.1f} K unter dem Soll"
+                    if short_room is not None and short_room > 0
+                    else ""
+                )
+                explanation = (
+                    f"Heizkreis {circuit_upper} fordert Wärme an: Die Vorlauftemperatur liegt unter dem Sollwert{room_str}."
+                )
+            else:
+                label = f"Heating circuit {circuit_upper}"
+                room_str = (
+                    f" and the room is {short_room:.1f} K under target"
+                    if short_room is not None and short_room > 0
+                    else ""
+                )
+                explanation = (
+                    f"Heating circuit {circuit_upper} requests flow: the flow temperature is below its setpoint{room_str}."
+                )
             return OperationReason(
-                label=f"Heating circuit {circuit.upper()}",
+                label=label,
                 mode_label=mode_label,
-                explanation=(
-                    f"Heating circuit {circuit.upper()} requests flow: the flow temperature is below its setpoint"
-                    + (
-                        f" and the room is {short_room:.1f} K under target"
-                        if short_room is not None and short_room > 0
-                        else ""
-                    )
-                    + "."
-                ),
+                explanation=explanation,
                 details={
                     "operating_mode": mode,
                     "circuit": circuit,
@@ -176,17 +247,27 @@ def compose_operation_reason(
             )
 
     if demand_reason and demand_reason not in _IDLE_DEMAND_REASONS:
-        normalized_reason = _normalize_web_demand_label(demand_reason)
+        normalized_reason = _normalize_web_demand_label(demand_reason, language)
+        explanation = (
+            f"Die Regelung meldet '{normalized_reason}' als Anforderungsgrund."
+            if is_de
+            else f"The controller reports '{normalized_reason}' as the demand reason."
+        )
         return OperationReason(
             label=normalized_reason,
             mode_label=mode_label,
-            explanation=f"The controller reports '{normalized_reason}' as the demand reason.",
+            explanation=explanation,
             details={"operating_mode": mode, "demand_reason": normalized_reason, "demand_reason_raw": demand_reason},
         )
 
+    explanation = (
+        f"Die Wärmepumpe läuft im Modus '{mode_label}'."
+        if is_de
+        else f"The heat pump runs in mode '{mode_label}'."
+    )
     return OperationReason(
         label=mode_label,
         mode_label=mode_label,
-        explanation=f"The heat pump runs in mode '{mode_label}'.",
+        explanation=explanation,
         details={"operating_mode": mode, "outdoor_temp": outdoor, "power_consumption_kw": power},
     )

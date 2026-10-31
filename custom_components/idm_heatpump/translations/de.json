@@ -3085,7 +3085,7 @@
       "options": {
         "auto": "Automatisch (empfohlen)",
         "modbus_web": "Modbus + Web-Ergänzung",
-        "web_only": "Nur Web (read-only)",
+        "web_only": "Nur Weboberfläche",
         "modbus_only": "Nur Modbus"
       }
     }
@@ -3502,6 +3502,34 @@
         }
       }
     },
+    "start_dhw_boost": {
+      "name": "Warmwasser-Boost starten",
+      "description": "Priorisiert vorübergehend die Warmwasserbereitung und stellt danach den exakten vorherigen Modus und Sollwert wieder her.",
+      "fields": {
+        "entry_id": {
+          "name": "Konfigurationseintrag",
+          "description": "Nur erforderlich, wenn mehrere IDM-Wärmepumpen konfiguriert sind."
+        },
+        "target_temperature": {
+          "name": "Zieltemperatur",
+          "description": "Temporäre Warmwasser-Solltemperatur in °C (35–65)."
+        },
+        "timeout_minutes": {
+          "name": "Maximale Laufzeit",
+          "description": "Maximale Boost-Dauer in Minuten vor automatischer Rückstellung (5–240)."
+        }
+      }
+    },
+    "cancel_dhw_boost": {
+      "name": "Warmwasser-Boost abbrechen",
+      "description": "Bricht einen aktiven Boost ab und stellt den exakt gespeicherten Betriebsmodus und Warmwassersollwert wieder her.",
+      "fields": {
+        "entry_id": {
+          "name": "Konfigurationseintrag",
+          "description": "Nur erforderlich, wenn mehrere IDM-Wärmepumpen konfiguriert sind."
+        }
+      }
+    },
     "export_knx_group_addresses": {
       "name": "KNX-Gruppenadressen exportieren",
       "description": "Gibt die IDM-KNX-Objekttabelle dieses Reglers zurück, damit sie in ETS nachgebaut werden kann.",
@@ -3535,8 +3563,8 @@
       "description": "Fertige Dashboard-Konfiguration mit deinen aktuellen Entitäts-IDs ausgeben.",
       "fields": {
         "entry_id": {
-          "name": "IDM integration",
-          "description": "IDM integration entry."
+          "name": "IDM-Integration",
+          "description": "Eintrag der IDM-Integration."
         }
       }
     },
@@ -3545,7 +3573,7 @@
       "description": "Unterdrückt einen Predictive-Advisor-Anomaliegrund für eine Anzahl von Tagen, sodass ein wiederkehrender, verstandener Befund nicht erneut feuert. Zurückgestellte Gründe bleiben bis zum Ablauf aus den aktiven Empfehlungen und dem Gesundheitswert heraus.",
       "fields": {
         "entry_id": {
-          "name": "IDM integration",
+          "name": "IDM-Integration",
           "description": "Der IDM-Integrations-Eintrag."
         },
         "reason": {
@@ -3563,7 +3591,7 @@
       "description": "Hebe eine Anomalie-Zurückstellung vorzeitig auf, damit der Grund wieder feuern kann.",
       "fields": {
         "entry_id": {
-          "name": "IDM integration",
+          "name": "IDM-Integration",
           "description": "Der IDM-Integrations-Eintrag."
         },
         "reason": {

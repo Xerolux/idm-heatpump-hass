@@ -197,7 +197,7 @@ The German description is intended for identification; the code-form register na
 | 1106 | Wärmequellenpumpe M15 | `heat_source_pump_status` | INT16 | % | R | — |
 | 1108 | ISC Kältespeicherpumpe M84 | `isc_cold_storage_pump_status` | INT16 | % | R | — |
 | 1109 | ISC Rückkühlpumpe M17 | `isc_recooling_pump_status` | INT16 | % | R | — |
-| 1110 | Umschaltventil Heizkreis Heizen/Kühlen | `valve_hc_heat_cool` | UINT16 | — | R | — |
+| 1110 | Umschaltventil Heizkreis Heizen/Kühlen | `valve_hc_heat_cool` | UINT16 | — | R | Enum |
 | 1111 | Umschaltventil Speicher Heizen/Kühlen | `valve_storage_heat_cool` | UINT16 | — | R | — |
 | 1112 | Umschaltventil Heizen/Warmwasser | `valve_heat_dhw` | UINT16 | — | R | — |
 | 1113 | Wärmequelle Umschaltventil | `valve_heat_source_heat_cool` | UINT16 | — | R | — |
@@ -358,7 +358,7 @@ The German description is intended for identification; the code-form register na
 | 1658–1659 | Externe Raumtemperatur HK E | `hc_e_ext_room_temp` | FLOAT | °C | RW | — |
 | 1660–1661 | Externe Raumtemperatur HK F | `hc_f_ext_room_temp` | FLOAT | °C | RW | — |
 | 1662–1663 | Externe Raumtemperatur HK G | `hc_g_ext_room_temp` | FLOAT | °C | RW | — |
-| 1680 | Störung Wärmequellenkreis | `fault_heat_source_circuit` | UCHAR | — | R | Navigator 10 |
+| 1680 | Störung Wärmequellenkreis | `fault_heat_source_circuit` | UCHAR | — | R | Navigator 10, Binary |
 | 1681 | Störung Druckschalter Wärmequellenkreis | `fault_heat_source_pressure_switch` | UCHAR | — | R | Navigator 10 |
 | 1682 | Störung Ladepumpe 1 Zwischenkreis | `fault_charging_pump_1_intermediate` | UCHAR | — | R | Navigator 10 |
 | 1683 | Störung Ladepumpe 2 Zwischenkreis | `fault_charging_pump_2_intermediate` | UCHAR | — | R | Navigator 10 |

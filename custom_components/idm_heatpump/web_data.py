@@ -240,15 +240,7 @@ def _add_web_notifications(
         value=summary,
         native_value=summary,
     )
-    return IdmWebSupplement(
-        navigator_version=supplement.navigator_version,
-        software_version=supplement.software_version,
-        heatpump_model=supplement.heatpump_model,
-        web_variant=supplement.web_variant,
-        myidm_id=supplement.myidm_id,
-        values=values,
-        sensor_values=sensor_values,
-    )
+    return replace(supplement, values=values, sensor_values=sensor_values)
 
 
 async def _read_optional_notifications(

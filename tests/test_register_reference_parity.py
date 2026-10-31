@@ -1,19 +1,22 @@
-"""Parity guard between the English and German generated register reference.
+"""Parity and freshness guards for the English and German register references.
 
-``scripts/generate_modbus_register_reference.py`` regenerates only the English
-wiki page. The German mirror (``docs/wiki/de/Modbus-Register.md``) is carried
-by hand in the same pull request, per the repository's mirror rule — and that
-carrying was missed once (register 1072 was re-typed UCHAR → FLOAT for
-discussion #516 and only the English row changed). This test normalizes the
-known German column vocabulary and then requires the two generated tables to
-be row-for-row identical, so an English regeneration without its German
-mirror fails the build instead of silently diverging.
+``scripts/generate_modbus_register_reference.py`` regenerates both the English
+wiki page (``docs/wiki/Modbus-Register.md``) and its German mirror
+(``docs/wiki/de/Modbus-Register.md``) from the pinned ``idm-heatpump-api``
+package, including pre-release pins such as ``2.16.0b2``. These tests enforce
+that both committed catalogs match the generator output and remain row-for-row
+equivalent after normalizing the German column vocabulary.
 """
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
+
+import pytest
+
+from scripts import generate_modbus_register_reference as generator
 
 ROOT = Path(__file__).resolve().parents[1]
 EN_PAGE = ROOT / "docs" / "wiki" / "Modbus-Register.md"
@@ -73,3 +76,33 @@ def test_german_register_reference_matches_english() -> None:
         + "; ".join(f"row {i}: EN {en!r} vs DE {de!r}" for i, en, de in diverging)
         + " — carry the regenerated English table into the German mirror"
     )
+
+
+def test_committed_register_references_match_generator_output() -> None:
+    assert generator.main(["--check"]) == 0
+
+
+@pytest.mark.parametrize(
+    ("requirement", "expected"),
+    [
+        ("idm-heatpump-api[web]==2.16.0", "2.16.0"),
+        ("idm-heatpump-api[web]==2.16.0a1", "2.16.0a1"),
+        ("idm-heatpump-api[web]==2.16.0b2", "2.16.0b2"),
+        ("idm-heatpump-api==2.16.0rc3", "2.16.0rc3"),
+    ],
+)
+def test_pinned_api_version_accepts_stable_and_prerelease_pins(
+    tmp_path: Path, requirement: str, expected: str
+) -> None:
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({"requirements": [requirement]}), encoding="utf-8")
+
+    assert generator._pinned_api_version(manifest) == expected
+
+
+def test_pinned_api_version_rejects_unpinned_requirement(tmp_path: Path) -> None:
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({"requirements": ["idm-heatpump-api[web]>=2.16.0"]}), encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="must be pinned exactly"):
+        generator._pinned_api_version(manifest)

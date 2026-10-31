@@ -1277,7 +1277,6 @@ def run_gui() -> int:
             self._update_notice = ("", "#5b6673")
             self._update_check_running = False
             self._show_license()
-            self._start_update_check()
 
         # --- step 1: license -------------------------------------------------
         def _show_license(self) -> None:
@@ -1303,6 +1302,8 @@ def run_gui() -> int:
         # --- step 2: host + PIN ---------------------------------------------
         def _show_input(self) -> None:
             self._clear()
+            if not self._update_check_running and not self._update_notice[0]:
+                self._start_update_check()
             frame = ttk.Frame(self.container)
             frame.pack(fill="both", expand=True)
             ttk.Label(frame, text="Verbindung zur Wärmepumpe", font=("", 13, "bold")).pack(anchor="w", pady=(0, 8))

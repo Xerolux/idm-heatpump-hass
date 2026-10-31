@@ -577,82 +577,81 @@ async def _async_setup_web_only_entry(
     coordinator.setup_registers(web_circuits, zone_count, web_zone_rooms, model_info=detected_model_info)
     coordinator.data = {}
 
+    optional_platforms = await _async_optional_platforms(hass)
+    platforms_to_load = (
+        Platform.SENSOR,
+        Platform.BINARY_SENSOR,
+        Platform.SELECT,
+        Platform.NUMBER,
+        Platform.BUTTON,
+        Platform.CLIMATE,
+        Platform.WATER_HEATER,
+        *optional_platforms,
+    )
+
     entry.runtime_data = IdmHeatpumpData(
         coordinator=coordinator,
         client=client,
-        loaded_platforms=(
-            Platform.SENSOR,
-            Platform.SELECT,
-            Platform.NUMBER,
-            Platform.BUTTON,
-            Platform.CLIMATE,
-            Platform.WATER_HEATER,
-        ),
+        loaded_platforms=platforms_to_load,
     )
 
-    # Same lazy database as the Modbus path: warm it off the loop before any
-    # sensor entity writes its first state.
-    await hass.async_add_executor_job(warm_error_code_database)
-    precreate_main_device(hass, coordinator)
-    await hass.config_entries.async_forward_entry_setups(
-        entry,
-        [
-            Platform.SENSOR,
-            Platform.SELECT,
-            Platform.NUMBER,
-            Platform.BUTTON,
-            Platform.CLIMATE,
-            Platform.WATER_HEATER,
-        ],
-    )
-    cleanup_disabled_feature_entities(hass, coordinator)
-    cleanup_stale_model_entities(hass, coordinator)
-    cleanup_deconfigured_heating_circuit_entities(hass, coordinator)
-    shorten_legacy_differential_entity_ids(hass, coordinator)
-    cleanup_stale_web_sensor_entities(hass, coordinator)
-    cleanup_stale_hierarchy_devices(hass, coordinator)
+    try:
+        # Same lazy database as the Modbus path: warm it off the loop before any
+        # sensor entity writes its first state.
+        await hass.async_add_executor_job(warm_error_code_database)
+        precreate_main_device(hass, coordinator)
+        await hass.config_entries.async_forward_entry_setups(entry, list(platforms_to_load))
+        cleanup_disabled_feature_entities(hass, coordinator)
+        cleanup_stale_model_entities(hass, coordinator)
+        cleanup_deconfigured_heating_circuit_entities(hass, coordinator)
+        shorten_legacy_differential_entity_ids(hass, coordinator)
+        cleanup_stale_web_sensor_entities(hass, coordinator)
+        cleanup_stale_hierarchy_devices(hass, coordinator)
 
-    if bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE)):
-        # The bridge serves register-named values from the web register
-        # bridge; bus commands route through the same register-named web
-        # writes (system mode, hot-water setpoint, circuit mode/setpoint,
-        # acknowledge). Commands for registers without a web mapping are
-        # rejected by the coordinator's write path.
-        knx_receive = bool(entry.options.get(CONF_KNX_RECEIVE, DEFAULT_KNX_RECEIVE))
-        groups = tuple(str(group) for group in (entry.options.get(CONF_KNX_GROUPS) or OBJECT_GROUPS))
-        overrides = entry.options.get(CONF_KNX_OVERRIDES) or {}
-        try:
-            bridge = KnxBridge(
-                hass,
-                coordinator,
-                KnxBridgeConfig(
-                    base_address=str(entry.options.get(CONF_KNX_BASE_ADDRESS, DEFAULT_KNX_BASE_ADDRESS)).strip(),
-                    send_enabled=bool(entry.options.get(CONF_KNX_SEND, DEFAULT_KNX_SEND)),
-                    receive_enabled=knx_receive,
-                    respond_to_read=bool(entry.options.get(CONF_KNX_RESPOND_TO_READ, DEFAULT_KNX_RESPOND_TO_READ)),
-                    groups=groups,
-                    overrides=dict(overrides) if isinstance(overrides, Mapping) else {},
-                    resend_interval=int(entry.options.get(CONF_KNX_RESEND_INTERVAL, DEFAULT_KNX_RESEND_INTERVAL)),
-                    tolerance=float(entry.options.get(CONF_KNX_TOLERANCE, DEFAULT_KNX_TOLERANCE)),
-                ),
-                entry_id=entry.entry_id,
-            )
-            await bridge.async_start()
-            entry.runtime_data.knx_bridge = bridge
-        except InvalidGroupAddressError:
-            _LOGGER.warning(
-                "KNX bridge for %s could not start in web-only mode: invalid base address",
-                entry.title,
-            )
+        if bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE)):
+            # The bridge serves register-named values from the web register
+            # bridge; bus commands route through the same register-named web
+            # writes (system mode, hot-water setpoint, circuit mode/setpoint,
+            # acknowledge). Commands for registers without a web mapping are
+            # rejected by the coordinator's write path.
+            knx_receive = bool(entry.options.get(CONF_KNX_RECEIVE, DEFAULT_KNX_RECEIVE))
+            groups = tuple(str(group) for group in (entry.options.get(CONF_KNX_GROUPS) or OBJECT_GROUPS))
+            overrides = entry.options.get(CONF_KNX_OVERRIDES) or {}
+            try:
+                bridge = KnxBridge(
+                    hass,
+                    coordinator,
+                    KnxBridgeConfig(
+                        base_address=str(entry.options.get(CONF_KNX_BASE_ADDRESS, DEFAULT_KNX_BASE_ADDRESS)).strip(),
+                        send_enabled=bool(entry.options.get(CONF_KNX_SEND, DEFAULT_KNX_SEND)),
+                        receive_enabled=knx_receive,
+                        respond_to_read=bool(entry.options.get(CONF_KNX_RESPOND_TO_READ, DEFAULT_KNX_RESPOND_TO_READ)),
+                        groups=groups,
+                        overrides=dict(overrides) if isinstance(overrides, Mapping) else {},
+                        resend_interval=int(entry.options.get(CONF_KNX_RESEND_INTERVAL, DEFAULT_KNX_RESEND_INTERVAL)),
+                        tolerance=float(entry.options.get(CONF_KNX_TOLERANCE, DEFAULT_KNX_TOLERANCE)),
+                    ),
+                    entry_id=entry.entry_id,
+                )
+                await bridge.async_start()
+                entry.runtime_data.knx_bridge = bridge
+            except InvalidGroupAddressError:
+                _LOGGER.warning(
+                    "KNX bridge for %s could not start in web-only mode: invalid base address",
+                    entry.title,
+                )
 
-    entry.runtime_data.web_task = _create_entry_background_task(
-        hass,
-        entry,
-        _web_poll_loop(coordinator, web_scan_interval),
-        name=f"{DOMAIN}_web_poll_{entry.entry_id}",
-    )
+        entry.runtime_data.web_task = _create_entry_background_task(
+            hass,
+            entry,
+            _web_poll_loop(coordinator, web_scan_interval),
+            name=f"{DOMAIN}_web_poll_{entry.entry_id}",
+        )
 
-    _register_update_listener(entry)
+        _register_update_listener(entry)
+    except Exception:
+        await _async_teardown_partial_setup(hass, entry)
+        raise
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
@@ -1468,7 +1467,21 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None
             await advisor_analytics.async_save()
         except Exception:
             _LOGGER.warning("Failed to persist IDM advisor analytics during unload", exc_info=True)
+    ai_advisor = getattr(entry.runtime_data, "ai_advisor", None)
+    if isinstance(ai_advisor, AiAdvisor):
+        save_advisor = getattr(ai_advisor, "async_save", None)
+        if callable(save_advisor):
+            try:
+                await save_advisor()
+            except Exception:
+                _LOGGER.warning("Failed to persist IDM AI advisor during unload", exc_info=True)
     coordinator = getattr(entry.runtime_data, "coordinator", None)
+    dhw_boost_mgr = getattr(coordinator, "dhw_boost_manager", None)
+    if dhw_boost_mgr is not None:
+        try:
+            await dhw_boost_mgr.async_shutdown()
+        except Exception:
+            _LOGGER.debug("Error shutting down DHW boost manager during unload", exc_info=True)
     shutdown = getattr(coordinator, "async_shutdown", None)
     if callable(shutdown):
         try:

@@ -286,6 +286,7 @@ class IdmAdvisorOperationReasonSensor(IdmCoordinatorEntityBase, SensorEntity):
                 data,
                 demand_reason=self._engine.demand_reason_label,
                 circuits=self._engine.circuits,
+                unused_registers=getattr(self.coordinator, "unused_registers", frozenset()),
             )
         return self._reason_value
 

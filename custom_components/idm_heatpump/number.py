@@ -6,6 +6,8 @@ from __future__ import annotations
 # © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
 # Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # SPDX-License-Identifier: MIT
+import math
+
 from homeassistant.components.number import NumberEntity, NumberEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -17,7 +19,10 @@ from .adapter_glt import is_glt_measurement
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
 from .registers import sort_entity_descriptions
-from .web_control_entities import web_control_heatingcircuit_entities, web_control_number_entities
+from .web_control_entities import (
+    web_control_heatingcircuit_number_entities,
+    web_control_number_entities,
+)
 
 PARALLEL_UPDATES = 0
 
@@ -34,7 +39,7 @@ async def async_setup_entry(
         if should_add_entity(coordinator, desc_info["register"], as_writable_control=True)
     ]
     entities.extend(web_control_number_entities(coordinator))
-    entities.extend(web_control_heatingcircuit_entities(coordinator))
+    entities.extend(web_control_heatingcircuit_number_entities(coordinator))
     async_add_entities(entities)
 
 
@@ -61,7 +66,13 @@ class IdmNumber(IdmEntity, NumberEntity):
         if self.is_writable_control() and self._value_is_sentinel():
             return None
         value = self.coordinator.data.get(self._register.name)
-        return float(value) if value is not None else None
+        if value is None or isinstance(value, bool):
+            return None
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return None
+        return numeric if math.isfinite(numeric) else None
 
     async def async_set_native_value(self, value: float) -> None:
         await self._async_write_register(value, action_label=f"write {self._register.name}={value}")

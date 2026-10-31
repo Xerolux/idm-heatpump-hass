@@ -151,7 +151,7 @@ def summarize_period(records: list[dict[str, Any]], start: float, end: float) ->
         "samples": len(points),
         "first_observation_utc": datetime.fromtimestamp(points[0]["at"], UTC).isoformat() if points else None,
         "last_observation_utc": datetime.fromtimestamp(points[-1]["at"], UTC).isoformat() if points else None,
-        "energy_counter_coverage_percent": round(100 * covered / (end - start), 1),
+        "energy_counter_coverage_percent": round(100 * covered / (end - start), 1) if end > start else 0.0,
         "electrical_kwh_observed": round(electrical, 3) if intervals else None,
         "thermal_kwh_observed": round(thermal, 3) if intervals else None,
         "cop_observed": round(thermal / electrical, 2) if electrical > 0 else None,
@@ -941,3 +941,5 @@ class AiAdvisor:
             await self._store.async_save(self.storage_payload())
         except Exception:  # noqa: BLE001 - optional history must not block HA; never log stored data
             _LOGGER.warning("Could not save experimental AI history")
+
+    async_save = async_stop

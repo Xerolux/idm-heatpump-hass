@@ -92,11 +92,12 @@ marked.use({
   },
 });
 
-const markdown = fs.readFileSync(markdownPath, 'utf8');
-let html = marked.parse(markdown);
 /* German pages live one directory deeper: docs/de/<slug>/ instead of docs/<slug>/. */
 const imageRoot = pageLanguage === 'de'
   ? (currentSlug === 'home' ? '../images/' : '../../images/')
   : (currentSlug === 'home' ? 'images/' : '../images/');
+
+const markdown = fs.readFileSync(markdownPath, 'utf8');
+let html = marked.parse(markdown);
 html = html.replaceAll('src="../images/', `src="${imageRoot}`);
 process.stdout.write(JSON.stringify({ html, headings }));

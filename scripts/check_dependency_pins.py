@@ -92,6 +92,8 @@ _MINIMUM_SPECIFIER_RE = re.compile(r"^>=(?P<floor>\d+(?:\.\d+)+)$")
 PIN_DOCUMENTS = (
     "tests/test_release_contract.py",
     "tests/test_entity_metadata_catalog.py",
+    "tests/test_register_reference_parity.py",
+    "custom_components/idm_heatpump/quality_scale.yaml",
     "README.md",
     "README_de.md",
     "AGENTS.md",

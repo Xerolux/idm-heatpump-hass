@@ -690,6 +690,7 @@ def cleanup_deconfigured_heating_circuit_entities(hass: HomeAssistant, coordinat
         # prefix (``calculated_hc_b_flow_deviation``) and are just as absent
         # once the circuit is gone.
         register_name = entity_key.removeprefix("calculated_")
+        register_name = register_name.removesuffix("_set")
         match = _HEATING_CIRCUIT_REGISTER.match(register_name)
         if match is None:
             continue
@@ -829,9 +830,12 @@ def _entity_key_stale_after_model_change(
         # exists on every family; it is never a model-switch orphan.
         return False
     if key == "water_heater":
-        return not all(name in current_names for name in _WATER_HEATER_REGISTERS)
+        has_current = "dhw_temp_top" in current_names or "dhw_temp" in current_names
+        return not (has_current and "dhw_setpoint" in current_names)
     if key in ("dhw_boost_start", "dhw_boost_cancel"):
         return not all(name in current_names for name in _DHW_BOOST_REGISTERS)
+    if key == "dhw_priority_charge":
+        return "demand_dhw_17" not in current_names
     climate_hc = _CLIMATE_HC_ENTITY_KEY.match(key)
     if climate_hc is not None:
         circuit = climate_hc.group(1)
@@ -846,7 +850,8 @@ def _entity_key_stale_after_model_change(
             and f"{room_prefix}_setpoint" in current_names
             and f"{room_prefix}_temp" in current_names
         )
-    return key in reference_names and key not in current_names
+    base_key = key.removesuffix("_set")
+    return base_key in reference_names and base_key not in current_names
 
 
 def cleanup_stale_model_entities(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
@@ -869,6 +874,9 @@ def cleanup_stale_model_entities(hass: HomeAssistant, coordinator: IdmCoordinato
     """
     config_entry = coordinator.config_entry
     if config_entry is None:
+        return
+
+    if getattr(coordinator, "update_interval", True) is None:
         return
 
     current_names = coordinator.register_map_names

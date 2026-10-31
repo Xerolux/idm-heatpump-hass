@@ -3085,7 +3085,7 @@
       "options": {
         "auto": "Automatic (recommended)",
         "modbus_web": "Modbus + web supplement",
-        "web_only": "Web only (read-only)",
+        "web_only": "Web only",
         "modbus_only": "Modbus only"
       }
     }
@@ -3499,6 +3499,34 @@
         "electric_heater_power": {
           "name": "Electric heater power",
           "description": "Current electric-heater power in kW."
+        }
+      }
+    },
+    "start_dhw_boost": {
+      "name": "Start DHW boost",
+      "description": "Temporarily prioritize domestic hot water and restore the exact previous mode and setpoint afterwards.",
+      "fields": {
+        "entry_id": {
+          "name": "Config entry",
+          "description": "Required only when multiple IDM heat pumps are configured."
+        },
+        "target_temperature": {
+          "name": "Target temperature",
+          "description": "Temporary domestic hot-water target in °C (35–65)."
+        },
+        "timeout_minutes": {
+          "name": "Maximum runtime",
+          "description": "Maximum boost duration in minutes before automatic restoration (5–240)."
+        }
+      }
+    },
+    "cancel_dhw_boost": {
+      "name": "Cancel DHW boost",
+      "description": "Cancel an active boost and restore the exact saved system mode and DHW setpoint.",
+      "fields": {
+        "entry_id": {
+          "name": "Config entry",
+          "description": "Required only when multiple IDM heat pumps are configured."
         }
       }
     },
