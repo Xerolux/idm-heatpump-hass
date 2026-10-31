@@ -53,7 +53,8 @@ set_controller_clock:
       required: false
       example: 01J...
       selector:
-        text: {}
+        config_entry:
+          integration: idm_heatpump
 
 acknowledge_errors:
   name: "Acknowledge Errors"
@@ -76,7 +77,7 @@ write_register:
       selector:
         number:
           min: 0
-          max: 10000
+          max: 65535
           mode: box
     value:
       name: "Value"
@@ -222,7 +223,8 @@ start_dhw_boost:
       description: "Required only when multiple IDM heat pumps are loaded"
       required: false
       selector:
-        text:
+        config_entry:
+          integration: idm_heatpump
     target_temperature:
       name: "Target Temperature"
       description: "Temporary domestic hot-water target in °C"
@@ -257,7 +259,8 @@ cancel_dhw_boost:
       description: "Required only when multiple IDM heat pumps are loaded"
       required: false
       selector:
-        text:
+        config_entry:
+          integration: idm_heatpump
 
 export_knx_group_addresses:
   name: "Export KNX Group Addresses"

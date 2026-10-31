@@ -130,6 +130,9 @@ class DhwBoostManager:
         mode = self.coordinator.get_register("system_mode")
         setpoint = self.coordinator.get_register("dhw_setpoint")
         current = self.coordinator.get_register("dhw_temp_top")
+        unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
+        if "system_mode" in unused or "dhw_setpoint" in unused or "dhw_temp_top" in unused:
+            return False
         return bool(mode and mode.writable and setpoint and setpoint.writable and current)
 
     async def async_setup(self) -> None:
@@ -191,8 +194,14 @@ class DhwBoostManager:
             target = self._validated_target(target_temperature)
             timeout = self._validated_timeout(timeout_minutes)
             data = self.coordinator.data or {}
+            unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
+            if "dhw_temp_top" in unused:
+                raise DhwBoostError(
+                    "The current domestic hot water temperature is not available",
+                    translation_key="dhw_boost_no_current_temp",
+                )
             current_temperature = _finite_number(data.get("dhw_temp_top"))
-            if current_temperature is None:
+            if current_temperature is None or current_temperature == -1.0 or current_temperature == -1:
                 raise DhwBoostError(
                     "The current domestic hot water temperature is not available",
                     translation_key="dhw_boost_no_current_temp",
@@ -205,9 +214,19 @@ class DhwBoostManager:
                 self._notify()
                 return
 
+            if "system_mode" in unused or "dhw_setpoint" in unused:
+                raise DhwBoostError(
+                    "The system mode or the previous domestic hot water setpoint is not available",
+                    translation_key="dhw_boost_no_previous_state",
+                )
             previous_mode = self._safe_int(data.get("system_mode"))
             previous_setpoint = self._safe_int(data.get("dhw_setpoint"))
-            if previous_mode is None or previous_setpoint is None:
+            if (
+                previous_mode is None
+                or previous_mode == 255
+                or previous_setpoint is None
+                or previous_setpoint == -1
+            ):
                 raise DhwBoostError(
                     "The system mode or the previous domestic hot water setpoint is not available",
                     translation_key="dhw_boost_no_previous_state",
@@ -282,6 +301,7 @@ class DhwBoostManager:
             if self._unsub_coordinator is not None:
                 self._unsub_coordinator()
                 self._unsub_coordinator = None
+            self._setup_complete = False
 
     def _handle_coordinator_update(self) -> None:
         if not self.active or self._evaluation_in_progress or self._evaluation_task is not None:
@@ -319,9 +339,13 @@ class DhwBoostManager:
                     return
 
                 data = self.coordinator.data or {}
-                current_temperature = _finite_number(data.get("dhw_temp_top"))
+                unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
+                raw_temp = data.get("dhw_temp_top") if "dhw_temp_top" not in unused else None
+                current_temperature = _finite_number(raw_temp)
                 if (
                     current_temperature is not None
+                    and current_temperature != -1.0
+                    and current_temperature != -1
                     and self.target_temperature is not None
                     and current_temperature >= self.target_temperature
                 ):

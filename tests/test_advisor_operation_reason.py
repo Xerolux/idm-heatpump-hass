@@ -211,3 +211,46 @@ def test_dhw_mode_above_setpoint_never_emits_negative_shortfall() -> None:
     assert reason.label == "Hot water"
     assert "below setpoint" not in reason.explanation
     assert "-4.0 K" not in reason.explanation
+
+
+def test_operation_reason_german_language() -> None:
+    off = compose_operation_reason({"hp_operating_mode": 0, "power_consumption_hp": 0.0}, demand_reason=None, language="de")
+    assert off is not None
+    assert off.label == "Aus"
+    assert "Die Wärmepumpe läuft nicht." in off.explanation
+
+    heating = compose_operation_reason(
+        {
+            "hp_operating_mode": 1,
+            "power_consumption_hp": 1.5,
+            "hc_a_setpoint_flow_temp": 40.0,
+            "hc_a_flow_temp": 35.0,
+            "hc_a_room_setpoint_heat_normal": 22.0,
+            "hc_a_room_temp": 20.0,
+        },
+        demand_reason=None,
+        language="de",
+    )
+    assert heating is not None
+    assert heating.label == "Heizkreis A"
+    assert "Heizkreis A fordert Wärme an" in heating.explanation
+    assert "2.0 K unter dem Soll" in heating.explanation
+
+
+def test_operation_reason_unused_registers_and_sentinels() -> None:
+    # If room temp is -1.0 (disconnected sensor), do not say room is 22 K under target
+    reason = compose_operation_reason(
+        {
+            "hp_operating_mode": 1,
+            "power_consumption_hp": 1.5,
+            "hc_a_setpoint_flow_temp": 40.0,
+            "hc_a_flow_temp": 35.0,
+            "hc_a_room_setpoint_heat_normal": 21.0,
+            "hc_a_room_temp": -1.0,
+        },
+        demand_reason=None,
+    )
+    assert reason is not None
+    assert reason.label == "Heating circuit A"
+    assert "under target" not in reason.explanation
+

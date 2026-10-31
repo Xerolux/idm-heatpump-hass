@@ -239,8 +239,8 @@ class TestWebClimateStateGuards:
         _supplement_with_circuits(coordinator, _circuit("A", setpoint=21.5, minimum=16.0, maximum=24.0))
 
         assert climate.native_target_temperature == 21.5
-        assert climate._attr_min_hvac_setpoint == 16.0
-        assert climate._attr_max_hvac_setpoint == 24.0
+        assert climate.min_temp == 16.0
+        assert climate.max_temp == 24.0
 
     def test_hvac_mode_and_action_none_without_a_mode_value(self):
         coordinator = _coordinator()
@@ -353,7 +353,9 @@ class TestWebWaterHeaterState:
     def test_target_temperature_high_follows_the_target(self):
         heater = web_water_heater_entities(_coordinator())[0]
 
-        assert heater.native_target_temperature_high == heater.native_target_temperature == 48.0
+        assert heater.native_target_temperature == 48.0
+        assert heater.min_temp == 30.0
+        assert heater.max_temp == 60.0
 
     async def test_set_temperature_without_a_temperature_is_ignored(self):
         coordinator = _coordinator()

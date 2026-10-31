@@ -229,6 +229,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
 async def _get_coordinator(hass: HomeAssistant, call: ServiceCall) -> IdmCoordinator:
     """Return the first loaded IDM coordinator."""
+    from homeassistant.helpers import device_registry as dr
     from homeassistant.helpers import entity_registry as er
 
     call_data = call.data if isinstance(call.data, Mapping) else {}
@@ -247,6 +248,22 @@ async def _get_coordinator(hass: HomeAssistant, call: ServiceCall) -> IdmCoordin
         entity_entry = registry.async_get(entity_ids)
         if entity_entry and entity_entry.config_entry_id:
             requested_entry_id = entity_entry.config_entry_id
+
+    if requested_entry_id is None:
+        device_ids = call_data.get("device_id")
+        if device_ids:
+            device_registry = dr.async_get(hass)
+            device_id_list = [device_ids] if isinstance(device_ids, str) else list(device_ids)
+            idm_entries = {entry.entry_id for entry in hass.config_entries.async_entries(DOMAIN)}
+            for d_id in device_id_list:
+                dev = device_registry.async_get(d_id)
+                if dev and dev.config_entries:
+                    for entry_id in dev.config_entries:
+                        if entry_id in idm_entries:
+                            requested_entry_id = entry_id
+                            break
+                if requested_entry_id is not None:
+                    break
 
     if requested_entry_id is None:
         requested_entry_id = call_data.get("entry_id")
@@ -364,7 +381,7 @@ async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> Non
         await coordinator.async_web_set_system_mode(mode_val)
         return
 
-    reg = coordinator.get_register("system_mode")
+    reg = coordinator.get_register("system_mode") or coordinator.get_register("system_mode_17")
     allow_custom = False
     if not isinstance(reg, RegisterDef) or not getattr(reg, "writable", False):
         reg = RegisterDef(
@@ -408,9 +425,17 @@ async def _handle_set_controller_clock(hass: HomeAssistant, call: ServiceCall) -
         from homeassistant.util import dt as dt_util
 
         moment = dt_util.now()
-    client = coordinator._web_write_client()
-    await client.set_datetime(moment)
-    await coordinator.async_refresh_web_supplement()
+    try:
+        client = coordinator._web_write_client()
+        await client.set_datetime(moment)
+        await coordinator.async_refresh_web_supplement()
+    except Exception as err:
+        issue_id = classify_write_error(err)
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key=issue_id,
+            translation_placeholders=write_error_placeholders("set_controller_clock", err),
+        ) from err
 
 
 async def _handle_acknowledge_errors(hass: HomeAssistant, call: ServiceCall) -> None:
@@ -482,7 +507,24 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
         )
 
     try:
-        value = int(value) if datatype != DataType.FLOAT else float(value)
+        if datatype == DataType.BOOL:
+            if isinstance(value, str):
+                v_lower = value.strip().lower()
+                if v_lower in ("true", "1", "on", "yes", "wahr", "ein"):
+                    value = True
+                elif v_lower in ("false", "0", "off", "no", "falsch", "aus"):
+                    value = False
+                else:
+                    raise ValueError(f"Cannot parse boolean from {value}")
+            else:
+                value = bool(value)
+        elif datatype == DataType.FLOAT:
+            f_val = float(value)
+            if not math.isfinite(f_val):
+                raise ValueError("Float value must be finite")
+            value = f_val
+        else:
+            value = int(value)
     except (ValueError, TypeError, OverflowError) as err:
         raise ServiceValidationError(
             translation_domain=DOMAIN,

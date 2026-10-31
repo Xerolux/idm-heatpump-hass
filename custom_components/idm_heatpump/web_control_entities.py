@@ -10,6 +10,7 @@ value before sending and raises on a controller rejection.
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from homeassistant.components.button import ButtonEntity
@@ -22,6 +23,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .adapter_enums import get_slug_map_and_key
 from .const import CONNECTION_MODE_WEB_ONLY, resolve_connection_mode
 from .coordinator import IdmCoordinator
+from .device_hierarchy import build_subdevice_info
 from .entity import build_entity_unique_id
 
 _SYSTEM_MODE_SLUGS, _SYSTEM_MODE_KEY = get_slug_map_and_key("system_mode")
@@ -60,7 +62,51 @@ def web_control_number_entities(coordinator: IdmCoordinator) -> list[IdmWebDhwSe
     return [IdmWebDhwSetpointNumber(coordinator)]
 
 
-def web_control_heatingcircuit_entities(coordinator: IdmCoordinator) -> list[Any]:
+def web_control_heatingcircuit_number_entities(
+    coordinator: IdmCoordinator,
+) -> list[IdmWebHeatingCircuitSetpointNumber]:
+    """Create the web-only heating-circuit setpoint numbers for Navigator 10."""
+    if not _web_control_active(coordinator):
+        return []
+    supplement = coordinator.web_supplement
+    circuits = getattr(supplement, "heating_circuits", ()) if supplement is not None else ()
+    entities: list[IdmWebHeatingCircuitSetpointNumber] = []
+    from .differential_circuits import configured_differential_circuits
+
+    differential = configured_differential_circuits(coordinator)
+    for circuit in circuits:
+        hc_id = str(getattr(circuit, "hc_id", "")).lower()
+        if not hc_id or hc_id in differential:
+            continue
+        if getattr(circuit, "setpoint_normal", None) is not None:
+            entities.append(IdmWebHeatingCircuitSetpointNumber(coordinator, hc_id, circuit))
+    return entities
+
+
+def web_control_heatingcircuit_select_entities(
+    coordinator: IdmCoordinator,
+) -> list[IdmWebHeatingCircuitModeSelect]:
+    """Create the web-only heating-circuit mode selects for Navigator 10."""
+    if not _web_control_active(coordinator):
+        return []
+    supplement = coordinator.web_supplement
+    circuits = getattr(supplement, "heating_circuits", ()) if supplement is not None else ()
+    entities: list[IdmWebHeatingCircuitModeSelect] = []
+    from .differential_circuits import configured_differential_circuits
+
+    differential = configured_differential_circuits(coordinator)
+    for circuit in circuits:
+        hc_id = str(getattr(circuit, "hc_id", "")).lower()
+        if not hc_id or hc_id in differential:
+            continue
+        if getattr(circuit, "mode_parameter_id", None) is not None:
+            entities.append(IdmWebHeatingCircuitModeSelect(coordinator, hc_id, circuit))
+    return entities
+
+
+def web_control_heatingcircuit_entities(
+    coordinator: IdmCoordinator,
+) -> list[IdmWebHeatingCircuitSetpointNumber | IdmWebHeatingCircuitModeSelect]:
     """Create the web-only heating-circuit controls for a Navigator 10 entry.
 
     One setpoint number and one mode select per configured circuit, keyed by
@@ -72,12 +118,13 @@ def web_control_heatingcircuit_entities(coordinator: IdmCoordinator) -> list[Any
         return []
     supplement = coordinator.web_supplement
     circuits = getattr(supplement, "heating_circuits", ()) if supplement is not None else ()
-    entities: list[Any] = []
+    entities: list[IdmWebHeatingCircuitSetpointNumber | IdmWebHeatingCircuitModeSelect] = []
     from .differential_circuits import configured_differential_circuits
 
+    differential = configured_differential_circuits(coordinator)
     for circuit in circuits:
         hc_id = str(getattr(circuit, "hc_id", "")).lower()
-        if not hc_id or hc_id in configured_differential_circuits(coordinator):
+        if not hc_id or hc_id in differential:
             continue
         setpoint = getattr(circuit, "setpoint_normal", None)
         if setpoint is not None:
@@ -99,17 +146,23 @@ class _IdmWebControlEntityBase(CoordinatorEntity[IdmCoordinator]):
     """Shared placement and availability for the web-only controls."""
 
     _attr_has_entity_name = True
+    _hierarchy_key: str | None = None
 
     @property
     def available(self) -> bool:
         # Web controls are refreshed with the web supplement, independently
         # of the Modbus coordinator result (see IdmWebSensor.available).
-        return self.coordinator.web_supplement is not None
+        return (
+            self.coordinator.web_supplement is not None
+            and getattr(self.coordinator, "web_alive", True) is not False
+        )
 
     @property
     def device_info(self) -> DeviceInfo:
         from .entity import build_device_info
 
+        if self._hierarchy_key and (subdevice := build_subdevice_info(self.coordinator, self._hierarchy_key)):
+            return subdevice
         return build_device_info(self.coordinator)
 
 
@@ -154,6 +207,7 @@ class IdmWebAcknowledgeErrorsButton(_IdmWebControlEntityBase, ButtonEntity):
 
     _attr_icon = "mdi:alert-circle-check"
     _attr_translation_key = "acknowledge_errors"
+    _hierarchy_key = "error_acknowledge"
 
     def __init__(self, coordinator: IdmCoordinator) -> None:
         super().__init__(coordinator)
@@ -176,6 +230,7 @@ class IdmWebDhwSetpointNumber(_IdmWebControlEntityBase, NumberEntity):
 
     _attr_icon = "mdi:thermometer-water"
     _attr_mode = NumberMode.BOX
+    _hierarchy_key = "dhw_setpoint"
 
     def __init__(self, coordinator: IdmCoordinator) -> None:
         super().__init__(coordinator)
@@ -199,17 +254,22 @@ class IdmWebDhwSetpointNumber(_IdmWebControlEntityBase, NumberEntity):
         value = getattr(self._parameter(), "value", None)
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             return None
-        return float(value)
+        numeric = float(value)
+        return numeric if math.isfinite(numeric) else None
 
     @property
     def native_min_value(self) -> float:
         minimum = getattr(self._parameter(), "min_value", None)
-        return float(minimum) if isinstance(minimum, (int, float)) else 30.0
+        if not isinstance(minimum, bool) and isinstance(minimum, (int, float)) and math.isfinite(float(minimum)):
+            return float(minimum)
+        return 30.0
 
     @property
     def native_max_value(self) -> float:
         maximum = getattr(self._parameter(), "max_value", None)
-        return float(maximum) if isinstance(maximum, (int, float)) else 60.0
+        if not isinstance(maximum, bool) and isinstance(maximum, (int, float)) and math.isfinite(float(maximum)):
+            return float(maximum)
+        return 60.0
 
     @property
     def native_step(self) -> float:
@@ -220,7 +280,7 @@ class IdmWebDhwSetpointNumber(_IdmWebControlEntityBase, NumberEntity):
             step = float(raw_increment)  # type: ignore[arg-type]
         except (TypeError, ValueError):
             step = 0.5
-        return step if step > 0 else 0.5
+        return step if math.isfinite(step) and step > 0 else 0.5
 
     async def async_set_native_value(self, value: float) -> None:
         await self.coordinator.async_web_set_dhw_setpoint(value)
@@ -237,6 +297,7 @@ class IdmWebHeatingCircuitSetpointNumber(_IdmWebControlEntityBase, NumberEntity)
         entry = coordinator.config_entry
         assert entry is not None
         self._hc_id = hc_id
+        self._hierarchy_key = f"hc_{hc_id}_room_setpoint_heat_normal"
         self._attr_unique_id = build_entity_unique_id(entry.entry_id, f"web_hc_{hc_id}_room_setpoint")
         self._attr_translation_key = "web_hc_room_setpoint"
         self._attr_translation_placeholders = {"circuit": hc_id.upper()}
@@ -262,17 +323,22 @@ class IdmWebHeatingCircuitSetpointNumber(_IdmWebControlEntityBase, NumberEntity)
         value = getattr(self._setpoint(), "value", None)
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             return None
-        return float(value)
+        numeric = float(value)
+        return numeric if math.isfinite(numeric) else None
 
     @property
     def native_min_value(self) -> float:
         minimum = getattr(self._setpoint(), "min_value", None)
-        return float(minimum) if isinstance(minimum, (int, float)) else 15.0
+        if not isinstance(minimum, bool) and isinstance(minimum, (int, float)) and math.isfinite(float(minimum)):
+            return float(minimum)
+        return 15.0
 
     @property
     def native_max_value(self) -> float:
         maximum = getattr(self._setpoint(), "max_value", None)
-        return float(maximum) if isinstance(maximum, (int, float)) else 30.0
+        if not isinstance(maximum, bool) and isinstance(maximum, (int, float)) and math.isfinite(float(maximum)):
+            return float(maximum)
+        return 30.0
 
     @property
     def native_step(self) -> float:
@@ -283,7 +349,7 @@ class IdmWebHeatingCircuitSetpointNumber(_IdmWebControlEntityBase, NumberEntity)
             step = float(raw_increment)  # type: ignore[arg-type]
         except (TypeError, ValueError):
             step = 0.1
-        return step if step > 0 else 0.1
+        return step if math.isfinite(step) and step > 0 else 0.1
 
     async def async_set_native_value(self, value: float) -> None:
         setpoint = self._setpoint()
@@ -313,6 +379,7 @@ class IdmWebHeatingCircuitModeSelect(_IdmWebControlEntityBase, SelectEntity):
         entry = coordinator.config_entry
         assert entry is not None
         self._hc_id = hc_id
+        self._hierarchy_key = f"hc_{hc_id}_mode"
         self._attr_unique_id = build_entity_unique_id(entry.entry_id, f"web_hc_{hc_id}_mode")
         self._attr_translation_key = "web_hc_mode"
         self._attr_translation_placeholders = {"circuit": hc_id.upper()}
@@ -343,9 +410,13 @@ class IdmWebHeatingCircuitModeSelect(_IdmWebControlEntityBase, SelectEntity):
     @property
     def current_option(self) -> str | None:
         value = getattr(self._circuit(), "mode_value", None)
-        if value is None:
+        if value is None or isinstance(value, bool):
             return None
-        return self._slug_map.get(int(value))
+        try:
+            int_value = int(value)
+        except (TypeError, ValueError, OverflowError):
+            return None
+        return self._slug_map.get(int_value)
 
     async def async_select_option(self, option: str) -> None:
         reverse = {slug: key for key, slug in self._slug_map.items()}

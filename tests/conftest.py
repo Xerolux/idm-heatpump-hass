@@ -1133,7 +1133,17 @@ def _stub_homeassistant() -> None:
         TURN_ON = 8
 
     class _ClimateEntity:
-        pass
+        @property
+        def current_temperature(self):
+            return getattr(self, "native_current_temperature", None)
+
+        @property
+        def target_temperature(self):
+            return getattr(self, "native_target_temperature", None)
+
+        @property
+        def temperature_unit(self):
+            return getattr(self, "native_temperature_unit", getattr(self, "_attr_native_temperature_unit", None))
 
     climate_mod.ClimateEntity = _ClimateEntity
     # Real HA re-exports climate.const symbols onto the climate module, so mirror
@@ -1161,7 +1171,17 @@ def _stub_homeassistant() -> None:
         TARGET_TEMPERATURE = 1
 
     class _WaterHeaterEntity:
-        pass
+        @property
+        def current_temperature(self):
+            return getattr(self, "native_current_temperature", None)
+
+        @property
+        def target_temperature(self):
+            return getattr(self, "native_target_temperature", None)
+
+        @property
+        def temperature_unit(self):
+            return getattr(self, "native_temperature_unit", getattr(self, "_attr_native_temperature_unit", None))
 
     water_heater_mod.STATE_HEAT_PUMP = "performance"
     water_heater_mod.WaterHeaterEntity = _WaterHeaterEntity

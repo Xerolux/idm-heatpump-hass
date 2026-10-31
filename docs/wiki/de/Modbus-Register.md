@@ -202,7 +202,7 @@ Die deutsche Beschreibung dient der Identifikation; der Registername in Codeform
 | 1106 | Wärmequellenpumpe M15 | `heat_source_pump_status` | INT16 | % | R | — |
 | 1108 | ISC Kältespeicherpumpe M84 | `isc_cold_storage_pump_status` | INT16 | % | R | — |
 | 1109 | ISC Rückkühlpumpe M17 | `isc_recooling_pump_status` | INT16 | % | R | — |
-| 1110 | Umschaltventil Heizkreis Heizen/Kühlen | `valve_hc_heat_cool` | UINT16 | — | R | — |
+| 1110 | Umschaltventil Heizkreis Heizen/Kühlen | `valve_hc_heat_cool` | UINT16 | — | R | Enum |
 | 1111 | Umschaltventil Speicher Heizen/Kühlen | `valve_storage_heat_cool` | UINT16 | — | R | — |
 | 1112 | Umschaltventil Heizen/Warmwasser | `valve_heat_dhw` | UINT16 | — | R | — |
 | 1113 | Wärmequelle Umschaltventil | `valve_heat_source_heat_cool` | UINT16 | — | R | — |
@@ -363,7 +363,7 @@ Die deutsche Beschreibung dient der Identifikation; der Registername in Codeform
 | 1658–1659 | Externe Raumtemperatur HK E | `hc_e_ext_room_temp` | FLOAT | °C | RW | — |
 | 1660–1661 | Externe Raumtemperatur HK F | `hc_f_ext_room_temp` | FLOAT | °C | RW | — |
 | 1662–1663 | Externe Raumtemperatur HK G | `hc_g_ext_room_temp` | FLOAT | °C | RW | — |
-| 1680 | Störung Wärmequellenkreis | `fault_heat_source_circuit` | UCHAR | — | R | Navigator 10 |
+| 1680 | Störung Wärmequellenkreis | `fault_heat_source_circuit` | UCHAR | — | R | Navigator 10, Binär |
 | 1681 | Störung Druckschalter Wärmequellenkreis | `fault_heat_source_pressure_switch` | UCHAR | — | R | Navigator 10 |
 | 1682 | Störung Ladepumpe 1 Zwischenkreis | `fault_charging_pump_1_intermediate` | UCHAR | — | R | Navigator 10 |
 | 1683 | Störung Ladepumpe 2 Zwischenkreis | `fault_charging_pump_2_intermediate` | UCHAR | — | R | Navigator 10 |
@@ -867,7 +867,7 @@ Die deutsche Beschreibung dient der Identifikation; der Registername in Codeform
 
 > Ebenfalls aus `idm-heatpump-api[web]==2.16.0b2` generiert.
 
-Die Regler Navigator 1.0/1.7 verwenden ein anderes Registerlayout: Dieselbe Adresse kann einen anderen Datenpunkt tragen als im Katalog oben. Diese Familie hat daher eine eigene Tabelle mit **152** Definitionen (davon 81 beschreibbar). Der offizielle RW-Holding-Block von ma_de_812049 Rev.1 steuert 77 beschreibbare, EEPROM-empfindliche Parameter bei (Betriebsarten, Raum-/Vorlaufsollwerte, Heizkurven, Grenzen, Bivalenzpunkte, Solar-Betriebsart, Warmwasser-Sollwert); das PV-Supplement erscheint nur, wenn der Regler die Adresse 74 beantwortet. Eine Zonenmodul-Steuerung existiert in dieser Familie nicht.
+Die Regler Navigator 1.0/1.7 verwenden ein anderes Registerlayout: Dieselbe Adresse kann einen anderen Datenpunkt tragen als im Katalog oben. Diese Familie hat daher eine eigene Tabelle mit **154** Definitionen (davon 83 beschreibbar). Der offizielle RW-Holding-Block von ma_de_812049 Rev.1 steuert 79 beschreibbare, EEPROM-empfindliche Parameter bei (Betriebsarten, Raum-/Vorlaufsollwerte, Heizkurven, Grenzen, Bivalenzpunkte, Solar-Betriebsart, Warmwasser-Sollwert); das PV-Supplement erscheint nur, wenn der Regler die Adresse 74 beantwortet. Eine Zonenmodul-Steuerung existiert in dieser Familie nicht.
 
 | Adresse(n) | Beschreibung (DE) | Registername | Typ | Einheit | Zugriff | Anmerkung |
 |-------------|------------------|---------------|------|------|--------|------|

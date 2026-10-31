@@ -14,8 +14,9 @@ from typing import Any, ClassVar
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity import EntityCategory, EntityDescription  # type: ignore[attr-defined]
+from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.loader import async_get_integration
@@ -450,7 +451,7 @@ def _is_confirmed_navigator_10(coordinator: IdmCoordinator) -> bool:
 
 def _web_sensor_definitions(coordinator: IdmCoordinator) -> list[WebSensorDefinition]:
     modbus_register_names = {reg.name for reg in coordinator.active_registers}
-    has_modbus = len(modbus_register_names) > 0
+    has_modbus = getattr(coordinator, "update_interval", None) is not None and len(modbus_register_names) > 0
     is_nav10 = _is_confirmed_navigator_10(coordinator)
     definitions = []
     seen: set[str] = set()
@@ -757,7 +758,11 @@ class IdmSensor(IdmEntity, SensorEntity):
             if self._register.datatype == DataType.BITFLAG:
                 return _decode_bitflag(int_value, self._enum_bitflag_labels or self._register.enum_options)
             if self._enum_slug_map is not None:
-                return self._enum_slug_map.get(int_value)
+                slug = self._enum_slug_map.get(int_value)
+                if slug is None:
+                    self._report_unmapped_enum_value(int_value)
+                    return None
+                return slug
             label = self._register.enum_options.get(int_value)
             if label is None:
                 # A value outside the declared options is not a state this

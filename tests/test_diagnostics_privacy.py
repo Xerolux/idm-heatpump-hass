@@ -136,6 +136,11 @@ def _private_coordinator(entry: MagicMock) -> MagicMock:
         # A future summary field must not become a leak channel unnoticed.
         "myidm_id": PRIVATE_MYIDM_ID,
     }
+    coord.last_write_error = {
+        "detail": f"Write failed to {PRIVATE_HOST}:502",
+        "register": "test_reg",
+        "value": 1,
+    }
 
     entry.data = {
         "host": PRIVATE_HOST,
@@ -176,6 +181,7 @@ class TestDiagnosticsPrivacy:
 
         assert result["data"]["client_diagnostics"]["last_error"] == "ModbusConnectionError"
         assert result["data"]["web_supplement"]["last_error"] == "IdmWebAuthenticationFailed"
+        assert result["data"]["last_write_error"]["detail"] == "Write error"
 
     async def test_export_stays_complete_for_support(self, mock_hass, mock_config_entry):
         """Redaction must not strip the fields a support triage depends on."""

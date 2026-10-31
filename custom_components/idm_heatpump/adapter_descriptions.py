@@ -164,9 +164,11 @@ def make_sensor_description(
     """Create a SensorEntityDescription from a library register plus HA metadata."""
     device_class: SensorDeviceClass | None = meta.get("device_class")
     unit = meta.get("unit") or reg.unit
-    if device_class is None:
+    if "device_class" not in meta:
         device_class, _ = infer_sensor_classes(reg.name, unit)
-    state_class = _DC_STATE_CLASS_MAP.get(device_class) if device_class else None
+    state_class = meta.get("state_class")
+    if state_class is None and device_class:
+        state_class = _DC_STATE_CLASS_MAP.get(device_class)
     # Explicit ``enabled_by_default`` metadata wins for user-facing core
     # measurements. When the key is absent, fall back to the conservative
     # generated profile so rare technical registers stay disabled by default
@@ -176,14 +178,21 @@ def make_sensor_description(
     else:
         enabled_default = entity_enabled_by_default(reg.name)
 
-    return SensorEntityDescription(
-        key=reg.name,
+    kwargs: dict[str, Any] = {
+        "key": reg.name,
         **name_kwargs(reg.name, meta.get("name") or fallback_name),
-        native_unit_of_measurement=unit,
-        device_class=device_class,
-        state_class=state_class,
-        suggested_display_precision=infer_suggested_display_precision(unit),
-        icon=meta.get("icon"),
-        entity_category=meta.get("entity_category"),
-        entity_registry_enabled_default=enabled_default,
-    )
+        "native_unit_of_measurement": unit,
+        "device_class": device_class,
+        "state_class": state_class,
+        "suggested_display_precision": infer_suggested_display_precision(unit),
+        "icon": meta.get("icon"),
+        "entity_category": meta.get("entity_category"),
+        "entity_registry_enabled_default": enabled_default,
+    }
+    options = meta.get("options")
+    if options is None and reg.enum_options:
+        options = [str(opt) for opt in reg.enum_options.values()]
+    if options is not None and (device_class == SensorDeviceClass.ENUM or device_class is None):
+        kwargs["options"] = list(options)
+
+    return SensorEntityDescription(**kwargs)

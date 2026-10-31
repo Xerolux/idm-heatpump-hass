@@ -136,18 +136,38 @@ jobs:
 
       - name: Install Home Assistant and the updated runtime dependencies
         if: steps.summary.outputs.updated == 'true'
+        env:
+          SET_PIN: ${{ inputs.set-pin }}
         run: |
           pip install "homeassistant==${MINIMUM_HOME_ASSISTANT}" "aiohttp>=3.8.0"
           pip install ruff mypy pytest pytest-cov pytest-asyncio
           python - <<'PY'
           import json
+          import os
           import subprocess
           import sys
+          import time
 
           with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as manifest_file:
               requirements = json.load(manifest_file)["requirements"]
 
-          subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
+          cmd = [sys.executable, "-m", "pip", "install", *requirements]
+          # Announced releases (set-pin) arrive right after tagging, before PyPI's
+          # simple index has propagated to every edge node.
+          delays = (10, 20, 30, 45, 60) if os.environ.get("SET_PIN") else ()
+          for attempt, delay in enumerate((*delays, None), start=1):
+              run_cmd = [*cmd, "--no-cache-dir"] if delays else cmd
+              result = subprocess.run(run_cmd, check=False)
+              if result.returncode == 0:
+                  break
+              if delay is None:
+                  sys.exit(result.returncode)
+              print(
+                  f"pip install failed (attempt {attempt}/{len(delays) + 1}); "
+                  f"waiting {delay}s for PyPI index propagation...",
+                  flush=True,
+              )
+              time.sleep(delay)
           PY
 
       # A transitive pin in a new release can displace the Home Assistant this
@@ -177,9 +197,11 @@ jobs:
         if: steps.summary.outputs.updated == 'true'
         run: |
           python scripts/generate_modbus_register_reference.py
+          python scripts/generate_modbus_register_reference.py --check
           python scripts/generate_entity_metadata_catalog.py
           python scripts/generate_entity_translations.py
           python scripts/check_documentation_versions.py --update
+          git add docs/wiki/Modbus-Register.md docs/wiki/de/Modbus-Register.md
 
       - name: Smoke test the production Modbus backend
         if: steps.summary.outputs.updated == 'true'

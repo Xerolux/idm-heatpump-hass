@@ -119,6 +119,16 @@ def _sanitized_error_message(error: Any, *, fallback: str) -> str | None:
     return fallback
 
 
+def _last_write_error_diagnostics(coordinator: Any) -> dict[str, Any] | None:
+    raw = getattr(coordinator, "last_write_error", None)
+    if not isinstance(raw, dict):
+        return None
+    data = dict(raw)
+    if "detail" in data:
+        data["detail"] = _sanitized_error_message(data["detail"], fallback="Write error")
+    return data
+
+
 def _client_diagnostics(coordinator: Any) -> dict[str, Any]:
     """Return the API client's diagnostics with free-text error content sanitized.
 
@@ -413,7 +423,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                 # The reason the last write failed. Without it a "write rejected"
                 # bug report carries no evidence at all unless the reporter had
                 # debug logging on before the failure (#237).
-                "last_write_error": getattr(coordinator, "last_write_error", None),
+                "last_write_error": _last_write_error_diagnostics(coordinator),
                 "web_supplement": _web_supplement_diagnostics(coordinator),
                 "unused_registers": sorted(coordinator.unused_registers),
                 "unsupported_registers": sorted(coordinator.unsupported_registers),

@@ -47,6 +47,9 @@ async def async_setup_entry(
     if web_entities:
         async_add_entities(web_entities)
 
+    if getattr(coordinator, "update_interval", True) is None:
+        return
+
     # The shared family reports the storage top sensor; Navigator 1.0/1.7 has
     # no dhw_temp_top and offers the tank temperature (dhw_temp,
     # Trinkwassererwärmertemperatur) as the closest equivalent. FW030 became a

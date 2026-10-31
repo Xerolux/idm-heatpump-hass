@@ -152,3 +152,56 @@ async def test_platform_setup_adds_agent() -> None:
     await async_setup_entry(None, entry, add_entities)
     assert len(added) == 1
     assert isinstance(added[0], IdmHeatpumpConversationEntity)
+
+
+async def test_fault_query_answers_alarm_and_clean_state() -> None:
+    coord_clean = _coordinator({})
+    entity_clean = IdmHeatpumpConversationEntity(coord_clean, None)
+    ans_clean_de = await _answer(entity_clean, "Gibt es eine Störung?", "de")
+    ans_clean_en = await _answer(entity_clean, "Any errors?", "en")
+    assert "keine Störung" in ans_clean_de
+    assert "no active faults" in ans_clean_en
+
+    coord_alarm = _coordinator({"hp_sum_alarm": 1})
+    entity_alarm = IdmHeatpumpConversationEntity(coord_alarm, None)
+    ans_alarm_de = await _answer(entity_alarm, "Gibt es eine Störung?", "de")
+    ans_alarm_en = await _answer(entity_alarm, "Any faults?", "en")
+    assert "Sammelstörung" in ans_alarm_de
+    assert "active plant alarm" in ans_alarm_en
+
+    coord_err = _coordinator({"error_number": 42})
+    entity_err = IdmHeatpumpConversationEntity(coord_err, None)
+    ans_err_de = await _answer(entity_err, "Gibt es einen Fehler?", "de")
+    assert "Fehlercode 42" in ans_err_de
+
+
+async def test_sentinels_and_unused_registers_ignored() -> None:
+    data = {
+        "outdoor_temp": -1.0,
+        "hp_flow_temp": float("nan"),
+        "hp_return_temp": 35.0,
+    }
+    coord = _coordinator(data)
+    coord.unused_registers = frozenset({"outdoor_temp"})
+    entity = IdmHeatpumpConversationEntity(coord, None)
+    ans = await _answer(entity, "Wie sind die Temperaturen?", "de")
+    assert "Außentemperatur" not in ans
+    assert "Vorlauftemperatur" not in ans
+    assert "Rücklauftemperatur: 35 °C" in ans
+
+
+async def test_why_running_german_translation() -> None:
+    data = {
+        "hp_operating_mode": 1,
+        "power_consumption_hp": 1.5,
+    }
+    entity = IdmHeatpumpConversationEntity(_coordinator(data), None)
+    ans = await _answer(entity, "Warum läuft die Wärmepumpe gerade?", "de")
+    assert "Heizen" in ans or "Wärmepumpe" in ans
+    assert "The heat pump" not in ans
+
+
+def test_short_keywords_do_not_falsely_match_substrings() -> None:
+    assert _route_intent("is the telescope working?") == "help"
+    assert _route_intent("check the statement") == "help"
+

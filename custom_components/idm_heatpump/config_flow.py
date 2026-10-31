@@ -594,6 +594,7 @@ def _default_options() -> dict[str, Any]:
         CONF_EXTERNAL_POWER_FORWARDING_ENTITIES: {},
         CONF_EXTERNAL_POWER_FORWARDING_INTERVAL: DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
         CONF_EXTERNAL_POWER_BATTERY_SIGN: DEFAULT_EXTERNAL_POWER_BATTERY_SIGN,
+        CONF_EXTERNAL_POWER_GRID_SIGN: DEFAULT_EXTERNAL_POWER_GRID_SIGN,
         CONF_KNX_BRIDGE: DEFAULT_KNX_BRIDGE,
         CONF_KNX_BASE_ADDRESS: DEFAULT_KNX_BASE_ADDRESS,
         CONF_KNX_SEND: DEFAULT_KNX_SEND,
@@ -2249,7 +2250,8 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                         detected = await self._async_detect_web_supplement(
                             web_host,
                             web_pin,
-                            model_hint=self._data.get(CONF_DETECTED_NAVIGATOR_VERSION),
+                            model_hint=(getattr(self, "_detected_plant", None) or {}).get("model")
+                            or self._data.get(CONF_DETECTED_NAVIGATOR_VERSION),
                             required=web_requested,
                         )
                     except IdmWebAuthenticationFailed:

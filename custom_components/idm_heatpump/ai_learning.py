@@ -26,6 +26,9 @@ class LearningHistory:
 
     def __init__(self) -> None:
         self.buckets: dict[str, list[float]] = {}
+        self._version: int = 0
+        self._summary_cache: tuple[int, int, dict[str, Any]] | None = None
+        self._best_bucket_cache: tuple[int, int, dict[str, Any]] | None = None
 
     def load(self, value: Any, now: float) -> None:
         """Load only the bounded numerical schema, dropping expired entries."""
@@ -45,16 +48,20 @@ class LearningHistory:
                     # Rows of length 4 predate the dispersion moments; pad them
                     # with zeros so a comparison can still read the mean.
                     self.buckets[str(key)] = ([float(v) for v in row] + [0.0, 0.0])[:6]
+        self._version += 1
         self.prune(now)
 
     def prune(self, now: float) -> None:
         day = int(now // 86400)
-        self.buckets = dict(
+        new_buckets = dict(
             sorted(
                 ((k, v) for k, v in self.buckets.items() if day - RETENTION_DAYS < int(k.split(":")[0]) <= day),
                 key=lambda item: int(item[0].split(":")[0]),
             )[-MAX_BUCKETS:]
         )
+        if len(new_buckets) != len(self.buckets) or any(k not in new_buckets for k in self.buckets):
+            self.buckets = new_buckets
+            self._version += 1
 
     def observe(self, before: dict[str, Any], after: dict[str, Any]) -> None:
         """Reject gaps, mode changes, resets, standby and implausible intervals."""
@@ -91,6 +98,7 @@ class LearningHistory:
         cop = thermal / electric
         row[4] += cop * gap
         row[5] += cop * cop * gap
+        self._version += 1
         self.prune(after["at"])
 
     def best_bucket(self, now: float) -> dict[str, Any]:
@@ -103,6 +111,10 @@ class LearningHistory:
         keyed per day, so counting keys per combination counts days.
         """
         day = int(now // 86400)
+        if self._best_bucket_cache is not None:
+            v, cached_day, cached_result = self._best_bucket_cache
+            if v == self._version and cached_day == day:
+                return dict(cached_result)
         grouped: dict[tuple[int, int], dict[str, float]] = {}
         for key, row in self.buckets.items():
             parts = str(key).split(":")
@@ -112,14 +124,18 @@ class LearningHistory:
             entry["days"] += 1
             entry["hours"] += row[2]
         if not grouped:
-            return {"mode": None, "outdoor_bin_c": None, "days": 0, "hours": 0.0}
+            empty_result: dict[str, Any] = {"mode": None, "outdoor_bin_c": None, "days": 0, "hours": 0.0}
+            self._best_bucket_cache = (self._version, day, dict(empty_result))
+            return empty_result
         (mode, bin_index), entry = max(grouped.items(), key=lambda item: (item[1]["days"], item[1]["hours"]))
-        return {
+        result: dict[str, Any] = {
             "mode": LEARNING_MODE_NAMES.get(mode, mode),
             "outdoor_bin_c": bin_index * 5,
             "days": int(entry["days"]),
             "hours": round(entry["hours"] / 3600, 2),
         }
+        self._best_bucket_cache = (self._version, day, dict(result))
+        return result
 
     def comparison(self, sample: dict[str, Any]) -> dict[str, Any]:
         """Compare today's matched bin with prior days, never with itself."""
@@ -177,13 +193,17 @@ class LearningHistory:
         plant idles it has no answer at all. This totals what was learned.
         """
         day = int(now // 86400)
+        if self._summary_cache is not None:
+            v, cached_day, cached_result = self._summary_cache
+            if v == self._version and cached_day == day:
+                return dict(cached_result)
         older: list[tuple[int, int, list[float]]] = []
         for key, row in self.buckets.items():
             parts = str(key).split(":")
             if len(parts) == 3 and int(parts[0]) < day:
                 older.append((int(parts[0]), int(parts[1]), row))
         oldest = min((bucket_day for bucket_day, _, _ in older), default=None)
-        return {
+        result = {
             "total_days": len({bucket_day for bucket_day, _, _ in older}),
             "buckets": len(older),
             "total_hours": round(sum(row[2] for _, _, row in older) / 3600, 2),
@@ -192,3 +212,5 @@ class LearningHistory:
                 datetime.fromtimestamp(oldest * 86400, UTC).date().isoformat() if oldest is not None else None
             ),
         }
+        self._summary_cache = (self._version, day, dict(result))
+        return result

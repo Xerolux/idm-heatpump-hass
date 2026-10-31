@@ -169,19 +169,30 @@ class ComfortScheduler:
             await self._async_evaluate_locked(now)
 
     async def _async_evaluate_locked(self, now: datetime | None) -> None:
+        if getattr(self._coordinator, "last_update_success", True) is False:
+            return
         register = self._coordinator.get_register(self.register_name)
         if register is None:
+            return
+        unused: frozenset[str] = getattr(self._coordinator, "unused_registers", frozenset())
+        if self.register_name in unused:
             return
         current = self._current_value()
         if current is None:
             return
-        target = self._selected_target((now or dt_util.as_local(datetime.now(UTC))).time())
+        eval_time = (now if now is not None else dt_util.as_local(datetime.now(UTC))).time()
+        target = self._selected_target(eval_time)
+        step = getattr(register, "step", None)
+        tolerance = max(0.05, (float(step) * 0.55) if (step is not None and isinstance(step, (int, float))) else 0.05)
+        if target is not None and step is not None and isinstance(step, (int, float)) and step > 0:
+            target = round(round(target / float(step)) * float(step), 2)
+
         if target is not None and not self._active:
             self._previous = current
             self._active_target = target
             self._active = True
             await self._save_state()
-            if abs(current - target) >= 0.01:
+            if abs(current - target) > tolerance:
                 try:
                     await async_write_translated(
                         self._coordinator,
@@ -197,7 +208,7 @@ class ComfortScheduler:
                     raise
             return
         if target is not None and self._active and target != self._active_target:
-            if self._active_target is not None and abs(current - self._active_target) < 0.01:
+            if self._active_target is not None and abs(current - self._active_target) <= tolerance:
                 await async_write_translated(
                     self._coordinator, register, target, action_label="change scheduled comfort temperature for"
                 )
@@ -208,7 +219,7 @@ class ComfortScheduler:
             if (
                 self._previous is not None
                 and self._active_target is not None
-                and abs(current - self._active_target) < 0.01
+                and abs(current - self._active_target) <= tolerance
             ):
                 await async_write_translated(
                     self._coordinator,

@@ -90,7 +90,7 @@ class IdmWebDemandReasonSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and self._state() is not None
+        return getattr(self.coordinator, "web_alive", True) is not False and self._state() is not None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -141,7 +141,7 @@ class IdmWebDemandReasonPvBinarySensor(IdmCoordinatorEntityBase, BinarySensorEnt
 
     @property
     def available(self) -> bool:
-        return super().available and self._state() is not None
+        return getattr(self.coordinator, "web_alive", True) is not False and self._state() is not None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

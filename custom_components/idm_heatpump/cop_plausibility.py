@@ -10,6 +10,8 @@ electrical/thermal interval can represent a real heat-pump COP.
 
 from __future__ import annotations
 
+import math
+
 #: A COP above this is a counter artefact, not a heat pump (ai_learning's
 #: historical bound, now shared with the advisor).
 MAX_COP: float = 15.0
@@ -32,8 +34,10 @@ def cop_interval_is_plausible(
     is required: an interval that consumed power without producing heat is
     not a usable COP sample.
     """
+    if not math.isfinite(thermal) or not math.isfinite(electric):
+        return False
     if electric <= 0 or thermal <= 0:
         return False
     if thermal / electric > MAX_COP:
         return False
-    return electric_kw is None or electric_kw <= MAX_POWER_KW
+    return electric_kw is None or (math.isfinite(electric_kw) and 0 <= electric_kw <= MAX_POWER_KW)

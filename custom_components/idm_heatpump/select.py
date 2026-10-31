@@ -17,7 +17,10 @@ from .adapter_enums import get_slug_map_and_key
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
 from .registers import sort_entity_descriptions
-from .web_control_entities import web_control_heatingcircuit_entities, web_control_select_entities
+from .web_control_entities import (
+    web_control_heatingcircuit_select_entities,
+    web_control_select_entities,
+)
 
 PARALLEL_UPDATES = 0
 
@@ -35,7 +38,7 @@ async def async_setup_entry(
         and desc_info["register"].enum_options
     ]
     entities.extend(web_control_select_entities(coordinator))
-    entities.extend(web_control_heatingcircuit_entities(coordinator))
+    entities.extend(web_control_heatingcircuit_select_entities(coordinator))
     async_add_entities(entities)
 
 
@@ -73,11 +76,11 @@ class IdmSelect(IdmEntity, SelectEntity):
         if self.is_writable_control() and self._value_is_sentinel():
             return None
         raw = self.coordinator.data.get(self._register.name)
-        if raw is None:
+        if raw is None or isinstance(raw, bool):
             return None
         try:
             int_raw = int(raw)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             return None
         if self._enum_slug_map is not None:
             return self._enum_slug_map.get(int_raw)

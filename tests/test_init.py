@@ -520,10 +520,10 @@ class TestAsyncSetupWebOnlyEntry:
         assert entry.runtime_data.coordinator.update_interval is None
         mock_hass.config_entries.async_forward_entry_setups.assert_called_once()
         forwarded_platforms = mock_hass.config_entries.async_forward_entry_setups.call_args.args[1]
-        # Web-only mode forwards sensor, select, number, button, climate and
+        # Web-only mode forwards sensor, binary_sensor, select, number, button, climate and
         # water heater (the web-only controls of Phase 4). Platform members
         # are MagicMocks in the test stub, so assert on the list length.
-        assert len(forwarded_platforms) == 6
+        assert len(forwarded_platforms) == 7
         # model_hint comes from the detected navigator version stored in entry data.
         assert read_web.call_args.kwargs.get("model_hint") is None
 
@@ -733,10 +733,10 @@ class TestConnectionMode:
         assert result is None
         mock_client = client_factory.return_value
         mock_client.connect.assert_not_called()
-        # Web-only forwards sensor, select, number, button, climate and
+        # Web-only forwards sensor, binary_sensor, select, number, button, climate and
         # water heater (Phase 4).
         forwarded = mock_hass.config_entries.async_forward_entry_setups.call_args.args[1]
-        assert len(forwarded) == 6
+        assert len(forwarded) == 7
 
     async def test_modbus_only_mode_never_touches_the_web(self, mock_hass):
         """modbus_only skips the web read, the poll loop and the web pin."""
