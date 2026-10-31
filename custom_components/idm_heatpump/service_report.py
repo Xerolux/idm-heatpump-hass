@@ -36,19 +36,23 @@ _FAULT_KEYS = (
 )
 
 
-def _finite(value: Any) -> float | None:
+def _finite(value: Any, key: str | None = None, unused: frozenset[str] = frozenset()) -> float | None:
     """Exclude unavailable sentinels and nonnumeric controller values."""
+    if key is not None and key in unused:
+        return None
     if isinstance(value, bool):
         return None
     try:
         number = float(value)
     except (TypeError, ValueError):
         return None
-    return number if math.isfinite(number) and number not in (-1.0, 65535.0) else None
+    return number if math.isfinite(number) and number not in (-1.0, 65535.0, 6553.5) else None
 
 
-def _fault_reading(value: Any) -> float | bool | None:
-    return value if isinstance(value, bool) else _finite(value)
+def _fault_reading(value: Any, key: str | None = None, unused: frozenset[str] = frozenset()) -> float | bool | None:
+    if key is not None and key in unused:
+        return None
+    return value if isinstance(value, bool) else _finite(value, key, unused)
 
 
 def build_service_report(coordinator: Any, versions: Any) -> dict[str, Any]:
@@ -99,8 +103,16 @@ def build_service_report(coordinator: Any, versions: Any) -> dict[str, Any]:
         "unavailable_health_checks": [key for key, active in checks.items() if active is None],
         "operation": operation,
         "energy_kwh": energy,
-        "temperatures_c": {key: _finite(data[key]) for key in _TEMPERATURE_KEYS if key in data},
-        "fault_register_readings": {key: _fault_reading(data[key]) for key in _FAULT_KEYS if key in data},
+        "temperatures_c": {
+            key: _finite(data[key], key, getattr(coordinator, "unused_registers", frozenset()))
+            for key in _TEMPERATURE_KEYS
+            if key in data
+        },
+        "fault_register_readings": {
+            key: _fault_reading(data[key], key, getattr(coordinator, "unused_registers", frozenset()))
+            for key in _FAULT_KEYS
+            if key in data
+        },
         "unsupported_registers": sorted(coordinator.unsupported_registers),
         "writes_performed_by_report": False,
     }

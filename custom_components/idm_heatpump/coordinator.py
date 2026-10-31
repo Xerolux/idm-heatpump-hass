@@ -875,7 +875,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _effective_sentinels_of(self, register_name: str) -> tuple[int | float | str, ...]:
         """Return the register's effective sentinel set, empty when unknown."""
         register = self._register_by_name.get(register_name)
-        if register is None and self._registers:
+        if register is None and not self._register_by_name and self._registers:
             register = next((reg for reg in self._registers if reg.name == register_name), None)
         sentinels = getattr(register, "effective_sentinel_values", None)
         if sentinels is None:
@@ -1069,7 +1069,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if value is None:
             return True
         register = self._register_by_name.get(register_name)
-        if register is None and self._registers:
+        if register is None and not self._register_by_name and self._registers:
             # Fallback for code paths that mutate _registers directly (e.g. tests)
             register = next((reg for reg in self._registers if reg.name == register_name), None)
         sentinel_values = getattr(register, "effective_sentinel_values", None)
@@ -1677,6 +1677,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             modbus_family is not None and web_model_family is not None and modbus_family != web_model_family
         )
         model_info_changed = False
+        override_active = False
+        if self.config_entry is not None:
+            from .model_resolution import resolved_model_override
+
+            override_active = bool(
+                resolved_model_override(self.config_entry.options) or resolved_model_override(self.config_entry.data)
+            )
+
         if web_model_name and not model_conflicts:
             self._model_name = web_model_name
             # Keep model_info consistent so future conflict checks and
@@ -1698,8 +1706,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         elif web_model_name:
             # Web and Modbus disagree. Web evidence is definitive when the
             # firmware string carries a NAV10 prefix: the nav10 web variant
-            # can only connect to a Navigator 10 controller.
-            if _firmware_indicates_nav10(web_supplement.software_version):
+            # can only connect to a Navigator 10 controller. An explicit user
+            # override in options or data must not be reversed (#M8).
+            if not override_active and _firmware_indicates_nav10(web_supplement.software_version):
                 _LOGGER.info(
                     "Correcting Modbus-detected model %s to %s based on web firmware string %s",
                     getattr(self._model_info, "model_name", None) or self._model_name,
@@ -1759,21 +1768,24 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Re-read live coordinator data after the await above. A concurrent
         # Modbus poll may have replaced self.data while the web call was in
         # flight; merging into a stale snapshot would drop those register values.
-        live_data = cast(dict[str, Any] | None, getattr(self, "data", None))
-        if live_data is not None:
-            merged = self._apply_web_not_present_fallback({**live_data, **self._web_metadata_data()})
-            if self.update_interval is not None:
+        if self.update_interval is not None:
+            live_data = cast(dict[str, Any] | None, getattr(self, "data", None))
+            if live_data is not None:
+                merged = self._apply_web_not_present_fallback({**live_data, **self._web_metadata_data()})
                 self._unused_registers = {
                     reg_name for reg_name, value in merged.items() if self.is_register_unused(reg_name, value)
                 }
-            self.data = merged
-        if self.update_interval is None:
+                self.data = merged
+        else:
             # Web-only operation: the web snapshot is the sole data source, so
             # the register bridge replaces (not merges into) the snapshot -
             # values that disappeared from the web must disappear here too.
             bridged = self._web_register_bridge_data()
-            if bridged or self.data is None:
-                self.data = {**self._web_metadata_data(), **bridged}
+            new_data = {**self._web_metadata_data(), **bridged}
+            self._unused_registers = {
+                reg_name for reg_name, value in new_data.items() if self.is_register_unused(reg_name, value)
+            }
+            self.data = new_data
         self.async_update_listeners()
 
     def _persist_web_detection(self, supplement: IdmWebSupplement, model_conflicts: bool) -> None:

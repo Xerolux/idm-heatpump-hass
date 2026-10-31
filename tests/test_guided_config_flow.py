@@ -207,6 +207,48 @@ async def test_weather_requires_entity_and_comfort_windows_are_validated() -> No
     result = await flow.async_step_guided_detail({CONF_COMFORT_WINDOWS: "a,06:00,09:00,21\na,08:00,10:00,22"})
     assert result["errors"] == {CONF_COMFORT_WINDOWS: "invalid_comfort_windows"}
 
+    # AI advisor guided detail with invalid Ollama URL triggers AdvisorError form
+    flow = _options_flow()
+    await flow.async_step_init()
+    await flow.async_step_guided_mode({CONF_SETUP_LEVEL: "expert"})
+    await flow.async_step_guided_choose({"selected_features": ["ai_advisor"]})
+    assert (await flow.async_step_guided_toggle({"ai_advisor": True}))["step_id"] == "guided_detail"
+    result = await flow.async_step_guided_detail(
+        {
+            "ai_unverified_text": True,
+            "ai_provider": "ollama",
+            "ai_url": "ftp://bad-url",
+            "ai_openai_key": "-",
+        }
+    )
+    assert "base" in result["errors"]
+
+    # AI advisor with valid settings and cloud validation
+    result = await flow.async_step_guided_detail(
+        {
+            "ai_unverified_text": True,
+            "ai_provider": "ha_task",
+            "ai_cloud_consent": True,
+            "ai_task_entity": "ai_task.test",
+            "ai_api_key": "-",
+        }
+    )
+    assert result["step_id"] == "guided_review"
+
+    # AI advisor without unverified text skips validation
+    flow = _options_flow()
+    await flow.async_step_init()
+    await flow.async_step_guided_mode({CONF_SETUP_LEVEL: "expert"})
+    await flow.async_step_guided_choose({"selected_features": ["ai_advisor"]})
+    assert (await flow.async_step_guided_toggle({"ai_advisor": True}))["step_id"] == "guided_detail"
+    result = await flow.async_step_guided_detail(
+        {
+            "ai_unverified_text": False,
+            "ai_provider": "ollama",
+        }
+    )
+    assert result["step_id"] == "guided_review"
+
 
 @pytest.mark.parametrize("level", ["standard", "advanced", "expert"])
 async def test_every_level_can_enable_every_switch(level: str) -> None:

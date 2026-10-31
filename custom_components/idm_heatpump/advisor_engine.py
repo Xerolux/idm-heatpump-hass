@@ -406,11 +406,14 @@ class AdvisorEngine:
         if starts is not None:
             self._analytics.observe_metric("compressor_starts", starts, current, mode="max", outdoor=outdoor)
         if analysis is not None:
-            share = _number(analysis.operating_share("dhw"))
-            if share is not None and share > 0:
-                self._analytics.observe_metric(
-                    "dhw_charge_minutes", share / 100.0 * 1440.0, current, mode="max", outdoor=outdoor
-                )
+            dhw_today_fn = getattr(analysis, "dhw_minutes_today", None)
+            if callable(dhw_today_fn):
+                dhw_mins = _number(dhw_today_fn(current))
+            else:
+                share = _number(analysis.operating_share("dhw"))
+                dhw_mins = (share / 100.0 * 1440.0) if share is not None else None
+            if dhw_mins is not None and dhw_mins > 0:
+                self._analytics.observe_metric("dhw_charge_minutes", dhw_mins, current, mode="max", outdoor=outdoor)
 
         self._compressor_on = compressor_on
         self._last_sample_at = current
@@ -567,6 +570,8 @@ class AdvisorEngine:
             key: self._analytics.metric_today_samples(key, current) for key in (f"{metric}:heating", f"{metric}:dhw")
         }
         dominant = max(samples, key=lambda key: samples[key])
+        if samples[dominant] == 0:
+            return self._analytics.metric_baseline(metric, current)
         if samples[dominant] < _ANOMALY_MIN_TODAY_SAMPLES:
             return None
         return self._analytics.metric_baseline(dominant, current)
@@ -915,7 +920,9 @@ class AdvisorEngine:
             indoor = room if room is not None else 21.0
             deltas = [indoor - temperature for _at, temperature in self._weather_hours[:24]]
             if deltas:
-                plan["predicted_heat_demand_kwh"] = round(heat_loss / 1000.0 * (sum(deltas) / len(deltas)) * 24.0, 1)
+                plan["predicted_heat_demand_kwh"] = max(
+                    0.0, round(heat_loss / 1000.0 * (sum(deltas) / len(deltas)) * 24.0, 1)
+                )
         if self._pv_hours:
             plan["expected_pv_kwh"] = round(sum(value for _at, value in self._pv_hours[:24]), 2)
         if self._price_hours:
@@ -928,9 +935,11 @@ class AdvisorEngine:
                 }
         if self._dhw_window is not None and "expensive_hours" in plan:
             dhw_start = datetime.fromisoformat(self._dhw_window["start"])
+            dhw_hours = int(self._dhw_window.get("hours", _WINDOW_HOURS))
+            dhw_end = dhw_start + timedelta(hours=dhw_hours)
             avoid_start = datetime.fromisoformat(plan["expensive_hours"]["start"])
             avoid_end = avoid_start + timedelta(hours=plan["expensive_hours"]["hours"])
-            if avoid_start <= dhw_start < avoid_end:
+            if max(avoid_start, dhw_start) < min(avoid_end, dhw_end):
                 plan["dhw_window_conflicts_with_expensive_hours"] = True
                 plan_quality = self._advisor.usable_fraction
                 self._advisor.submit(
@@ -1007,11 +1016,11 @@ class AdvisorEngine:
         }
         components: dict[str, Any] = {}
         if self._analytics.metric_baseline("heat_sink_flow_rate") is not None:
-            penalty = (
-                30.0
-                if "heat_circle_flow_below_baseline" in reasons
-                else (12.0 if "spread_above_baseline" in reasons else 0.0)
-            )
+            penalty = 0.0
+            if "heat_circle_flow_below_baseline" in reasons:
+                penalty += 30.0
+            if "spread_above_baseline" in reasons:
+                penalty += 12.0
             components["hydraulics"] = round(max(0.0, 100.0 - penalty), 0)
         if self._analytics.metric_baseline("compressor_starts") is not None:
             penalty = 30.0 if "compressor_starts_above_baseline" in reasons else 0.0

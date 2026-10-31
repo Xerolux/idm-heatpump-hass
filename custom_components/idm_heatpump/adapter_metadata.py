@@ -13,8 +13,7 @@ from typing import Any
 
 from homeassistant.components.number import NumberDeviceClass
 from homeassistant.components.sensor import SensorDeviceClass
-from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
-from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfPower, UnitOfTemperature
 
 from idm_heatpump import DataType, RegisterDef
 

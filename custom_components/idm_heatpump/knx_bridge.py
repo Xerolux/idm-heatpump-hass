@@ -172,6 +172,7 @@ class KnxBridge:
         self._last_sent_at: dict[str, float] = {}
         self._last_full_send: float = 0.0
         self._queue: asyncio.Queue[str] = asyncio.Queue()
+        self._queued: set[str] = set()
         self._unsubscribers: list[Callable[[], None]] = []
         self._worker: asyncio.Task[None] | None = None
         self._registration_worker: asyncio.Task[None] | None = None
@@ -317,6 +318,7 @@ class KnxBridge:
         write_tasks = list(self._write_tasks.values())
         self._write_tasks.clear()
         self._pending_writes.clear()
+        self._queued.clear()
         for task in write_tasks:
             task.cancel()
         if write_tasks:
@@ -414,12 +416,15 @@ class KnxBridge:
                 if abs(float(payload) - previous) <= threshold:
                     continue
             self._last_sent[register] = float(payload)
-            self._queue.put_nowait(register)
+            if register not in self._queued:
+                self._queued.add(register)
+                self._queue.put_nowait(register)
 
     async def _async_send_worker(self) -> None:
         """Drain the send queue, pacing telegrams so the bus stays usable."""
         while True:
             register = await self._queue.get()
+            self._queued.discard(register)
             obj = self._objects.get(register)
             address = self._addresses.get(register)
             if obj is None or address is None:
@@ -489,7 +494,7 @@ class KnxBridge:
             sent_at is not None
             and last is not None
             and time.monotonic() - sent_at < ECHO_SUPPRESSION_SECONDS
-            and abs(float(value) - last) <= self._config.tolerance
+            and abs(float(value) - last) <= (self._config.tolerance if _is_float_dpt(obj.dpt) else 0.0)
         ):
             # Our own value coming back around; writing it again would
             # bounce between the bus and the controller.

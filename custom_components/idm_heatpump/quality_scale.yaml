@@ -52,7 +52,7 @@ rules:
     comment: >
       manifest.json declares the exact direct transport pair
       modbus-connection>=4.12.4 and tmodbus[async-serial]>=0.6.2, followed by
-      the pinned idm-heatpump-api[web]==2.14.5b2 device/web library. The injected
+      the pinned idm-heatpump-api[web]==2.16.0b2 device/web library. The injected
       transport path carries no pymodbus dependency.
 
   docs-actions:

@@ -58,38 +58,40 @@ async def async_setup_entry(
 
     entities.extend(web_climate_entities(coordinator))
 
-    # Find heating circuits
-    circuits = set()
-    for reg in coordinator.active_registers:
-        match = _HC_REGEX.search(reg.name)
-        if match:
-            circuits.add(match.group(1))
+    if getattr(coordinator, "update_interval", True) is not None:
+        # Find heating circuits
+        circuits = set()
+        for reg in coordinator.active_registers:
+            match = _HC_REGEX.search(reg.name)
+            if match:
+                circuits.add(match.group(1))
 
-    for circuit in circuits:
-        if circuit in configured_differential_circuits(coordinator):
-            continue
-        mode_reg = coordinator.get_register(f"hc_{circuit}_mode")
-        target_reg = coordinator.get_register(f"hc_{circuit}_room_setpoint_heat_normal")
-        current_reg = coordinator.get_register(f"hc_{circuit}_room_temp")
+        differential = configured_differential_circuits(coordinator)
+        for circuit in circuits:
+            if circuit in differential:
+                continue
+            mode_reg = coordinator.get_register(f"hc_{circuit}_mode")
+            target_reg = coordinator.get_register(f"hc_{circuit}_room_setpoint_heat_normal")
+            current_reg = coordinator.get_register(f"hc_{circuit}_room_temp")
 
-        if mode_reg and target_reg:
-            entities.append(IdmHeatingCircuitClimate(coordinator, circuit, mode_reg, target_reg, current_reg))
+            if mode_reg and target_reg:
+                entities.append(IdmHeatingCircuitClimate(coordinator, circuit, mode_reg, target_reg, current_reg))
 
-    # Find zone rooms
-    zone_rooms = set()
-    for reg in coordinator.active_registers:
-        match = _ZM_ROOM_REGEX.search(reg.name)
-        if match:
-            zone_rooms.add((int(match.group(1)), int(match.group(2))))
+        # Find zone rooms
+        zone_rooms = set()
+        for reg in coordinator.active_registers:
+            match = _ZM_ROOM_REGEX.search(reg.name)
+            if match:
+                zone_rooms.add((int(match.group(1)), int(match.group(2))))
 
-    for zone, room in zone_rooms:
-        prefix = f"zm{zone}_room{room}"
-        mode_reg = coordinator.get_register(f"{prefix}_mode")
-        target_reg = coordinator.get_register(f"{prefix}_setpoint")
-        current_reg = coordinator.get_register(f"{prefix}_temp")
+        for zone, room in zone_rooms:
+            prefix = f"zm{zone}_room{room}"
+            mode_reg = coordinator.get_register(f"{prefix}_mode")
+            target_reg = coordinator.get_register(f"{prefix}_setpoint")
+            current_reg = coordinator.get_register(f"{prefix}_temp")
 
-        if mode_reg and target_reg and current_reg:
-            entities.append(IdmZoneRoomClimate(coordinator, zone, room, mode_reg, target_reg, current_reg))
+            if mode_reg and target_reg and current_reg:
+                entities.append(IdmZoneRoomClimate(coordinator, zone, room, mode_reg, target_reg, current_reg))
 
     if entities:
         async_add_entities(entities)
@@ -288,7 +290,7 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
         if active_mode is not None and self._active_mode_register not in self.coordinator.unused_registers:
             try:
                 active = int(active_mode)
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 return HVACAction.IDLE
             if active == _CIRCUIT_ACTIVE_HEATING:
                 return HVACAction.HEATING
@@ -303,7 +305,7 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
         if status_val is not None:
             try:
                 status = HeatPumpStatus(int(status_val))
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 return HVACAction.IDLE
             if HeatPumpStatus.HEATING in status:
                 return HVACAction.HEATING

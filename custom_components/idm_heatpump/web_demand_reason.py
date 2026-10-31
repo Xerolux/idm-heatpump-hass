@@ -59,7 +59,8 @@ def demand_reason_label(detail: IdmWebHomeDetail) -> str | None:
         return None
     if len(set(active)) > 1:
         return REASON_LABELS["more_demands"]
-    return REASON_LABELS[active[0]]
+    slug = str(active[0])
+    return REASON_LABELS.get(slug, slug)
 
 
 async def async_read_home_detail(client: object) -> IdmWebHomeDetail | None:

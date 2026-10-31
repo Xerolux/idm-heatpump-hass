@@ -216,8 +216,16 @@ class EnergyManager:
         if not self._ready() or not self._coordinator.last_update_success:
             return False
         data = self._coordinator.data or {}
+        unused: frozenset[str] = getattr(self._coordinator, "unused_registers", frozenset())
+        if "dhw_temp_top" in unused or "system_mode" in unused:
+            return False
         temperature = _finite_number(data.get("dhw_temp_top"))
-        if temperature is None or temperature > self._config.target_temperature - _REHEAT_HYSTERESIS_C:
+        if (
+            temperature is None
+            or temperature == -1.0
+            or temperature == -1
+            or temperature > self._config.target_temperature - _REHEAT_HYSTERESIS_C
+        ):
             return False
         if data.get("system_mode") not in (SystemMode.AUTOMATIC, SystemMode.HOT_WATER_ONLY):
             return False
@@ -233,8 +241,12 @@ class EnergyManager:
             )
         except DhwBoostError as err:
             _LOGGER.warning("IDM energy manager could not start DHW boost: %s", err)
+            self._waiting_for_end = False
+            await self._async_save()
             return False
         if not manager.active:
+            self._waiting_for_end = False
+            await self._async_save()
             return False
         _LOGGER.info("IDM energy manager started DHW boost using %.2f kW surplus", self._surplus_kw() or 0.0)
         return True

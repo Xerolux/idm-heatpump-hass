@@ -122,6 +122,8 @@ class OperationAnalysis:
         self._compressor_reconciled = False
         self._defrost_reconciled = False
         self._mode_reconciled = False
+        self._daily_dhw: dict[str, float] = {}
+        self._last_save_schedule: float | None = None
 
     @property
     def supports_compressor(self) -> bool:
@@ -186,6 +188,13 @@ class OperationAnalysis:
         if isinstance(stored_alarm, bool):
             self._alarm_on = stored_alarm
 
+        stored_dhw = stored.get("daily_dhw")
+        if isinstance(stored_dhw, dict):
+            for day, val in stored_dhw.items():
+                num = _finite_non_negative(val)
+                if num is not None:
+                    self._daily_dhw[str(day)] = num
+
         self._prune_events(_utcnow())
 
     async def async_save(self) -> None:
@@ -215,6 +224,7 @@ class OperationAnalysis:
             "compressor_on": self._compressor_on,
             "defrost_on": self._defrost_on,
             "alarm_on": self._alarm_on,
+            "daily_dhw": dict(self._daily_dhw),
         }
 
     @staticmethod
@@ -248,6 +258,8 @@ class OperationAnalysis:
             return None
         value = data.get("hp_operating_mode")
         if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return None
+        if not math.isfinite(value):
             return None
         numeric = int(value)
         return numeric if numeric in {0, 1, 2, 4, 8} else None
@@ -356,11 +368,16 @@ class OperationAnalysis:
             return False
         name = _MODE_NAMES[self._last_mode]
         self.mode_durations[name] += elapsed
+        if self._last_mode == 4:
+            local_day = dt_util.as_local(observed_at).date().isoformat()
+            self._daily_dhw[local_day] = self._daily_dhw.get(local_day, 0.0) + elapsed
         return elapsed > 0
 
     def _prune_events(self, now: datetime) -> bool:
         """Keep enough event history for day and rolling-window calculations."""
         cutoff = now - _EVENT_RETENTION
+        cutoff_date = (dt_util.as_local(now) - _EVENT_RETENTION).date().isoformat()
+        self._daily_dhw = {day: val for day, val in self._daily_dhw.items() if day >= cutoff_date}
         before = (len(self.compressor_start_events), len(self.defrost_start_events), len(self.alarm_start_events))
         self.compressor_start_events = [event for event in self.compressor_start_events if event >= cutoff]
         self.defrost_start_events = [event for event in self.defrost_start_events if event >= cutoff]
@@ -396,6 +413,11 @@ class OperationAnalysis:
     def defrost_starts_today(self, now: datetime | None = None) -> int:
         current = (now or _utcnow()).astimezone(UTC)
         return self._count_today(self.defrost_start_events, current)
+
+    def dhw_minutes_today(self, now: datetime | None = None) -> float:
+        current = (now or _utcnow()).astimezone(UTC)
+        local_day = dt_util.as_local(current).date().isoformat()
+        return round(self._daily_dhw.get(local_day, 0.0) / 60.0, 1)
 
     def current_cycle_minutes(self, now: datetime | None = None) -> float | None:
         if not self._compressor_reconciled:

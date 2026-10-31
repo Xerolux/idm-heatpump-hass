@@ -30,7 +30,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
+from homeassistant.const import EntityCategory
 
 from idm_heatpump import (
     MODEL_NAVIGATOR_10,

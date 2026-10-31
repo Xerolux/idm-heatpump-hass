@@ -237,7 +237,9 @@ class IdmOperationSensor(IdmCoordinatorEntityBase, SensorEntity):
             "recording_scope": "observed_since_feature_activation",
             "compressor_counting_method": "aggregate_any_compressor_off_to_on",
         }
-        if self._definition.key.startswith("analysis_compressor"):
+        if self._definition.key.startswith("analysis_compressor") or self._definition.key.startswith(
+            "analysis_average_cycle"
+        ):
             attributes["completed_cycles_used_for_average"] = len(self._analysis.completed_cycle_durations)
         return attributes
 
@@ -267,6 +269,7 @@ class IdmShortCycleBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
         self.entity_description = BinarySensorEntityDescription(
             key="analysis_last_cycle_short",
             name="Letzter Verdichtertakt zu kurz",
+            translation_key="analysis_last_cycle_short",
             icon="mdi:timer-alert-outline",
             device_class=BinarySensorDeviceClass.PROBLEM,
         )

@@ -53,40 +53,41 @@ async def async_setup_entry(
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
 
     entities: list[ButtonEntity] = []
-    # The acknowledge is model-specific — holding register 1999 on the shared
-    # 2.0/10 family, coil c3000 on Navigator 1.0/1.7 — and only the detected
-    # map's own register is used. The former synthetic fallback wrote 1999
-    # even on models where that address is undocumented, so a map without an
-    # acknowledge gets no button at all instead of a wrong one (issue #319).
-    acknowledge_register = coordinator.get_register("error_acknowledge")
-    if isinstance(acknowledge_register, RegisterDef) and acknowledge_register.writable:
-        entities.append(IdmAcknowledgeErrorsButton(coordinator, acknowledge_register))
-    # Navigator 1.0/1.7 only: c3003 (Vorrangladung anfordern) is a momentary
-    # command coil, so it is a button writing ON exactly once — a switch would
-    # also write 0, which the coil must never receive (issue #319). Gated on
-    # writability, the entity appears together with the idm-heatpump-api map
-    # that makes the coil writable and write-only.
-    priority_register = coordinator.get_register("demand_dhw_17")
-    if isinstance(priority_register, RegisterDef) and priority_register.writable:
-        entities.append(IdmDhwPriorityChargeButton(coordinator, priority_register))
-    mode_register = coordinator.get_register("system_mode")
-    setpoint_register = coordinator.get_register("dhw_setpoint")
-    temperature_register = coordinator.get_register("dhw_temp_top")
-    if (
-        entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART
-        and isinstance(mode_register, RegisterDef)
-        and mode_register.writable
-        and isinstance(setpoint_register, RegisterDef)
-        and setpoint_register.writable
-        and isinstance(temperature_register, RegisterDef)
-    ):
-        boost = await async_get_dhw_boost_manager(coordinator)
-        entities.extend(
-            [
-                IdmDhwBoostStartButton(coordinator, boost),
-                IdmDhwBoostCancelButton(coordinator, boost),
-            ]
-        )
+    if getattr(coordinator, "update_interval", True) is not None:
+        # The acknowledge is model-specific — holding register 1999 on the shared
+        # 2.0/10 family, coil c3000 on Navigator 1.0/1.7 — and only the detected
+        # map's own register is used. The former synthetic fallback wrote 1999
+        # even on models where that address is undocumented, so a map without an
+        # acknowledge gets no button at all instead of a wrong one (issue #319).
+        acknowledge_register = coordinator.get_register("error_acknowledge")
+        if isinstance(acknowledge_register, RegisterDef) and acknowledge_register.writable:
+            entities.append(IdmAcknowledgeErrorsButton(coordinator, acknowledge_register))
+        # Navigator 1.0/1.7 only: c3003 (Vorrangladung anfordern) is a momentary
+        # command coil, so it is a button writing ON exactly once — a switch would
+        # also write 0, which the coil must never receive (issue #319). Gated on
+        # writability, the entity appears together with the idm-heatpump-api map
+        # that makes the coil writable and write-only.
+        priority_register = coordinator.get_register("demand_dhw_17")
+        if isinstance(priority_register, RegisterDef) and priority_register.writable:
+            entities.append(IdmDhwPriorityChargeButton(coordinator, priority_register))
+        mode_register = coordinator.get_register("system_mode")
+        setpoint_register = coordinator.get_register("dhw_setpoint")
+        temperature_register = coordinator.get_register("dhw_temp_top")
+        if (
+            entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART
+            and isinstance(mode_register, RegisterDef)
+            and mode_register.writable
+            and isinstance(setpoint_register, RegisterDef)
+            and setpoint_register.writable
+            and isinstance(temperature_register, RegisterDef)
+        ):
+            boost = await async_get_dhw_boost_manager(coordinator)
+            entities.extend(
+                [
+                    IdmDhwBoostStartButton(coordinator, boost),
+                    IdmDhwBoostCancelButton(coordinator, boost),
+                ]
+            )
     if entry.options.get(CONF_AI_ADVISOR, False) is True:
         entities.extend(IdmAiReportButton(coordinator, kind) for kind in REPORT_TYPES)
     entities.extend(web_control_button_entities(coordinator))

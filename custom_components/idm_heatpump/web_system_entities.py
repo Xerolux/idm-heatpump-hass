@@ -22,8 +22,8 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
+from homeassistant.const import EntityCategory
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 from idm_heatpump import (
     IdmWebEnergyflow,
@@ -45,6 +45,11 @@ def _nav10_supplement(coordinator: IdmCoordinator) -> IdmWebSupplement | None:
     if supplement is None or supplement.web_variant != "nav10":
         return None
     return supplement
+
+
+def _web_frame_live(coordinator: IdmCoordinator) -> bool:
+    """Return whether the web supplement is currently answering."""
+    return getattr(coordinator, "web_alive", True) is not False
 
 
 def _frame(coordinator: IdmCoordinator, attr: str) -> Any | None:
@@ -132,7 +137,7 @@ class IdmWebPowerConsumptionSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and _performance(self.coordinator) is not None
+        return _web_frame_live(self.coordinator) and _performance(self.coordinator) is not None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -171,7 +176,7 @@ class IdmWebEnvironmentPowerSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and _performance(self.coordinator) is not None
+        return _web_frame_live(self.coordinator) and _performance(self.coordinator) is not None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -223,7 +228,11 @@ class IdmWebEnergyflowGridSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and (flow := _energyflow(self.coordinator)) is not None and flow.grid_power is not None
+        return (
+            _web_frame_live(self.coordinator)
+            and (flow := _energyflow(self.coordinator)) is not None
+            and flow.grid_power is not None
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -257,7 +266,11 @@ class IdmWebEnergyflowPvSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and (flow := _energyflow(self.coordinator)) is not None and flow.pv_power is not None
+        return (
+            _web_frame_live(self.coordinator)
+            and (flow := _energyflow(self.coordinator)) is not None
+            and flow.pv_power is not None
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -311,7 +324,7 @@ class IdmWebWeatherForecastSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and _weather(self.coordinator) is not None
+        return _web_frame_live(self.coordinator) and _weather(self.coordinator) is not None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -346,7 +359,7 @@ class IdmWebHeatingRodBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity)
 
     @property
     def available(self) -> bool:
-        return super().available and _performance(self.coordinator) is not None
+        return _web_frame_live(self.coordinator) and _performance(self.coordinator) is not None
 
 
 class IdmWebIonActiveBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
@@ -371,7 +384,7 @@ class IdmWebIonActiveBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and _ion(self.coordinator) is not None
+        return _web_frame_live(self.coordinator) and _ion(self.coordinator) is not None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

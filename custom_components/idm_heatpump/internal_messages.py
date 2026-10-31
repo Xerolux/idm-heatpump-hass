@@ -118,11 +118,11 @@ _INTERNAL_MESSAGE_RANGES: tuple[tuple[range, str], ...] = (
 
 
 def _message_code(code: float | str | None) -> int | None:
-    if code is None:
+    if code is None or isinstance(code, bool):
         return None
     try:
         return int(code)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
 
 

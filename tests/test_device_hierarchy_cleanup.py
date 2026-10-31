@@ -751,3 +751,35 @@ def test_web_sensor_cleanup_removes_heatpump_model_and_nav20_stats_on_nav10() ->
         "sensor.web_model",
         "sensor.web_compressor",
     }
+
+
+def test_model_cleanup_keeps_water_heater_on_navigator_17_with_dhw_temp() -> None:
+    """Navigator 1.7 provides dhw_temp instead of dhw_temp_top; water_heater stays."""
+    coordinator = _model_coordinator(("dhw_temp", "dhw_setpoint", "outdoor_temp"))
+    entities = [
+        _entity("entry_dhw_temp", "sensor.dhw_temp"),
+        _entity("entry_water_heater", "water_heater.warmwasser"),
+        _entity("entry_dhw_priority_charge", "button.dhw_priority"),
+        _entity("entry_battery_soc_set", "number.battery_soc_set"),
+    ]
+
+    registry = _run_model_cleanup(coordinator, entities)
+
+    removed = {call.args[0] for call in registry.async_remove.call_args_list}
+    assert "water_heater.warmwasser" not in removed
+    assert "button.dhw_priority" in removed  # demand_dhw_17 not in map
+    assert "number.battery_soc_set" in removed  # battery_soc not in map
+
+
+def test_model_cleanup_skipped_in_web_only_mode() -> None:
+    """When running web_only, Modbus entities must not be wiped."""
+    coordinator = _model_coordinator(("outdoor_temp",))
+    coordinator.update_interval = None
+    entities = [
+        _entity("entry_water_heater", "water_heater.warmwasser"),
+        _entity("entry_dhw_temp_top", "sensor.dhw_temp_top"),
+    ]
+
+    registry = _run_model_cleanup(coordinator, entities)
+
+    assert not registry.async_remove.called

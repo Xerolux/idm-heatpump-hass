@@ -17,6 +17,7 @@ from typing import Any, Final
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .cop_plausibility import cop_interval_is_plausible
@@ -65,7 +66,7 @@ def _utcnow() -> datetime:
 
 
 def _day_key(now: datetime) -> str:
-    return now.astimezone(UTC).date().isoformat()
+    return dt_util.as_local(now).date().isoformat()
 
 
 def _number(value: Any) -> float | None:
@@ -234,9 +235,17 @@ class _OnlineRegression:
         if not isinstance(value, dict):
             return cls()
         stats = cls()
-        for name in ("n", "w", "sx", "sy", "sxx", "sxy"):
+        n = _number(value.get("n"))
+        w = _number(value.get("w"))
+        sxx = _number(value.get("sxx"))
+        if n is None or n < 0 or w is None or w < 0 or sxx is None or sxx < 0:
+            return cls()
+        stats.n = int(n)
+        stats.w = float(w)
+        stats.sxx = float(sxx)
+        for name in ("sx", "sy", "sxy"):
             numeric = _number(value.get(name))
-            if numeric is None or numeric < 0:
+            if numeric is None:
                 return cls()
             setattr(stats, name, numeric)
         if stats.n == 0:
@@ -654,33 +663,61 @@ class AdvisorAnalytics:
             return
         if not isinstance(stored, dict):
             return
+
+        def _valid_num_list(val: Any, expected_len: int) -> list[float] | None:
+            if not isinstance(val, list) or len(val) != expected_len:
+                return None
+            res = []
+            for item in val:
+                num = _number(item)
+                if num is None:
+                    return None
+                res.append(num)
+            return res
+
         daily = stored.get("daily")
         if isinstance(daily, dict):
             self._daily = {
-                str(key): {str(day): list(values) for day, values in days.items() if isinstance(values, list)}
+                str(key): {
+                    str(day): valid_vals
+                    for day, values in days.items()
+                    if (valid_vals := _valid_num_list(values, 2)) is not None
+                }
                 for key, days in daily.items()
                 if isinstance(days, dict)
             }
         day_outdoor = stored.get("day_outdoor")
         if isinstance(day_outdoor, dict):
             self._day_outdoor = {
-                str(day): list(values) for day, values in day_outdoor.items() if isinstance(values, list)
+                str(day): valid_vals
+                for day, values in day_outdoor.items()
+                if (valid_vals := _valid_num_list(values, 2)) is not None
             }
         cop_map = stored.get("cop_map")
         if isinstance(cop_map, dict):
             self._cop_map = {
-                str(key): list(values)
+                str(key): valid_vals
                 for key, values in cop_map.items()
-                if isinstance(values, list) and len(values) == 3
+                if (valid_vals := _valid_num_list(values, 3)) is not None
             }
         cop_days = stored.get("cop_days")
         if isinstance(cop_days, dict):
-            self._cop_days = {str(day): list(values) for day, values in cop_days.items() if isinstance(values, list)}
+            self._cop_days = {
+                str(day): valid_vals
+                for day, values in cop_days.items()
+                if (valid_vals := _valid_num_list(values, 2)) is not None
+            }
         for attr, key in ((self._cop_days_heating, "cop_days_heating"), (self._cop_days_dhw, "cop_days_dhw")):
             domain_days = stored.get(key)
             if isinstance(domain_days, dict):
                 attr.clear()
-                attr.update({str(day): list(values) for day, values in domain_days.items() if isinstance(values, list)})
+                attr.update(
+                    {
+                        str(day): valid_vals
+                        for day, values in domain_days.items()
+                        if (valid_vals := _valid_num_list(values, 2)) is not None
+                    }
+                )
         self._heat_fit = _OnlineRegression.from_dict(stored.get("heat_fit"))
         self._flow_fit = _OnlineRegression.from_dict(stored.get("flow_fit"))
         count = stored.get("cooldown_count")

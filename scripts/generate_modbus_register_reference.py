@@ -20,6 +20,7 @@ from idm_heatpump import (
 
 ROOT = Path(__file__).resolve().parents[1]
 DOC_PATH = ROOT / "docs" / "wiki" / "Modbus-Register.md"
+DE_DOC_PATH = ROOT / "docs" / "wiki" / "de" / "Modbus-Register.md"
 MANIFEST_PATH = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 NAMES_PATH = ROOT / "custom_components" / "idm_heatpump" / "adapter_names.py"
 
@@ -36,6 +37,21 @@ GROUPS = (
     (3000, 9999, "Navigator 10 extensions", "4000+"),
 )
 
+DE_GROUP_TITLES = {
+    "PV & Smart Grid": "PV & Smart Grid",
+    "System & heat pump": "System & Wärmepumpe",
+    "Cascade & bivalence": "Kaskade & Bivalenz",
+    "Heating circuits & demands": "Heizkreise & Anforderungen",
+    "Energy, solar, GLT & services": "Energie, Solar, GLT & Service",
+    "Zone modules": "Zonenmodule",
+    "Navigator 10 extensions": "Navigator-10-Erweiterungen",
+}
+
+TARGET_DOCUMENTS = (
+    (DOC_PATH, "en"),
+    (DE_DOC_PATH, "de"),
+)
+
 
 def _model_info(model_name: str) -> IdmModelInfo:
     return IdmModelInfo(
@@ -49,13 +65,13 @@ def _model_info(model_name: str) -> IdmModelInfo:
     )
 
 
-def _pinned_api_version() -> str:
-    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+def _pinned_api_version(manifest_path: Path = MANIFEST_PATH) -> str:
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     requirements = [item for item in manifest["requirements"] if item.startswith("idm-heatpump-api")]
     if len(requirements) != 1:
         raise RuntimeError("Expected exactly one idm-heatpump-api requirement")
     match = re.fullmatch(
-        r"idm-heatpump-api(?:\[web\])?==([0-9]+\.[0-9]+\.[0-9]+)",
+        r"idm-heatpump-api(?:\[web\])?==([0-9]+\.[0-9]+\.[0-9]+(?:(?:a|b|rc)[0-9]+)?)",
         requirements[0],
     )
     if match is None:
@@ -95,7 +111,7 @@ def _escape(value: object) -> str:
     return str(value).replace("|", "\\|").replace("\n", " ")
 
 
-def _access_label(register: RegisterDef) -> str:
+def _access_label(register: RegisterDef, *, lang: str = "en") -> str:
     write_class = register.write_class.value
     if write_class == "forbidden":
         return "R"
@@ -103,9 +119,10 @@ def _access_label(register: RegisterDef) -> str:
         return "RW · EEPROM"
     if write_class == "cyclic":
         ttl = int(register.cyclic_write_ttl or 0)
-        return f"RW · cyclic ≤ {ttl} s" if ttl else "RW · cyclic"
+        word = "zyklisch" if lang == "de" else "cyclic"
+        return f"RW · {word} ≤ {ttl} s" if ttl else f"RW · {word}"
     if write_class == "write_only":
-        return "W · write-only"
+        return "W · nur schreibend" if lang == "de" else "W · write-only"
     return "RW"
 
 
@@ -115,20 +132,95 @@ def _address_label(register: RegisterDef) -> str:
     return f"{register.address}–{register.address + register.size - 1}"
 
 
-def _notes(register: RegisterDef, navigator_10_only: set[str]) -> str:
+def _notes(register: RegisterDef, navigator_10_only: set[str], *, lang: str = "en") -> str:
     notes: list[str] = []
     if register.name in navigator_10_only:
         notes.append("Navigator 10")
     if register.enum_options:
         notes.append("Enum")
     if register.binary:
-        notes.append("Binary")
+        notes.append("Binär" if lang == "de" else "Binary")
     if not register.enabled_by_default:
-        notes.append("disabled by default")
+        notes.append("standardmäßig deaktiviert" if lang == "de" else "disabled by default")
     return ", ".join(notes) or "—"
 
 
-def _build_reference() -> str:
+def _intro_lines(
+    pinned_version: str,
+    total_count: int,
+    writable_count: int,
+    eeprom_count: int,
+    cyclic_count: int,
+    *,
+    lang: str,
+) -> list[str]:
+    if lang == "de":
+        return [
+            START_MARKER,
+            "## Vollständiger Registerkatalog",
+            "",
+            f"> Generiert aus `idm-heatpump-api[web]=={pinned_version}`. Bearbeite diesen Abschnitt nicht manuell.",
+            "",
+            (
+                f"Dieser maximale Katalog enthält **{total_count} logische Registerdefinitionen**: alle Heizkreise A–G, "
+                "zehn Zonenmodule mit jeweils acht Räumen sowie Solar-, ISC-, PV-, Kaskaden- und "
+                "Navigator-10-Erweiterungen. Die Integration wählt daraus nur die Teilmenge aus, die auf der "
+                "erkannten Installation unterstützt und aktiviert ist."
+            ),
+            "",
+            (
+                f"Von diesen Definitionen sind **{writable_count}** beschreibbar, **{eeprom_count}** "
+                f"EEPROM-empfindlich und **{cyclic_count}** erfordern zyklische Schreibzugriffe. `FLOAT`-Werte "
+                "belegen zwei Modbus-Wörter; die Tabelle zeigt dafür daher einen Adressbereich an. `R` bedeutet "
+                "nur lesend, `RW` lesend/schreibend und `W` nur schreibend."
+            ),
+            "",
+            (
+                "Die deutsche Beschreibung dient der Identifikation; der Registername in Codeform ist der "
+                "verbindliche Schlüssel, den die Integration verwendet. Die Verfügbarkeit kann je nach "
+                "Navigator-Modell und Firmware variieren."
+            ),
+            "",
+        ]
+    return [
+        START_MARKER,
+        "## Complete register catalog",
+        "",
+        f"> Generated from `idm-heatpump-api[web]=={pinned_version}`. Do not edit this section manually.",
+        "",
+        (
+            f"This maximal catalog contains **{total_count} logical register definitions**: all heating circuits A–G, "
+            "ten zone modules with eight rooms each, and Solar, ISC, PV, cascade and Navigator 10 extensions. "
+            "The integration selects only the subset supported and enabled on the detected installation."
+        ),
+        "",
+        (
+            f"Of these definitions, **{writable_count}** are writable, **{eeprom_count}** are EEPROM-sensitive "
+            f"and **{cyclic_count}** require cyclic writes. `FLOAT` values occupy two Modbus words; the table "
+            "therefore shows an address range for them. `R` means read-only, `RW` read/write and `W` write-only."
+        ),
+        "",
+        (
+            "The German description is intended for identification; the code-form register name is the "
+            "authoritative key used by the integration. Availability can vary by Navigator model and firmware."
+        ),
+        "",
+    ]
+
+
+def _table_header(*, lang: str) -> list[str]:
+    if lang == "de":
+        return [
+            "| Adresse(n) | Beschreibung (DE) | Registername | Typ | Einheit | Zugriff | Anmerkung |",
+            "|-------------|------------------|---------------|------|------|--------|------|",
+        ]
+    return [
+        "| Address(es) | Description (DE) | Register name | Type | Unit | Access | Note |",
+        "|-------------|------------------|---------------|------|------|--------|------|",
+    ]
+
+
+def _build_reference(lang: str = "en") -> str:
     pinned_version = _pinned_api_version()
     installed_version = distribution_version("idm-heatpump-api")
     if installed_version != pinned_version:
@@ -150,41 +242,25 @@ def _build_reference() -> str:
     eeprom_count = sum(item.eeprom_sensitive for item in ordered)
     cyclic_count = sum(item.cyclic_required for item in ordered)
 
-    lines = [
-        START_MARKER,
-        "## Complete register catalog",
-        "",
-        f"> Generated from `idm-heatpump-api[web]=={pinned_version}`. Do not edit this section manually.",
-        "",
-        (
-            f"This maximal catalog contains **{len(ordered)} logical register definitions**: all heating circuits A–G, "
-            "ten zone modules with eight rooms each, and Solar, ISC, PV, cascade and Navigator 10 extensions. "
-            "The integration selects only the subset supported and enabled on the detected installation."
-        ),
-        "",
-        (
-            f"Of these definitions, **{writable_count}** are writable, **{eeprom_count}** are EEPROM-sensitive "
-            f"and **{cyclic_count}** require cyclic writes. `FLOAT` values occupy two Modbus words; the table "
-            "therefore shows an address range for them. `R` means read-only, `RW` read/write and `W` write-only."
-        ),
-        "",
-        (
-            "The German description is intended for identification; the code-form register name is the "
-            "authoritative key used by the integration. Availability can vary by Navigator model and firmware."
-        ),
-        "",
-    ]
+    lines = _intro_lines(
+        pinned_version,
+        len(ordered),
+        writable_count,
+        eeprom_count,
+        cyclic_count,
+        lang=lang,
+    )
 
     for start, end, title, address_range in GROUPS:
         group_registers = [item for item in ordered if start <= item.address <= end]
         if not group_registers:
             continue
+        localized_title = DE_GROUP_TITLES[title] if lang == "de" else title
         lines.extend(
             [
-                f"### {address_range} · {title} ({len(group_registers)})",
+                f"### {address_range} · {localized_title} ({len(group_registers)})",
                 "",
-                "| Address(es) | Description (DE) | Register name | Type | Unit | Access | Note |",
-                "|-------------|------------------|---------------|------|------|--------|------|",
+                *_table_header(lang=lang),
             ]
         )
         for register in group_registers:
@@ -198,21 +274,21 @@ def _build_reference() -> str:
                         f"`{register.name}`",
                         register.datatype.value,
                         _escape(unit),
-                        _access_label(register),
-                        _notes(register, navigator_10_only),
+                        _access_label(register, lang=lang),
+                        _notes(register, navigator_10_only, lang=lang),
                     )
                 )
                 + " |"
             )
         lines.append("")
 
-    lines.extend(_navigator_17_section(pinned_version, display_name))
+    lines.extend(_navigator_17_section(pinned_version, display_name, lang=lang))
 
     lines.append(END_MARKER)
     return "\n".join(lines)
 
 
-def _navigator_17_section(pinned_version: str, display_name: object) -> list[str]:
+def _navigator_17_section(pinned_version: str, display_name: object, *, lang: str = "en") -> list[str]:
     """The separate 1.x protocol-family table.
 
     The same address can carry a different data point than in the shared
@@ -245,27 +321,46 @@ def _navigator_17_section(pinned_version: str, display_name: object) -> list[str
     holding_count = sum(
         1 for register in ordered17 if getattr(register, "writable", False) and register.name not in pv_names
     )
-    section = [
-        "## Navigator 1.7 (separate protocol family)",
-        "",
-        f"> Also generated from `idm-heatpump-api[web]=={pinned_version}`.",
-        "",
-        (
-            "The Navigator 1.0/1.7 controllers use a different register layout: the same address can "
-            "carry a different data point than in the catalog above, so this family has its own table "
-            f"with **{len(ordered17)}** definitions ({writable17} writable). "
-            f"The official RW holding block of ma_de_812049 Rev.1 contributes {holding_count} writable, "
-            "EEPROM-sensitive parameters (operating modes, room/flow setpoints, heating curves, limits, "
-            "bivalence points, solar mode, DHW setpoint); the PV supplement appears only when the "
-            "controller answers address 74. No zone-module control exists on this family."
-        ),
-        "",
-        "| Address(es) | Description (DE) | Register name | Type | Unit | Access | Note |",
-        "|-------------|------------------|---------------|------|------|--------|------|",
-    ]
+    if lang == "de":
+        section = [
+            "## Navigator 1.7 (eigene Protokollfamilie)",
+            "",
+            f"> Ebenfalls aus `idm-heatpump-api[web]=={pinned_version}` generiert.",
+            "",
+            (
+                "Die Regler Navigator 1.0/1.7 verwenden ein anderes Registerlayout: Dieselbe Adresse kann "
+                "einen anderen Datenpunkt tragen als im Katalog oben. Diese Familie hat daher eine eigene Tabelle "
+                f"mit **{len(ordered17)}** Definitionen (davon {writable17} beschreibbar). "
+                f"Der offizielle RW-Holding-Block von ma_de_812049 Rev.1 steuert {holding_count} beschreibbare, "
+                "EEPROM-empfindliche Parameter bei (Betriebsarten, Raum-/Vorlaufsollwerte, Heizkurven, Grenzen, "
+                "Bivalenzpunkte, Solar-Betriebsart, Warmwasser-Sollwert); das PV-Supplement erscheint nur, wenn der "
+                "Regler die Adresse 74 beantwortet. Eine Zonenmodul-Steuerung existiert in dieser Familie nicht."
+            ),
+            "",
+            *_table_header(lang=lang),
+        ]
+    else:
+        section = [
+            "## Navigator 1.7 (separate protocol family)",
+            "",
+            f"> Also generated from `idm-heatpump-api[web]=={pinned_version}`.",
+            "",
+            (
+                "The Navigator 1.0/1.7 controllers use a different register layout: the same address can "
+                "carry a different data point than in the catalog above, so this family has its own table "
+                f"with **{len(ordered17)}** definitions ({writable17} writable). "
+                f"The official RW holding block of ma_de_812049 Rev.1 contributes {holding_count} writable, "
+                "EEPROM-sensitive parameters (operating modes, room/flow setpoints, heating curves, limits, "
+                "bivalence points, solar mode, DHW setpoint); the PV supplement appears only when the "
+                "controller answers address 74. No zone-module control exists on this family."
+            ),
+            "",
+            *_table_header(lang=lang),
+        ]
+    pv_note = "PV-Supplement" if lang == "de" else "PV supplement"
     for register in ordered17:
         unit = register.unit or "—"
-        note = "PV supplement" if register.name in pv_names else ""
+        note = pv_note if register.name in pv_names else ""
         section.append(
             "| "
             + " | ".join(
@@ -275,7 +370,7 @@ def _navigator_17_section(pinned_version: str, display_name: object) -> list[str
                     f"`{register.name}`",
                     register.datatype.value,
                     _escape(unit),
-                    _access_label(register),
+                    _access_label(register, lang=lang),
                     note,
                 )
             )
@@ -285,36 +380,40 @@ def _navigator_17_section(pinned_version: str, display_name: object) -> list[str
     return section
 
 
-def _updated_document() -> tuple[str, str]:
-    current = DOC_PATH.read_text(encoding="utf-8")
-    generated = _build_reference()
+def _updated_document(doc_path: Path = DOC_PATH, lang: str = "en") -> tuple[str, str]:
+    current = doc_path.read_text(encoding="utf-8")
+    generated = _build_reference(lang=lang)
     pattern = re.compile(
         rf"{re.escape(START_MARKER)}.*?{re.escape(END_MARKER)}",
         flags=re.DOTALL,
     )
     updated, replacements = pattern.subn(generated, current)
     if replacements != 1:
-        raise RuntimeError("Expected exactly one generated register-reference section")
+        raise RuntimeError(f"Expected exactly one generated register-reference section in {doc_path}")
     return current, updated
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--check",
         action="store_true",
         help="Fail when the committed catalog differs from the generated output",
     )
-    args = parser.parse_args()
-    current, updated = _updated_document()
+    args = parser.parse_args(argv)
+    rendered = [(doc_path, *_updated_document(doc_path, lang)) for doc_path, lang in TARGET_DOCUMENTS]
     if args.check:
-        if current != updated:
-            print(f"{DOC_PATH.relative_to(ROOT)} is not up to date")
-            return 1
-        print(f"{DOC_PATH.relative_to(ROOT)} is up to date")
-        return 0
-    DOC_PATH.write_text(updated, encoding="utf-8")
-    print(f"Updated {DOC_PATH.relative_to(ROOT)}")
+        stale = False
+        for doc_path, current, updated in rendered:
+            if current != updated:
+                print(f"{doc_path.relative_to(ROOT)} is not up to date")
+                stale = True
+            else:
+                print(f"{doc_path.relative_to(ROOT)} is up to date")
+        return 1 if stale else 0
+    for doc_path, _current, updated in rendered:
+        doc_path.write_text(updated, encoding="utf-8", newline="\n")
+        print(f"Updated {doc_path.relative_to(ROOT)}")
     return 0
 
 

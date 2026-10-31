@@ -15,9 +15,10 @@ unknown questions get a capability list instead of a guess.
 from __future__ import annotations
 
 import logging
+import math
 import re
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, Final
 
 from homeassistant.components.conversation import (
     ConversationEntity,
@@ -44,9 +45,12 @@ _INTENT_KEYWORDS: tuple[tuple[tuple[str, ...], str], ...] = (
         "temperature",
     ),
     (("verbrauch", "energie", "cop", "strom", "energy", "consumption", "power"), "energy"),
-    (("status", "störung", "fehler", "state", "error", "fault"), "status"),
+    (("status", "störung", "fehler", "state", "error", "fault", "alarm"), "status"),
     (("hilfe", "help", "was kannst du", "what can you"), "help"),
 )
+
+_FAULT_KEYWORDS: Final[tuple[str, ...]] = ("störung", "fehler", "error", "fault", "alarm")
+_EXACT_KEYWORDS: Final[frozenset[str]] = frozenset({"cop", "state", "flow"})
 
 _TEMPERATURE_KEYS: tuple[tuple[str, str, str], ...] = (
     ("outdoor_temp", "Außentemperatur", "outdoor temperature"),
@@ -79,19 +83,38 @@ def _match_language(language: str | None) -> str:
 
 def _route_intent(utterance: str) -> str:
     """Return the intent id for an utterance (lowercased, punctuation split)."""
-    text = re.sub(r"[^\w\s]", " ", utterance.lower())
+    text = " ".join(re.sub(r"[^\w\s]", " ", utterance.lower()).split())
     for keywords, intent_id in _INTENT_KEYWORDS:
-        if any(keyword in text for keyword in keywords):
-            return intent_id
+        for keyword in keywords:
+            if " " in keyword:
+                if keyword in text:
+                    return intent_id
+            elif keyword in _EXACT_KEYWORDS:
+                if re.search(rf"\b{re.escape(keyword)}s?\b", text):
+                    return intent_id
+            else:
+                if re.search(rf"\b{re.escape(keyword)}", text):
+                    return intent_id
     return "help"
 
 
-def _number(value: Any) -> float | None:
+def _number(
+    value: Any,
+    key: str | None = None,
+    unused_registers: set[str] | frozenset[str] = frozenset(),
+) -> float | None:
     """Return a plain float for numeric snapshot values."""
+    if key is not None and key in unused_registers:
+        return None
     if isinstance(value, bool) or value is None:
         return None
     if isinstance(value, (int, float)):
-        return round(float(value), 1)
+        numeric = float(value)
+        if not math.isfinite(numeric):
+            return None
+        if numeric <= -1.0 and key is not None and ("temp" in key or key.endswith("_setpoint")):
+            return None
+        return round(numeric, 1)
     return None
 
 
@@ -136,9 +159,10 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
             return tuple(str(circuit) for circuit in circuits)
         return ("a",)
 
-    def _answer(self, intent_id: str, language: str) -> str:
+    def _answer(self, intent_id: str, language: str, *, utterance: str = "") -> str:
         """Compose the deterministic answer for one routed intent."""
         data: Mapping[str, Any] = self.coordinator.data or {}
+        unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
         if intent_id == "why_running":
             reason = compose_operation_reason(
                 data,
@@ -146,6 +170,8 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
                     str(data["web_demand_reason"]) if isinstance(data.get("web_demand_reason"), str) else None
                 ),
                 circuits=self.circuits,
+                unused_registers=unused,
+                language=language,
             )
             if reason is not None:
                 return reason.explanation
@@ -163,7 +189,8 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
         if intent_id == "energy":
             return self._energy_answer(data, language)
         if intent_id == "status":
-            return self._status_answer(data, language)
+            is_fault_query = any(k in utterance.lower() for k in _FAULT_KEYWORDS)
+            return self._status_answer(data, language, is_fault_query=is_fault_query)
         return _HELP_TEXT[language]
 
     def _recommendation_answer(self, data: Mapping[str, Any], language: str) -> str:
@@ -192,9 +219,10 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
 
     def _temperature_answer(self, data: Mapping[str, Any], language: str, keys: tuple[str, ...]) -> str:
         parts: list[str] = []
+        unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
         index = {key: (label_de, label_en) for key, label_de, label_en in _TEMPERATURE_KEYS}
         for key in keys:
-            value = _number(data.get(key))
+            value = _number(data.get(key), key, unused)
             if value is None or key not in index:
                 continue
             label_de, label_en = index[key]
@@ -208,9 +236,10 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
         return "; ".join(parts) + "."
 
     def _energy_answer(self, data: Mapping[str, Any], language: str) -> str:
-        power = _number(data.get("power_consumption_hp"))
-        thermal = _number(data.get("thermal_power_flow_sensor"))
-        cop = _number(data.get("calculated_cop"))
+        unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
+        power = _number(data.get("power_consumption_hp"), "power_consumption_hp", unused)
+        thermal = _number(data.get("thermal_power_flow_sensor"), "thermal_power_flow_sensor", unused)
+        cop = _number(data.get("calculated_cop"), "calculated_cop", unused)
         parts: list[str] = []
         if power is not None:
             label = "Elektrische Leistung" if language == "de" else "electrical power"
@@ -228,9 +257,36 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
             )
         return "; ".join(parts) + "."
 
-    def _status_answer(self, data: Mapping[str, Any], language: str) -> str:
+    def _status_answer(self, data: Mapping[str, Any], language: str, *, is_fault_query: bool = False) -> str:
+        unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
+        alarm = data.get("hp_sum_alarm")
+        error_no = data.get("error_number")
+        has_alarm = bool(alarm == 1 or alarm is True) and "hp_sum_alarm" not in unused
+        has_error = (
+            isinstance(error_no, int)
+            and not isinstance(error_no, bool)
+            and error_no > 0
+            and error_no != 65535
+            and "error_number" not in unused
+        )
+        if has_alarm or has_error:
+            if language == "de":
+                if has_error:
+                    return f"Es liegt eine Störung vor (Fehlercode {error_no})."
+                return "Es liegt eine Sammelstörung vor."
+            if has_error:
+                return f"There is an active fault (error code {error_no})."
+            return "There is an active plant alarm."
+
+        if is_fault_query:
+            return (
+                "Es liegt aktuell keine Störung vor." if language == "de" else "There are no active faults right now."
+            )
+
         mode = data.get("hp_operating_mode")
-        mode = mode if isinstance(mode, int) and not isinstance(mode, bool) else None
+        mode = (
+            mode if isinstance(mode, int) and not isinstance(mode, bool) and "hp_operating_mode" not in unused else None
+        )
         if mode is None:
             return (
                 "Ich kann den Betriebsmodus gerade nicht lesen."
@@ -241,6 +297,8 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
             data,
             demand_reason=(str(data["web_demand_reason"]) if isinstance(data.get("web_demand_reason"), str) else None),
             circuits=self.circuits,
+            unused_registers=unused,
+            language=language,
         )
         if reason is not None:
             return reason.explanation
@@ -252,7 +310,7 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
         language = _match_language(getattr(user_input, "language", None))
         utterance = str(getattr(user_input, "text", "") or "")
         intent_id = _route_intent(utterance)
-        answer = self._answer(intent_id, language)
+        answer = self._answer(intent_id, language, utterance=utterance)
         _LOGGER.debug("Assist question routed to %s: %s", intent_id, utterance)
         response = intent.IntentResponse(language=language)
         response.async_set_speech(answer)
