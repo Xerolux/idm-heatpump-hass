@@ -5,6 +5,14 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.25.0-b3 — 2026-10-31
+
+Hotfix for the valve semantics beta: on plants without the heating/cooling
+function the changeover valve (1110) answers the UINT16 "not configured"
+sentinel `65535`, which the new enum rejected as `not_in_enum` and dropped
+the entity from every update. The API pin moves to 2.16.0b2, the sentinel
+passes validated polls, and the entity reports unavailable again.
+
 ## v0.25.0-b2 — 2026-10-30
 
 The gate-and-semantics beta: component setup now refuses Home Assistant builds

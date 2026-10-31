@@ -13,6 +13,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.25.0-b3] - 2026-10-31
+
+### ⚠️ Upgrade notes
+
+- **The changeover valve reports unavailable again on plants without heating/cooling**: the API pin moves to `idm-heatpump-api[web]==2.16.0b2`, which accepts the UINT16 "not configured" answer `65535` at register 1110 as a sentinel — 0.25.0-b2 dropped the entity from every update with a `not_in_enum` warning. No configuration migration; automations keep working untouched.
+
+### 🐛 Bugfixes
+
+- **Valve sensor no longer vanishes with a validation warning**: plants without the heating/cooling function answer `65535` although the official table documents only 0 and 1, so the new enum rejected it as `not_in_enum` and omitted it from every poll ([API #159](https://github.com/Xerolux/idm-heatpump-api/pull/159)). The register now declares the sentinel; genuine out-of-table states stay rejected.
+
+### 💼 Maintenance
+
+- **Rollback is safe**: 0.25.0-b2 shows the valve as unavailable-with-warning on the same plants; neither release changes stored settings, other entities or unique IDs, and the API change touches only register 1110's read validation.
+
 ## [0.25.0-b2] - 2026-10-30
 
 ### ⚠️ Upgrade notes
