@@ -5,6 +5,18 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.25.0-b4 — 2026-10-31
+
+Das Code-Audit-Beta des Oktobers: Korrekturen an Web-only-Steuerung,
+Diensten und Navigator 1.7 — Heizkreis-Selects und korrekte
+Klima-Bereiche kehren im web-only-Modus zurück, `device_id`-Ziele lösen
+über die Geräteregistrierung auf, `write_register` parst boolesche
+Zeichenketten und akzeptiert Adressen bis 65535, und `set_system_mode`
+funktioniert wieder am Navigator 1.7. Advisor-Analysen richten sich an
+der lokalen Mitternacht aus, der Assist-Agent trifft Wortgrenzen, und
+veraltete Differenzkreis-Entitäts-IDs (#429) werden einmalig beim Setup
+gekürzt.
+
 ## v0.25.0-b3 — 2026-10-31
 
 Hotfix für das Ventil-Semantik-Beta: auf Anlagen ohne Heiz-/Kühlfunktion
