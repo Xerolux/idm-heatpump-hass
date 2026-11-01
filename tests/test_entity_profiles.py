@@ -55,6 +55,57 @@ def test_technical_pump_signal_remains_disabled_diagnostic():
     assert description.entity_registry_enabled_default is False
 
 
+def test_flow_rate_keeps_statistics_without_device_class():
+    """Explicit ``device_class: None`` must not drop the state class.
+
+    0.25.0-b4 stopped deriving a state class for overlay entries that set
+    ``device_class: None``, so Home Assistant retired the long-term
+    statistics of the heat-sink flow sensor and showed the state-class
+    repair dialog on real plants. The unit map must keep ``L/min`` sensors
+    measurable even without a device class.
+    """
+    description = _description("heat_sink_flow_rate")
+
+    assert description.device_class is None
+    assert description.native_unit_of_measurement == "L/min"
+    assert description.state_class == SensorStateClass.MEASUREMENT
+
+
+def test_library_state_class_annotation_restores_measurement():
+    """A library ``state_class`` annotation applies even without a device class.
+
+    The pump signal has neither a device class nor a unit whose state class
+    can be inferred; the library's own ``measurement`` annotation is what
+    keeps its statistics alive.
+    """
+    description = _description("heat_sink_charging_pump_signal", "%", "measurement")
+
+    assert description.device_class is None
+    assert description.state_class == SensorStateClass.MEASUREMENT
+
+
+def test_enum_option_sensors_stay_state_class_free():
+    """Enum-option sensors must not carry a state class.
+
+    Home Assistant rejects sensors that combine ``options`` with a state
+    class, so the state-class rescue chain has to stop when options are
+    present — even when the library annotates the register as measurement.
+    """
+    register = RegisterDef(
+        address=1110,
+        datatype=DataType.UINT16,
+        name="valve_hc_heat_cool",
+        unit=None,
+        state_class="measurement",
+        enum_options={0: "Heating", 1: "Cooling"},
+    )
+
+    description = make_sensor_description(register, {}, "Changeover valve")
+
+    assert description.options == ["Heating", "Cooling"]
+    assert description.state_class is None
+
+
 def test_expected_core_keys_are_explicitly_profiled():
     expected = {
         "outdoor_temp",
