@@ -5,6 +5,17 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.25.0-b5 — 2026-11-01
+
+Statistics fix for the audit beta: 0.25.0-b4 dropped the `measurement`
+state class of the heat-sink flow sensor (Durchfluss Wärmesenke (B2)) and
+the heat-sink charging-pump signal, so Home Assistant retired their
+long-term statistics with the state-class repair dialog. Sensors whose
+overlay deliberately leaves the device class unset keep their state class
+again — from the library's own annotation or the unit map — while
+enum-option sensors stay state-class-free. Statistics resume on update
+without data loss.
+
 ## v0.25.0-b4 — 2026-10-31
 
 The October code-audit beta: fixes across web-only controls, services and
