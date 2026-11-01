@@ -5,6 +5,17 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.25.0-b5 — 2026-11-01
+
+Statistik-Fix für das Audit-Beta: 0.25.0-b4 verlor die
+`measurement`-Zustandsklasse des Durchfluss-Sensors „Wärmesenke (B2)" und
+des Ladepumpen-Signals der Wärmesenke, worauf Home Assistant die
+Langzeitstatistiken einstellte und den Zustandsklassen-Dialog zeigte.
+Sensoren, deren Overlay bewusst keine Geräteklasse setzt, behalten ihre
+Zustandsklasse wieder — aus der Bibliotheks-Annotation oder der
+Einheitsabbildung — während Enum-Sensoren zustandsklassenfrei bleiben.
+Die Statistiken laufen nach dem Update ohne Datenverlust weiter.
+
 ## v0.25.0-b4 — 2026-10-31
 
 Das Code-Audit-Beta des Oktobers: Korrekturen an Web-only-Steuerung,

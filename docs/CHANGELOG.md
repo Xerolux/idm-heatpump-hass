@@ -13,6 +13,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.25.0-b5] - 2026-11-01
+
+### ⚠️ Upgrade notes
+
+- **Long-term statistics resume without data loss**: 0.25.0-b4 dropped the `measurement` state class of the heat-sink flow sensor ("Durchfluss Wärmesenke (B2)") and the heat-sink charging-pump signal, so Home Assistant retired their statistics and showed the state-class repair dialog. Updating restores both classes automatically; keep the statistics, do not accept the delete prompt.
+
+### 🐛 Bugfixes
+
+- **Sensors without a device class keep their state class**: an overlay entry that deliberately sets `device_class: None` no longer loses its measurement annotation — the library's own register annotation or the unit map (L/min, %) restores it, while enum-option sensors stay state-class-free as Home Assistant requires. Fixes the statistics regression reported on a Navigator 10 plant.
+
+### 💼 Maintenance
+
+- **Rollback is safe**: 0.25.0-b4 keeps running with the same API pin and configuration; the fix changes only sensor description metadata, so no stored setting, unique ID or register write path changes.
+
 ## [0.25.0-b4] - 2026-10-31
 
 ### ⚠️ Upgrade notes
