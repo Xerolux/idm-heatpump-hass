@@ -156,6 +156,32 @@ def name_kwargs(register_name: str, fallback_name: str, *, options_key: str | No
     return kwargs
 
 
+#: Mapping for coercing raw state-class annotations into Home Assistant's
+#: enum. Keyed by the members themselves, so a lookup with the enum's string
+#: value (``"measurement"``) finds the member — str-enum members hash and
+#: compare equal to their values.
+_COERCIBLE_STATE_CLASSES: dict[str, SensorStateClass] = {
+    SensorStateClass.MEASUREMENT: SensorStateClass.MEASUREMENT,
+    SensorStateClass.TOTAL: SensorStateClass.TOTAL,
+    SensorStateClass.TOTAL_INCREASING: SensorStateClass.TOTAL_INCREASING,
+}
+
+
+def _coerce_state_class(value: Any) -> SensorStateClass | None:
+    """Coerce a raw state-class annotation into the Home Assistant enum.
+
+    The library annotates registers with the enum's string values
+    (``"measurement"``), and overlay metadata may carry either form.
+    Unknown values coerce to ``None`` instead of raising, mirroring
+    :func:`library_adapter._coerce_sensor_state_class` — that helper cannot
+    be imported here because :mod:`library_adapter` already imports this
+    module.
+    """
+    if value is None:
+        return None
+    return _COERCIBLE_STATE_CLASSES.get(str(value))
+
+
 def make_sensor_description(
     reg: RegisterDef,
     meta: dict[str, Any],
@@ -164,11 +190,23 @@ def make_sensor_description(
     """Create a SensorEntityDescription from a library register plus HA metadata."""
     device_class: SensorDeviceClass | None = meta.get("device_class")
     unit = meta.get("unit") or reg.unit
+    options = meta.get("options")
+    if options is None and reg.enum_options:
+        options = [str(opt) for opt in reg.enum_options.values()]
+    inferred_device_class, inferred_state_class = infer_sensor_classes(reg.name, unit)
     if "device_class" not in meta:
-        device_class, _ = infer_sensor_classes(reg.name, unit)
-    state_class = meta.get("state_class")
+        device_class = inferred_device_class
+    state_class = _coerce_state_class(meta.get("state_class"))
     if state_class is None and device_class:
         state_class = _DC_STATE_CLASS_MAP.get(device_class)
+    if state_class is None and not options:
+        # A sensor without a device class still needs a state class so Home
+        # Assistant keeps its long-term statistics: the library's own
+        # annotation (measurement for flow rates) or the unit map (L/min,
+        # kW, °C …) restores it, while enum-option sensors must stay
+        # state-class-free. Dropping this chain made 0.25.0-b4 silent about
+        # statistics for the explicitly device-class-less flow registers.
+        state_class = _coerce_state_class(reg.state_class) or inferred_state_class
     # Explicit ``enabled_by_default`` metadata wins for user-facing core
     # measurements. When the key is absent, fall back to the conservative
     # generated profile so rare technical registers stay disabled by default
@@ -189,9 +227,6 @@ def make_sensor_description(
         "entity_category": meta.get("entity_category"),
         "entity_registry_enabled_default": enabled_default,
     }
-    options = meta.get("options")
-    if options is None and reg.enum_options:
-        options = [str(opt) for opt in reg.enum_options.values()]
     if options is not None and (device_class == SensorDeviceClass.ENUM or device_class is None):
         kwargs["options"] = list(options)
 
