@@ -1211,6 +1211,44 @@ class TestIdmNumber:
         num = IdmNumber(coord, reg, _make_desc("dhw_target"))
         assert num.native_value == 48.0
 
+    def test_handle_coordinator_update_logs_sentinel_readback(self, caplog):
+        """A sentinel readback on a writable control is logged once per poll cycle.
+
+        The controller occasionally erases a GLT RAM input between two
+        forwarding writes; the entity then reports unknown for that sample.
+        The debug line makes those events countable against the write
+        cadence instead of leaving them visible only as graph dips (#493).
+        """
+        import logging as logging_module
+
+        from custom_components.idm_heatpump.number import IdmNumber
+
+        coord = _make_coordinator(data={"dhw_target": -1})
+        coord.unused_registers = {"dhw_target"}
+        reg = _make_register("dhw_target", writable=True)
+        num = IdmNumber(coord, reg, _make_desc("dhw_target"))
+        assert num.native_value is None
+
+        with caplog.at_level(logging_module.DEBUG, logger="custom_components.idm_heatpump.number"):
+            num._handle_coordinator_update()
+
+        assert any("unset sentinel" in record.message and "dhw_target" in record.message for record in caplog.records)
+
+    def test_handle_coordinator_update_stays_silent_on_healthy_readback(self, caplog):
+        """A healthy readback must not produce sentinel debug lines."""
+        import logging as logging_module
+
+        from custom_components.idm_heatpump.number import IdmNumber
+
+        coord = _make_coordinator(data={"dhw_target": 48.0})
+        reg = _make_register("dhw_target", writable=True)
+        num = IdmNumber(coord, reg, _make_desc("dhw_target"))
+
+        with caplog.at_level(logging_module.DEBUG, logger="custom_components.idm_heatpump.number"):
+            num._handle_coordinator_update()
+
+        assert not any("unset sentinel" in record.message for record in caplog.records)
+
     def test_native_value_none_when_data_is_none(self):
         from custom_components.idm_heatpump.number import IdmNumber
 

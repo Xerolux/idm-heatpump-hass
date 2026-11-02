@@ -718,6 +718,10 @@ def _stub_homeassistant() -> None:
         async def async_added_to_hass(self) -> None:
             pass
 
+        def _handle_coordinator_update(self) -> None:
+            """Refresh the entity state, as the real Home Assistant base does."""
+            self.async_write_ha_state()
+
         def async_write_ha_state(self):
             pass
 
