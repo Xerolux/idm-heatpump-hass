@@ -279,7 +279,7 @@ jobs:
       # second checkout.
       - name: Hassfest Action
         if: steps.summary.outputs.updated == 'true'
-        uses: home-assistant/actions/hassfest@cd6f3635a740c84d8a14f6121a90068b8ece6bf6  # guardrails-disable-line
+        uses: home-assistant/actions/hassfest@86d4564712fa02543c808e3a693dd04f9d3f8361  # guardrails-disable-line
 
       # pytest-cov leaves .coverage behind, and an untracked file in the
       # workspace would be committed to the pull request.
