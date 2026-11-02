@@ -6,11 +6,12 @@ from __future__ import annotations
 # © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
 # Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # SPDX-License-Identifier: MIT
+import logging
 import math
 
 from homeassistant.components.number import NumberEntity, NumberEntityDescription
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from idm_heatpump import RegisterDef
@@ -25,6 +26,8 @@ from .web_control_entities import (
 )
 
 PARALLEL_UPDATES = 0
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -76,3 +79,21 @@ class IdmNumber(IdmEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         await self._async_write_register(value, action_label=f"write {self._register.name}={value}")
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Log sentinel readbacks so controller-side erases become countable.
+
+        When a writable control's readback arrives as an unset sentinel, the
+        entity reports unknown for that sample (see :attr:`native_value`).
+        Home Assistant then only shows a graph dip, so there was no way to
+        tell how often the controller erases a GLT RAM input between two
+        forwarding writes. One debug line per affected poll cycle makes the
+        events countable against the forwarding write cadence (#493).
+        """
+        if self.is_writable_control() and self._value_is_sentinel():
+            _LOGGER.debug(
+                "GLT readback of %s arrived as an unset sentinel; reporting unknown until the next forwarding write",
+                self._register.name,
+            )
+        super()._handle_coordinator_update()
