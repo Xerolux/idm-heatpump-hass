@@ -5,6 +5,15 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.25.0-b6 — 2026-11-01
+
+Diagnostics beta for the GLT flicker thread: when the controller erases a
+GLT RAM input between two forwarding writes, the writable Number reports
+unknown for that sample — and the debug log now names the register once
+per affected poll cycle (#493), so the events become countable against
+the forwarding write cadence. Built in and silent unless debug logging is
+enabled.
+
 ## v0.25.0-b5 — 2026-11-01
 
 Statistics fix for the audit beta: 0.25.0-b4 dropped the `measurement`

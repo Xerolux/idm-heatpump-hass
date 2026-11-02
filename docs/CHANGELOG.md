@@ -13,6 +13,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.25.0-b6] - 2026-11-02
+
+### ⚠️ Upgrade notes
+
+- **Nothing to configure, nothing to migrate**: the new GLT sentinel logging is built in and stays silent unless you enable debug logging for `custom_components.idm_heatpump`, so only users chasing an issue see the extra lines. Rollback is safe.
+
+### ✨ New
+
+- **Sentinel readbacks on writable controls are countable in the debug log**: when the controller erases a GLT RAM input between two forwarding writes, the affected Number reports unknown for that sample, and the log names the register once per affected cycle (#493). Counting these lines against the `Forwarded external power …` cadence distinguishes late writes from controller-side erases.
+
+### 💼 Maintenance
+
+- **Hassfest validation action bumped** to the current Home Assistant tools release; no integration behaviour change.
+
 ## [0.25.0-b5] - 2026-11-01
 
 ### ⚠️ Upgrade notes

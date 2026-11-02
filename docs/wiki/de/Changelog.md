@@ -5,6 +5,15 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.25.0-b6 — 2026-11-02
+
+Diagnose-Beta für den GLT-Flacker-Thread: Löscht der Controller einen
+GLT-RAM-Input zwischen zwei Forwarding-Writes, meldet die beschreibbare
+Nummer für dieses eine Sample `unknown` — und das Debug-Log nennt nun das
+Register einmal je betroffenem Poll-Zyklus (#493), damit sich die
+Ereignisse gegen die Schreib-Kadenz zählen lassen. Fest eingebaut und
+stumm, solange kein Debug-Logging aktiv ist.
+
 ## v0.25.0-b5 — 2026-11-01
 
 Statistik-Fix für das Audit-Beta: 0.25.0-b4 verlor die
