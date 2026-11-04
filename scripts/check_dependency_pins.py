@@ -165,7 +165,10 @@ BARE_VERSION_STATEMENTS: dict[str, tuple[tuple[str, str], ...]] = {
 HISTORY_STATEMENTS: dict[str, tuple[str, ...]] = {
     # The name is spelled with and without backticks: once in the rule that
     # describes history statements, once in the history statement itself.
-    "AGENTS.md": (r"pymodbus is gone as of `?idm-heatpump-api`? [0-9][0-9a-z.]*",),
+    "AGENTS.md": (
+        r"pymodbus is gone as of `?idm-heatpump-api`? [0-9][0-9a-z.]*",
+        r"\(2026-10-09: `modbus-connection`[^\n]*?the floor followed\)",
+    ),
     "docs/dev/open-work-audit.md": (
         r"`idm-heatpump-api` [0-9][0-9a-z.]* provides the transport-neutral contract",
         r"idm-heatpump-api [0-9][0-9a-z.]*\)\* — the official doc's UCHAR typing",

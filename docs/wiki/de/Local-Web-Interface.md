@@ -132,7 +132,7 @@ Web-Clients `idm-heatpump-api[web]==2.16.0b3`, die zusätzlich
 Navigator-10-Heizkreisdaten für die Kreise B–G bereitstellen.
 
 Für den unabhängigen Modbus-Pfad lautet die getestete Manifest-Reihenfolge
-`modbus-connection>=4.12.4`, `tmodbus[async-serial]>=0.6.2`
+`modbus-connection>=4.12.7`, `tmodbus[async-serial]>=0.6.2`
 und `idm-heatpump-api[web]==2.16.0b3`. Die ersten beiden besitzen den direkten
 Modbus-Socket; seit API 2.0.0 ist pymodbus gar nicht mehr installiert. Das ändert
 weder das Web-Protokoll noch macht es die Version `4.12.2` zu einem

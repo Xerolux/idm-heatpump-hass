@@ -5,13 +5,15 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
-## v0.25.0-b8 — 2026-11-04
+## v0.25.0-b9 — 2026-11-04
 
 Daily and weekly reports reuse existing local AI measurements in the shared
 advisor history instead of starting their energy analysis from scratch.
 Missing evidence remains unknown. Full recommendation details stay visible
 but are excluded from Recorder to avoid oversized-attribute warnings.
 Measured-data reports continue to work without any AI provider or credentials.
+The transport floor now matches the validated HA runtime, `modbus-connection>=4.12.7`.
+This includes all fixes from the unpublished b8 candidate.
 
 ## v0.25.0-b7 — 2026-11-04
 
