@@ -215,16 +215,11 @@ class EnergyStatistics:
         """
         if isinstance(value, bool) or not isinstance(value, int):
             return None
-        # IntFlag accepts any int (negative values wrap around); the flag
-        # checks below are the actual safety net.
-        mode = HeatPumpStatus(value)
-        if mode & HeatPumpStatus.DEFROSTING:
-            return None
-        heating = bool(mode & HeatPumpStatus.HEATING)
-        water = bool(mode & HeatPumpStatus.WATER)
-        if heating and not water:
+        # Only exact, unambiguous modes can feed a dedicated COP bucket.
+        # IntFlag would also accept unknown bits and wrap negative values.
+        if value == HeatPumpStatus.HEATING:
             return _MODE_DOMAIN_HEATING
-        if water and not heating:
+        if value == HeatPumpStatus.WATER:
             return _MODE_DOMAIN_DHW
         return None
 

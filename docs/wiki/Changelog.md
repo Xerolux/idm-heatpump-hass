@@ -5,6 +5,18 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.25.0-b7 — 2026-11-04
+
+Advisor evidence beta: reports, Predictive Advisor sensors and local Assist
+share period comparisons for energy, COP, starts and room comfort. New sensors
+explain changes and review observed heating-curve adjustments against matched
+weather and operating history. Recommendations gain localized evidence and
+confidence explanations, and generated dashboards include an Advisor view.
+Learning, forecast aggregation, missing-data handling and operating explanations
+are corrected. Analysis stays read-only; no result proves causality or savings.
+New evidence starts collecting after update and needs suitable before/after
+history. Existing energy totals and AI report history are retained.
+
 ## v0.25.0-b6 — 2026-11-01
 
 Diagnostics beta for the GLT flicker thread: when the controller erases a

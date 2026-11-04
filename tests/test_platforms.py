@@ -381,11 +381,13 @@ class TestSensorAsyncSetupEntry:
         advisor = entry.runtime_data.ai_advisor
         assert len(advisor.records) == 1  # the setup-time observe ran
         assert advisor._scheduler is not None  # scheduling started without entities
-        assert len(listeners) == 1
+        # Shared evidence and AI report collection each own one entry listener.
+        assert len(listeners) == 2
         advisor.records[-1]["at"] = time.time() - 400
         coord.async_update_listeners()
         assert len(advisor.records) == 2  # coordinator updates drive collection
-        unsubscribed[0]()
+        for unsubscribe in unsubscribed:
+            unsubscribe()
         advisor.records[-1]["at"] = time.time() - 400
         coord.async_update_listeners()
         assert len(advisor.records) == 2  # unsubscribed listeners stop collecting

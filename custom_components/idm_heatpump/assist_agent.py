@@ -27,18 +27,49 @@ from homeassistant.components.conversation import (
 )
 from homeassistant.helpers import intent
 
+from .advisor_evidence import AnalysisHistory, render_analysis
 from .advisor_operation_reason import compose_operation_reason
+from .calculated_sensors import _cop
 from .const import CONF_HEATING_CIRCUITS
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
-from .predictive_advisor import PredictiveAdvisor
+from .predictive_advisor import PredictiveAdvisor, Recommendation
 
 _LOGGER = logging.getLogger(__name__)
 
 #: Keyword routing table: first matching group wins, so the most specific
 #: questions (why → recommendation) are checked before the generic status.
 _INTENT_KEYWORDS: tuple[tuple[tuple[str, ...], str], ...] = (
-    (("warum", "why", "läuft die", "running"), "why_running"),
+    (
+        (
+            "was hat sich",
+            "verändert",
+            "verändert sich",
+            "mehr strom",
+            "höher",
+            "higher",
+            "changed",
+            "changes",
+            "more energy",
+        ),
+        "changes",
+    ),
+    (("taktung", "taktet", "verdichterstarts", "cycling", "compressor starts"), "cycling"),
+    (("daten fehlen", "daten fehlen noch", "missing data", "missing evidence", "datenqualität"), "data_quality"),
+    (
+        (
+            "hat geholfen",
+            "geholfen",
+            "wirkung",
+            "verbessert",
+            "bewertung",
+            "did it help",
+            "improvement",
+            "review change",
+        ),
+        "optimization",
+    ),
     (("empfehlung", "empfiehl", "optimier", "recommend", "advice", "optimi"), "recommendation"),
+    (("warum", "why", "läuft die", "running"), "why_running"),
     (("warmwasser", "speicher", "hot water", "dhw", "storage tank"), "hot_water"),
     (
         ("temperatur", "vorlauf", "rücklauf", "außen", "temperature", "flow", "return", "outdoor"),
@@ -65,12 +96,15 @@ _HELP_TEXT = {
         "Wärmepumpe gerade?“, „Welche Empfehlung gibt es?“, „Wie ist der "
         "Warmwasserzustand?“, „Wie sind die Temperaturen?“, „Wie ist der "
         "Verbrauch?“ und „Wie ist der Status?“."
+        " Außerdem: „Was hat sich verändert?“, „Wie entwickelt sich die Taktung?“, "
+        "„Hat die Änderung geholfen?“ und „Welche Daten fehlen noch?“."
     ),
     "en": (
         'I answer questions about your IDM heat pump: "Why is the heat pump '
         'running?", "Any recommendation?", "How is the hot water?", '
         '"What are the temperatures?", "What is the consumption?" and '
         '"What is the status?".'
+        ' Also: "What changed?", "How is cycling developing?", "Did it help?" and "What data is missing?".'
     ),
 }
 
@@ -112,16 +146,21 @@ def _number(
         numeric = float(value)
         if not math.isfinite(numeric):
             return None
-        if numeric <= -1.0 and key is not None and ("temp" in key or key.endswith("_setpoint")):
+        if (
+            numeric <= -1.0
+            and key is not None
+            and key != "outdoor_temp"
+            and ("temp" in key or key.endswith("_setpoint"))
+        ):
             return None
         return round(numeric, 1)
     return None
 
 
-def _format(value: float) -> str:
+def _format(value: float, language: str = "en") -> str:
     """Render a snapshot number without trailing zeros."""
     text = f"{value:.1f}".rstrip("0").rstrip(".")
-    return text if text else "0"
+    return text.replace(".", ",") if language == "de" else text
 
 
 class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity):
@@ -162,6 +201,21 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
     def _answer(self, intent_id: str, language: str, *, utterance: str = "") -> str:
         """Compose the deterministic answer for one routed intent."""
         data: Mapping[str, Any] = self.coordinator.data or {}
+        if intent_id != "help" and getattr(self.coordinator, "last_update_success", True) is False:
+            return (
+                "Die letzte Aktualisierung ist fehlgeschlagen. Ich kann den aktuellen Anlagenzustand nicht zuverlässig beurteilen."
+                if language == "de"
+                else "The last update failed. I cannot reliably assess the current plant state."
+            )
+        if intent_id in ("changes", "cycling", "data_quality", "optimization"):
+            history = getattr(self.coordinator, "analysis_history", None)
+            if not isinstance(history, AnalysisHistory):
+                return (
+                    "Die gemeinsame Auswertung hat noch keine Historie. Aktiviere den Predictive Advisor oder KI-Berater, um Daten zu sammeln."
+                    if language == "de"
+                    else "Shared analysis has no history yet. Enable the predictive or AI advisor to collect evidence."
+                )
+            return render_analysis(history.analysis(), language, topic=intent_id)
         unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
         if intent_id == "why_running":
             reason = compose_operation_reason(
@@ -204,10 +258,37 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
             )
         parts: list[str] = []
         for record in recommendations[:3]:
-            summary = record.summary() if callable(getattr(record, "summary", None)) else {}
+            summary = (
+                record.summary(language)
+                if isinstance(record, Recommendation)
+                else record.summary()
+                if callable(getattr(record, "summary", None))
+                else {}
+            )
             title = str(summary.get("title") or getattr(record, "title", ""))
             if title:
-                parts.append(title)
+                explanation = summary.get("explanation", {})
+                if isinstance(explanation, dict) and explanation:
+                    observed = str(explanation["observation"])
+                    confidence = explanation.get("confidence_percent", 0)
+                    check = str(explanation["first_check"])
+                    values = ""
+                    if record.current_value is not None:
+                        values += (" Aktuell: " if language == "de" else " Current: ") + str(record.current_value) + "."
+                    if record.recommended_value is not None:
+                        values += (
+                            (" Vorschlag: " if language == "de" else " Suggested: ")
+                            + str(record.recommended_value)
+                            + "."
+                        )
+                    parts.append(
+                        observed
+                        + values
+                        + (f" Konfidenz: {confidence} %. " if language == "de" else f" Confidence: {confidence}%. ")
+                        + check
+                    )
+                else:
+                    parts.append(title)
         if not parts:
             return (
                 "Der predictive Advisor hat Empfehlungen, aber keinen lesbaren Titel."
@@ -226,7 +307,7 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
             if value is None or key not in index:
                 continue
             label_de, label_en = index[key]
-            parts.append(f"{label_de if language == 'de' else label_en}: {_format(value)} °C")
+            parts.append(f"{label_de if language == 'de' else label_en}: {_format(value, language)} °C")
         if not parts:
             return (
                 "Ich habe gerade keine plausiblen Temperaturen."
@@ -239,16 +320,21 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
         unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
         power = _number(data.get("power_consumption_hp"), "power_consumption_hp", unused)
         thermal = _number(data.get("thermal_power_flow_sensor"), "thermal_power_flow_sensor", unused)
+        if thermal is None or thermal <= 0:
+            thermal = _number(data.get("current_power"), "current_power", unused)
         cop = _number(data.get("calculated_cop"), "calculated_cop", unused)
+        if cop is None:
+            cop = _cop({key: value for key, value in data.items() if key not in unused})
         parts: list[str] = []
         if power is not None:
             label = "Elektrische Leistung" if language == "de" else "electrical power"
-            parts.append(f"{label}: {_format(power)} kW")
+            parts.append(f"{label}: {_format(power, language)} kW")
         if thermal is not None:
             label = "Thermische Leistung" if language == "de" else "thermal power"
-            parts.append(f"{label}: {_format(thermal)} kW")
+            parts.append(f"{label}: {_format(thermal, language)} kW")
         if cop is not None and cop > 0:
-            parts.append(f"COP: {_format(cop)}")
+            label = "Momentaner COP" if language == "de" else "Instantaneous COP"
+            parts.append(f"{label}: {_format(cop, language)}")
         if not parts:
             return (
                 "Ich habe gerade keine Verbrauchswerte."
@@ -279,8 +365,23 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
             return "There is an active plant alarm."
 
         if is_fault_query:
+            alarm_known = "hp_sum_alarm" not in unused and isinstance(alarm, (bool, int)) and alarm in (0, 1)
+            error_known = (
+                "error_number" not in unused
+                and isinstance(error_no, int)
+                and not isinstance(error_no, bool)
+                and error_no == 0
+            )
+            if not alarm_known and not error_known:
+                return (
+                    "Die Störungsmeldungen sind gerade nicht lesbar; ich kann eine Störung weder bestätigen noch ausschließen."
+                    if language == "de"
+                    else "Fault indications are unavailable; I cannot confirm or rule out a fault."
+                )
             return (
-                "Es liegt aktuell keine Störung vor." if language == "de" else "There are no active faults right now."
+                "Die verfügbaren Meldungen zeigen aktuell keine Störung an."
+                if language == "de"
+                else "The available indications show no active faults right now."
             )
 
         mode = data.get("hp_operating_mode")

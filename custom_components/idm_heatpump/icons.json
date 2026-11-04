@@ -160,6 +160,12 @@
       },
       "isc_recooling_temp": {
         "default": "mdi:thermometer"
+      },
+      "advisor_changes": {
+        "default": "mdi:chart-timeline-variant"
+      },
+      "advisor_optimization_review": {
+        "default": "mdi:clipboard-check-outline"
       }
     },
     "binary_sensor": {

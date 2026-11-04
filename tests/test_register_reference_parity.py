@@ -11,6 +11,7 @@ equivalent after normalizing the German column vocabulary.
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 
@@ -78,20 +79,36 @@ def test_german_register_reference_matches_english() -> None:
     )
 
 
+@pytest.mark.skipif(
+    os.environ.get("API_DEPENDENCY_MODE") == "api-main",
+    reason="Committed catalogs describe the manifest pin, not the API development branch",
+)
 def test_committed_register_references_match_generator_output() -> None:
     assert generator.main(["--check"]) == 0
 
 
+def test_generator_still_rejects_a_runtime_that_differs_from_the_manifest_pin(monkeypatch) -> None:
+    monkeypatch.setattr(generator, "_pinned_api_version", lambda: "2.16.0b2")
+    monkeypatch.setattr(generator, "distribution_version", lambda name: "2.16.0b3")
+    with pytest.raises(RuntimeError, match="does not match pinned"):
+        generator._build_reference()
+
+
 @pytest.mark.parametrize(
-    ("requirement", "expected"),
+    ("requirement_name", "expected"),
     [
-        ("idm-heatpump-api[web]==2.16.0", "2.16.0"),
-        ("idm-heatpump-api[web]==2.16.0a1", "2.16.0a1"),
-        ("idm-heatpump-api[web]==2.16.0b2", "2.16.0b2"),
-        ("idm-heatpump-api==2.16.0rc3", "2.16.0rc3"),
+        ("idm-heatpump-api[web]", "2.16.0"),
+        ("idm-heatpump-api[web]", "2.16.0a1"),
+        ("idm-heatpump-api[web]", "2.16.0b3"),
+        ("idm-heatpump-api", "2.16.0rc3"),
     ],
 )
-def test_pinned_api_version_accepts_stable_and_prerelease_pins(tmp_path: Path, requirement: str, expected: str) -> None:
+def test_pinned_api_version_accepts_stable_and_prerelease_pins(
+    tmp_path: Path, requirement_name: str, expected: str
+) -> None:
+    # Construct parser fixtures so the pin updater cannot rewrite only one
+    # half of a literal requirement/expected-version pair during a release.
+    requirement = f"{requirement_name}=={expected}"
     manifest = tmp_path / "manifest.json"
     manifest.write_text(json.dumps({"requirements": [requirement]}), encoding="utf-8")
 

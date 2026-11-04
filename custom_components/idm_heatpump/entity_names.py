@@ -344,6 +344,8 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "advisor_dhw_recommendation": ("Advisor hot water recommendation", "Advisor-Warmwasser-Empfehlung"),
         "advisor_predicted_heat_demand": ("Advisor predicted heat demand 24h", "Advisor-Wärmebedarf 24 h"),
         "advisor_next_24h": ("Advisor 24 hour plan", "Advisor-24-Stunden-Plan"),
+        "advisor_changes": ("Advisor changes", "Advisor-Veränderungen"),
+        "advisor_optimization_review": ("Advisor optimization review", "Advisor-Optimierungsbewertung"),
         # === Calculated ===
         "calculated_hp_temperature_delta": (
             "Heat pump temperature spread",

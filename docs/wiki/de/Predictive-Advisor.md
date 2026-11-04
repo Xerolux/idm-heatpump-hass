@@ -55,6 +55,72 @@ Zurückfallen auf den Müllwert des Registers gibt es nicht.
 
 ## Entitäten
 
+### Gemeinsame Auswertung und Optimierungsbewertung
+
+Predictive Advisor, Messdatenberichte und lokaler Assist nutzen dieselbe
+numerische Historie und dieselben Zeitraumvergleiche. Sie sammelt Daten, solange
+Predictive Advisor oder experimenteller KI-Berater aktiviert ist; ein Modell oder
+Cloud-Anbieter ist nicht nötig. Sie hält bis zu 28 Tage vor, begrenzt durch einen
+separaten Speicherrahmen von 4 MiB. Älteste Details werden zuerst entfernt.
+Deaktivieren/Neuladen beendet die Sammlung; gespeicherte Daten bleiben erhalten.
+Es gibt keinen Recorder-Nachimport; bestehende KI-Berichte bleiben separat.
+
+- **Advisor-Veränderungen** (`advisor_changes`) zählt geänderte Vergleichswerte.
+  Attribute erläutern Energie, COP, Verdichterstarts, Warmwasser-Zeitanteil,
+  Raumabweichung, Wetter und fehlende Daten. Unbekannt bedeutet: kein geeigneter
+  Vergleich. Null bedeutet: keine deutliche Änderung bei vergleichbaren Fenstern.
+- **Advisor-Optimierungsbewertung** (`advisor_optimization_review`) protokolliert
+  gelesene Heizkurvenänderungen und bewertet die letzte stabile Änderung. Wer
+  die Änderung vorgenommen hat und ob sie manuell war, lässt sich daraus nicht
+  feststellen. Es wird nichts geschrieben.
+- Empfehlungen enthalten übersetzte Beobachtungen, Gründe, aktuelle/vorgeschlagene
+  Werte, die Bedeutung der Konfidenz, fehlende Daten und eine erste Prüfung.
+  Die Konfidenz ist keine Wahrscheinlichkeit für einen Defekt.
+- Ein neu generiertes Anlagen-Dashboard ergänzt die vorhandenen Advisor-Entitäten
+  und Erklärungskarten. Bestehende Dashboards werden nicht automatisch geändert.
+
+Für die Bewertung sind 72 Stunden davor und 72 Stunden nach sechs Stunden
+Beruhigungszeit nötig. Beide Fenster benötigen mindestens 80 % erfasste
+Energie-Zählerintervalle. Verglichen werden ausschließlich Heizintervalle in
+Außentemperaturbereichen von zwei Grad. Mindestens sechs gemeinsame Heizstunden
+und 60 % Übereinstimmung bezogen auf die größere Heizhistorie sind nötig.
+Geänderte Raumsollwerte, fehlende Komfortdaten oder überlagerte Änderungen
+lassen die Wirkung offen. Ab 5 % COP-Unterschied wird eine beobachtete Änderung
+ausgewiesen. Eine um mehr als 0,3 K schlechtere absolute Raumabweichung oder mehr
+Starts um sowohl 0,2 pro Stunde als auch 20 % verhindern ein einfaches positives
+Urteil. Das sind beschreibende Schwellen, keine statistische Signifikanz oder
+Ursachenbeweise. Einflüsse wie Nutzung und Sonneneinstrahlung bleiben unbekannt.
+
+Assist-Beispiele: **Was hat sich verändert?**, **Warum ist der Verbrauch heute
+höher?**, **Wie entwickelt sich die Taktung?**, **Welche Daten fehlen noch?**,
+**Hat die Änderung geholfen?**. Die letzte Frage bewertet die zuletzt erfasste
+Heizkurvenänderung; sie ändert keine Einstellung und bestätigt keine Empfehlung
+als umgesetzt.
+
+Zugeordnete Raumsensoren werden vor Qualitätsprüfung und Modellberechnung von
+Fahrenheit oder Kelvin in Celsius umgerechnet. Ohne Einheit bleibt die Annahme
+Celsius bestehen. Nicht verfügbare oder falsch zugeordnete Quellen werden nicht
+durch Registerwerte ersetzt. Fehlgeschlagene Aktualisierungen unterbrechen
+Lernintervalle. Nur eindeutiger Heiz- oder Warmwasserbetrieb zählt für den
+jeweiligen COP-Bereich.
+
+Bei Laufgründen hat eine ausdrückliche Anforderung der Regelung Vorrang vor
+Temperaturvermutungen. Ein kühler Warmwasserspeicher überschreibt keinen
+gemeldeten Heizbetrieb; ein Speicher oberhalb des Sollwerts wird so beschrieben.
+
+Der Wärmebedarf für 24 Stunden benötigt 24 unterschiedliche, aufeinanderfolgende
+Prognosestunden. Kurze oder lückenhafte Prognosen liefern keinen Tageswert.
+Warme Stunden heben den Heizbedarf kalter Stunden nicht auf. PV-Periodenenergie
+wird an Stundengrenzen aufgeteilt; doppelte Zeitpunkte zählen einmal.
+PV-Empfehlungen beschreiben erwartete Erzeugung, keinen bestätigten Überschuss
+nach Abzug des Hausverbrauchs.
+
+Der lokale Assist verwendet die korrigierten Laufgründe. Er berücksichtigt
+negative Außentemperaturen, benennt den momentanen COP ausdrücklich und
+bestätigt ohne lesbare Störungswerte keine Fehlerfreiheit. Nach fehlgeschlagenen
+Aktualisierungen erklärt er die fehlende Beurteilbarkeit statt alte Werte als
+aktuell auszugeben.
+
 Alle Entitäten erscheinen mit dem Smart-Profil und werden bedeutsam, sobald
 der Advisor Daten gesammelt hat. Sensoren, deren Modelle noch nicht gelernt
 sind, bleiben stattdessen nicht verfügbar — sie raten nie.

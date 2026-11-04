@@ -2029,6 +2029,9 @@
       "advisor_building_thermal_inertia": {
         "name": "Advisor-Thermische Trägheit"
       },
+      "advisor_changes": {
+        "name": "Advisor-Veränderungen"
+      },
       "advisor_confidence": {
         "name": "Advisor-Konfidenz"
       },
@@ -2059,6 +2062,19 @@
       },
       "advisor_optimal_flow_temp": {
         "name": "Advisor-Optimale Vorlauftemperatur"
+      },
+      "advisor_optimization_review": {
+        "name": "Advisor-Optimierungsbewertung",
+        "state": {
+          "no_change_recorded": "Keine Änderung erfasst",
+          "collecting_after": "Daten nach Änderung sammeln",
+          "insufficient_data": "Unzureichende Daten",
+          "not_comparable": "Bedingungen nicht vergleichbar",
+          "observed_improvement": "Verbesserung beobachtet",
+          "observed_deterioration": "Verschlechterung beobachtet",
+          "mixed_outcome": "Gemischtes Ergebnis",
+          "no_clear_change": "Keine klare Änderung"
+        }
       },
       "advisor_predicted_heat_demand": {
         "name": "Advisor-Wärmebedarf 24 h"

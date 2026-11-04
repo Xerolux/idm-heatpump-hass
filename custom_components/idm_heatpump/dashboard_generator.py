@@ -141,6 +141,24 @@ class PlantDashboardBuilder:
             return {"title": "Energy", "path": "idm-energy", "cards": cards}
         return None
 
+    def advisor_view(self) -> dict[str, Any] | None:
+        """Show evidence and review only when advisor entities exist."""
+        keys = (
+            "advisor_status",
+            "advisor_confidence",
+            "advisor_changes",
+            "advisor_optimization_review",
+            "advisor_recommendations",
+        )
+        card = self._entities_card([self.entity(key) for key in keys], "Advisor")
+        if card is None:
+            return None
+        cards = [card]
+        for key in ("advisor_changes", "advisor_optimization_review"):
+            if entity := self.entity(key):
+                cards.append({"type": "markdown", "content": "{{ state_attr('" + entity + "', 'explanation') or '' }}"})
+        return {"title": "Advisor", "path": "idm-advisor", "cards": cards}
+
     def diagnostics_view(self) -> dict[str, Any] | None:
         """Compose the connection diagnostics view."""
         card = self._entities_card([self.entity(key, domain) for key, domain in _DIAGNOSTIC_KEYS], "Diagnostics")
@@ -157,6 +175,7 @@ class PlantDashboardBuilder:
                 self.heating_view(),
                 self.hot_water_view(),
                 self.energy_view(),
+                self.advisor_view(),
                 self.diagnostics_view(),
             )
             if view is not None

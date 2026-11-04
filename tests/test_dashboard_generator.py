@@ -60,6 +60,18 @@ def test_builder_skips_missing_entities_and_views() -> None:
         build_plant_dashboard("test_entry", _registry({}), ["a"])
 
 
+def test_advisor_view_uses_actual_registry_ids_and_shared_explanations() -> None:
+    entities = {
+        ("sensor", "test_entry_advisor_changes"): "sensor.renamed_changes",
+        ("sensor", "test_entry_advisor_optimization_review"): "sensor.renamed_review",
+    }
+    dashboard = build_plant_dashboard("test_entry", _registry(entities), ["a"])
+    view = dashboard["views"][0]
+    assert view["path"] == "idm-advisor"
+    assert view["cards"][0]["entities"] == ["sensor.renamed_changes", "sensor.renamed_review"]
+    assert "sensor.renamed_review" in view["cards"][2]["content"]
+
+
 def test_builder_composes_all_views_for_full_plant() -> None:
     dashboard = build_plant_dashboard("test_entry", _registry(_full_plant()), ["a", "c"])
     paths = [view["path"] for view in dashboard["views"]]

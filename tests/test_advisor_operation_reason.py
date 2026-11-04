@@ -36,7 +36,7 @@ def test_hot_water_from_mode_and_from_temperature() -> None:
     by_mode = compose_operation_reason({"hp_operating_mode": 4, "power_consumption_hp": 1.5}, demand_reason=None)
     assert by_mode is not None and by_mode.label == "Hot water"
     by_temp = compose_operation_reason(
-        {"hp_operating_mode": 1, "dhw_temp_top": 41.0, "dhw_setpoint": 48.0, "power_consumption_hp": 1.5},
+        {"dhw_temp_top": 41.0, "dhw_setpoint": 48.0, "power_consumption_hp": 1.5},
         demand_reason=None,
     )
     assert by_temp is not None and by_temp.label == "Hot water"

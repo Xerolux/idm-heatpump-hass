@@ -52,6 +52,65 @@ the garbage register value.
 
 ## Entities
 
+### Shared evidence and optimization review
+
+The Predictive Advisor, measurement reports and local Assist share one numerical
+history and the same period comparisons. The history collects while either the
+Predictive Advisor or experimental AI adviser is enabled; it needs no model or
+cloud provider. It retains up to 28 days, capped independently at 4 MiB by removing
+the oldest details. Collection stops on disable/reload; stored data is retained.
+There is no Recorder backfill, and existing AI report history remains separate.
+
+- **Advisor changes** (`advisor_changes`) counts changed comparison metrics;
+  attributes explain energy, COP, compressor starts, DHW operating-time share,
+  room deviation, weather context and missing evidence. Unknown means a suitable
+  comparison is unavailable; zero means no marked change in comparable windows.
+- **Advisor optimization review** (`advisor_optimization_review`) records observed
+  heating-curve readback changes and evaluates the latest stable change. This
+  cannot establish who made a change or whether it was manual. It never writes.
+- Recommendation attributes include localized observations, supporting reasons,
+  current/suggested values, confidence interpretation, missing evidence and a
+  first check. Confidence is not a probability that the plant has a defect.
+- Regenerate the plant dashboard to add the available **Advisor** view and
+  explanation cards. Existing dashboards are not modified automatically.
+
+Review needs 72 hours before the change and 72 hours after a six-hour settling
+period. Both windows need at least 80% observed energy-counter coverage. Only
+pure heating intervals are compared within two-degree outdoor-temperature bins:
+at least six matched hours and 60% matching of the larger heating history are
+required. Changed room targets, missing comfort readings or overlapping changes
+leave the result open. A COP difference of at least 5% is reported as an observed
+change; worsening absolute room deviation by more than 0.3 K or increasing starts
+by more than both 0.2 per hour and 20% prevents a simple improvement verdict.
+These are conservative descriptive thresholds, not statistical significance or
+proof of cause. Other influences such as occupancy and solar gains remain unknown.
+
+Assist examples: **What changed?**, **Why is consumption higher?**, **How is
+cycling developing?**, **What data is missing?**, **Did it help?**. The last
+question reviews the latest recorded heating-curve change; it does not change
+settings or acknowledge a recommendation as applied.
+
+Mapped room sensors are converted from Fahrenheit or Kelvin to Celsius before
+quality checks and model fitting; a missing unit retains the Celsius assumption.
+Unavailable or mismatched mapped sources do not fall back to register values.
+Failed coordinator updates break learning intervals instead of repeating cached
+measurements. Only exact heating or hot-water modes feed dedicated COP domains.
+
+Operating explanations prioritize explicit controller demand over temperature
+inferences. A cool DHW tank alone does not override reported heating operation,
+and a tank already above target is described accordingly.
+
+The 24-hour heat-demand estimate requires 24 distinct consecutive forecast hours;
+short or gapped forecasts do not produce a full-day estimate. Warm hours cannot
+cancel heating demand in cold hours. PV period energy is split at hour boundaries
+and duplicate timestamps are counted once. PV recommendations describe forecast
+generation, not confirmed surplus after household consumption.
+
+The local Assist agent uses these corrected operation explanations. It accepts
+subzero outdoor temperatures, identifies instantaneous COP explicitly, and
+does not claim a fault-free plant when alarm readings are missing. Failed
+updates produce an unavailable-state explanation instead of cached live values.
+
 All entities appear under the Smart profile and become meaningful as the
 advisor collects data. Sensors that depend on not-yet-learned models stay
 unavailable instead of guessing.

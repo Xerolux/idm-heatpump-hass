@@ -149,8 +149,14 @@ class LearningHistory:
             "status_reason": None,
             "best_bucket": self.best_bucket(float(sample.get("at") or 0.0)),
         }
-        if not finite(sample.get("outdoor_temp")) or sample.get("mode") not in LEARNING_MODE_VALUES:
+        if sample.get("connected") is False:
+            result["status_reason"] = "stale_input"
+            return result
+        if sample.get("mode") not in LEARNING_MODE_VALUES:
             result["status_reason"] = "idle"
+            return result
+        if not finite(sample.get("outdoor_temp")):
+            result["status_reason"] = "missing_temperature"
             return result
         day = int(sample["at"] // 86400)
         suffix = f":{int(sample['mode'])}:{math.floor(sample['outdoor_temp'] / 5)}"
@@ -169,7 +175,7 @@ class LearningHistory:
         baseline = sum(r[1] for r in rows) / electric
         baseline_std: float | None = None
         weight = sum(r[2] for r in rows)
-        if weight > 0 and all(len(r) >= 6 for r in rows):
+        if weight > 0 and all(len(r) >= 6 and r[4] > 0 and r[5] > 0 for r in rows):
             cop_mean = sum(r[4] for r in rows) / weight
             variance = max(0.0, sum(r[5] for r in rows) / weight - cop_mean * cop_mean)
             baseline_std = variance**0.5

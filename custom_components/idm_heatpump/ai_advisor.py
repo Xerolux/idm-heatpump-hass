@@ -11,13 +11,15 @@ import re
 import time
 from collections.abc import Callable
 from datetime import UTC, date, datetime
-from itertools import pairwise
 from typing import Any
 from urllib.parse import urlsplit
 
 import aiohttp
 from homeassistant.helpers.storage import Store
 
+from .advisor_evidence import AnalysisHistory, render_analysis
+from .advisor_evidence import compare_periods as compare_periods  # noqa: PLC0414 - preserve public helpers
+from .advisor_evidence import summarize_period as summarize_period  # noqa: PLC0414 - preserve public helpers
 from .ai_cloud import (
     CLOUD_DEFAULTS,
     CONF_AI_CLOUD_LIMIT,
@@ -117,47 +119,12 @@ def capture_sample(coordinator: Any, timestamp: float) -> dict[str, Any]:
     }
     for key in _TEMPERATURES:
         value = _number(data.get(key))
-        result[key] = value if value is not None and -60 <= value <= 110 else None
+        unused = getattr(coordinator, "unused_registers", ())
+        result[key] = value if value is not None and -60 <= value <= 110 and key not in unused else None
     for key in _COUNTERS:
         value = _number(getattr(statistics, key, None)) if healthy else None
         result[key] = value if value is not None and value >= 0 else None
     return result
-
-
-def summarize_period(records: list[dict[str, Any]], start: float, end: float) -> dict[str, Any]:
-    """Sum only bounded, observed counter intervals; never extrapolate gaps."""
-    points = [row for row in records if start <= row["at"] <= end]
-    electrical = thermal = covered = 0.0
-    intervals = 0
-    for before, after in pairwise(points):
-        gap = after["at"] - before["at"]
-        values = [before.get(key) for key in _COUNTERS] + [after.get(key) for key in _COUNTERS]
-        if not 0 < gap <= 900 or not before["connected"] or not after["connected"]:
-            continue
-        if any(_number(value) is None for value in values):
-            continue
-        electric_delta = after[_COUNTERS[0]] - before[_COUNTERS[0]]
-        thermal_delta = after[_COUNTERS[1]] - before[_COUNTERS[1]]
-        if electric_delta < 0 or thermal_delta < 0:
-            continue
-        electrical += electric_delta
-        thermal += thermal_delta
-        covered += gap
-        intervals += 1
-    outdoor = [row["outdoor_temp"] for row in points if row.get("outdoor_temp") is not None]
-    return {
-        "start_utc": datetime.fromtimestamp(start, UTC).isoformat(),
-        "end_utc": datetime.fromtimestamp(end, UTC).isoformat(),
-        "samples": len(points),
-        "first_observation_utc": datetime.fromtimestamp(points[0]["at"], UTC).isoformat() if points else None,
-        "last_observation_utc": datetime.fromtimestamp(points[-1]["at"], UTC).isoformat() if points else None,
-        "energy_counter_coverage_percent": round(100 * covered / (end - start), 1) if end > start else 0.0,
-        "electrical_kwh_observed": round(electrical, 3) if intervals else None,
-        "thermal_kwh_observed": round(thermal, 3) if intervals else None,
-        "cop_observed": round(thermal / electrical, 2) if electrical > 0 else None,
-        "outdoor_c_min": min(outdoor) if outdoor else None,
-        "outdoor_c_max": max(outdoor) if outdoor else None,
-    }
 
 
 async def _post(
@@ -222,6 +189,10 @@ async def async_local_report(url: str, model: str, language: str, facts: dict[st
                 "Do not repeat raw Unix timestamps or lifetime energy counters. "
                 "Use period electrical_kwh_observed/thermal_kwh_observed for period consumption. "
                 "Null health checks are unknown, never evidence of a healthy plant."
+                " Lead with the main finding, then evidence, then limitations. Adapt to the report purpose: "
+                "health prioritizes flagged and unknown checks; efficiency uses the matching learned COP baseline. "
+                "Use only supplied comparison deltas. A missing comparison means evidence is insufficient. "
+                "Lower consumption alone is not evidence of improved efficiency or savings."
             )
             response = await _post(
                 session,
@@ -275,7 +246,7 @@ def report_quality(report: str, facts: dict[str, Any]) -> dict[str, Any]:
     unexpected = sorted(
         {
             float(n.replace(",", "."))
-            for n in re.findall(r"(?<![\w])\d+(?:[.,]\d+)?", report)
+            for n in re.findall(r"(?<![\w])[+-]?\d+(?:[.,]\d+)?", report)
             if not any(abs(float(n.replace(",", ".")) - k) <= max(0.02, abs(k) * 0.005) for k in known)
         }
     )
@@ -286,7 +257,17 @@ def report_quality(report: str, facts: dict[str, Any]) -> dict[str, Any]:
         for section, key in (
             ("period", "energy_counter_coverage_percent"),
             ("previous_period", "energy_counter_coverage_percent"),
+            ("period", "dhw_share_observed_percent"),
+            ("previous_period", "dhw_share_observed_percent"),
+            ("period", "starts_coverage_percent"),
+            ("previous_period", "starts_coverage_percent"),
             ("learning", "deviation_percent"),
+            ("comparison", "electrical_kwh_observed_change_percent"),
+            ("comparison", "thermal_kwh_observed_change_percent"),
+            ("comparison", "cop_observed_change_percent"),
+            ("optimization_review", "cop_change_percent"),
+            ("optimization_review", "coverage_before_percent"),
+            ("optimization_review", "coverage_after_percent"),
         )
         if isinstance(section_facts := facts.get(section), dict)
         and (value := _number(section_facts.get(key))) is not None
@@ -302,7 +283,7 @@ def report_quality(report: str, facts: dict[str, Any]) -> dict[str, Any]:
         "model_text_verified": False,
         "unsupported_percentages": unsupported_percentages[:30],
         "unsupported_numbers": unexpected[:30],
-        "partial_coverage": facts["period"]["energy_counter_coverage_percent"] < 90,
+        "partial_coverage": facts["period"]["energy_counter_coverage_percent"] < 100,
         "stale_input": not facts["current"].get("connected"),
     }
 
@@ -334,6 +315,7 @@ def fact_report(facts: dict[str, Any], language: str) -> str:
             "Dieser Bericht verwendet ausschließlich berechnete Messwerte.",
             "This report uses calculated measurements only.",
         ),
+        label("Datengrundlage", "Data basis"),
         label("Angefragtes Auswertungsfenster (UTC): ", "Requested analysis window (UTC): ")
         + str(period.get("start_utc", "?"))
         + " – "
@@ -349,6 +331,48 @@ def fact_report(facts: dict[str, Any], language: str) -> str:
         label("Beobachtete thermische Energie: ", "Observed thermal energy: ") + number("thermal_kwh_observed", " kWh"),
         label("COP aus beobachteten Energiemengen: ", "COP from observed energy totals: ") + number("cop_observed"),
     ]
+    purpose = facts.get("purpose", "daily")
+    focus = {
+        "daily": (
+            "Tagesüberblick: Energie, Betriebszustand und Datenqualität.",
+            "Daily overview: energy, operating state and data quality.",
+        ),
+        "weekly": (
+            "Wochenüberblick: beobachtete Energiemengen und Vergleich zur Vorwoche.",
+            "Weekly overview: observed energy and comparison with the previous week.",
+        ),
+        "health": (
+            "Anlagencheck: aktuelle Auffälligkeiten und Grenzen der Messprüfungen.",
+            "Plant check: current findings and limits of measurement checks.",
+        ),
+        "efficiency": (
+            "Effizienzanalyse: Energieverhältnis und Vergleich mit ähnlichen Betriebsbedingungen.",
+            "Efficiency analysis: energy ratio and comparison with similar operating conditions.",
+        ),
+    }
+    lines.insert(1, label(*focus.get(purpose, focus["daily"])))
+    coverage = _number(period.get("energy_counter_coverage_percent")) or 0.0
+    if coverage < 90:
+        lines.insert(
+            2,
+            label(
+                "Die Datenbasis ist lückenhaft. Die Werte gelten nur für erfasste Abschnitte; ein belastbarer Vergleich zum vorherigen Fenster fehlt.",
+                "Coverage is incomplete. Values describe observed intervals only; a reliable comparison with the previous window is unavailable.",
+            ),
+        )
+    elif coverage < 100:
+        lines.insert(
+            2,
+            label(
+                "Das Fenster ist weitgehend erfasst, enthält aber Messlücken. Die Energiemengen sind keine vollständigen Zeitraumwerte.",
+                "Most of the window is covered, but gaps remain. Energy totals do not cover the complete period.",
+            ),
+        )
+    if _number(period.get("observed_energy_hours")) is not None:
+        lines.append(
+            label("Erfasste Zählerintervalle: ", "Observed counter intervals: ") + number("observed_energy_hours", " h")
+        )
+        lines.append(label("Nicht erfasste Zeit: ", "Unobserved time: ") + number("unobserved_energy_hours", " h"))
     if period.get("first_observation_utc"):
         lines.append(
             label("Erste Beobachtung im Fenster (UTC): ", "First observation in window (UTC): ")
@@ -366,6 +390,13 @@ def fact_report(facts: dict[str, Any], language: str) -> str:
     unknown = sum(value is None for value in checks.values())
     lines.append(label("Auffällige Messprüfungen: ", "Flagged measurement checks: ") + str(active))
     lines.append(label("Prüfungen ohne ausreichende Daten: ", "Checks without sufficient data: ") + str(unknown))
+    if active:
+        lines.append(
+            label(
+                "Die markierten Prüfungen zeigen Messauffälligkeiten, keine bestätigten Defekte. Betriebsphase und Verlauf müssen bei der Einordnung berücksichtigt werden.",
+                "Flagged checks indicate measurement findings, not confirmed faults. Operating phase and history are needed to interpret them.",
+            )
+        )
     check_names = HEALTH_CHECK_NAMES
     for key, names in check_names.items():
         value = checks.get(key)
@@ -389,6 +420,35 @@ def fact_report(facts: dict[str, Any], language: str) -> str:
         lines.append(label(*names) + ": " + text)
     previous = facts.get("previous_period", {})
     learning = facts.get("learning", {})
+    comparison = facts.get("comparison", {})
+    shared = facts.get("analysis")
+    if isinstance(shared, dict):
+        lines.append(render_analysis(shared, language))
+        lines.append(render_analysis(shared, language, topic="optimization"))
+    elif isinstance(comparison, dict) and comparison.get("status") == "observed_comparison":
+        lines.append(label("Vergleich mit dem vorherigen Fenster", "Comparison with the previous window"))
+        for key, de, en in (
+            ("electrical_kwh_observed_change_percent", "Elektrische Energie", "Electrical energy"),
+            ("thermal_kwh_observed_change_percent", "Thermische Energie", "Thermal energy"),
+            ("cop_observed_change_percent", "Beobachteter COP", "Observed COP"),
+        ):
+            change = _number(comparison.get(key))
+            if change is not None:
+                text = f"{change:+.1f}".replace(".", ",") if german else f"{change:+.1f}"
+                lines.append(label(de, en) + ": " + text + " %")
+        lines.append(
+            label(
+                "Das sind beobachtete Änderungen, kein Einsparnachweis. Wetter, Warmwasseranteil und Nutzung können sich unterscheiden.",
+                "These are observed changes, not evidence of savings. Weather, hot-water share and usage may differ.",
+            )
+        )
+    elif comparison:
+        lines.append(
+            label(
+                "Kein Prozentvergleich: Beide Fenster müssen gleich lang, zu mindestens 90 % und mit höchstens 2 Prozentpunkten Unterschied erfasst sein.",
+                "No percentage comparison: windows must have equal lengths, at least 90% coverage each and no more than 2 percentage points difference in coverage.",
+            )
+        )
     for section, entries in (
         (
             previous,
@@ -482,6 +542,13 @@ def fact_report(facts: dict[str, Any], language: str) -> str:
                 "Lernwerte entstehen nur im laufenden Betrieb.",
                 "The plant is not running in an evaluated mode right now – "
                 "learning data is only collected while it runs.",
+            )
+        )
+    elif learning.get("status_reason") in ("stale_input", "missing_temperature"):
+        lines.append(
+            label(
+                "Der aktuelle Betriebspunkt ist nicht beurteilbar: Frische Betriebsdaten oder eine gültige Außentemperatur fehlen. Gespeicherte Lernwerte bleiben erhalten.",
+                "The current operating point cannot be assessed: fresh operating data or a valid outdoor temperature is missing. Stored learning data is retained.",
             )
         )
     lines.append(
@@ -774,6 +841,9 @@ class AiAdvisor:
         self.records.append(sample)
         self.records = [row for row in self.records[-_MAX_RECORDS:] if row["at"] >= now - 14 * 86400]
         self.observed_period = summarize_period(self.records, now - 86400, now)
+        history = getattr(self._coordinator, "analysis_history", None)
+        if isinstance(history, AnalysisHistory):
+            self.observed_period = history.analysis(now)["period"]
         self._store.async_delay_save(self.storage_payload, 30)
 
     def build_facts(self, report_type: str, now: float) -> dict[str, Any]:
@@ -788,6 +858,16 @@ class AiAdvisor:
         starts = None
         if analysis is not None and snapshot["connected"]:
             starts = _number(analysis.compressor_starts_last_hours(24))
+        period = summarize_period(records, now - duration, now)
+        previous_period = summarize_period(records, now - 2 * duration, now - duration)
+        history = getattr(self._coordinator, "analysis_history", None)
+        analysis = (
+            history.analysis(now, days=7 if report_type == "weekly" else 1)
+            if isinstance(history, AnalysisHistory)
+            else None
+        )
+        if analysis is not None:
+            period, previous_period = analysis["period"], analysis["previous_period"]
         return {
             "experimental": True,
             "purpose": report_type,
@@ -800,8 +880,11 @@ class AiAdvisor:
             "current": snapshot,
             "health_checks_current": checks,
             "compressor_starts_last_24_hours": starts,
-            "period": summarize_period(records, now - duration, now),
-            "previous_period": summarize_period(records, now - 2 * duration, now - duration),
+            "period": period,
+            "previous_period": previous_period,
+            "comparison": compare_periods(period, previous_period),
+            "analysis": analysis,
+            "optimization_review": analysis["optimization_review"] if analysis is not None else {},
             "limitations": [
                 "History begins only when the feature is enabled; no Recorder backfill.",
                 "Energy counters require Smart statistics and exclude invalid polling gaps.",
@@ -878,7 +961,7 @@ class AiAdvisor:
                     ),
                     "model_text_verified": False,
                     "model_used": False,
-                    "partial_coverage": facts["period"]["energy_counter_coverage_percent"] < 90,
+                    "partial_coverage": facts["period"]["energy_counter_coverage_percent"] < 100,
                     "stale_input": not facts["current"].get("connected"),
                     "unsupported_numbers": [],
                     "unsupported_percentages": [],

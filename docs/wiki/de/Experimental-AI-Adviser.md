@@ -22,6 +22,28 @@ API-Schlüssel nötig, und es wird keine Cloud-Reservierung verbraucht. Zeitplan
 lokales statistisches Lernen, Speicherlimits und alle vier Berichts-Buttons
 funktionieren in diesem Modus.
 
+Die Berichte unterscheiden Tages-/Wochenüberblick, Anlagencheck und
+Effizienzanalyse. Sie zeigen erfasste Zählerstunden und fehlende Zeit.
+Prozentvergleiche benötigen gleich lange Fenster mit jeweils mindestens 90 %
+Zählerabdeckung und höchstens zwei Prozentpunkten Abdeckungsunterschied.
+Sie beschreiben beobachtete Änderungen und keine Einsparung: Wetter,
+Warmwasserbedarf und Nutzung können sich unterscheiden. Fehlende COP-Daten
+gelten als unbekannt, nicht als bestandene Prüfung; eine auffällige Prüfung
+ist kein bestätigter Defekt. Das Modell erhält berechnete Vergleichswerte.
+Doppelte Zeitstempel zählen nicht als zusätzliche Abdeckung.
+
+Das lokale Lernen unterscheidet Stillstand von fehlenden oder veralteten
+Messungen. Ältere Lernwerte ohne Streuungsmomente liefern weiter einen mittleren
+COP, aber keine Standardabweichung oder Aussage zur Signifikanz einer Abweichung.
+
+Neue Berichte nutzen außerdem die [gemeinsame Advisor-Auswertung](Predictive-Advisor#gemeinsame-auswertung-und-optimierungsbewertung)
+für Zeitraumveränderungen und die Bewertung der zuletzt beobachteten
+Heizkurvenänderung. Advisor-Entitäten und lokaler Assist verwenden dieselbe
+Auswertung, auch ohne Modelltexte. Ihre Historie hält bis zu 28 Tage innerhalb
+eines separaten Rahmens von 4 MiB vor; sie ersetzt das Speicherbudget für
+KI-Lernwerte und Berichte nicht. Ohne geeignete Vorher-/Nachher-Daten bleibt
+eine Wirkung ausdrücklich offen.
+
 <p align="center">
   <img src="../images/ai-adviser-report-example.svg" alt="Beispiel des deutschen Messdatenberichts: Zeitfenster, Abdeckung, beobachtete Energie, COP, Health-Checks, Lernfortschritt" width="540">
 </p>

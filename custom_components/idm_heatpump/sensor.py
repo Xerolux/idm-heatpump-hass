@@ -27,6 +27,7 @@ from idm_heatpump import DataType, RegisterDef
 
 from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
+from .advisor_evidence import async_ensure_analysis
 from .ai_advisor import AiAdvisor
 from .ai_advisor_entities import AI_METRICS, IdmAiMetricSensor, IdmAiReportSensor
 from .calculated_sensors import IdmCalculatedSensor, calculated_sensor_entities, differential_temperature_entities
@@ -517,6 +518,7 @@ async def async_setup_entry(
         | AdvisorProducerEntity
     ] = []
     if entry.options.get(CONF_AI_ADVISOR, False) is True:
+        await async_ensure_analysis(hass, entry, coordinator)
         advisor = AiAdvisor(hass, entry, coordinator)
         await advisor.async_load()
         entry.runtime_data.ai_advisor = advisor

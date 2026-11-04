@@ -19,6 +19,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from .advisor_engine import AdvisorEngine
+from .advisor_evidence import REVIEW_STATES, AnalysisHistory, render_analysis
 from .advisor_operation_reason import OperationReason, compose_operation_reason
 from .coordinator import IdmCoordinator
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
@@ -85,6 +86,8 @@ def predictive_advisor_producer_entities(
         IdmAdvisorDhwWindowSensor(coordinator, engine),
         IdmAdvisorHeatDemandSensor(coordinator, engine),
         IdmAdvisorPlanSensor(coordinator, engine),
+        IdmAdvisorEvidenceSensor(coordinator, "advisor_changes"),
+        IdmAdvisorEvidenceSensor(coordinator, "advisor_optimization_review"),
     ]
     entities.extend(IdmAdvisorCurveSensor(coordinator, engine, circuit) for circuit in engine.circuits)
     return entities
@@ -172,9 +175,11 @@ class IdmAdvisorRecommendationSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
+        language = getattr(getattr(getattr(self, "hass", None), "config", None), "language", "en")
+        language = language if isinstance(language, str) else "en"
         return {
-            "recommendations": [rec.summary() for rec in self._advisor.active_recommendations],
-            "history": [rec.summary() for rec in list(self._advisor.history)[-20:]],
+            "recommendations": [rec.summary(language) for rec in self._advisor.active_recommendations],
+            "history": [rec.summary(language) for rec in list(self._advisor.history)[-20:]],
             "event": "idm_advisor_recommendation",
             "write_actions": False,
         }
@@ -665,6 +670,52 @@ class IdmAdvisorPlanSensor(IdmCoordinatorEntityBase, SensorEntity):
         return {**(self._engine.plan or {}), "write_actions": False}
 
 
+class IdmAdvisorEvidenceSensor(IdmCoordinatorEntityBase, SensorEntity):
+    """Expose the shared changes and optimization review without enabling AI."""
+
+    def __init__(self, coordinator: IdmCoordinator, key: str) -> None:
+        super().__init__(coordinator)
+        assert coordinator.config_entry is not None
+        self._attr_unique_id = build_entity_unique_id(coordinator.config_entry.entry_id, key)
+        self.entity_description = SensorEntityDescription(
+            key=key,
+            translation_key=key,
+            icon="mdi:chart-timeline-variant" if key == "advisor_changes" else "mdi:clipboard-check-outline",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            device_class=SensorDeviceClass.ENUM if key == "advisor_optimization_review" else None,
+        )
+        if key == "advisor_optimization_review":
+            self._attr_options = list(REVIEW_STATES)
+
+    def _analysis(self) -> dict[str, Any] | None:
+        history = getattr(self.coordinator, "analysis_history", None)
+        return history.analysis() if isinstance(history, AnalysisHistory) else None
+
+    @property
+    def native_value(self) -> str | int | None:
+        analysis = self._analysis()
+        if analysis is None:
+            return None
+        if self.entity_description.key == "advisor_changes":
+            return len(analysis["changes"]) if analysis["comparison"].get("status") == "observed_comparison" else None
+        return str(analysis["optimization_review"]["status"])
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        analysis = self._analysis()
+        if analysis is None:
+            return {"write_actions": False}
+        language = getattr(getattr(getattr(self, "hass", None), "config", None), "language", "en")
+        language = language if isinstance(language, str) else "en"
+        review = self.entity_description.key == "advisor_optimization_review"
+        return {
+            "findings": analysis["optimization_review"] if review else analysis["changes"],
+            "explanation": render_analysis(analysis, language, topic="optimization" if review else "changes"),
+            "missing_evidence": analysis["missing_evidence"],
+            "write_actions": False,
+        }
+
+
 AdvisorProducerEntity = (
     IdmAdvisorConfidenceSensor
     | IdmAdvisorOperationReasonSensor
@@ -678,4 +729,5 @@ AdvisorProducerEntity = (
     | IdmAdvisorDhwWindowSensor
     | IdmAdvisorHeatDemandSensor
     | IdmAdvisorPlanSensor
+    | IdmAdvisorEvidenceSensor
 )

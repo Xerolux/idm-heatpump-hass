@@ -85,7 +85,7 @@ def _number(
     numeric = float(value)
     if not math.isfinite(numeric):
         return None
-    if numeric <= -1.0 and key is not None and ("temp" in key or key.endswith("_setpoint")):
+    if numeric <= -1.0 and key is not None and key != "outdoor_temp" and ("temp" in key or key.endswith("_setpoint")):
         return None
     return numeric
 
@@ -110,8 +110,8 @@ def compose_operation_reason(
 ) -> OperationReason | None:
     """Explain the current operation from one snapshot.
 
-    Priority: off → PV surplus → hot water → defrosting → requesting heating
-    circuit → active controller demand reason → the operating mode itself.
+    Priority: off → PV surplus → defrosting → hot-water mode → controller
+    demand → inferred temperature demand → the operating mode itself.
     Returns None when neither the operating mode nor the power draw is readable.
     """
     is_de = language.lower().startswith("de")
@@ -170,14 +170,45 @@ def compose_operation_reason(
             details={"operating_mode": mode, "outdoor_temp": outdoor, "power_consumption_kw": power},
         )
 
-    if mode == 4 or (mode != 2 and dhw_temp is not None and dhw_setpoint is not None and dhw_temp < dhw_setpoint - 3.0):
+    if mode != 4 and demand_reason and demand_reason not in _IDLE_DEMAND_REASONS:
+        normalized_reason = _normalize_web_demand_label(demand_reason, language)
+        return OperationReason(
+            label=normalized_reason,
+            mode_label=mode_label,
+            explanation=(
+                f"Die Regelung meldet '{normalized_reason}' als Anforderungsgrund."
+                if is_de
+                else f"The controller reports '{normalized_reason}' as the demand reason."
+            ),
+            details={"operating_mode": mode, "demand_reason": normalized_reason, "demand_reason_raw": demand_reason},
+        )
+
+    if mode == 4 or (
+        mode is None and dhw_temp is not None and dhw_setpoint is not None and dhw_temp < dhw_setpoint - 3.0
+    ):
         short = dhw_setpoint - dhw_temp if dhw_temp is not None and dhw_setpoint is not None else None
-        if is_de:
-            diff_str = f" um {short:.1f} K" if short is not None and short > 0 else ""
-            explanation = f"Der Warmwasserspeicher liegt{diff_str} unter dem Sollwert."
-        else:
-            diff_str = f" by {short:.1f} K" if short is not None and short > 0 else ""
-            explanation = f"The hot-water tank is below its setpoint{diff_str}."
+        explanation = (
+            ("Die Regelung meldet Warmwasserbetrieb." if is_de else "The controller reports hot-water operation.")
+            if mode == 4
+            else (
+                "Der Temperaturabstand deutet auf möglichen Warmwasserbedarf hin; der Betriebsmodus fehlt."
+                if is_de
+                else "The temperature gap suggests possible hot-water demand; the operating mode is unavailable."
+            )
+        )
+        if short is not None:
+            if short > 0:
+                explanation += (
+                    f" Der Speicher liegt um {short:.1f} K unter dem Sollwert."
+                    if is_de
+                    else f" The tank is {short:.1f} K below its setpoint."
+                )
+            else:
+                explanation += (
+                    " Der Speicher hat den angezeigten Sollwert erreicht oder überschritten."
+                    if is_de
+                    else " The tank has reached or exceeded the displayed setpoint."
+                )
         return OperationReason(
             label="Warmwasser" if is_de else "Hot water",
             mode_label=mode_label,
@@ -190,6 +221,8 @@ def compose_operation_reason(
         )
 
     for circuit in circuits:
+        if mode not in (None, 1):
+            break
         room = _number(data.get(f"hc_{circuit}_room_temp"), f"hc_{circuit}_room_temp", unused_registers)
         room_setpoint = _number(
             data.get(f"hc_{circuit}_room_setpoint_heat_normal"),
@@ -225,6 +258,12 @@ def compose_operation_reason(
                     else ""
                 )
                 explanation = f"Heating circuit {circuit_upper} requests flow: the flow temperature is below its setpoint{room_str}."
+            if circuit_flow is None:
+                explanation = (
+                    f"Für Heizkreis {circuit_upper} liegt ein Vorlauf-Sollwert vor; die aktuelle Vorlauftemperatur fehlt."
+                    if is_de
+                    else f"Heating circuit {circuit_upper} has a flow target; its current flow temperature is unavailable."
+                )
             return OperationReason(
                 label=label,
                 mode_label=mode_label,
@@ -239,20 +278,6 @@ def compose_operation_reason(
                     "outdoor_temp": outdoor,
                 },
             )
-
-    if demand_reason and demand_reason not in _IDLE_DEMAND_REASONS:
-        normalized_reason = _normalize_web_demand_label(demand_reason, language)
-        explanation = (
-            f"Die Regelung meldet '{normalized_reason}' als Anforderungsgrund."
-            if is_de
-            else f"The controller reports '{normalized_reason}' as the demand reason."
-        )
-        return OperationReason(
-            label=normalized_reason,
-            mode_label=mode_label,
-            explanation=explanation,
-            details={"operating_mode": mode, "demand_reason": normalized_reason, "demand_reason_raw": demand_reason},
-        )
 
     explanation = (
         f"Die Wärmepumpe läuft im Modus '{mode_label}'." if is_de else f"The heat pump runs in mode '{mode_label}'."

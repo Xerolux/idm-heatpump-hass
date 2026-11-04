@@ -1163,7 +1163,7 @@ class TestImplausibleRoomTemperature:
         engine, _advisor, analytics, _coordinator = _engine(
             {"outdoor_temp": 5.0, "power_consumption_hp": 0.0, "hc_a_room_temp": -327.33}
         )
-        engine._weather_hours = [(T0, 5.0)] * 24
+        engine._weather_hours = [(T0 + timedelta(hours=index), 5.0) for index in range(24)]
         monkeypatch.setattr(type(analytics), "heat_loss_w_per_k", property(lambda self: 2000.0))
 
         engine._compute_plan(T0)
