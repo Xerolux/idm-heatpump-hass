@@ -14,12 +14,14 @@ import logging
 import math
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
+from itertools import pairwise
 from typing import Any, Final
 
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from .advisor_analytics import AdvisorAnalytics, DailyBaseline
+from .advisor_inputs import room_temperature_celsius
 from .const import HeatPumpStatus
 from .predictive_advisor import (
     _ROOM_TEMP_RANGE,
@@ -115,16 +117,9 @@ def _cop_domain(mode_value: Any) -> str:
     numeric = _number(mode_value)
     if numeric is None:
         return "total"
-    # IntFlag accepts any int (negative values wrap around); the flag
-    # checks below are the actual safety net.
-    mode = HeatPumpStatus(int(numeric))
-    if mode & HeatPumpStatus.DEFROSTING:
-        return "total"
-    heating = bool(mode & HeatPumpStatus.HEATING)
-    water = bool(mode & HeatPumpStatus.WATER)
-    if heating and not water:
+    if numeric == HeatPumpStatus.HEATING:
         return "heating"
-    if water and not heating:
+    if numeric == HeatPumpStatus.WATER:
         return "dhw"
     return "total"
 
@@ -169,7 +164,7 @@ def _bucket_hourly_kwh(series: list[tuple[datetime, float]]) -> list[tuple[datet
     gap to the next sample and one hour, so a 15-minute grid contributes a
     quarter of each kW value instead of a full hour.
     """
-    ordered = sorted(series)
+    ordered = sorted(dict(series).items())
     if not ordered:
         return []
     hours: dict[datetime, float] = {}
@@ -178,9 +173,15 @@ def _bucket_hourly_kwh(series: list[tuple[datetime, float]]) -> list[tuple[datet
             gap = (ordered[index + 1][0] - at).total_seconds() / 3600.0
         else:
             gap = (at - ordered[index - 1][0]).total_seconds() / 3600.0 if index else 1.0
-        duration = max(1.0 / 60.0, min(gap, 1.0))
-        hour = at.replace(minute=0, second=0, microsecond=0)
-        hours[hour] = hours.get(hour, 0.0) + kw * duration
+        remaining = max(0.0, min(gap, 1.0))
+        cursor = at
+        while remaining > 0:
+            hour = cursor.replace(minute=0, second=0, microsecond=0)
+            next_hour = hour + timedelta(hours=1)
+            duration = min(remaining, (next_hour - cursor).total_seconds() / 3600.0)
+            hours[hour] = hours.get(hour, 0.0) + kw * duration
+            remaining = max(0.0, remaining - duration)
+            cursor = next_hour
     return sorted(hours.items())
 
 
@@ -373,6 +374,14 @@ class AdvisorEngine:
     def observe(self, now: datetime | None = None) -> None:
         """Feed analytics from one snapshot and run due sync producers."""
         data = getattr(self._coordinator, "data", None)
+        if getattr(self._coordinator, "last_update_success", True) is False:
+            # Break the interval and cooling episode across an outage. Reusing
+            # cached power here would teach the models from repeated old data.
+            self._last_sample_at = None
+            self._compressor_on = None
+            self._off_since = None
+            self._cooldown_recorded = True
+            return
         if not isinstance(data, Mapping) or not data:
             return
         current = now if now is not None else _utcnow()
@@ -430,13 +439,7 @@ class AdvisorEngine:
         entity_id = self._room_temp_entities.get(circuit)
         if entity_id:
             state = self._hass.states.get(entity_id)
-            if state is not None:
-                try:
-                    override = _room_temp(float(getattr(state, "state", "")))  # HA states are strings
-                except (TypeError, ValueError):
-                    override = None
-                if override is not None:
-                    return override
+            return _room_temp(room_temperature_celsius(state))
         return _room_temp(data.get(f"hc_{circuit}_room_temp"))
 
     def _primary_room_temp(self, data: Mapping[str, Any]) -> tuple[float | None, str | None]:
@@ -864,6 +867,8 @@ class AdvisorEngine:
                     "start": best[0].isoformat(),
                     "hours": _WINDOW_HOURS,
                     "expected_pv_kwh": round(best[2], 2),
+                    "forecast_scope": "pv_generation",
+                    "surplus_confirmed": False,
                 }
         if window is None and self._price_hours:
             # Hot-water charging has its own (lower) COP; prefer the observed
@@ -894,10 +899,10 @@ class AdvisorEngine:
         end_local = dt_util.as_local(start + timedelta(hours=_WINDOW_HOURS))
         window_text = f"{start_local.strftime('%H:%M')}-{end_local.strftime('%H:%M')}"
         if window["source"] == "pv_surplus_forecast":
-            title = f"Charge hot water {window_text}: expected PV surplus {window['expected_pv_kwh']} kWh"
+            title = f"Consider hot water {window_text}: forecast PV generation {window['expected_pv_kwh']} kWh; surplus unconfirmed"
             reasons = ("pv_forecast_surplus_window",)
         else:
-            title = f"Charge hot water {window_text}: cheapest heat cost {window['heat_cost_eur_per_kwh']:.3f} €/kWh"
+            title = f"Consider hot water {window_text}: lowest estimated heat cost {window['heat_cost_eur_per_kwh']:.3f} €/kWh"
             reasons = ("electricity_price_and_expected_cop",)
         self._advisor.submit(
             Recommendation(
@@ -918,10 +923,24 @@ class AdvisorEngine:
         room, _circuit = self._primary_room_temp(data)
         if heat_loss is not None and self._weather_hours:
             indoor = room if room is not None else 21.0
-            deltas = [indoor - temperature for _at, temperature in self._weather_hours[:24]]
-            if deltas:
-                plan["predicted_heat_demand_kwh"] = max(
-                    0.0, round(heat_loss / 1000.0 * (sum(deltas) / len(deltas)) * 24.0, 1)
+            # A few hours or duplicate timestamps are not a 24-hour forecast.
+            # Require a contiguous grid near now; warm hours cannot cancel
+            # the positive heating demand of colder hours.
+            hour = current.replace(minute=0, second=0, microsecond=0)
+            weather = sorted(
+                {
+                    at: temperature
+                    for at, temperature in self._weather_hours
+                    if hour <= at < hour + timedelta(hours=25)
+                }.items()
+            )[:24]
+            if (
+                len(weather) == 24
+                and weather[0][0] <= hour + timedelta(hours=1)
+                and all(after[0] - before[0] == timedelta(hours=1) for before, after in pairwise(weather))
+            ):
+                plan["predicted_heat_demand_kwh"] = round(
+                    heat_loss / 1000.0 * sum(max(0.0, indoor - temperature) for _at, temperature in weather), 1
                 )
         if self._pv_hours:
             plan["expected_pv_kwh"] = round(sum(value for _at, value in self._pv_hours[:24]), 2)

@@ -13,6 +13,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### ⚠️ Upgrade notes
+
+- **No migration required**: existing energy totals remain intact. This correction applies to future samples; previously misattributed heating or hot-water energy cannot be reconstructed automatically. Rollback is safe.
+
+- **New read-only advisor evidence starts collecting after update**: the changes and optimization-review sensors appear with the Predictive Advisor. Shared history retains up to 28 days within a separate 4 MiB cap; existing AI report history is preserved. Optimization review needs three days before and after a readback change, plus six settling hours. No settings are changed automatically.
+
+### ✨ New
+
+- **One evidence base for reports, Predictive Advisor and Assist**: shared numerical history publishes observed changes in energy, COP, compressor starts, hot-water time share and room-temperature deviation. Comparable periods retain weather and coverage context. Missing evidence and an unchanged period are distinguished explicitly.
+
+- **Observed optimization review**: heating-curve readback changes are recorded across restarts. Before/after heating intervals are matched in two-degree outdoor bins, with coverage, operating mode, room targets, comfort and cycling guards. Results distinguish improvement, deterioration, mixed outcomes and insufficient evidence; an observed association never establishes causality or savings.
+
+- **Explainable recommendations**: recommendations include localized observations, supporting reasons, current/suggested values, confidence meaning, missing evidence and a first check. German and English Assist answers use the same structured explanations as the recommendation sensor.
+
+- **Additional local Assist questions**: ask what changed, whether consumption increased, how cycling developed, which evidence is missing or whether a change helped. Answers use shared evidence and explain unavailable history instead of guessing.
+
+- **Advisor dashboard view**: generated plant dashboards include the available advisor status, confidence, recommendations, changes and optimization review. Explanation cards use actual registry IDs and remain absent when the corresponding entities do not exist.
+
+### 🐛 Bugfixes
+
+- **Per-mode energy and COP statistics reject ambiguous status values**: only pure heating or pure hot-water operation contributes to its dedicated counters. Combined cooling flags, unknown bits and negative status values remain in the overall energy totals without contaminating the heating or hot-water COP.
+
+- **AI reports explain their evidence**: daily, weekly, health and efficiency reports have distinct introductions, observed and missing hours, explicit unknown checks and guarded period comparisons. Equal-duration windows need at least 90% coverage each and similar coverage before percentage changes are shown. Prompts distinguish observed changes from savings, and negative reported changes pass the numeric guard correctly.
+
+- **Advisor learning uses consistent inputs**: mapped Fahrenheit/Kelvin room sensors are converted to Celsius; unavailable or mismatched sources do not fall back to registers. Failed updates break training intervals, ambiguous modes do not feed dedicated COP domains, and legacy learning records without dispersion moments no longer imply perfect statistical certainty. Missing COP values remain unknown.
+
+- **Forecasts and running explanations avoid unsupported conclusions**: short or gapped weather forecasts cannot become 24-hour demand estimates, warm hours cannot cancel cold-hour demand, and PV energy is split across hour boundaries without duplicate counting. PV generation is not called confirmed surplus. Controller demand and operating modes take priority over temperature guesses; DHW explanations handle targets already reached.
+
+- **Local Assist answers stay grounded in available readings**: negative outdoor temperatures remain readable, instantaneous COP is clearly labelled and uses the available thermal-power source, missing alarm data cannot establish a fault-free plant, and failed updates produce an explanation instead of cached live readings. German answers use decimal commas.
+
 ## [0.25.0-b6] - 2026-11-02
 
 ### ⚠️ Upgrade notes

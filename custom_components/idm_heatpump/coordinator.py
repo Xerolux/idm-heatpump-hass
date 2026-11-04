@@ -67,6 +67,7 @@ from .registers import (
 )
 
 if TYPE_CHECKING:
+    from .advisor_evidence import AnalysisHistory
     from .dhw_boost import DhwBoostManager
 
 from .controller_stats_reference import LIFETIME_ENERGY_COUNTER_REGISTERS
@@ -338,6 +339,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._hierarchy_device_ids: dict[tuple[str, str], str] = {}
         self._operation_analysis: OperationAnalysis | None = None
         self._energy_statistics: EnergyStatistics | None = None
+        self.analysis_history: AnalysisHistory | None = None
         self._entity_aware_polling_manager: EntityAwarePollingManager | None = None
         self._external_register_demand: dict[str, frozenset[str]] = {}
         self._polling_plan_total_count: int = 0

@@ -155,7 +155,7 @@ async def test_platform_setup_adds_agent() -> None:
 
 
 async def test_fault_query_answers_alarm_and_clean_state() -> None:
-    coord_clean = _coordinator({})
+    coord_clean = _coordinator({"hp_sum_alarm": 0, "error_number": 0})
     entity_clean = IdmHeatpumpConversationEntity(coord_clean, None)
     ans_clean_de = await _answer(entity_clean, "Gibt es eine Störung?", "de")
     ans_clean_en = await _answer(entity_clean, "Any errors?", "en")

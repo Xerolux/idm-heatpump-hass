@@ -84,6 +84,8 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── predictive_advisor_entities.py # Advisor status/recommendation sensors and optimization-available binary sensor
 │   ├── advisor_analytics.py          # Persistent advisor models: rolling baselines, COP map, building regressions
 │   ├── advisor_engine.py             # Producer orchestration: anomalies, heating curve, DHW window, 24 h plan
+│   ├── advisor_inputs.py             # Shared unit-aware input normalization for advisor models and quality
+│   ├── advisor_evidence.py           # Shared history, period changes and observed optimization review
 │   ├── cop_plausibility.py           # Shared COP-sample plausibility guard for the advisor and AI learner (#610)
 │   ├── advisor_operation_reason.py   # Composes the why-is-the-heat-pump-running explanation
 │   ├── whats_new.py                  # One-time release notice in Home Assistant Repairs
@@ -146,6 +148,8 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_ai_advisor_extended.py
 │   ├── test_ai_cloud.py
 │   ├── test_ai_report_integrity.py
+│   ├── test_ai_analysis_quality.py
+│   ├── test_advisor_evidence.py
 │   ├── test_ai_advisor.py
 │   ├── test_comfort_advisory.py
 │   ├── test_comfort_scheduler.py

@@ -46,7 +46,7 @@ def _low_cop(coordinator: IdmCoordinator, _analysis: Any) -> bool | None:
     if not coordinator.data:
         return None
     cop = _cop(coordinator.data)
-    return cop is not None and cop < 2.0
+    return cop < 2.0 if cop is not None else None
 
 
 def _dhw_not_reaching_target(coordinator: IdmCoordinator, _analysis: Any) -> bool | None:
@@ -159,6 +159,8 @@ class IdmHealthBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool | None:
+        if self._check.key != "health_communication" and self.coordinator.last_update_success is False:
+            return None
         return self._check.evaluate(self.coordinator, self._analysis)
 
     @property
@@ -190,18 +192,30 @@ class IdmHealthReportSensor(IdmCoordinatorEntityBase, SensorEntity):
         return True
 
     @property
-    def native_value(self) -> str:
+    def native_value(self) -> str | None:
         active = [check.label for check in HEALTH_CHECKS if check.evaluate(self.coordinator, self._analysis)]
+        if self.coordinator.last_update_success is False:
+            return "problem" if _communication(self.coordinator, self._analysis) else None
+        if not self.coordinator.data:
+            return "problem" if active else None
         return "problem" if active else "ok"
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        active_checks = [check.key for check in HEALTH_CHECKS if check.evaluate(self.coordinator, self._analysis)]
+        checks = {
+            check.key: check.evaluate(self.coordinator, self._analysis)
+            if check.key == "health_communication" or self.coordinator.last_update_success is not False
+            else None
+            for check in HEALTH_CHECKS
+        }
+        active_checks = [key for key, value in checks.items() if value is True]
         return {
             "active_checks": active_checks,
+            "unknown_checks": [key for key, value in checks.items() if value is None],
+            "evaluated_checks": sum(isinstance(value, bool) for value in checks.values()),
             "report_version": 1,
             "report_purpose": "installer_diagnostic_summary",
-            "summary": "problem" if active_checks else "ok",
+            "summary": self.native_value,
             "communication_failures": self.coordinator.poll_statistics.consecutive_failures,
             "last_update_success": self.coordinator.last_update_success,
             "model": self.coordinator.model_name,

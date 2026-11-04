@@ -98,6 +98,52 @@ async def test_setup_reload_and_unload_leave_no_tasks_behind(smoke_hass, patched
     assert not pending, f"leaked tasks after unload: {[task.get_coro() for task in pending]}"
 
 
+async def test_shared_advisor_readback_review_survives_real_ha_reload(
+    smoke_hass, patched_client, smoke_entry, fake_client
+) -> None:
+    """Exercise the actual Store, new entity registration and listener teardown."""
+    from custom_components.idm_heatpump.advisor_evidence import AnalysisHistory
+
+    values = {
+        "hc_a_heating_curve": 1.0,
+        "hp_operating_mode": 1,
+        "power_consumption_hp": 2.0,
+        "thermal_power_flow_sensor": 6.0,
+        "outdoor_temp": 5.0,
+        "hc_a_room_temp": 21.0,
+        "hc_a_room_setpoint_heat_normal": 21.0,
+    }
+    fake_client.read_batch.side_effect = lambda registers: {
+        register.name: values.get(register.name, 20.0) for register in registers
+    }
+    await smoke_hass.config_entries.async_add(smoke_entry)
+    await smoke_hass.async_block_till_done()
+    assert smoke_entry.state is ConfigEntryState.LOADED
+    coordinator = smoke_entry.runtime_data.coordinator
+    history = coordinator.analysis_history
+    assert isinstance(history, AnalysisHistory)
+    registry = er.async_get(smoke_hass)
+    entities = {entry.unique_id: entry for entry in er.async_entries_for_config_entry(registry, smoke_entry.entry_id)}
+    review_id = entities[f"{smoke_entry.entry_id}_advisor_optimization_review"].entity_id
+    assert smoke_hass.states.get(review_id).state == "no_change_recorded"
+    assert f"{smoke_entry.entry_id}_advisor_changes" in entities
+
+    values["hc_a_heating_curve"] = 0.98
+    await coordinator.async_request_refresh()
+    await smoke_hass.async_block_till_done()
+    assert len(history.changes) == 1
+    assert history.changes[0]["after"] == 0.98
+    await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+    await smoke_hass.async_block_till_done()
+    reloaded = smoke_entry.runtime_data.coordinator.analysis_history
+    assert isinstance(reloaded, AnalysisHistory) and reloaded is not history
+    assert len(reloaded.changes) == 1 and reloaded.changes[0]["after"] == 0.98
+    assert smoke_hass.states.get(review_id).state == "collecting_after"
+    assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
+    await smoke_hass.async_block_till_done()
+    assert not [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
+
+
 async def test_connection_entities_register_as_diagnostics(smoke_hass, patched_client, smoke_entry) -> None:
     """The connection entities must land in the device page's Diagnose section.
 

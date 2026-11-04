@@ -20,6 +20,26 @@ consumption. No model is called, no API key is needed and no cloud reservation
 is consumed. Scheduling, local statistical learning, storage limits and all four
 report buttons work in this mode.
 
+Reports distinguish the daily/weekly overview, plant check and efficiency
+analysis. The data basis includes observed counter hours and missing time.
+Percentage comparisons require equal-length windows with at least 90% counter
+coverage each and no more than two percentage points of coverage difference.
+These describe observed changes rather than savings: weather, hot-water demand
+and usage can differ. Missing COP data is unknown, not a passed health check;
+a flagged check is not a confirmed defect. The model receives calculated
+comparison values. Duplicate timestamps never count as extra coverage.
+
+Local learning distinguishes an idle plant from missing or stale measurements.
+Older baseline records without dispersion moments still provide a mean COP,
+but cannot establish a standard deviation or deviation significance.
+
+New reports also use the [shared advisor evidence](Predictive-Advisor#shared-evidence-and-optimization-review)
+for period changes and the latest observed heating-curve optimization review.
+This is the same analysis used by Advisor entities and local Assist, available
+without model explanations. Its history retains up to 28 days within a separate
+4 MiB cap; it does not replace the AI learning/report storage budget. A review
+requires suitable before/after history and may deliberately remain inconclusive.
+
 <p align="center">
   <img src="../images/ai-adviser-report-example.svg" alt="Example of the German measured-data report: window, coverage, observed energy, COP, health checks, learning progress" width="540">
 </p>

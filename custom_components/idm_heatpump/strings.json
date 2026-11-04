@@ -2029,6 +2029,9 @@
       "advisor_building_thermal_inertia": {
         "name": "Advisor building thermal inertia"
       },
+      "advisor_changes": {
+        "name": "Advisor changes"
+      },
       "advisor_confidence": {
         "name": "Advisor confidence"
       },
@@ -2059,6 +2062,19 @@
       },
       "advisor_optimal_flow_temp": {
         "name": "Advisor optimal flow temperature"
+      },
+      "advisor_optimization_review": {
+        "name": "Advisor optimization review",
+        "state": {
+          "no_change_recorded": "No change recorded",
+          "collecting_after": "Collecting after change",
+          "insufficient_data": "Insufficient evidence",
+          "not_comparable": "Conditions not comparable",
+          "observed_improvement": "Observed improvement",
+          "observed_deterioration": "Observed deterioration",
+          "mixed_outcome": "Mixed outcome",
+          "no_clear_change": "No clear change"
+        }
       },
       "advisor_predicted_heat_demand": {
         "name": "Advisor predicted heat demand 24h"

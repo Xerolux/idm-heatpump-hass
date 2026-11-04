@@ -242,6 +242,21 @@ def test_mode_domain_rejects_non_flag_values() -> None:
     assert EnergyStatistics._mode_domain("1") is None
 
 
+@pytest.mark.parametrize("mode", [3, 6, 17, 20, -15, -12])
+def test_ambiguous_modes_do_not_feed_heating_or_dhw_totals(mode: int) -> None:
+    stats = EnergyStatistics(SimpleNamespace(), "entry", 30)
+    start = datetime(2026, 1, 1, tzinfo=UTC)
+    sample = {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 4.0, "hp_operating_mode": mode}
+    stats.process_snapshot(sample, now=start)
+    stats.process_snapshot(sample, now=start + timedelta(minutes=1))
+    assert stats.total_electrical_kwh == pytest.approx(1.0 / 60.0)
+    assert stats.total_thermal_kwh == pytest.approx(4.0 / 60.0)
+    assert stats.heating_electrical_kwh == 0.0
+    assert stats.heating_thermal_kwh == 0.0
+    assert stats.dhw_electrical_kwh == 0.0
+    assert stats.dhw_thermal_kwh == 0.0
+
+
 def test_mode_change_between_samples_stays_in_the_totals_only() -> None:
     stats = EnergyStatistics(SimpleNamespace(), "entry", 30)
     start = datetime(2026, 1, 1, tzinfo=UTC)

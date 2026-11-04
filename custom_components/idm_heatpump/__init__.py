@@ -32,6 +32,7 @@ from idm_heatpump import (
 
 from .advisor_analytics import AdvisorAnalytics
 from .advisor_engine import AdvisorEngine, advisor_forecast_loop
+from .advisor_evidence import AnalysisHistory, async_ensure_analysis
 from .ai_advisor import AiAdvisor
 from .comfort_scheduler import ComfortScheduler, parse_schedule_rows
 from .const import (
@@ -1072,6 +1073,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
                 integration = await async_get_integration(hass, DOMAIN)
                 await async_note_release(hass, entry, str(integration.manifest.get("version") or "") or None)
                 predictive_advisor = PredictiveAdvisor(coordinator)
+                await async_ensure_analysis(hass, entry, coordinator)
                 await predictive_advisor.async_load()
                 coordinator.register_required_registers("predictive_advisor", predictive_advisor.required_registers)
                 entry.async_on_unload(coordinator.async_add_listener(predictive_advisor.observe))
@@ -1443,6 +1445,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None
     # Raises a translated ConfigEntryError instead of reporting a bare False,
     # so a platform that refuses to unload fails the entry loudly (2026.11).
     await hass.config_entries.async_unload_platforms_or_raise(entry, list(platforms))
+    history = getattr(entry.runtime_data.coordinator, "analysis_history", None)
+    if isinstance(history, AnalysisHistory):
+        try:
+            await history.async_save()
+        except Exception:
+            _LOGGER.warning("Failed to persist shared advisor evidence during unload", exc_info=True)
     operation_analysis = getattr(entry.runtime_data, "operation_analysis", None)
     if isinstance(operation_analysis, OperationAnalysis):
         try:

@@ -23,6 +23,7 @@ from typing import Any, Final
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
+from .advisor_evidence import explain_recommendation
 from .const import (
     CONF_ADVISOR_ROOM_TEMP_ENTITIES,
     CONF_DYNAMIC_PRICE_ENTITY,
@@ -327,13 +328,15 @@ class Recommendation:
             "refreshed_at": self.effective_refreshed_at.isoformat(),
         }
 
-    def summary(self) -> dict[str, Any]:
+    def summary(self, language: str = "en") -> dict[str, Any]:
         """Return the compact form published as an entity attribute."""
         return {
             "id": self.id,
             "category": str(self.category),
             "severity": str(self.severity),
             "title": self.title,
+            "description": self.description,
+            "explanation": explain_recommendation(self.to_dict(), language),
             "current_value": self.current_value,
             "recommended_value": self.recommended_value,
             "unit": self.unit,
@@ -725,10 +728,9 @@ class PredictiveAdvisor:
                 raw = getattr(state, "state", None)
                 if raw is None or raw in ("unknown", "unavailable", "none"):
                     return None
-                try:
-                    return float(raw)  # HA states are strings; classify numerically
-                except (TypeError, ValueError):
-                    return raw  # present but unparseable: implausible, not unavailable
+                from .advisor_inputs import room_temperature_celsius
+
+                return room_temperature_celsius(state)
         value = data.get(key)
         if key == "thermal_power_flow_sensor" and (value is None or value == 0.0):
             fallback = data.get("current_power")
