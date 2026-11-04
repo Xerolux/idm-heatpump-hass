@@ -44,6 +44,12 @@ eines separaten Rahmens von 4 MiB vor; sie ersetzt das Speicherbudget für
 KI-Lernwerte und Berichte nicht. Ohne geeignete Vorher-/Nachher-Daten bleibt
 eine Wirkung ausdrücklich offen.
 
+Beim Update übernimmt die gemeinsame Historie automatisch die bisherigen lokalen
+KI-Messpunkte. Energie- und Temperaturwerte bleiben für Tages- und Wochenberichte
+verfügbar; fehlende Verdichterstart-, Raumkomfort- und Heizkurvendaten werden nicht
+nachträglich rekonstruiert. Ausführliche Empfehlungen bleiben sichtbar, werden aber
+nicht im Recorder gespeichert.
+
 <p align="center">
   <img src="../images/ai-adviser-report-example.svg" alt="Beispiel des deutschen Messdatenberichts: Zeitfenster, Abdeckung, beobachtete Energie, COP, Health-Checks, Lernfortschritt" width="540">
 </p>

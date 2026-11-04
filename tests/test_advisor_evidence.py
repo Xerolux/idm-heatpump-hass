@@ -37,6 +37,75 @@ def _history() -> evidence.AnalysisHistory:
     return evidence.AnalysisHistory(SimpleNamespace(), "test", obj._coordinator, ("a",))
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("provider", ["ollama", "ha_task", "openai", "zai"])
+async def test_upgrade_backfills_existing_ai_history_without_fabricating_evidence(provider) -> None:
+    obj = manager()
+    history = _history()
+    obj._coordinator.analysis_history = history
+    now = time.time()
+    rows = [
+        {
+            "at": now - offset * 300,
+            "connected": True,
+            "total_electrical_kwh": 100 - offset,
+            "total_thermal_kwh": 300 - 3 * offset,
+            "outdoor_temp": 5,
+            "mode": 1,
+        }
+        for offset in reversed(range(577))
+    ]
+    obj._store.async_load = AsyncMock(return_value={"records": rows})
+    history.records = [{**rows[-1], "outdoor_temp": 6}]
+    history._store.async_delay_save = MagicMock()
+    await obj.async_load()
+    facts = obj.build_facts("daily", now)
+    assert facts["period"]["energy_counter_coverage_percent"] > 99
+    assert facts["previous_period"]["energy_counter_coverage_percent"] > 99
+    assert facts["period"]["cop_observed"] == 3
+    assert history.records[-1]["outdoor_temp"] == 6
+    assert facts["period"]["compressor_starts_observed"] is None
+    assert facts["period"]["room_deviation_abs_k"] is None
+    assert history.changes == []
+    before = list(history.records)
+    history.import_legacy_records(obj.records, now)
+    assert history.records == before
+    history._store.async_delay_save.assert_called_once()
+    # Measured-data reports must work with no endpoint, key or AI Task entity,
+    # regardless of a previously selected provider.
+    obj._options.update(ai_provider=provider, ai_unverified_text=False, ai_url="")
+    for kind in ("daily", "weekly", "health", "efficiency"):
+        obj._last_request = float("-inf")
+        with (
+            patch("custom_components.idm_heatpump.ai_advisor.async_local_report", AsyncMock()) as local,
+            patch("custom_components.idm_heatpump.ai_advisor.async_cloud_report", AsyncMock()) as cloud,
+            patch("custom_components.idm_heatpump.ai_advisor.async_ha_task_report", AsyncMock()) as task,
+        ):
+            result = await obj.async_generate(kind)
+        assert result["quality"]["output_source"] == "facts"
+        assert result["quality"]["model_used"] is False
+        for call in (local, cloud, task):
+            call.assert_not_awaited()
+
+
+def test_legacy_history_import_rejects_invalid_times_and_private_fields() -> None:
+    history = _history()
+    history._store.async_delay_save = MagicMock()
+    history.import_legacy_records(
+        [
+            {"at": NOW + 1},
+            {"at": NOW - 29 * 86400},
+            {"at": True},
+            {"at": NOW, "connected": "true", "outdoor_temp": float("nan"), "secret": "private"},
+        ],
+        NOW,
+    )
+    assert len(history.records) == 1
+    assert history.records[0]["connected"] is False
+    assert history.records[0]["outdoor_temp"] is None
+    assert "secret" not in history.records[0]
+
+
 def _records(
     *, after_cop: float = 3.6, after_comfort: float | None = 0.2, after_outdoor: float = 5, after_target: float = 21
 ) -> list[dict]:

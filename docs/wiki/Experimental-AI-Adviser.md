@@ -40,6 +40,11 @@ without model explanations. Its history retains up to 28 days within a separate
 4 MiB cap; it does not replace the AI learning/report storage budget. A review
 requires suitable before/after history and may deliberately remain inconclusive.
 
+On upgrade, existing local AI measurements backfill the shared history automatically.
+Energy and temperature observations remain available for daily and weekly reports;
+missing compressor-start, room-comfort and heating-curve evidence is not reconstructed.
+Detailed recommendation payloads remain visible but are excluded from Recorder.
+
 <p align="center">
   <img src="../images/ai-adviser-report-example.svg" alt="Example of the German measured-data report: window, coverage, observed energy, COP, health checks, learning progress" width="540">
 </p>
