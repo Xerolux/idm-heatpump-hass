@@ -7,12 +7,12 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.25.0-b8` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
+- **Current Version**: `0.25.0-b9` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.11.0b0 (bump to 2026.11.0 when the stable ships)
 - **Python**: 3.14+ (Home Assistant 2026.11 requires `>=3.14.2`)
-- **Direct Modbus Runtime**: `modbus-connection>=4.12.4`, `tmodbus[async-serial]>=0.6.2`
+- **Direct Modbus Runtime**: `modbus-connection>=4.12.7`, `tmodbus[async-serial]>=0.6.2`
 - **Device Logic**: `idm-heatpump-api[web]==2.16.0b3` (owns its own exception hierarchy; pymodbus is no longer a dependency)
 - **Completed audit**: `docs/dev/code-audit-2026-09.md` — the September 2026 full-read audit.
   Every work package shipped (D5 was attempted and closed as won't-fix); the document stays as
@@ -367,7 +367,7 @@ mypy). Recreate it and check through it with:
 ```bash
 py -3.14 -m venv test_ha
 test_ha/Scripts/python -m pip install homeassistant==2026.11.0b0 \
-    "modbus-connection>=4.12.4" "tmodbus[async-serial]>=0.6.2" \
+    "modbus-connection>=4.12.7" "tmodbus[async-serial]>=0.6.2" \
     "idm-heatpump-api[web]==2.16.0b3" mypy
 test_ha/Scripts/python -m mypy custom_components/idm_heatpump/
 ```

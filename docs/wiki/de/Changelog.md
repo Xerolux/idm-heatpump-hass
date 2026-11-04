@@ -5,7 +5,7 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
-## v0.25.0-b8 — 2026-11-04
+## v0.25.0-b9 — 2026-11-04
 
 Tages- und Wochenberichte übernehmen bestehende lokale KI-Messpunkte in die
 gemeinsame Advisor-Historie, statt die Energieauswertung neu zu beginnen.
@@ -13,6 +13,8 @@ Fehlende Daten bleiben unbekannt. Ausführliche Empfehlungen bleiben sichtbar,
 werden aber vom Recorder ausgenommen, um Warnungen über zu große Attribute
 zu vermeiden. Messdatenberichte funktionieren weiterhin ohne KI-Anbieter
 oder Zugangsdaten.
+Die Transport-Untergrenze entspricht mit `modbus-connection>=4.12.7` der
+validierten HA-Umgebung. Alle Korrekturen des unveröffentlichten b8-Kandidaten sind enthalten.
 
 ## v0.25.0-b7 — 2026-11-04
 

@@ -499,6 +499,21 @@ def test_the_shipped_transport_requirements_are_ha_owned_minimums() -> None:
     assert requirements["idm-heatpump-api"].pinned_version is not None
 
 
+def test_transport_update_keeps_dated_contributor_example(tmp_path, monkeypatch) -> None:
+    old_version, new_version = "4.12.4", "4.12.7"
+    requirement = f"modbus-connection>={old_version}"
+    historical = next(
+        line for line in (ROOT / "AGENTS.md").read_text(encoding="utf-8").splitlines() if "2026-10-09:" in line
+    )
+    _write(tmp_path, "AGENTS.md", f"Current: `{requirement}`\n" + historical + "\n")
+    _write(tmp_path, "custom_components/idm_heatpump/manifest.json", json.dumps({"requirements": [requirement]}))
+    monkeypatch.setattr(pins, "PIN_DOCUMENTS", ("AGENTS.md",))
+    pins.apply_update(pins.parse_requirement(requirement), new_version, root=tmp_path)
+    updated = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+    assert f"Current: `modbus-connection>={new_version}`" in updated
+    assert historical in updated
+
+
 def test_ha_owned_floor_held_below_home_assistants_own_pin() -> None:
     """Upstream ahead of HA's own pin never marks the floor stale.
 

@@ -13,17 +13,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.25.0-b8] - 2026-11-04
+## [0.25.0-b9] - 2026-11-04
 
 ### ⚠️ Upgrade notes
 
 - **Existing local AI measurements are reused automatically**: no reset or manual migration is needed. Backfill preserves recorded energy, temperature and operating-mode observations. Missing historical compressor starts, room comfort and heating-curve changes remain unknown. Rollback retains the original AI history.
+
+- **Transport floor aligned with the tested HA runtime**: `modbus-connection>=4.12.7` matches Home Assistant 2026.11.0b0's own Modbus dependency and the validated runtime. The API stays at `2.16.0b3`. The unpublished b8 release was stopped by the freshness gate; b9 contains its complete report and Recorder corrections.
 
 ### 🐛 Bugfixes
 
 - **Daily and weekly reports retain their existing observation history**: the shared advisor evidence now imports the local AI measurements on load instead of replacing a mature history with a few new samples. Existing shared records take precedence, and repeated reloads do not duplicate observations or invent missing evidence.
 
 - **Recommendation details no longer exceed Recorder's attribute limit**: full explanations and recent recommendation history stay available in the entity attributes, but their large payloads are excluded from Recorder. The recommendation count remains recorded. This removes the maximum-size warning without truncating the explanations shown in Home Assistant.
+
+- **Dependency updates preserve historical examples**: the transport-floor updater now recognizes the dated Home Assistant pin example in the contributor instructions as history, preventing a successful current-pin rewrite from being rejected because that example still names its original version.
 
 ## [0.25.0-b7] - 2026-11-04
 

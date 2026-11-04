@@ -123,8 +123,8 @@ The sticky protocol selection was introduced in integration version
 Navigator 10 heating-circuit data for circuits B–G.
 
 For the independent Modbus path, the tested manifest order is
-`modbus-connection>=4.12.4`, `tmodbus[async-serial]>=0.6.2`,
+`modbus-connection>=4.12.7`, `tmodbus[async-serial]>=0.6.2`,
 and `idm-heatpump-api[web]==2.16.0b3`. The first two own the direct Modbus socket;
 since API 2.0.0 pymodbus is no longer installed at all. This does not change
 the web protocol or make
-version `4.12.4` an IDM integration release.
+version `4.12.7` an IDM integration release.
