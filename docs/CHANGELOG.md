@@ -13,7 +13,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.25.0-b7] - 2026-11-04
+
+The advisor now explains what changed and can review an observed heating-curve change against comparable operating history. Reports, local Assist and new advisor sensors share the same evidence while keeping uncertain outcomes open.
 
 ### ⚠️ Upgrade notes
 
