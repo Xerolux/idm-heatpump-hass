@@ -47,6 +47,10 @@ The advisor now explains what changed and can review an observed heating-curve c
 
 - **Local Assist answers stay grounded in available readings**: negative outdoor temperatures remain readable, instantaneous COP is clearly labelled and uses the available thermal-power source, missing alarm data cannot establish a fault-free plant, and failed updates produce an explanation instead of cached live readings. German answers use decimal commas.
 
+### 💼 Maintenance
+
+- **API development compatibility checks stay independent of release catalogs**: the API-main CI leg skips only the committed register-catalog freshness assertion, which deliberately requires the exact manifest pin. The pinned release leg still enforces it, and a regression test confirms the generator rejects mismatched runtime versions. Functional tests remain enabled in both legs.
+
 ## [0.25.0-b6] - 2026-11-02
 
 ### ⚠️ Upgrade notes

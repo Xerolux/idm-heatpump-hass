@@ -23,6 +23,8 @@ jobs:
   validate:
     name: Python ${{ inputs.python-version }} / HA ${{ inputs.home-assistant-version }} / ${{ inputs.api-dependency-mode }}
     runs-on: ubuntu-latest
+    env:
+      API_DEPENDENCY_MODE: ${{ inputs.api-dependency-mode }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # guardrails-disable-line
 

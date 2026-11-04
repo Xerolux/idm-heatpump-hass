@@ -11,6 +11,7 @@ equivalent after normalizing the German column vocabulary.
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 
@@ -78,8 +79,19 @@ def test_german_register_reference_matches_english() -> None:
     )
 
 
+@pytest.mark.skipif(
+    os.environ.get("API_DEPENDENCY_MODE") == "api-main",
+    reason="Committed catalogs describe the manifest pin, not the API development branch",
+)
 def test_committed_register_references_match_generator_output() -> None:
     assert generator.main(["--check"]) == 0
+
+
+def test_generator_still_rejects_a_runtime_that_differs_from_the_manifest_pin(monkeypatch) -> None:
+    monkeypatch.setattr(generator, "_pinned_api_version", lambda: "2.16.0b2")
+    monkeypatch.setattr(generator, "distribution_version", lambda name: "2.16.0b3")
+    with pytest.raises(RuntimeError, match="does not match pinned"):
+        generator._build_reference()
 
 
 @pytest.mark.parametrize(

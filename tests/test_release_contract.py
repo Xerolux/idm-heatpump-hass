@@ -509,6 +509,13 @@ def test_dependency_freshness_workflow_runs_the_pipeline_daily() -> None:
     assert "concurrency:\n  group: dependency-update" in workflow
 
 
+def test_api_compatibility_leg_exposes_its_mode_to_both_test_runs() -> None:
+    quality = _read(ROOT / ".github" / "workflows" / "python-quality.yml")
+    assert "    env:\n      API_DEPENDENCY_MODE: ${{ inputs.api-dependency-mode }}\n    steps:" in quality
+    assert "pytest tests/" in quality.split("- name: Run unit tests", 1)[1]
+    assert "pytest tests/" in quality.split("- name: Check config flow coverage", 1)[1]
+
+
 def test_release_refuses_stale_runtime_pins_without_override() -> None:
     """A release must not silently ship a pin that upstream has moved past."""
     workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
