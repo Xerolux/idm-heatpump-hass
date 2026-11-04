@@ -144,9 +144,7 @@ async def test_shared_advisor_readback_review_survives_real_ha_reload(
     assert not [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
 
 
-async def test_existing_ai_measurements_survive_shared_history_upgrade(
-    smoke_hass, patched_client, smoke_entry
-) -> None:
+async def test_existing_ai_measurements_survive_shared_history_upgrade(smoke_hass, patched_client, smoke_entry) -> None:
     """Use actual HA storage and platform setup to exercise upgrade backfill."""
     import time
 

@@ -363,8 +363,7 @@ class AnalysisHistory:
             if at is None or not now - _RETENTION <= at <= now:
                 continue
             imported[at] = {
-                key: row.get(key) is True if key == "connected" else _number(row.get(key))
-                for key in allowed
+                key: row.get(key) is True if key == "connected" else _number(row.get(key)) for key in allowed
             }
         # The shared history is authoritative at timestamps it already knows.
         imported.update({row["at"]: row for row in self.records})
