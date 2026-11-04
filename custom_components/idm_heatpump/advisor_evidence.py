@@ -354,6 +354,25 @@ class AnalysisHistory:
                 ):
                     self.changes.append({**values, "circuit": change["circuit"]})
 
+    def import_legacy_records(self, records: list[dict[str, Any]], now: float) -> None:
+        """Backfill existing AI measurements without inventing new evidence fields."""
+        allowed = set(_sample(self.coordinator, self.circuits, now))
+        imported: dict[float, dict[str, Any]] = {}
+        for row in records[-_MAX_RECORDS:]:
+            at = _number(row.get("at"))
+            if at is None or not now - _RETENTION <= at <= now:
+                continue
+            imported[at] = {
+                key: row.get(key) is True if key == "connected" else _number(row.get(key)) for key in allowed
+            }
+        # The shared history is authoritative at timestamps it already knows.
+        imported.update({row["at"]: row for row in self.records})
+        merged = sorted(imported.values(), key=lambda row: row["at"])[-_MAX_RECORDS:]
+        if merged != self.records:
+            self.records = merged
+            self._cache.clear()
+            self._store.async_delay_save(self._serialize, 30)
+
     def observe(self, now: float | None = None) -> None:
         current = time.time() if now is None else now
         previous = self.records[-1] if self.records else None

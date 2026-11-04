@@ -153,6 +153,8 @@ class IdmAdvisorStatusSensor(IdmCoordinatorEntityBase, SensorEntity):
 class IdmAdvisorRecommendationSensor(IdmCoordinatorEntityBase, SensorEntity):
     """Active advisor recommendations with their full, explainable payloads."""
 
+    _unrecorded_attributes = frozenset({"recommendations", "history"})
+
     def __init__(self, coordinator: IdmCoordinator, advisor: PredictiveAdvisor) -> None:
         super().__init__(coordinator)
         self._advisor = advisor

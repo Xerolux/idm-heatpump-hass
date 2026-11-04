@@ -623,6 +623,7 @@ def test_entity_values_before_and_after_observation() -> None:
     advisor = PredictiveAdvisor(coordinator)
     status_sensor = IdmAdvisorStatusSensor(coordinator, advisor)
     recommendation_sensor = IdmAdvisorRecommendationSensor(coordinator, advisor)
+    assert recommendation_sensor._unrecorded_attributes == frozenset({"recommendations", "history"})
     binary = IdmAdvisorOptimizationBinarySensor(coordinator, advisor)
 
     # Before the first snapshot the entities stay unavailable.

@@ -643,6 +643,9 @@ class AiAdvisor:
                 clean["connected"] = row.get("connected") is True
                 self.records.append(clean)
             self.records.sort(key=lambda row: row["at"])
+            history = getattr(self._coordinator, "analysis_history", None)
+            if isinstance(history, AnalysisHistory):
+                history.import_legacy_records(self.records, now)
         if isinstance(stored, dict):
             day, count = stored.get("cloud_day", ""), stored.get("cloud_requests", 0)
             valid_day = day == "" and count == 0

@@ -144,6 +144,46 @@ async def test_shared_advisor_readback_review_survives_real_ha_reload(
     assert not [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
 
 
+async def test_existing_ai_measurements_survive_shared_history_upgrade(smoke_hass, patched_client, smoke_entry) -> None:
+    """Use actual HA storage and platform setup to exercise upgrade backfill."""
+    import time
+
+    from homeassistant.helpers.storage import Store
+
+    from custom_components.idm_heatpump.const import CONF_AI_ADVISOR, DOMAIN
+
+    now = time.time()
+    records = [
+        {
+            "at": now - offset * 300,
+            "connected": True,
+            "mode": 1,
+            "outdoor_temp": 5,
+            "total_electrical_kwh": 1000 - offset,
+            "total_thermal_kwh": 3000 - 3 * offset,
+        }
+        for offset in reversed(range(577))
+    ]
+    store = Store(smoke_hass, 1, f"{DOMAIN}.ai_advisor.{smoke_entry.entry_id}")
+    await store.async_save({"records": records})
+    await smoke_hass.config_entries.async_add(smoke_entry)
+    await smoke_hass.async_block_till_done()
+    smoke_hass.config_entries.async_update_entry(smoke_entry, options={CONF_AI_ADVISOR: True})
+    await smoke_hass.async_block_till_done()
+    assert smoke_entry.state is ConfigEntryState.LOADED
+    advisor = smoke_entry.runtime_data.ai_advisor
+    facts = advisor.build_facts("daily", now)
+    assert facts["period"]["energy_counter_coverage_percent"] > 99
+    assert facts["previous_period"]["cop_observed"] == 3
+    await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+    await smoke_hass.async_block_till_done()
+    facts = smoke_entry.runtime_data.ai_advisor.build_facts("daily", now)
+    assert facts["period"]["energy_counter_coverage_percent"] > 99
+    assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
+    await smoke_hass.async_block_till_done()
+    assert not [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
+
+
 async def test_connection_entities_register_as_diagnostics(smoke_hass, patched_client, smoke_entry) -> None:
     """The connection entities must land in the device page's Diagnose section.
 
