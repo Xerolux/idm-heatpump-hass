@@ -117,3 +117,17 @@ Feature follow-up validation:
 - Final targeted report/provider/Assist/evidence checks: **129 passed**.
 - Strict mypy: **82 modules passed**. Ruff lint/format and documentation
   version/language/translation/changelog checks passed.
+
+## Release preparation follow-up
+
+The owner requested publication as integration `0.25.0-b7`. API `2.16.0b3`
+was published during preparation and is now the exact release pin. All current
+dependency documents and generated register references are synchronized. With
+the published wheel installed, the unit suite passes **3345 tests, 2 skipped**
+with **98.77% coverage**, strict mypy passes 82 modules, and all nine genuine
+Home Assistant lifecycle smoke tests pass using the simulated plant.
+
+API-main CI intentionally checks the development library, whereas committed
+catalogs describe the manifest pin. Only the exact catalog-freshness assertion
+is scoped to the pinned leg; functional tests run in both modes and a dedicated
+regression preserves the generator's hard rejection of mismatched versions.

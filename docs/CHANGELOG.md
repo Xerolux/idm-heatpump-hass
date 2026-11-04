@@ -23,6 +23,8 @@ The advisor now explains what changed and can review an observed heating-curve c
 
 - **New read-only advisor evidence starts collecting after update**: the changes and optimization-review sensors appear with the Predictive Advisor. Shared history retains up to 28 days within a separate 4 MiB cap; existing AI report history is preserved. Optimization review needs three days before and after a readback change, plus six settling hours. No settings are changed automatically.
 
+- **API updated to `idm-heatpump-api[web]==2.16.0b3`**: Navigator 10 web saves with an uncertain transport outcome are no longer automatically replayed. Existing configuration and counters are retained; the new pin is validated with the integration before release.
+
 ### ✨ New
 
 - **One evidence base for reports, Predictive Advisor and Assist**: shared numerical history publishes observed changes in energy, COP, compressor starts, hot-water time share and room-temperature deviation. Comparable periods retain weather and coverage context. Missing evidence and an unchanged period are distinguished explicitly.
@@ -48,6 +50,8 @@ The advisor now explains what changed and can review an observed heating-curve c
 - **Local Assist answers stay grounded in available readings**: negative outdoor temperatures remain readable, instantaneous COP is clearly labelled and uses the available thermal-power source, missing alarm data cannot establish a fault-free plant, and failed updates produce an explanation instead of cached live readings. German answers use decimal commas.
 
 ### 💼 Maintenance
+
+- **Navigator web lifecycle hardening from API 2.16.0b3**: invalid non-finite parameter values are rejected before network access, cancelled connection setup releases sessions and sockets, and Navigator 2.0 statistics reuse authentication with one controlled renewal. Raw-statistics responses are supported consistently. Generated catalogs and current dependency documentation match the new exact pin.
 
 - **API development compatibility checks stay independent of release catalogs**: the API-main CI leg skips only the committed register-catalog freshness assertion, which deliberately requires the exact manifest pin. The pinned release leg still enforces it, and a regression test confirms the generator rejects mismatched runtime versions. Functional tests remain enabled in both legs.
 

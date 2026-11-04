@@ -95,15 +95,20 @@ def test_generator_still_rejects_a_runtime_that_differs_from_the_manifest_pin(mo
 
 
 @pytest.mark.parametrize(
-    ("requirement", "expected"),
+    ("requirement_name", "expected"),
     [
-        ("idm-heatpump-api[web]==2.16.0", "2.16.0"),
-        ("idm-heatpump-api[web]==2.16.0a1", "2.16.0a1"),
-        ("idm-heatpump-api[web]==2.16.0b2", "2.16.0b2"),
-        ("idm-heatpump-api==2.16.0rc3", "2.16.0rc3"),
+        ("idm-heatpump-api[web]", "2.16.0"),
+        ("idm-heatpump-api[web]", "2.16.0a1"),
+        ("idm-heatpump-api[web]", "2.16.0b3"),
+        ("idm-heatpump-api", "2.16.0rc3"),
     ],
 )
-def test_pinned_api_version_accepts_stable_and_prerelease_pins(tmp_path: Path, requirement: str, expected: str) -> None:
+def test_pinned_api_version_accepts_stable_and_prerelease_pins(
+    tmp_path: Path, requirement_name: str, expected: str
+) -> None:
+    # Construct parser fixtures so the pin updater cannot rewrite only one
+    # half of a literal requirement/expected-version pair during a release.
+    requirement = f"{requirement_name}=={expected}"
     manifest = tmp_path / "manifest.json"
     manifest.write_text(json.dumps({"requirements": [requirement]}), encoding="utf-8")
 
