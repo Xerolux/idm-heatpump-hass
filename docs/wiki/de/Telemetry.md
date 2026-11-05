@@ -145,8 +145,9 @@ zusätzliche Aufbewahrung ist dadurch nicht automatisch freigegeben.
 
 ## Unabhängige Löschhistorie auf Proxmox
 
-Die Löschhistorie liegt jetzt auf dem Proxmox-Host außerhalb der netcup-Snapshots
-und Gast-Backups. Sie enthält nur zufällige Berichts-/Anfragekennungen und
+Die Löschhistorie liegt jetzt ausschließlich im eigenen unprivilegierten
+LXC 117 auf Proxmox, unabhängig von den netcup-Snapshots. Auf dem Hypervisor
+laufen dafür keine Anwendungsdienste; es gibt keine Host-Bind-Mounts und kein Nesting. Sie enthält nur zufällige Berichts-/Anfragekennungen und
 Lösch-/Ablaufzeitpunkte, keine myIDM-ID, Kontakte oder Messwerte. Ein privater
 ausgehender SSH-Tunnel schützt die Übertragung; kein neuer öffentlicher Port
 wurde geöffnet. Löschungen werden erst nach dauerhafter externer Speicherung
@@ -155,3 +156,8 @@ Scheitert der Abgleich, bleibt der Zugriff gesperrt. Die Historie wird sechs
 Kalendermonate plus einen Tag aufbewahrt. Bei älteren Software-Snapshots muss
 vor Freigabe zuerst der aktuelle Dienst eingerichtet werden. Die Proxmox-Historie
 selbst darf nicht gemeinsam mit netcup auf einen alten Stand zurückgesetzt werden.
+
+Die anfängliche direkte Host-Installation wurde entfernt. Benutzer, Dateien und
+private Schlüssel sind vom Hypervisor entfernt; neue Schlüssel liegen im Container.
+Der Container selbst darf nicht gemeinsam mit netcup auf einen veralteten Stand
+zurückgesetzt werden.

@@ -133,11 +133,16 @@ availability; this is not consent to an additional retention period.
 
 ## Independent erasure journal on Proxmox
 
-The journal now resides on the Proxmox host outside netcup snapshots and guest
-backups. It holds only random report/request IDs and erasure/expiry timestamps,
+The journal now runs only inside dedicated unprivileged LXC 117 on Proxmox,
+independent of netcup snapshots. No application daemon, host bind mount or nesting
+is used on the hypervisor. It holds only random report/request IDs and erasure/expiry timestamps,
 not myIDM IDs, contacts or measurements. A private outbound SSH tunnel protects
 transfer without a new public port. Erasures are confirmed only after durable
 external recording. Startup reconciles the current history; failure blocks access.
 History expires after six calendar months plus one day. Old software snapshots
 require the current service before access is enabled. The independent Proxmox
 journal must not be rolled back together with netcup.
+
+The initial direct-host installation was removed, including its user, files and
+private keys. New keys reside in the guest. Do not roll the journal container
+itself back to an obsolete history together with netcup.

@@ -145,3 +145,35 @@ back the independent Proxmox journal together with netcup; recover its latest
 state after a host disaster. Provider snapshot contents are not rewritten by this
 mechanism. Backup-purpose justification, actual six-month snapshot removal and
 the netcup processing agreement remain operator responsibilities.
+
+
+## Corrected deployment boundary: isolated unprivileged container
+
+The operator objected to the initial direct installation on the Proxmox host.
+That was an implementation mistake, not a requirement of the journal design.
+The journal and tunnel now run only inside dedicated unprivileged LXC 117
+`idm-erasure-journal`: one CPU, 512 MiB RAM, 4 GiB guest root disk, protection and
+automatic startup enabled. No host bind mount, nesting or privileged container
+mode was used. SSH and the template's unused mail server are disabled/masked in
+the guest; only the journal's guest-loopback TCP listener remains.
+
+During cutover, the backend was paused, both old host services stopped and the
+journal copied through SQLite's backup mechanism. Identity, all four existing
+technical entries and their logical digest were preserved. Newly generated HMAC
+and SSH keys live in the guest; cloud authorization/key files were rotated. The
+old host units, application/config/state directories, private keys and dedicated
+user/group were removed after successful replacement verification. No journal
+listener, service, key or user remains on the hypervisor. Normal Proxmox container
+configuration/storage is of course still managed by the hypervisor.
+
+Live verification over the guest's tunnel restored a synthetic old database:
+previously erased data/request contacts stayed deleted, an unrelated synthetic
+report remained, report replay was discarded and a wrong journal identity blocked
+startup. Two further technical test tombstones were added by this verification.
+The Proxmox host and unrelated guests were not restarted, and HA control/settings
+were untouched. The retired direct-host installer is blocked from reuse; scoped
+server deployment instructions explicitly prohibit direct hypervisor deployment.
+
+The journal container itself must not be restored to an obsolete history together
+with netcup. It is independent of netcup snapshots, not automatically independent
+of its own guest backup or rollback. Recover the latest erasure history first.
