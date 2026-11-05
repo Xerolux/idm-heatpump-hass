@@ -29,8 +29,9 @@ Stromverlust kann ungespeicherte Änderungen verlieren. HA-Ausfallzeit wird nich
 als beobachtete Anlagenlaufzeit erfunden. Störungswechsel sind Beobachtungen,
 kein vollständiges Fehlerprotokoll.
 
-Der erste Versuch erfolgt frühestens 24 Stunden nach Zustimmung, stündlich geprüft.
-Weitere Versuche liegen mindestens 24 Stunden auseinander, auch nach Neustarts.
+Der erste Termin liegt zufällig 24 bis 48 Stunden nach Zustimmung; weitere
+Versuche liegen 24 bis 25 Stunden auseinander. Eine lokale Minutenprüfung löst
+fällige Termine aus. Der nächste Termin bleibt neustartfest erhalten.
 Versand nur per HTTPS an den festen IDM-Tools-Endpunkt, mit 15 Sekunden Zeitlimit
 und ohne Weiterleitungen. Fehlgeschlagene Berichte bleiben bis zum nächsten
 Tagestermin erhalten; die Berichtskennung verhindert doppelte Zählung.
@@ -91,7 +92,8 @@ laufende Anfragen ab und entfernt Sensor und Registry-Eintrag sofort. Ohne diese
 Einwilligung gibt es keinen Kontakt zum Firmware-Katalog.
 
 Übertragen werden ausschließlich Navigator-Familie, Regler-/Anlagenmodell und
-installierte Firmware, beim Start und alle sechs Stunden. Keine myIDM-ID,
+installierte Firmware, nach bis zu 30 Minuten zufälliger Startverzögerung, danach alle sechs
+Stunden zuzüglich bis zu 30 Minuten zufälliger Verzögerung. Keine myIDM-ID,
 Betriebszähler, Temperaturen, Zugangsdaten oder fremden HA-Daten. Es gibt keine
 dauerhafte Firmware-Warteschlange; die Integration hält nur das aktuelle Ergebnis.
 HA kann Sensorzustände gemäß deiner Recorder-/Backup-Konfiguration speichern. Der
@@ -114,3 +116,14 @@ Telemetrie hilft beim Aufbau des Katalogs, ist aber keine Voraussetzung für sei
 Abfrage. Telemetrie verwendet weiterhin Hinweisfassung v3, die unabhängige
 Firmware-Einwilligung `idm-firmware-v1`. Deren Zeitpunkt und Fassung werden nur
 lokal gespeichert und nicht bei der Firmware-Abfrage übertragen.
+
+
+## Lastverteilung
+
+Der erste Bericht wird zufällig 24 bis 48 Stunden nach Einwilligung gesendet,
+danach jeder Versuch nach 24 bis 25 Stunden. Auch Fehlversuche reservieren den
+nächsten Termin vor dem Netzwerkzugriff. Der Termin bleibt neustartfest erhalten.
+Nach längerer Unterbrechung werden überfällige Berichte zusätzlich zufällig über
+bis zu eine Stunde verteilt. Es gibt keine sofortigen Wiederholungen und keinen
+stapelweisen Versand alter Berichte. Die lokale Minutenprüfung selbst erzeugt
+keinen Netzwerkkontakt. Bereits bestehende Tagespläne erhalten einmalig Streuung.

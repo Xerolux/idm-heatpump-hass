@@ -368,7 +368,7 @@ async def test_telemetry_reload_preserves_aggregates_and_refusal_erases_them(
         assert er.async_get(smoke_hass).async_get(firmware_entity_id) is None
         assert smoke_hass.states.get(firmware_entity_id) is None
         assert not path.exists()
-        assert session.call_count >= 1  # Opt-in firmware catalog only; daily upload is still delayed.
+        session.assert_not_called()  # Even opted-in startup queries are spread over time.
         assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
         await smoke_hass.async_block_till_done()
     pending = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
@@ -395,6 +395,8 @@ async def test_firmware_only_works_without_identity_or_telemetry_store(smoke_has
         await smoke_hass.async_block_till_done()
         assert smoke_entry.runtime_data.telemetry is None
         assert smoke_entry.runtime_data.firmware is not None
+        firmware_session.assert_not_called()
+        await smoke_entry.runtime_data.firmware.async_refresh_firmware()
         assert set(firmware_session.return_value.post.call_args.kwargs["json"]) == {
             "navigator", "navigator_model", "heatpump_model", "firmware"
         }

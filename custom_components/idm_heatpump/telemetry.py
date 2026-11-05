@@ -11,6 +11,7 @@ import asyncio
 import logging
 import math
 import re
+import secrets
 import time
 import uuid
 from datetime import datetime, timedelta
@@ -84,6 +85,7 @@ class Telemetry:
             hass, 1, f"{DOMAIN}.telemetry.{entry.entry_id}", serialize_in_event_loop=True
         )
         self._last_attempt = 0.0
+        self._next_attempt = 0.0
         self._started = time.monotonic()
         self._elapsed = 0.0
         self._pending: dict[str, float] = {}
@@ -237,12 +239,29 @@ class Telemetry:
                 self._outbox_elapsed = _number(stored.get("outbox_elapsed")) or 0.0
         else:
             self._last_attempt = now
+        scheduled = (
+            _number(stored.get("next_attempt"))
+            if stored.get("consent_at") == self._entry.options.get(CONF_TELEMETRY_CONSENT_AT)
+            else None
+        )
+        if (
+            scheduled is not None
+            and now < scheduled <= now + 2 * _INTERVAL
+            and scheduled >= self._last_attempt + _INTERVAL
+        ):
+            self._next_attempt = scheduled
+        elif scheduled is not None and scheduled <= now:
+            # Reconnect after downtime without synchronizing every overdue client.
+            self._next_attempt = max(now + 1 + secrets.randbelow(3600), self._last_attempt + _INTERVAL)
+        else:
+            # First activation and migration spread reports across a full day.
+            self._next_attempt = max(now, self._last_attempt + _INTERVAL) + secrets.randbelow(_INTERVAL + 1)
         await self._store.async_save(self._serialize())
         self._save_scheduled = False
         self._entry.async_on_unload(self.stop)
         self._entry.async_on_unload(self._entry.add_update_listener(self.async_options_updated))
         self._entry.async_on_unload(self._coordinator.async_add_listener(self.observe))
-        self._entry.async_on_unload(async_track_time_interval(self._hass, self.async_tick, timedelta(hours=1)))
+        self._entry.async_on_unload(async_track_time_interval(self._hass, self.async_tick, timedelta(minutes=1)))
         self.observe()
         return True
 
@@ -276,6 +295,7 @@ class Telemetry:
         return {
             "consent_at": self._entry.options.get(CONF_TELEMETRY_CONSENT_AT),
             "last_attempt": self._last_attempt,
+            "next_attempt": self._next_attempt,
             "counters": self.payload()["counters"],
             "totals": self._totals(),
             "observed_seconds": self._elapsed + time.monotonic() - self._started,
@@ -325,9 +345,11 @@ class Telemetry:
             return
         async with self._lock:
             current = time.time()
-            if current - self._last_attempt < _INTERVAL:
+            if current < self._next_attempt or current - self._last_attempt < _INTERVAL:
                 return
             self._last_attempt = current
+            # Reserve the next daily slot before any I/O, including failed attempts.
+            self._next_attempt = current + _INTERVAL + secrets.randbelow(3601)
             self._active_task = asyncio.current_task()
             try:
                 # Freeze and persist before I/O. A lost receipt can be retried

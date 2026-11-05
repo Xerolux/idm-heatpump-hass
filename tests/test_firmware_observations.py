@@ -78,7 +78,8 @@ async def test_firmware_response_is_bound_to_requested_plant_metadata():
     telemetry.firmware_result = {}
     with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
         await FirmwareObservations.async_refresh_firmware(telemetry)
-    assert telemetry.firmware_result == {}
+    assert telemetry.firmware_result.get("latest_firmware") is None
+    assert set(telemetry.firmware_result) == {"next_check"}
 
 
 async def test_withdrawal_cancels_firmware_request_as_well_as_upload():
@@ -137,9 +138,11 @@ async def test_firmware_has_independent_lifecycle_and_six_hour_timer():
     client.async_refresh_firmware = AsyncMock()
     with patch("custom_components.idm_heatpump.firmware_observations.async_track_time_interval") as timer:
         assert await client.async_start()
-        assert timer.call_args.args[2].total_seconds() == 21600
+        assert timer.call_args.args[2].total_seconds() == 60
+    client.async_refresh_firmware.assert_not_awaited()
+    client._next_firmware_check = 0
     await client.async_tick(datetime.now(UTC))
-    assert client.async_refresh_firmware.await_count == 2
+    assert client.async_refresh_firmware.await_count == 1
     entry.options[CONF_TELEMETRY] = False
     await client.async_options_updated(None, entry)
     assert client.enabled

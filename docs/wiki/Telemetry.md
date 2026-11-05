@@ -25,8 +25,11 @@ storage, with delayed saves after updates and a flush on clean unload. Abrupt
 power loss can lose unsaved changes. Restart downtime does not count as observed
 runtime. Error transitions count what was observed, not a complete alarm log.
 
-The first attempt is at least 24 hours after consent, checked hourly, and further
-attempts are at least 24 hours apart across restarts. HTTPS uses only the fixed
+The first attempt is randomly 24–48 hours after consent. Further attempts are
+24–25 hours apart, including after errors. The exact next slot is persisted
+before network I/O and checked once a minute without network traffic. After
+downtime, overdue reports receive up to one hour of random recovery delay.
+There are no immediate retries or backlog bursts. HTTPS uses only the fixed
 IDM Tools endpoint, a 15-second timeout and no redirects. Failed reports remain
 for the next daily slot; the server deduplicates the persisted report ID.
 
@@ -91,7 +94,8 @@ Disabling firmware queries cancels the request and removes the sensor and its
 registry entry immediately. Without firmware consent there is no catalog contact.
 
 The query sends only Navigator family, controller/plant model and installed
-firmware, on startup and every six hours. It sends no myIDM ID, operating counters,
+firmware, after a random startup delay of up to 30 minutes, then every six hours
+plus up to 30 minutes of random delay. It sends no myIDM ID, operating counters,
 temperatures, credentials or other HA data. There is no persistent firmware queue;
 the integration keeps only the current result. HA may retain sensor states
 according to the local Recorder/backup configuration. The server uses metadata transiently and does not

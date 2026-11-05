@@ -5,7 +5,7 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
-## v0.26.0-b6 — 2026-11-05
+## v0.26.0-b7 — 2026-11-05
 
 Local test build, not a public release: current stable base plus Modbus network
 discovery, explicitly consented myIDM plant telemetry, restart-safe daily reports

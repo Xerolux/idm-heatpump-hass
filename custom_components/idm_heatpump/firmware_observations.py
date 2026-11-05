@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import secrets
 import time
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -32,6 +33,7 @@ class FirmwareObservations:
         self._stopped = False
         self._firmware_task: asyncio.Task[Any] | None = None
         self._last_firmware_check = 0.0
+        self._next_firmware_check = 0.0
         self._firmware_listeners: set[Callable[[], None]] = set()
         self.firmware_result: dict[str, Any] = {}
 
@@ -50,13 +52,20 @@ class FirmwareObservations:
             return False
         self._entry.async_on_unload(self.stop)
         self._entry.async_on_unload(self._entry.add_update_listener(self.async_options_updated))
-        self._entry.async_on_unload(async_track_time_interval(self._hass, self.async_tick, timedelta(hours=6)))
-        await self.async_refresh_firmware()
+        # Delay startup queries too: HA updates/reconnections often happen together.
+        self._next_firmware_check = time.time() + 1 + secrets.randbelow(1800)
+        self.firmware_result = {
+            "status": "scheduled",
+            "next_check": datetime.fromtimestamp(self._next_firmware_check, UTC).isoformat(),
+        }
+        for listener in tuple(self._firmware_listeners):
+            listener()
+        self._entry.async_on_unload(async_track_time_interval(self._hass, self.async_tick, timedelta(minutes=1)))
         return True
 
     async def async_tick(self, now: datetime) -> None:
         del now
-        if self.enabled:
+        if self.enabled and time.time() >= self._next_firmware_check:
             await self.async_refresh_firmware()
 
     def stop(self) -> None:
@@ -93,6 +102,7 @@ class FirmwareObservations:
             return
         self._firmware_task = asyncio.current_task()
         self._last_firmware_check = time.time()
+        self._next_firmware_check = self._last_firmware_check + 21600 + secrets.randbelow(1801)
         coordinator = self._coordinator
         query = {
             "navigator": navigator_family(coordinator.model_name),
@@ -146,9 +156,11 @@ class FirmwareObservations:
                 "observations": _number(result.get("observations")),
                 "last_checked": datetime.fromtimestamp(self._last_firmware_check, UTC).isoformat(),
             }
-            for listener in tuple(self._firmware_listeners):
-                listener()
         except (aiohttp.ClientError, TimeoutError, OSError, ValueError):
             _LOGGER.debug("IDM firmware observations unavailable; local plant operation is unaffected")
         finally:
             self._firmware_task = None
+            if self.enabled:
+                self.firmware_result["next_check"] = datetime.fromtimestamp(self._next_firmware_check, UTC).isoformat()
+                for listener in tuple(self._firmware_listeners):
+                    listener()

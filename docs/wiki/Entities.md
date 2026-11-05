@@ -992,7 +992,8 @@ Disabling firmware queries cancels the request and removes the sensor and its
 registry entry immediately. Without firmware consent there is no catalog contact.
 
 The query sends only Navigator family, controller/plant model and installed
-firmware, on startup and every six hours. It sends no myIDM ID, operating counters,
+firmware, after a random startup delay of up to 30 minutes, then every six hours
+plus up to 30 minutes of random delay. It sends no myIDM ID, operating counters,
 temperatures, credentials or other HA data. There is no persistent firmware queue;
 the integration keeps only the current result. HA may retain sensor states
 according to the local Recorder/backup configuration. The server uses metadata transiently and does not

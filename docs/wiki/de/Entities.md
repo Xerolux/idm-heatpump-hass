@@ -829,7 +829,8 @@ laufende Anfragen ab und entfernt Sensor und Registry-Eintrag sofort. Ohne diese
 Einwilligung gibt es keinen Kontakt zum Firmware-Katalog.
 
 Übertragen werden ausschließlich Navigator-Familie, Regler-/Anlagenmodell und
-installierte Firmware, beim Start und alle sechs Stunden. Keine myIDM-ID,
+installierte Firmware, nach bis zu 30 Minuten zufälliger Startverzögerung, danach alle sechs
+Stunden zuzüglich bis zu 30 Minuten zufälliger Verzögerung. Keine myIDM-ID,
 Betriebszähler, Temperaturen, Zugangsdaten oder fremden HA-Daten. Es gibt keine
 dauerhafte Firmware-Warteschlange; die Integration hält nur das aktuelle Ergebnis.
 HA kann Sensorzustände gemäß deiner Recorder-/Backup-Konfiguration speichern. Der

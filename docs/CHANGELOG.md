@@ -13,13 +13,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.26.0-b6] - 2026-11-05
+## [0.26.0-b7] - 2026-11-05
 
 ### ⚠️ Upgrade notes
 
 - **Telemetry remains off unless explicitly enabled**: one consent covers only the connected IDM plant. Enabling requires the myIDM ID of the IDM plant, which is transmitted unchanged. Refusing collects and sends nothing. Existing integration operation stays local and independent of telemetry availability.
 
 ### ✨ New
+
+- **Spread cloud requests across installations**: first telemetry reports are randomized across 24–48 hours, subsequent attempts across 24–25 hours, and overdue reconnects across up to one hour. Slots survive reloads and are reserved before I/O. Firmware startup checks wait up to 30 minutes, with jitter on subsequent six-hour intervals. No immediate retries or bulk backlog upload is introduced.
 
 - **Readable consent before activation**: the telemetry form groups the unchanged data scope, transfer schedule, retention and withdrawal behavior into labelled paragraphs. A prominent Markdown link opens the full privacy notice before the explicitly labelled consent switch. Opening that page never enables collection. This presentation change retains notice revision v3 and does not restart existing daily reporting slots.
 
