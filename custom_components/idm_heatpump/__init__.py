@@ -430,15 +430,20 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     Services are registered here (action-setup rule) so they are available
     as soon as the domain loads, independently of config entries.
     """
-    from .ha_compat import ha_running_version, ha_version_supported
+    from .ha_compat import (
+        MIN_HA_VERSION_LABEL,
+        ha_running_version,
+        ha_version_supported,
+    )
     from .log_filter import install_library_log_filter
     from .services import async_setup_services
 
     if not ha_version_supported():
         raise HomeAssistantError(
-            "IDM Heatpump requires Home Assistant 2026.11.0b0 or newer; "
-            f"found {ha_running_version() or 'an unknown version'}. Update Home "
-            "Assistant, or use integration 0.24.x for the 2026.8-2026.10 line."
+            f"IDM Heatpump requires Home Assistant {MIN_HA_VERSION_LABEL} or "
+            f"newer; found {ha_running_version() or 'an unknown version'}. "
+            "Update Home Assistant, or use integration 0.24.x for the "
+            "2026.8-2026.10 line."
         )
 
     install_library_log_filter()

@@ -182,6 +182,7 @@ HISTORY_STATEMENTS: dict[str, tuple[str, ...]] = {
         r"\(`modbus-connection` `[0-9][0-9a-z.]*`, `idm-heatpump-api` `[0-9][0-9a-z.]*`\); no register map or",
         r"`beta\.4`, on `idm-heatpump-api` `[0-9][0-9a-z.]*` and `modbus-connection` `[0-9][0-9a-z.]*`\.",
         r"`idm-heatpump-api` `[0-9][0-9a-z.]*` is[\s\S]*?validated pair with this cut\.",
+        r"`idm-heatpump-api` `[0-9][0-9a-z.]*` — identical code[\s\S]*?before the integration tag\.",
     ),
     "docs/wiki/de/Stability-and-Release-Readiness.md": (
         r"Bis\s+einschließlich `0\.14\.1`[\s\S]*?`tmodbus==0\.5\.0` gepinnt\.",
@@ -189,6 +190,7 @@ HISTORY_STATEMENTS: dict[str, tuple[str, ...]] = {
         r"und die Gerätelogik ist auf\n`idm-heatpump-api\[web\]==[0-9][0-9a-z.]*` gepinnt",
         r"\*\*`0\.15\.0`\*\* zog dieses Paar[\s\S]*?`tmodbus\[async-serial\]==0\.5\.1`",
         r"`idm-heatpump-api` `[0-9][0-9a-z.]*` ist das mit diesem Schnitt[\s\S]*?validierte Paar\.",
+        r"`idm-heatpump-api` `[0-9][0-9a-z.]*` —\s*identischer Code[\s\S]*?PyPI\.",
     ),
 }
 

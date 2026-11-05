@@ -4,6 +4,26 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.25.0 release decision
+
+**0.25.0** is the stable cut of the b1–b9 line (2026-10-29 through
+2026-11-04; the unpublished b8 candidate is fully contained in b9) and the
+Home Assistant 2026.11 platform release. Every beta of the line passed the
+full quality gate before its merge — the two-leg CI matrix (Python 3.14 ×
+HA 2026.11.0 × manifest-pinned/api-main) with the coverage gates, strict
+mypy against the real Home Assistant runtime, ruff, hassfest, the
+real-Home-Assistant lifecycle smoke leg and the credential scan — and the
+cut re-ran the whole suite against the promoted stable API pin (3,350+
+tests, 98.8 % coverage at the minimum Home Assistant 2026.11.0). The
+advisor additions are strictly read-only (shared evidence storage, no
+write path, no EEPROM-sensitive register); the GLT sentinel logging is
+diagnostics-only and silent without debug logging. The 2026.11 minimum is
+declared in the manifest `homeassistant` key and HACS and gated at setup
+(#632, field-reported by @x29a); installations on 2026.8–2026.10 stay on
+0.24.0-b2. `idm-heatpump-api` `2.16.0` — identical code to the line's
+`2.16.0b3` pin, promotion-only — is the validated pair with this cut and
+was published on PyPI before the integration tag.
+
 ## 0.23.2 release decision
 
 **0.23.2** is the stable cut of the five-beta line (b1–b5, 2026-10-24
@@ -400,7 +420,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.25.0-b9` and `idm-heatpump-api` `2.16.0b3` form the current
+Source-tree integration `0.25.0` and `idm-heatpump-api` `2.16.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
