@@ -2,7 +2,8 @@
   "domain": "idm_heatpump",
   "name": "IDM Heatpump",
   "after_dependencies": [
-    "ai_task"
+    "ai_task",
+    "network"
   ],
   "codeowners": [
     "@xerolux"
