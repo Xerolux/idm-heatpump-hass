@@ -86,3 +86,20 @@ architecture or operational decision before implementation. The public draft
 notice now distinguishes active expiry from existing image copies.
 
 Source: [BayLfD, deletion of backup copies](https://www.datenschutz-bayern.de/tbs/tb30/k12.html#12.5).
+
+
+## Implemented date-based startup/restore gate
+
+The normal entry point already purged expired rows before starting workers.
+The HTTP server constructor now also runs retention cleanup before socket binding,
+so alternate callers cannot serve restored expired rows. Cleanup failure prevents
+binding. A real temporary SQLite snapshot-copy test proves that expired telemetry,
+expired erasure requests and old rates are removed while a fresh report survives.
+A failure-injection test proves the socket remains unopened. The backend suite
+passes 70 tests and 22 subtests; the change is deployed with rollback backups.
+
+This does not recover individual erasures newer than a restored snapshot. A
+current, independent erasure journal and reconciliation gate are still not
+configured. No provider snapshots or retention settings were changed. The public
+notice distinguishes this implemented date gate from the remaining erasure-log
+requirement. No Home Assistant update or real plant report was forced.
