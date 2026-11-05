@@ -9,6 +9,7 @@
   ],
   "config_flow": true,
   "documentation": "https://xerolux.github.io/idm-heatpump-hass/docs/",
+  "homeassistant": "2026.11.0",
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/Xerolux/idm-heatpump-hass/issues",
@@ -16,7 +17,7 @@
   "requirements": [
     "modbus-connection>=4.12.7",
     "tmodbus[async-serial]>=0.6.2",
-    "idm-heatpump-api[web]==2.16.0b3"
+    "idm-heatpump-api[web]==2.16.0"
   ],
-  "version": "0.25.0-b9"
+  "version": "0.25.0"
 }
