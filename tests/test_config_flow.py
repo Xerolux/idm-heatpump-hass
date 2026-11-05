@@ -365,15 +365,22 @@ class TestConfigFlowInit:
 
 
 class TestAsyncStepUser:
-    async def test_shows_form_without_input(self):
+    async def test_first_step_shows_manual_or_scan_menu(self):
         flow = _make_flow()
         result = await flow.async_step_user(None)
-        assert result["type"] == "form"
+        assert result["type"] == "menu"
         assert result["step_id"] == "user"
+        assert set(result["menu_options"]) == {"manual", "scan"}
+
+    async def test_shows_form_without_input(self):
+        flow = _make_flow()
+        result = await flow.async_step_manual(None)
+        assert result["type"] == "form"
+        assert result["step_id"] == "manual"
 
     async def test_empty_name_shows_error(self):
         flow = _make_flow()
-        result = await flow.async_step_user(
+        result = await flow.async_step_manual(
             {
                 "name": "",
                 "host": "192.168.1.100",
@@ -385,7 +392,7 @@ class TestAsyncStepUser:
 
     async def test_empty_host_shows_error(self):
         flow = _make_flow()
-        result = await flow.async_step_user(
+        result = await flow.async_step_manual(
             {
                 "name": "IDM",
                 "host": "",
@@ -398,7 +405,7 @@ class TestAsyncStepUser:
     async def test_default_web_setup_requires_pin_or_explicit_opt_out(self):
         flow = _make_flow()
         with patch.object(flow, "_test_connection", return_value=True) as test_connection:
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM",
                     "host": "192.168.1.100",
@@ -417,7 +424,7 @@ class TestAsyncStepUser:
             patch.object(flow, "_test_connection", return_value=True),
             patch.object(flow, "_async_detect_web_supplement", return_value={}) as detect_web,
         ):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM",
                     "host": "192.168.1.100",
@@ -438,7 +445,7 @@ class TestAsyncStepUser:
     async def test_connection_failure_shows_error(self):
         flow = _make_flow()
         with patch.object(flow, "_test_connection", return_value=False):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM",
                     "host": "192.168.1.100",
@@ -452,7 +459,7 @@ class TestAsyncStepUser:
     async def test_unreachable_endpoint_shows_specific_error(self):
         flow = _make_flow()
         with patch.object(flow, "_test_connection", return_value=_ModbusConnectionStatus.UNREACHABLE):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM",
                     "host": "192.168.1.100",
@@ -466,7 +473,7 @@ class TestAsyncStepUser:
     async def test_connected_endpoint_without_register_data_shows_specific_error(self):
         flow = _make_flow()
         with patch.object(flow, "_test_connection", return_value=_ModbusConnectionStatus.NO_RESPONSE):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM",
                     "host": "192.168.1.100",
@@ -480,7 +487,7 @@ class TestAsyncStepUser:
     async def test_failed_proxy_connection_requires_original_web_host_for_fallback(self):
         flow = _make_flow()
         with patch.object(flow, "_test_connection", return_value=_ModbusConnectionStatus.UNREACHABLE):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM",
                     "host": "modbus-proxy.local",
@@ -492,7 +499,7 @@ class TestAsyncStepUser:
                 }
             )
 
-        assert result["step_id"] == "user"
+        assert result["step_id"] == "manual"
         assert result["errors"][CONF_WEB_HOST] == "web_host_required"
 
     async def test_the_same_endpoint_is_rejected_as_already_configured(self):
@@ -502,7 +509,7 @@ class TestAsyncStepUser:
         ]
 
         with patch.object(flow, "_test_connection", return_value=True) as test_connection:
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM Duplicate",
                     "host": "192.168.1.100",
@@ -527,7 +534,7 @@ class TestAsyncStepUser:
         ]
 
         with patch.object(flow, "_test_connection", return_value=True):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM Second Unit",
                     "host": "192.168.1.100",
@@ -543,7 +550,7 @@ class TestAsyncStepUser:
         with (
             patch.object(flow, "_test_connection", return_value=True),
         ):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM Test",
                     "host": "192.168.1.100",
@@ -563,7 +570,7 @@ class TestAsyncStepUser:
             patch.object(flow, "_test_connection", return_value=True),
             patch.object(flow, "_async_detect_web_supplement", return_value=detected),
         ):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM Test",
                     "host": "192.168.1.100",
@@ -613,7 +620,7 @@ class TestAsyncStepUser:
             patch.object(flow, "_test_connection", return_value=True),
             patch.object(flow, "_async_detect_web_supplement", return_value={}) as detect_web,
         ):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM Test",
                     "host": "192.0.2.11",
@@ -643,7 +650,7 @@ class TestAsyncStepUser:
                 return_value={"type": "form", "step_id": "options", "errors": {}},
             ),
         ):
-            await flow.async_step_user(
+            await flow.async_step_manual(
                 {
                     "name": "IDM Test",
                     "host": "192.0.2.11",
@@ -664,7 +671,7 @@ class TestAsyncStepUser:
         flow._async_abort_entries_match = MagicMock()
 
         with patch.object(flow, "_test_connection", return_value=True):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM Test",
                     "host": "192.0.2.11",
@@ -689,7 +696,7 @@ class TestAsyncStepUser:
                 side_effect=IdmWebAuthenticationFailed("bad pin"),
             ),
         ):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM Test",
                     "host": "192.168.1.100",
@@ -712,7 +719,7 @@ class TestAsyncStepUser:
                 side_effect=_WebSupplementConnectionFailed,
             ),
         ):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM Test",
                     "host": "192.168.1.100",
@@ -748,6 +755,106 @@ class TestAsyncStepUser:
         await flow.async_step_setup_review({"profile": "recommended", CONF_MODEL_OVERRIDE: "navigator_99_bogus"})
 
         assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_AUTO
+
+
+class TestNetworkScanSteps:
+    async def test_scan_form_suggests_default_subnet_from_adapters(self, monkeypatch):
+        default_subnet = AsyncMock(return_value="10.0.0.0/24")
+        monkeypatch.setattr(flow_module, "async_get_default_subnet", default_subnet)
+        flow = _make_flow()
+
+        result = await flow.async_step_scan(None)
+
+        assert result["type"] == "form"
+        assert result["step_id"] == "scan"
+        default_subnet.assert_awaited_once_with(flow.hass)
+
+    async def test_scan_form_falls_back_to_default_subnet(self, monkeypatch):
+        monkeypatch.setattr(flow_module, "async_get_default_subnet", AsyncMock(return_value=None))
+        flow = _make_flow()
+
+        result = await flow.async_step_scan(None)
+
+        assert result["type"] == "form"
+        assert result["step_id"] == "scan"
+
+    async def test_invalid_subnet_shows_error(self, monkeypatch):
+        async def _reject(_subnet):
+            raise flow_module.InvalidSubnetError("bad subnet")
+
+        monkeypatch.setattr(flow_module, "async_scan_modbus_tcp_hosts", _reject)
+        flow = _make_flow()
+
+        result = await flow.async_step_scan({"scan_subnet": "not-a-subnet"})
+
+        assert result["type"] == "form"
+        assert result["step_id"] == "scan"
+        assert result["errors"]["base"] == "invalid_subnet"
+
+    async def test_scan_without_candidates_shows_error(self, monkeypatch):
+        monkeypatch.setattr(flow_module, "async_scan_modbus_tcp_hosts", AsyncMock(return_value=[]))
+        flow = _make_flow()
+
+        result = await flow.async_step_scan({"scan_subnet": "192.168.1.0/24"})
+
+        assert result["type"] == "form"
+        assert result["errors"]["base"] == "no_candidates"
+
+    async def test_scan_lists_candidates_and_selection_prefills_manual(self, monkeypatch):
+        hosts = [
+            flow_module.ModbusTcpHost("192.168.1.20", "wp-keller.fritz.box"),
+            flow_module.ModbusTcpHost("192.168.1.10"),
+        ]
+        monkeypatch.setattr(flow_module, "async_scan_modbus_tcp_hosts", AsyncMock(return_value=hosts))
+        flow = _make_flow()
+
+        result = await flow.async_step_scan({"scan_subnet": "192.168.1.0/24"})
+
+        assert result["type"] == "form"
+        assert result["step_id"] == "scan_results"
+        assert flow._scan_results == hosts
+
+        result = await flow.async_step_scan_results({CONF_HOST: "192.168.1.20"})
+
+        assert result["type"] == "form"
+        assert result["step_id"] == "manual"
+        assert flow._discovered_host == "192.168.1.20"
+        assert flow._discovered_hostname == "wp-keller.fritz.box"
+
+    async def test_selection_continues_setup_with_discovered_host(self, monkeypatch):
+        hosts = [flow_module.ModbusTcpHost("192.168.1.20", "wp-keller.fritz.box")]
+        monkeypatch.setattr(flow_module, "async_scan_modbus_tcp_hosts", AsyncMock(return_value=hosts))
+        flow = _make_flow()
+        await flow.async_step_scan({"scan_subnet": "192.168.1.0/24"})
+        await flow.async_step_scan_results({CONF_HOST: "192.168.1.20"})
+
+        with (
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "_async_detect_web_supplement", return_value={}) as detect_web,
+        ):
+            result = await flow.async_step_manual(
+                {
+                    CONF_NAME: "IDM",
+                    CONF_HOST: "",
+                    "port": 502,
+                    "setup_web_access": False,
+                }
+            )
+
+        assert result["step_id"] == "setup_review"
+        detect_web.assert_awaited_once_with("192.168.1.20", "", model_hint=None, required=False)
+        assert flow._data[CONF_HOST] == "192.168.1.20"
+
+    async def test_unknown_selection_yields_manual_without_hostname(self, monkeypatch):
+        monkeypatch.setattr(flow_module, "async_scan_modbus_tcp_hosts", AsyncMock(return_value=[]))
+        flow = _make_flow()
+        await flow.async_step_scan({"scan_subnet": "192.168.1.0/24"})
+
+        result = await flow.async_step_scan_results({CONF_HOST: "192.168.1.200"})
+
+        assert result["step_id"] == "manual"
+        assert flow._discovered_host == "192.168.1.200"
+        assert flow._discovered_hostname is None
 
 
 class TestAsyncStepOptions:
@@ -2261,7 +2368,7 @@ class TestConfigFlowFullFlow:
         flow = _make_flow()
         # Step 1: user
         with patch.object(flow, "_test_connection", return_value=True):
-            step1 = await flow.async_step_user(
+            step1 = await flow.async_step_manual(
                 {
                     "name": "IDM Heat",
                     "host": "192.168.1.100",
@@ -2336,7 +2443,7 @@ class TestConfigFlowFullFlow:
         """Full happy path with zones: user → options → zones → create_entry."""
         flow = _make_flow()
         with patch.object(flow, "_test_connection", return_value=True):
-            await flow.async_step_user(
+            await flow.async_step_manual(
                 {
                     "name": "IDM Zone",
                     "host": "192.168.1.200",
@@ -2488,7 +2595,7 @@ class TestWebOnlyFallbackDuringSetup:
         flow = _make_flow()
 
         with patch.object(flow, "_test_connection", return_value=_ModbusConnectionStatus.CONNECTION_REFUSED):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM",
                     "host": "192.168.1.100",
@@ -2506,7 +2613,7 @@ class TestWebOnlyFallbackDuringSetup:
         flow = _make_flow()
 
         with patch.object(flow, "_test_connection", return_value=_ModbusConnectionStatus.CONNECTION_REFUSED):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM",
                     "host": "192.168.1.100",
@@ -2518,14 +2625,14 @@ class TestWebOnlyFallbackDuringSetup:
                 }
             )
 
-        assert result["step_id"] == "user"
+        assert result["step_id"] == "manual"
         assert result["errors"] == {CONF_WEB_HOST: "web_host_required"}
 
     async def test_successful_modbus_behind_a_proxy_requires_the_web_host(self):
         flow = _make_flow()
 
         with patch.object(flow, "_test_connection", return_value=_ModbusConnectionStatus.SUCCESS):
-            result = await flow.async_step_user(
+            result = await flow.async_step_manual(
                 {
                     "name": "IDM",
                     "host": "192.168.1.100",
@@ -2537,7 +2644,7 @@ class TestWebOnlyFallbackDuringSetup:
                 }
             )
 
-        assert result["step_id"] == "user"
+        assert result["step_id"] == "manual"
         assert result["errors"] == {CONF_WEB_HOST: "web_host_required"}
 
     async def test_retry_returns_to_the_setup_form(self):
@@ -2547,7 +2654,7 @@ class TestWebOnlyFallbackDuringSetup:
         result = await flow.async_step_modbus_failed({"action": "retry", CONF_WEB_PIN: "1234"})
 
         assert result["type"] == "form"
-        assert result["step_id"] == "user"
+        assert result["step_id"] == "manual"
 
     async def test_retry_during_reconfigure_returns_to_the_connection_step(self):
         flow = _make_flow()
@@ -3029,7 +3136,7 @@ class TestFlowFieldLabelCoverage:
     @pytest.mark.parametrize(
         ("schema", "step_id"),
         [
-            (flow_module.STEP_USER_DATA_SCHEMA, "user"),
+            (flow_module.STEP_USER_DATA_SCHEMA, "manual"),
             (flow_module.STEP_RECONFIGURE_SCHEMA, "connection"),
             (_build_setup_review_schema({}), "setup_review"),
             (_build_modbus_failed_schema({}), "modbus_failed"),

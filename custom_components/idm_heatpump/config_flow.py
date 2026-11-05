@@ -27,6 +27,7 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -254,6 +255,12 @@ from .knx_catalog import (
 )
 from .library_adapter import get_idm_client
 from .log_filter import install_library_log_filter
+from .network_scan import (
+    InvalidSubnetError,
+    ModbusTcpHost,
+    async_get_default_subnet,
+    async_scan_modbus_tcp_hosts,
+)
 from .registers import normalize_zone_rooms
 from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
 
@@ -305,6 +312,11 @@ _MODEL_OVERRIDE_SELECTOR: SelectSelector = SelectSelector(
 
 
 _SETUP_WEB_ACCESS = "setup_web_access"
+
+# Network scan step: the subnet field the scan form asks for, and the
+# fallback suggestion when Home Assistant's adapter list yields nothing.
+_SCAN_SUBNET = "scan_subnet"
+_DEFAULT_SCAN_SUBNET = "192.168.1.0/24"
 
 
 # Initial setup defaults to full local Modbus + Navigator web access. Users who
@@ -2188,11 +2200,30 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
         self._modbus_error = _ModbusConnectionStatus.FAILED.value
         self._reconfigure_entry: config_entries.ConfigEntry | None = None
         self._detected_plant: dict[str, Any] | None = None
+        # Network scan state: cached results plus the host picked from them,
+        # which pre-fills the manual step after selection.
+        self._scan_results: list[ModbusTcpHost] = []
+        self._discovered_host: str | None = None
+        self._discovered_hostname: str | None = None
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Let the user choose between manual entry and a network scan.
+
+        The first setup step deliberately offers both paths: typing the
+        Modbus address by hand stays the direct route, while the scan helps
+        when the heat pump's IP address is unknown.
+        """
+        return self.async_show_menu(step_id="user", menu_options=["manual", "scan"])
+
+    async def async_step_manual(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            # A host picked in the scan-results step pre-fills the form; treat
+            # it as the answer when the submission comes back without one.
+            if not str(user_input.get(CONF_HOST, "")).strip() and self._discovered_host:
+                user_input = {**user_input, CONF_HOST: self._discovered_host}
+
             name = user_input.get(CONF_NAME, "").strip()
             host = user_input.get(CONF_HOST, "").strip()
 
@@ -2276,11 +2307,81 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                         }
                         return await self.async_step_setup_review()
 
+        suggested: dict[str, Any] = dict(user_input or {})
+        if CONF_HOST not in suggested and self._discovered_host:
+            suggested[CONF_HOST] = self._discovered_host
+        if CONF_NAME not in suggested and self._discovered_hostname:
+            suggested[CONF_NAME] = self._discovered_hostname
         return self.async_show_form(
-            step_id="user",
-            data_schema=self.add_suggested_values_to_schema(STEP_USER_DATA_SCHEMA, user_input or {}),
+            step_id="manual",
+            data_schema=self.add_suggested_values_to_schema(STEP_USER_DATA_SCHEMA, suggested),
             description_placeholders={"wiki_url": _MODBUS_SETUP_URL},
             errors=errors,
+        )
+
+    async def async_step_scan(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Ask for the subnet to scan, then probe it for Modbus TCP hosts.
+
+        The subnet field is pre-filled with the default-routed LAN network
+        from Home Assistant's adapter list so the typical home user only has
+        to click submit. The scan itself sends no Modbus bytes (see
+        :mod:`.network_scan`) and only runs on this explicit request.
+        """
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            subnet = str(user_input.get(_SCAN_SUBNET, "")).strip()
+            try:
+                self._scan_results = await async_scan_modbus_tcp_hosts(subnet)
+            except InvalidSubnetError:
+                _LOGGER.warning("Network scan rejected subnet %s", subnet)
+                errors["base"] = "invalid_subnet"
+            else:
+                if not self._scan_results:
+                    _LOGGER.info("Network scan of %s found no Modbus TCP hosts", subnet)
+                    errors["base"] = "no_candidates"
+                else:
+                    return await self.async_step_scan_results()
+
+        default_subnet = await async_get_default_subnet(self.hass) or _DEFAULT_SCAN_SUBNET
+        return self.async_show_form(
+            step_id="scan",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(_SCAN_SUBNET, default=default_subnet): TextSelector(
+                        TextSelectorConfig(type=TextSelectorType.TEXT)
+                    ),
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_scan_results(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Pick the heat pump from the cached scan result list.
+
+        Every host that answered on the Modbus port is offered — the scan
+        cannot tell an IDM controller from another Modbus device without
+        talking to it, so the list may contain unrelated devices. Selecting
+        one continues in the manual step with the address pre-filled, where
+        the connection test and the remaining settings (web access, proxy)
+        are completed as usual.
+        """
+        if user_input is not None:
+            selected = str(user_input.get(CONF_HOST, "")).strip()
+            candidate = next((host for host in self._scan_results if host.ip == selected), None)
+            self._discovered_host = selected
+            self._discovered_hostname = candidate.hostname if candidate else None
+            return await self.async_step_manual()
+
+        options = [SelectOptionDict(value=host.ip, label=host.label) for host in self._scan_results]
+        return self.async_show_form(
+            step_id="scan_results",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_HOST): SelectSelector(
+                        SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
+                    ),
+                }
+            ),
         )
 
     async def async_step_setup_review(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -2668,7 +2769,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 if self._reconfigure_entry is not None:
                     return await self.async_step_connection()
                 return self.async_show_form(
-                    step_id="user",
+                    step_id="manual",
                     data_schema=self.add_suggested_values_to_schema(STEP_USER_DATA_SCHEMA, self._data),
                     description_placeholders={"wiki_url": _MODBUS_SETUP_URL},
                 )

@@ -23,6 +23,19 @@ All notable changes to this project will be documented in this file.
 
 - **Optional plant telemetry**: daily reports describe controller compatibility, connection failures, observed alarm transitions and available operating aggregates. Personal reports use private encrypted storage with twelve-month expiry. The IDM Tools website accepts erasure requests for verification by the operator. No unrelated Home Assistant data, remote commands or automatic diagnostic captures are included.
 
+## [0.26.0-b1] - 2026-11-05
+
+The setup assistant can now find the heat pump by itself: setup starts with a choice between manual entry and a network scan, so the Modbus address no longer has to be looked up in the router first.
+
+### ⚠️ Upgrade notes
+
+- **Rollback is safe**: the scan only adds a path through the setup assistant. Stored entries, entities and settings are untouched, existing installations notice nothing of the change, and the previous release reads the same configuration without migration in either direction.
+
+### ✨ New
+
+- **Setup starts with manual entry or a network scan**: the first setup step is now a menu; *Scan the network for the heat pump* probes every host of a chosen IPv4 subnet once on Modbus TCP port 502 — no Modbus data is sent — and lists the responding hosts. The subnet field comes pre-filled from Home Assistant's network adapter.
+- **Found devices show address and name**: every scan result carries the IP address plus the reverse-DNS hostname when one resolves, so a heat pump named by the router is recognizable at a glance. Picking an entry takes the address into the connection form, where the connection test, web access and Modbus-proxy settings are completed as before.
+
 ## [0.25.0] - 2026-11-05
 
 This release completes the step onto the Home Assistant 2026.11 platform — the 2026.11.0 minimum is now declared in the manifest and enforced at install time — and makes the advisor explain itself: reports, Predictive Advisor sensors and local Assist share one evidence base for what changed, what is missing and what an observed heating-curve adjustment actually did.

@@ -3,6 +3,13 @@
     "step": {
       "user": {
         "title": "Set up IDM Navigator Heat Pump",
+        "menu_options": {
+          "manual": "Enter connection details manually",
+          "scan": "Scan the network for the heat pump"
+        }
+      },
+      "manual": {
+        "title": "Set up IDM Navigator Heat Pump",
         "description": "[Need help? Open the documentation]({wiki_url})\n\nEnter the Modbus connection details of your IDM heat pump. By default, the assistant configures **Modbus and local Navigator web access together**, so enter the Local network code as the web PIN. If you deliberately want Modbus only, explicitly disable web access.\n\nWhen using a Modbus proxy, enable “Use a Modbus proxy” and enter the heat pump’s direct IP address or hostname as the web address.",
         "data": {
           "name": "Name",
@@ -23,6 +30,23 @@
           "web_pin": "Enter the Local network code configured on the Navigator display. Do not enter a cloud/app password or a two-factor code. Leave empty for Modbus-only operation; `0` disables local web access on the controller.",
           "modbus_proxy": "Enable this when the Modbus address above is a proxy and not the heat pump itself.",
           "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`."
+        }
+      },
+      "scan": {
+        "title": "Scan the network",
+        "description": "Every host in the subnet is probed once on the Modbus TCP port 502. No Modbus data is sent or read; the scan only checks whether the port answers. It takes a few seconds and finds only devices reachable from Home Assistant.",
+        "data": {
+          "scan_subnet": "Subnet (CIDR)"
+        },
+        "data_description": {
+          "scan_subnet": "IPv4 network to scan, for example `192.168.1.0/24`. Pre-filled with the network of your Home Assistant host."
+        }
+      },
+      "scan_results": {
+        "title": "Found devices",
+        "description": "Pick the heat pump from the hosts that answered on the Modbus TCP port. The address is carried into the next step, where the connection is tested and web access and proxy settings are configured. Hosts shown with a name were resolved via reverse DNS.",
+        "data": {
+          "host": "Found Modbus device"
         }
       },
       "reconfigure": {
@@ -862,7 +886,9 @@
       "ai_cloud_budget_unavailable": "The request budget could not be safely loaded or saved. No cloud request was sent.",
       "ai_cloud_daily_limit_reached": "The cloud request limit for this UTC day has been reached.",
       "ai_task_entity_required": "Select an existing ai_task entity that supports data generation.",
-      "telemetry_serial_required": "Enter the heat-pump serial number (3–80 characters: letters, digits, spaces and . / _ -)."
+      "telemetry_serial_required": "Enter the heat-pump serial number (3–80 characters: letters, digits, spaces and . / _ -).",
+      "invalid_subnet": "Not a valid IPv4 subnet, or too large (at most /22). Use a notation like `192.168.1.0/24`.",
+      "no_candidates": "No device with an open Modbus TCP port was found. Check that the heat pump is reachable and Modbus TCP is enabled, verify the subnet — or enter the address manually."
     },
     "abort": {
       "already_configured": "This heat pump is already configured.",
