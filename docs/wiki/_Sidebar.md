@@ -54,3 +54,5 @@
 **idm-heatpump-api[web]:** idm-heatpump-api[web]==2.16.0b3
 
 [GitHub](https://github.com/Xerolux/idm-heatpump-hass) · [Discussions](https://github.com/Xerolux/idm-heatpump-hass/discussions) · [Issues](https://github.com/Xerolux/idm-heatpump-hass/issues) · [HACS](https://hacs.xyz/)
+
+- [Telemetry](Telemetry)

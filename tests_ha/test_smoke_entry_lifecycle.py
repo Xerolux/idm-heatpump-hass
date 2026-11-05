@@ -315,3 +315,46 @@ async def test_external_power_source_can_be_cleared_with_real_ha_selectors() -> 
     assert "external_power_forwarding_battery_soc" not in submitted
     _store_external_power_forwarding_entities(options, submitted)
     assert options[CONF_EXTERNAL_POWER_FORWARDING_ENTITIES] == {"pv_production": "sensor.pv"}
+
+async def test_telemetry_reload_preserves_aggregates_and_refusal_erases_them(
+    smoke_hass, patched_client, smoke_entry
+) -> None:
+    """Exercise real HA Store and lifecycle; never contact an external endpoint."""
+    from datetime import UTC, datetime
+    from pathlib import Path
+    from unittest.mock import patch
+
+    from custom_components.idm_heatpump.telemetry import TELEMETRY_POLICY
+
+    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession") as session:
+        await smoke_hass.config_entries.async_add(smoke_entry)
+        await smoke_hass.async_block_till_done()
+        assert smoke_entry.runtime_data.telemetry is None
+        smoke_hass.config_entries.async_update_entry(smoke_entry, options={
+            "telemetry": True,
+            "telemetry_serial": "TEST-Smoke-123",
+            "telemetry_consent_at": datetime.now(UTC).isoformat(),
+            "telemetry_policy": TELEMETRY_POLICY,
+        })
+        await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+        telemetry = smoke_entry.runtime_data.telemetry
+        assert telemetry is not None
+        telemetry._pending["modbus_polls"] = 7
+        await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+        restored = smoke_entry.runtime_data.telemetry
+        assert restored is not None and restored is not telemetry
+        assert restored.payload()["counters"]["modbus_polls"] >= 7
+        path = Path(smoke_hass.config.path(".storage", "idm_heatpump.telemetry." + smoke_entry.entry_id))
+        assert path.exists()
+        smoke_hass.config_entries.async_update_entry(smoke_entry, options={"telemetry": False})
+        await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+        assert smoke_entry.runtime_data.telemetry is None
+        assert not path.exists()
+        session.assert_not_called()
+        assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+    pending = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
+    assert not pending

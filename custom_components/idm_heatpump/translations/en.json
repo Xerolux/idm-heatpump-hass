@@ -31,7 +31,8 @@
         "menu_options": {
           "connection": "Change connection settings",
           "features": "Configure features",
-          "diagnostics": "Test current connection"
+          "diagnostics": "Test current connection",
+          "telemetry": "Telemetry"
         },
         "menu_option_descriptions": {
           "connection": "Edit Modbus host, port, slave ID, local web PIN, and proxy settings.",
@@ -817,6 +818,14 @@
           "advisor_room_temp_f": "Use this sensor as circuit F's room temperature for advisor models and recommendations instead of the hc_f_room_temp register.",
           "advisor_room_temp_g": "Use this sensor as circuit G's room temperature for advisor models and recommendations instead of the hc_g_room_temp register."
         }
+      },
+      "telemetry": {
+        "title": "Telemetry",
+        "description": "I voluntarily consent to daily personal telemetry being sent to Xerolux (Sebastian Blüml) via https://idmtools.xerolux.de: my unchanged heat-pump serial number, consent time and notice revision, random report ID to prevent duplicate counting, integration version, Navigator family, firmware, connection mode, available features/registers, observed Modbus failures and alarm-code transitions, and available aggregated compressor starts, operating times and energy values. Purpose: fixing defects and improving the IDM integration. No anonymization. Missing sources are omitted. No credentials or additional plant queries. Private encrypted storage; automatic deletion twelve months after receipt. The server technically sees the connection IP. Voluntary, off by default; the integration works without consent. Disabling withdraws consent for future submissions without affecting prior lawful processing. Request deletion of received data at https://idmtools.xerolux.de/telemetry.html using the serial number and contact details for identity verification. The same page explains the full privacy notice and your rights. The serial entered here is transmitted unchanged; a myIDM ID is not a heat-pump serial number.\n\nScope is strictly the connected IDM plant and its operation through this integration. No other HA devices, entities, rooms, people, presence data, unrelated integrations, household meters or files. No means no telemetry collection, local telemetry storage or transmission, including test contacts. Disabling cancels in-flight telemetry tasks. Data already received remains until erased.\n\nWhen enabled, only the declared plant aggregates and at most one pending report are persisted locally across restarts (delayed saves after changes, flushed on clean unload). Abrupt power loss can lose unsaved changes. Failed reports remain for the next daily slot. Disabling deletes the local collection; enabling again starts a new collection. Consent does not authorize remote control or later expansion of the data fields.",
+        "data": {
+          "telemetry": "Enable telemetry",
+          "telemetry_serial": "Heat-pump serial number (required when enabled)"
+        }
       }
     },
     "error": {
@@ -852,7 +861,8 @@
       "ai_cloud_rate_limited": "The provider rejected the request because of quota or rate limits. No automatic retry was made.",
       "ai_cloud_budget_unavailable": "The request budget could not be safely loaded or saved. No cloud request was sent.",
       "ai_cloud_daily_limit_reached": "The cloud request limit for this UTC day has been reached.",
-      "ai_task_entity_required": "Select an existing ai_task entity that supports data generation."
+      "ai_task_entity_required": "Select an existing ai_task entity that supports data generation.",
+      "telemetry_serial_required": "Enter the heat-pump serial number (3–80 characters: letters, digits, spaces and . / _ -)."
     },
     "abort": {
       "already_configured": "This heat pump is already configured.",

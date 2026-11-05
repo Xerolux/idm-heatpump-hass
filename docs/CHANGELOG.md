@@ -13,6 +13,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### ⚠️ Upgrade notes
+
+- **Telemetry remains off unless explicitly enabled**: one consent covers only the connected IDM plant. Enabling requires the actual heat-pump serial number, which is transmitted unchanged. Refusing collects and sends nothing. Existing integration operation stays local and independent of telemetry availability.
+
+### ✨ New
+
+- **Optional plant telemetry**: daily reports describe controller compatibility, connection failures, observed alarm transitions and available operating aggregates. Personal reports use private encrypted storage with twelve-month expiry. The IDM Tools website accepts erasure requests for verification by the operator. No unrelated Home Assistant data, remote commands or automatic diagnostic captures are included.
+
 ## [0.25.0-b9] - 2026-11-04
 
 ### ⚠️ Upgrade notes

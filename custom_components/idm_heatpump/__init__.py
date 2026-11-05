@@ -226,6 +226,7 @@ from .room_temp_forwarding import (
     RoomTempForwardingConfig,
     register_for_storage_temp_key,
 )
+from .telemetry import Telemetry
 from .versions import async_runtime_versions
 from .web_data import (
     IdmWebAuthenticationFailed,
@@ -280,6 +281,7 @@ class IdmHeatpumpData:
     humidity_forwarding_task: asyncio.Task[None] | None = None
     storage_temp_forwarding_task: asyncio.Task[None] | None = None
     external_power_forwarding_task: asyncio.Task[None] | None = None
+    telemetry: Telemetry | None = None
     energy_manager: EnergyManager | None = None
     ai_advisor: AiAdvisor | None = None
     energy_statistics: EnergyStatistics | None = None
@@ -1173,6 +1175,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
         # entries. Idempotent — subsequent calls from operation_entities.py are no-ops.
         ensure_entity_aware_polling(coordinator)
 
+        from .const import CONF_TELEMETRY
+
+        if entry.options.get(CONF_TELEMETRY) is True:
+            entry.runtime_data.telemetry = Telemetry(hass, entry, coordinator, versions.integration)
+            try:
+                if not await entry.runtime_data.telemetry.async_start():
+                    entry.runtime_data.telemetry = None
+            except OSError:
+                _LOGGER.warning("IDM telemetry storage unavailable; local plant integration remains active")
+                entry.runtime_data.telemetry = None
+
         if advisor_engine is not None:
             entry.runtime_data.advisor_forecast_task = _create_entry_background_task(
                 hass,
@@ -1387,6 +1400,13 @@ async def _async_teardown_partial_setup(hass: HomeAssistant, entry: IdmConfigEnt
         except Exception:
             _LOGGER.debug("Error stopping the KNX bridge while unwinding setup", exc_info=True)
 
+    telemetry = getattr(runtime, "telemetry", None)
+    if isinstance(telemetry, Telemetry):
+        try:
+            await telemetry.async_stop()
+        except OSError:
+            _LOGGER.warning("IDM telemetry storage could not be updated during unload")
+
     await _async_cancel_entry_tasks(runtime)
 
     coordinator = getattr(runtime, "coordinator", None)
@@ -1445,6 +1465,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None
     # Raises a translated ConfigEntryError instead of reporting a bare False,
     # so a platform that refuses to unload fails the entry loudly (2026.11).
     await hass.config_entries.async_unload_platforms_or_raise(entry, list(platforms))
+    telemetry = getattr(entry.runtime_data, "telemetry", None)
+    if isinstance(telemetry, Telemetry):
+        try:
+            await telemetry.async_stop()
+        except OSError:
+            _LOGGER.warning("IDM telemetry storage could not be updated during unload")
     history = getattr(entry.runtime_data.coordinator, "analysis_history", None)
     if isinstance(history, AnalysisHistory):
         try:

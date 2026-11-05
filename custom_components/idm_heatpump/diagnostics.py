@@ -34,7 +34,7 @@ from .versions import async_runtime_versions
 
 TO_REDACT = {CONF_AI_URL, CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_WEB_HOST, CONF_WEB_PIN}
 # Device identifiers must not leak into diagnostics either.
-TO_REDACT.update({"myidm_id", "serial_number", "serial"})
+TO_REDACT.update({"myidm_id", "serial_number", "serial", "telemetry_serial", "telemetry_consent_at"})
 TO_REDACT.update(CLOUD_KEYS)
 
 

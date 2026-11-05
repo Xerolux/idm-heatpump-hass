@@ -2320,7 +2320,38 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             return await self.async_step_connection(user_input)
         return self.async_show_menu(
             step_id="reconfigure",
-            menu_options=["connection", "features", "diagnostics"],
+            menu_options=["connection", "features", "diagnostics", "telemetry"],
+        )
+
+    async def async_step_telemetry(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Save one explicit consent for identifiable telemetry with its serial."""
+        from datetime import UTC, datetime
+
+        from .const import CONF_TELEMETRY, CONF_TELEMETRY_CONSENT_AT, CONF_TELEMETRY_POLICY, CONF_TELEMETRY_SERIAL
+        from .telemetry import TELEMETRY_POLICY, valid_serial
+
+        entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            enabled = user_input.get(CONF_TELEMETRY) is True
+            serial = user_input.get(CONF_TELEMETRY_SERIAL, "")
+            if enabled and not valid_serial(serial):
+                errors[CONF_TELEMETRY_SERIAL] = "telemetry_serial_required"
+            else:
+                options = dict(entry.options)
+                options[CONF_TELEMETRY] = enabled
+                options[CONF_TELEMETRY_SERIAL] = serial if enabled else ""
+                options[CONF_TELEMETRY_CONSENT_AT] = datetime.now(UTC).isoformat() if enabled else ""
+                options[CONF_TELEMETRY_POLICY] = TELEMETRY_POLICY if enabled else ""
+                return self.async_update_and_abort(entry, options=options)
+        return self.async_show_form(
+            step_id="telemetry",
+            data_schema=vol.Schema({
+                vol.Required(CONF_TELEMETRY, default=entry.options.get(CONF_TELEMETRY) is True):
+                    BooleanSelector(BooleanSelectorConfig()),
+                vol.Optional(CONF_TELEMETRY_SERIAL, default=entry.options.get(CONF_TELEMETRY_SERIAL, "")): str,
+            }),
+            errors=errors,
         )
 
     async def async_step_features(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
