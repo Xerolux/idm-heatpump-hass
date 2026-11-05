@@ -65,3 +65,24 @@ The operator subsequently confirmed that both server and backups are at netcup
 in Nuremberg, Germany. Location is no longer an unanswered operator question;
 this statement has not been independently verified. Processor agreements and
 actual backup retention/erasure are still separate operational checks.
+
+
+## Six-month full-image backup clarification
+
+The operator confirmed six-month retention of netcup full-server snapshots.
+Read-only host inspection found the private data directory on the root filesystem.
+Consequently, a full root-disk image includes that directory; deleting active
+rows does not erase prior image copies. Approximately eighteen months from
+original receipt is possible when a last image is taken just before twelve-month
+active expiry and retained another six months. Individual verified erasures may
+also reappear after a restore, because the current app has no independent erasure
+journal outside the restored disk.
+
+This is an unresolved general-release condition, not a finding that six-month
+snapshots are automatically unlawful or that an extra six months has been
+consented to. Existing snapshots, twelve-month live expiry, HA options and report
+schedules were not changed. A complete backup/restore erasure solution needs an
+architecture or operational decision before implementation. The public draft
+notice now distinguishes active expiry from existing image copies.
+
+Source: [BayLfD, deletion of backup copies](https://www.datenschutz-bayern.de/tbs/tb30/k12.html#12.5).

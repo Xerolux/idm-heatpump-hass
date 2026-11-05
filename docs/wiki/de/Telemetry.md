@@ -133,3 +133,11 @@ Am 5. November 2026 bestätigt der Betreiber: Server und Backups liegen bei
 netcup in Nürnberg, Deutschland. Damit ist der Standort nach Betreiberangabe
 geklärt. Auftragsverarbeitungsvertrag und die tatsächliche Backup-Aufbewahrung
 bzw. Löschung bleiben getrennt zu prüfen.
+
+
+Der Betreiber bestätigt sechs Monate Aufbewahrung vollständiger netcup-Server-Snapshots.
+Die private Datenablage liegt auf dem Root-Dateisystem und ist damit in einem
+Vollabbild enthalten. Die automatische Zwölfmonatslöschung betrifft den aktiven
+Datenbestand und entfernt keine alten Snapshot-Kopien. Backup-Löschung und
+Wiederherstellungsverfahren bleiben vor einer allgemeinen Freigabe offen; eine
+zusätzliche Aufbewahrung ist dadurch nicht automatisch freigegeben.

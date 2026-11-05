@@ -122,3 +122,10 @@ On 5 November 2026 the operator confirmed that the server and backups are
 hosted by netcup in Nuremberg, Germany. This resolves the location according to
 the operator. Processing agreements and actual backup retention/erasure remain
 separate checks.
+
+
+The operator confirmed six-month retention of full netcup server snapshots.
+The private data directory is on the root filesystem and thus included in a full
+disk image. Twelve-month live expiry does not erase previous image copies.
+Backup erasure and restoration handling remain unresolved before general
+availability; this is not consent to an additional retention period.
