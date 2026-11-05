@@ -13,7 +13,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.26.0-b7] - 2026-11-05
+## [0.26.0-b8] - 2026-11-05
 
 ### ⚠️ Upgrade notes
 
@@ -23,7 +23,7 @@ All notable changes to this project will be documented in this file.
 
 - **Spread cloud requests across installations**: first telemetry reports are randomized across 24–48 hours, subsequent attempts across 24–25 hours, and overdue reconnects across up to one hour. Slots survive reloads and are reserved before I/O. Firmware startup checks wait up to 30 minutes, with jitter on subsequent six-hour intervals. No immediate retries or bulk backlog upload is introduced.
 
-- **Readable consent before activation**: the telemetry form groups the unchanged data scope, transfer schedule, retention and withdrawal behavior into labelled paragraphs. A prominent Markdown link opens the full privacy notice before the explicitly labelled consent switch. Opening that page never enables collection. This presentation change retains notice revision v3 and does not restart existing daily reporting slots.
+- **Readable consent before activation**: short mobile-friendly summaries explain benefits, shared data, storage and withdrawal in plain language. Both dialogs identify the project as Xerolux and link directly to the full privacy notice with the operator's legal name and contact. Explicit opt-in stays off by default; existing consent, data scope and reporting schedules remain unchanged.
 
 - **Independent firmware consent**: firmware comparison now has its own optional switch, off by default, and works without telemetry or a myIDM ID. Queries contain only controller/model/software metadata. Telemetry consent never enables them automatically. Turning firmware queries off cancels requests and removes the sensor. Sharing operating reports is no longer a prerequisite for viewing matching community firmware observations.
 
