@@ -2,8 +2,7 @@
 
 Telemetry is **off by default**. Under **Reconfigure → Telemetry**, one explicit
 switch consents to the complete plant-only schema. Enter the actual heat-pump
-serial number once; it is transmitted unchanged. A myIDM ID is not assumed to be
-the serial number. No anonymization is claimed.
+myIDM ID once; it is transmitted unchanged. The controller myIDM ID is used automatically when available. No anonymization is claimed.
 
 Only the connected IDM plant, its controller and its connection through this
 integration are in scope. No other HA devices, entity IDs, room names, people,
@@ -13,7 +12,7 @@ contact, including no endpoint test. Normal local integration operation continue
 
 ## Data and delivery
 
-The fixed schema includes the serial, consent time/revision, report ID, integration
+The fixed schema includes the myIDM ID, consent time/revision, report ID, integration
 version, Navigator family/model, heat-pump model, firmware, connection mode/web
 variant, detected solar/PV/cascade/ISC capabilities, snapshot register count,
 observed hours, Modbus polls/failures, observed web outages and alarm-code
@@ -39,12 +38,12 @@ and an expanded data schema are not authorized by the telemetry switch.
 ## Server retention and rights
 
 Reports are private, AES-GCM encrypted outside the web root and linked to the
-unchanged serial. They expire twelve calendar months after reception, with
+unchanged myIDM ID. They expire twelve calendar months after reception, with
 hourly cleanup independent of diagnostic ZIP retention. Request erasure at
 [IDM Tools telemetry/privacy](https://idmtools.xerolux.de/telemetry.html). The form
-queues the serial and contact email privately; it does not automatically erase
+queues the myIDM ID and contact email privately; it does not automatically erase
 records. The operator verifies entitlement through separate contact before
-erasing matching reports. A serial alone is not proof. Disable telemetry as well
+erasing matching reports. A myIDM ID alone is not proof. Disable telemetry as well
 to prevent new submissions.
 
 The notice identifies the controller, purpose, consent basis, recipients,
@@ -59,3 +58,42 @@ Daily observations help assess firmware compatibility and stability. They do not
 replace protocol captures, unknown-register discovery or investigating a setup
 that cannot start in HA. IDM Web Capture remains the targeted diagnostic tool.
 Neither telemetry consent nor a server response permits remote capture commands.
+
+
+## Website and private operator access
+
+The [public telemetry/privacy page](https://idmtools.xerolux.de/telemetry.html)
+explains consent and accepts an erasure request using the myIDM ID and a contact
+email. The request itself does not immediately erase data. Users disable
+telemetry in HA to stop collection and sending.
+
+The operator uses the existing **IDM Tools Authelia owner account and second
+factor** at [private telemetry](https://auth.blueml.eu/idm-captures/telemetry).
+No new login or password is created. The capture inbox also links to this page.
+It shows private myIDM assignments, compatibility cohorts, observed counters and
+pending erasure requests. Contact and verify the requester before using the
+verified-erasure action. Public requests never grant private read access.
+
+
+## Why sharing helps, and your firmware sensor
+
+Consented plant observations reveal firmware compatibility, connection problems
+and recurring faults, helping target integration improvements. In return, the
+**Latest reported firmware** sensor appears only while telemetry is enabled.
+It queries the matching server catalog on startup and at most every six hours.
+
+The server groups observations by Navigator family, exact heat-pump model,
+firmware prefix and numeric major line. `T_NAV10_20.*`, `NAV10_20.*` and `m_20.*`
+are separate, as are different plant models. Version and build ordering is
+numeric. If the interface does not report a heat-pump type, matching uses only other missing-type reports within the same detected controller and firmware series. Known plant models remain separate. An unknown controller/firmware series produces no recommendation.
+
+This is **not an official latest IDM release** and does not establish availability
+or suitability for a specific plant. Only IDM or the installer can assess and
+install firmware. Matching firmware versions may be shown to other participants
+without myIDM IDs or operating data. Attributes identify whether a higher version
+was observed. Initially the sensor may be unknown until matching reports arrive;
+existing diagnostic ZIPs are not repurposed for this catalog.
+
+Disabling removes the sensor and its registry entry and cancels firmware queries.
+No consent means no display and no query. This additional purpose uses notice
+revision `idm-telemetry-v3` and requires explicit consent.

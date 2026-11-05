@@ -527,6 +527,23 @@ class TestAsyncSetupWebOnlyEntry:
         # model_hint comes from the detected navigator version stored in entry data.
         assert read_web.call_args.kwargs.get("model_hint") is None
 
+    async def test_web_only_starts_consented_telemetry_without_modbus(self, mock_hass):
+        entry = self._make_web_only_entry()
+        entry.options["telemetry"] = True
+        telemetry = MagicMock()
+        telemetry.async_start = AsyncMock(return_value=True)
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=MagicMock()),
+            patch("custom_components.idm_heatpump.async_read_web_supplement", AsyncMock(return_value=None)),
+            patch("custom_components.idm_heatpump.ir"),
+            patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()),
+            patch("custom_components.idm_heatpump.Telemetry", return_value=telemetry),
+        ):
+            await async_setup_entry(mock_hass, entry)
+        assert entry.runtime_data.telemetry is telemetry
+        telemetry.async_start.assert_awaited_once()
+        assert entry.runtime_data.coordinator.update_interval is None
+
     async def test_web_only_warms_the_error_code_database_off_the_event_loop(self, mock_hass):
         from custom_components.idm_heatpump.internal_messages import warm_error_code_database
 

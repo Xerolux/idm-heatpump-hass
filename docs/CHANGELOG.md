@@ -13,13 +13,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.26.0-b4] - 2026-11-05
 
 ### ⚠️ Upgrade notes
 
-- **Telemetry remains off unless explicitly enabled**: one consent covers only the connected IDM plant. Enabling requires the actual heat-pump serial number, which is transmitted unchanged. Refusing collects and sends nothing. Existing integration operation stays local and independent of telemetry availability.
+- **Telemetry remains off unless explicitly enabled**: one consent covers only the connected IDM plant. Enabling requires the myIDM ID of the IDM plant, which is transmitted unchanged. Refusing collects and sends nothing. Existing integration operation stays local and independent of telemetry availability.
 
 ### ✨ New
+
+- **Matching firmware observations with explicit consent**: the new diagnostic sensor compares community-reported firmware only within the same Navigator family, plant model, prefix and major line. Test channels remain separate. No manufacturer availability or installation permission is implied. Disabling telemetry immediately removes the sensor and stops catalog requests. The revised notice explains the benefit and requires renewed consent.
 
 - **Optional plant telemetry**: daily reports describe controller compatibility, connection failures, observed alarm transitions and available operating aggregates. Personal reports use private encrypted storage with twelve-month expiry. The IDM Tools website accepts erasure requests for verification by the operator. No unrelated Home Assistant data, remote commands or automatic diagnostic captures are included.
 

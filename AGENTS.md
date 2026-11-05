@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.26.0-b1` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
+- **Current Version**: `0.26.0-b4` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.11.0 (the 2026.8.1–2026.10 line stays on integration 0.24.x)
@@ -55,6 +55,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── modbus_client.py              # API client adapter routing raw I/O through the local transport
 │   ├── modbus_transport.py           # Backend-neutral contract + modbus-connection/tmodbus implementation
 │   ├── modbus_shared_transport.py    # Claims Home Assistant's shared Modbus connection, private-socket fallback
+│   ├── telemetry_entities.py        # Opt-in matching firmware sensor, removed on withdrawal
 │   ├── telemetry.py                 # Explicit plant-only consent, persisted aggregates and daily IDM Tools reports
 
 │   ├── network_scan.py               # Config-flow subnet scan for Modbus TCP endpoints (port probe + reverse DNS)
@@ -208,6 +209,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_sensitive_data.py
 │   ├── test_services.py
 │   ├── test_translation_parity.py
+│   ├── test_telemetry_entities.py
 │   ├── test_telemetry.py
 │   ├── test_versions.py
 │   ├── test_web_binary_sensors.py
@@ -614,7 +616,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 ## Important Constraints
 
 - **Do not push to `master` or `main`** — all development happens on feature branches.
-- **Plant control stays local.** Authorized outbound exceptions are the experimental AI provider and explicitly consented IDM plant telemetry. Telemetry is off by default, uses the fixed IDM Tools HTTPS endpoint, sends the unchanged owner-entered heat-pump serial plus its documented plant-only schema, and never reads unrelated HA data. A refusal means no telemetry collection, queue or network contact. Changes to the telemetry scope require a new notice revision and renewed consent. Never add remote plant controls or model tools.
+- **Plant control stays local.** Authorized outbound exceptions are the experimental AI provider and explicitly consented IDM plant telemetry. Telemetry is off by default, uses the fixed IDM Tools HTTPS endpoint, sends the unchanged controller-provided or explicitly entered myIDM ID plus its documented plant-only schema, and never reads unrelated HA data. A refusal means no telemetry collection, queue or network contact. Changes to the telemetry scope require a new notice revision and renewed consent. Never add remote plant controls or model tools.
 - **Do not skip type hints** — mypy strict mode will fail CI.
 - **Do not hardcode register addresses** in platform files — reference `const.py` or `registers.py`.
 - **Do not bypass the transports** (`ModbusConnectionTransport` / `SharedModbusUnitTransport`) with a second direct socket path. The shared provider is the only cross-entry path and only it may report `supports_shared_connection=True`; the private tmodbus socket remains the fallback and the probe path.

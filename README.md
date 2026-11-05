@@ -39,7 +39,7 @@
 >
 > New here? Start with the **[Installation & Setup guide][wiki-install]** or explore the **[searchable documentation][wiki]**.
 
-> **Optional personal plant telemetry:** off by default, one explicit consent, unchanged heat-pump serial, plant-only scope and twelve-month server retention. Refusing collects and sends nothing. [Scope, local persistence and erasure](docs/wiki/Telemetry.md).
+> **Optional personal plant telemetry:** off by default, one explicit consent, unchanged myIDM ID, plant-only scope and twelve-month server retention. Refusing collects and sends nothing. [Scope, local persistence and erasure](docs/wiki/Telemetry.md).
 
 ## Experimental AI plant adviser (read-only)
 

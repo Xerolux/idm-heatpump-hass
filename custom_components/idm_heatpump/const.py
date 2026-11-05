@@ -480,6 +480,6 @@ CONF_AI_ADVISOR = "ai_advisor"
 
 # Explicit, all-or-nothing consent for the fixed IDM Tools telemetry schema.
 CONF_TELEMETRY = "telemetry"
-CONF_TELEMETRY_SERIAL = "telemetry_serial"
+CONF_TELEMETRY_MYIDM = "telemetry_myidm_id"
 CONF_TELEMETRY_CONSENT_AT = "telemetry_consent_at"
 CONF_TELEMETRY_POLICY = "telemetry_policy"

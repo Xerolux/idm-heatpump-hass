@@ -5,6 +5,14 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.0-b4 — 2026-11-05
+
+Local test build, not a public release: current stable base plus Modbus network
+discovery, explicitly consented myIDM plant telemetry, restart-safe daily reports
+and private erasure requests. The optional Latest reported firmware sensor matches
+only the same controller, model and firmware series, separating test and stable
+channels. Disabling telemetry removes the sensor immediately and stops queries.
+
 ## v0.26.0-b1 — 2026-11-05
 
 The setup assistant can now find the heat pump by itself. Setup starts with a

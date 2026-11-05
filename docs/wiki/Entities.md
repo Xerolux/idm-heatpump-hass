@@ -980,3 +980,18 @@ registers. In particular, the reported 60 °C at `hc_d_setpoint_flow_constant`
 parameters are deliberately not exposed under guessed names and no new
 writes are added. This mapping is based on the Navigator 10 report in #429;
 it still needs confirmation on the reporter's hardware.
+
+
+## Optional telemetry: firmware observations
+
+The **Latest reported firmware** diagnostic sensor exists only with telemetry
+consent. It shows the highest version reported to the server for the same
+Navigator family, controller/plant model and firmware prefix/major line. Test
+and stable channels remain separate. Attributes show the installed version,
+matching series and whether a higher version was observed. Missing identity or
+evidence remains unknown. This is not manufacturer approval; IDM/the installer
+must assess suitability and perform installation. Disabling removes the sensor
+and its registry entry immediately and stops firmware queries.
+[Scope, benefits and privacy](Telemetry).
+
+Missing plant types are matched only with other missing-type observations in the same known controller/firmware series. Known plant models remain separate.

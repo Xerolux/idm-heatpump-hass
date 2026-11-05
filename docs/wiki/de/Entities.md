@@ -816,3 +816,18 @@ belegt nicht dessen Bedeutung als Schwellwert. Diese Parameter werden daher
 nicht unter vermuteten Namen angezeigt. Es kommen keine neuen Schreibzugriffe
 hinzu. Die Zuordnung basiert auf dem Navigator-10-Bericht in #429 und muss
 noch an der Anlage des Melders bestätigt werden.
+
+
+## Freiwillige Telemetrie: Firmware-Beobachtung
+
+Der Diagnose-Sensor **Neueste gemeldete Firmware** existiert ausschließlich bei
+aktivierter Telemetrie. Er zeigt die höchste auf dem Server gemeldete Version
+innerhalb derselben Navigator-Familie, desselben Regler-/Anlagenmodells und
+derselben Firmware-Präfix-/Hauptreihe. Test- und stabile Reihen bleiben getrennt.
+Attribute nennen installierte Version, Vergleichsreihe und eine beobachtete höhere
+Version. Fehlende Zuordnung oder Meldungen bleiben unbekannt. Das ist keine
+Herstellerfreigabe; Installation und Eignungsprüfung sind Sache von IDM/Fachbetrieb.
+Ausschalten entfernt den Sensor und seinen Registry-Eintrag sofort und beendet
+alle Firmware-Abfragen. [Umfang, Nutzen und Datenschutz](Telemetry).
+
+Fehlende Wärmepumpentypen werden nur mit anderen Meldungen ohne Typangabe derselben bekannten Regler-/Firmware-Reihe verglichen. Bekannte Modelle bleiben getrennt.

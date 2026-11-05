@@ -332,7 +332,7 @@ async def test_telemetry_reload_preserves_aggregates_and_refusal_erases_them(
         assert smoke_entry.runtime_data.telemetry is None
         smoke_hass.config_entries.async_update_entry(smoke_entry, options={
             "telemetry": True,
-            "telemetry_serial": "TEST-Smoke-123",
+            "telemetry_myidm_id": "TEST-Smoke-123",
             "telemetry_consent_at": datetime.now(UTC).isoformat(),
             "telemetry_policy": TELEMETRY_POLICY,
         })
@@ -340,6 +340,16 @@ async def test_telemetry_reload_preserves_aggregates_and_refusal_erases_them(
         await smoke_hass.async_block_till_done()
         telemetry = smoke_entry.runtime_data.telemetry
         assert telemetry is not None
+        firmware_entities = [e for e in er.async_entries_for_config_entry(er.async_get(smoke_hass), smoke_entry.entry_id) if e.unique_id.endswith("_telemetry_latest_firmware")]
+        assert len(firmware_entities) == 1
+        firmware_entity_id = firmware_entities[0].entity_id
+        telemetry.firmware_result = {"status":"no_matching_observations", "latest_firmware":None}
+        for listener in tuple(telemetry._firmware_listeners):
+            listener()
+        await smoke_hass.async_block_till_done()
+        firmware_state = smoke_hass.states.get(firmware_entity_id)
+        assert firmware_state is not None and firmware_state.state == "unknown"
+        assert firmware_state.attributes["status"] == "no_matching_observations"
         telemetry._pending["modbus_polls"] = 7
         await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
         await smoke_hass.async_block_till_done()
@@ -352,8 +362,10 @@ async def test_telemetry_reload_preserves_aggregates_and_refusal_erases_them(
         await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
         await smoke_hass.async_block_till_done()
         assert smoke_entry.runtime_data.telemetry is None
+        assert er.async_get(smoke_hass).async_get(firmware_entity_id) is None
+        assert smoke_hass.states.get(firmware_entity_id) is None
         assert not path.exists()
-        session.assert_not_called()
+        assert session.call_count >= 1  # Opt-in firmware catalog only; daily upload is still delayed.
         assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
         await smoke_hass.async_block_till_done()
     pending = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]

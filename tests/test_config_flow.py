@@ -3419,21 +3419,38 @@ class TestTelemetryConsent:
         assert form.call_args.kwargs["step_id"] == "telemetry"
         assert _marker_defaults(form.call_args.kwargs["data_schema"])["telemetry"] is False
 
-    async def test_serial_required_only_when_enabled(self):
+    async def test_myidm_required_only_when_enabled(self):
         flow = _make_flow()
         entry = MagicMock(options={"unrelated": "preserved"})
         with patch.object(flow, "_get_reconfigure_entry", return_value=entry):
             result = await flow.async_step_telemetry({"telemetry": True})
-        assert result["errors"] == {"telemetry_serial": "telemetry_serial_required"}
+        assert result["errors"] == {"telemetry_myidm_id": "telemetry_myidm_required"}
 
     @pytest.mark.parametrize("enabled", [False, True])
     async def test_saves_exact_consent_and_preserves_other_options(self, enabled):
         flow = _make_flow()
         entry = MagicMock(options={"unrelated": "preserved"})
         with patch.object(flow, "_get_reconfigure_entry", return_value=entry), patch.object(flow, "async_update_and_abort") as save:
-            await flow.async_step_telemetry({"telemetry": enabled, "telemetry_serial": "TEST-Serial-123"})
+            await flow.async_step_telemetry({"telemetry": enabled, "telemetry_myidm_id": "TEST-Serial-123"})
         options = save.call_args.kwargs["options"]
         assert options["unrelated"] == "preserved"
         assert options["telemetry"] is enabled
-        assert options["telemetry_serial"] == ("TEST-Serial-123" if enabled else "")
+        assert options["telemetry_myidm_id"] == ("TEST-Serial-123" if enabled else "")
         assert bool(options["telemetry_consent_at"]) is enabled
+
+
+async def test_telemetry_detects_myidm_without_requesting_a_serial():
+    flow = _make_flow()
+    entry = MagicMock(options={})
+    entry.runtime_data.coordinator.myidm_id = "TEST-MYIDM-123"
+    with patch.object(flow, "_get_reconfigure_entry", return_value=entry), patch.object(flow, "async_update_and_abort") as save:
+        await flow.async_step_telemetry({"telemetry": True})
+    assert save.call_args.kwargs["options"]["telemetry_myidm_id"] == "TEST-MYIDM-123"
+
+
+async def test_changed_telemetry_notice_never_preselects_new_consent():
+    flow = _make_flow()
+    entry = MagicMock(options={"telemetry":True,"telemetry_policy":"previous-notice"})
+    with patch.object(flow, "_get_reconfigure_entry", return_value=entry), patch.object(flow, "async_show_form") as form:
+        await flow.async_step_telemetry()
+    assert _marker_defaults(form.call_args.kwargs["data_schema"])["telemetry"] is False

@@ -452,6 +452,17 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     return True
 
 
+async def _async_start_entry_telemetry(entry: IdmConfigEntry) -> None:
+    """Keep optional telemetry failure independent of either local transport mode."""
+    if entry.runtime_data.telemetry is not None:
+        try:
+            if not await entry.runtime_data.telemetry.async_start():
+                entry.runtime_data.telemetry = None
+        except OSError:
+            _LOGGER.warning("IDM telemetry storage unavailable; local plant integration remains active")
+            entry.runtime_data.telemetry = None
+
+
 async def _async_setup_web_only_entry(
     hass: HomeAssistant,
     entry: IdmConfigEntry,
@@ -603,6 +614,12 @@ async def _async_setup_web_only_entry(
         loaded_platforms=platforms_to_load,
     )
 
+    from .const import CONF_TELEMETRY
+
+    if entry.options.get(CONF_TELEMETRY) is True:
+        integration = await async_get_integration(hass, DOMAIN)
+        entry.runtime_data.telemetry = Telemetry(hass, entry, coordinator, str(integration.manifest.get("version", "")))
+
     try:
         # Same lazy database as the Modbus path: warm it off the loop before any
         # sensor entity writes its first state.
@@ -615,6 +632,8 @@ async def _async_setup_web_only_entry(
         shorten_legacy_differential_entity_ids(hass, coordinator)
         cleanup_stale_web_sensor_entities(hass, coordinator)
         cleanup_stale_hierarchy_devices(hass, coordinator)
+
+        await _async_start_entry_telemetry(entry)
 
         if bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE)):
             # The bridge serves register-named values from the web register
@@ -1166,6 +1185,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
             loaded_platforms=platforms,
         )
 
+        from .const import CONF_TELEMETRY
+
+        if entry.options.get(CONF_TELEMETRY) is True:
+            entry.runtime_data.telemetry = Telemetry(hass, entry, coordinator, versions.integration)
+
         await coordinator.async_config_entry_first_refresh()
         precreate_main_device(hass, coordinator)
         await hass.config_entries.async_forward_entry_setups(entry, platforms)
@@ -1180,16 +1204,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
         # entries. Idempotent — subsequent calls from operation_entities.py are no-ops.
         ensure_entity_aware_polling(coordinator)
 
-        from .const import CONF_TELEMETRY
-
-        if entry.options.get(CONF_TELEMETRY) is True:
-            entry.runtime_data.telemetry = Telemetry(hass, entry, coordinator, versions.integration)
-            try:
-                if not await entry.runtime_data.telemetry.async_start():
-                    entry.runtime_data.telemetry = None
-            except OSError:
-                _LOGGER.warning("IDM telemetry storage unavailable; local plant integration remains active")
-                entry.runtime_data.telemetry = None
+        await _async_start_entry_telemetry(entry)
 
         if advisor_engine is not None:
             entry.runtime_data.advisor_forecast_task = _create_entry_background_task(

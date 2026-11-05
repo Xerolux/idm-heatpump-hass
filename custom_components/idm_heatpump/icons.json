@@ -166,6 +166,9 @@
       },
       "advisor_optimization_review": {
         "default": "mdi:clipboard-check-outline"
+      },
+      "telemetry_latest_firmware": {
+        "default": "mdi:chip"
       }
     },
     "binary_sensor": {
