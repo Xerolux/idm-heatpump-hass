@@ -141,3 +141,17 @@ Vollabbild enthalten. Die automatische Zwölfmonatslöschung betrifft den aktive
 Datenbestand und entfernt keine alten Snapshot-Kopien. Backup-Löschung und
 Wiederherstellungsverfahren bleiben vor einer allgemeinen Freigabe offen; eine
 zusätzliche Aufbewahrung ist dadurch nicht automatisch freigegeben.
+
+
+## Unabhängige Löschhistorie auf Proxmox
+
+Die Löschhistorie liegt jetzt auf dem Proxmox-Host außerhalb der netcup-Snapshots
+und Gast-Backups. Sie enthält nur zufällige Berichts-/Anfragekennungen und
+Lösch-/Ablaufzeitpunkte, keine myIDM-ID, Kontakte oder Messwerte. Ein privater
+ausgehender SSH-Tunnel schützt die Übertragung; kein neuer öffentlicher Port
+wurde geöffnet. Löschungen werden erst nach dauerhafter externer Speicherung
+bestätigt. Vor dem Dienststart werden die aktuellen Löschungen abgeglichen.
+Scheitert der Abgleich, bleibt der Zugriff gesperrt. Die Historie wird sechs
+Kalendermonate plus einen Tag aufbewahrt. Bei älteren Software-Snapshots muss
+vor Freigabe zuerst der aktuelle Dienst eingerichtet werden. Die Proxmox-Historie
+selbst darf nicht gemeinsam mit netcup auf einen alten Stand zurückgesetzt werden.

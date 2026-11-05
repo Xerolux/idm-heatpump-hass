@@ -129,3 +129,15 @@ The private data directory is on the root filesystem and thus included in a full
 disk image. Twelve-month live expiry does not erase previous image copies.
 Backup erasure and restoration handling remain unresolved before general
 availability; this is not consent to an additional retention period.
+
+
+## Independent erasure journal on Proxmox
+
+The journal now resides on the Proxmox host outside netcup snapshots and guest
+backups. It holds only random report/request IDs and erasure/expiry timestamps,
+not myIDM IDs, contacts or measurements. A private outbound SSH tunnel protects
+transfer without a new public port. Erasures are confirmed only after durable
+external recording. Startup reconciles the current history; failure blocks access.
+History expires after six calendar months plus one day. Old software snapshots
+require the current service before access is enabled. The independent Proxmox
+journal must not be rolled back together with netcup.

@@ -103,3 +103,45 @@ current, independent erasure journal and reconciliation gate are still not
 configured. No provider snapshots or retention settings were changed. The public
 notice distinguishes this implemented date gate from the remaining erasure-log
 requirement. No Home Assistant update or real plant report was forced.
+
+
+## Independent journal deployed on Proxmox
+
+At the operator's explicit request, the independent erasure journal now runs on
+his Proxmox host filesystem, outside netcup snapshots and guest VM backups.
+A dedicated unprivileged account and hardened loopback-only service hold only
+random report/request IDs and deletion/expiry timestamps, never raw myIDM IDs,
+email addresses or measurements. An outbound SSH reverse tunnel uses a separate
+restricted non-login netcup account, a verified pinned SSH host key and no new
+home-router/public HTTP port. An IPv4 path was selected because the Proxmox host
+could not route the server's IPv6 address; no global network configuration changed.
+
+The netcup service requires a successful authenticated, nonce-bound journal read
+before binding HTTP. Journal identity is pinned to reject silent recreation.
+Verified deletion commits externally before local deletion/confirmation. Replays
+of erased report IDs are discarded. Missing durability yields HTTP 503 and keeps
+the pending request; failed startup reconciliation keeps the listener closed.
+Technical tombstones expire after six calendar months plus one day, covering the
+operator's stated six-month image retention with a small operational margin.
+
+The backend suite passed 79 tests and 22 subtests. An isolated synthetic SQLite
+restore on netcup used the real Proxmox connection and removed a young individually
+erased report/request while retaining another synthetic report. It also proved
+replay rejection and startup refusal for a mismatched journal identity. The live
+production database was not restored or used for this experiment. Normal ingest,
+deduplication, firmware comparison and owner verification also passed. Minimal
+synthetic tombstones remain only as technical test evidence until normal expiry.
+
+The journal and tunnel start automatically. No Proxmox host/guest or HA restart,
+heating command, git push or release was performed for this change. The service's
+own restart preserved the journal identity and entries. Database permissions and
+loopback-only binding were checked. Operational keys are restricted on the two
+hosts and are absent from repository source and documentation.
+
+Important limits: restore images predating this protection only with the service
+blocked, then deploy the current modules/config before opening access. Software
+inside an old full image cannot enforce code absent from that image. Do not roll
+back the independent Proxmox journal together with netcup; recover its latest
+state after a host disaster. Provider snapshot contents are not rewritten by this
+mechanism. Backup-purpose justification, actual six-month snapshot removal and
+the netcup processing agreement remain operator responsibilities.
