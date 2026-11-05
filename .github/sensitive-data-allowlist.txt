@@ -11,6 +11,7 @@
 192.168.0.42
 192.168.0.196
 192.168.1.1
+192.168.1.6
 192.168.1.10
 192.168.1.20
 192.168.1.50
@@ -18,6 +19,9 @@
 192.168.1.101
 192.168.1.200
 192.168.168.1
+# Scan-subnet placeholder of the config-flow network scan: the CIDR network
+# address used as the example and fallback suggestion (network, not a host).
+192.168.1.0
 10.0.0.1
 10.0.0.5
 10.0.0.9

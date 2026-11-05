@@ -115,6 +115,7 @@ Modbus communication in its [technical PV/GLT documentation](https://www.idm-ene
 3. Search for **"IDM Heatpump"**
 4. Follow the configuration wizard:
    - **Prerequisite shown in the flow**: Confirm that Navigator **Building management system → Modbus TCP** is enabled
+   - **Start**: choose **Enter connection details manually** or **Scan the network for the heat pump**. The scan probes every host of a subnet once on the Modbus TCP port 502 — no Modbus data is sent or read — and lists the responding devices with IP address and, when resolvable, reverse-DNS hostname; the picked address pre-fills the connection form. The subnet field is pre-filled from Home Assistant's network adapter
    - **Connection**: Enter a name, the heat pump IP/hostname, port 502, and slave ID 1
    - **Automatic plant detection**: after a successful connection test the wizard reads the plant configuration read-only from the controller (model, active heating circuits, zone modules, cascade) and shows it on the review step; the following steps open with these values instead of safe defaults. A failed detection silently keeps the defaults.
    - **Optional web access**: Enter the local Navigator web PIN; when using a Modbus proxy, also enable the proxy option and enter the original heat pump address as web host
@@ -131,10 +132,14 @@ levels only change how much is asked, never which features are available:
 
 ```mermaid
 flowchart TD
-    add["Add Integration → IDM Heatpump"] --> prereq{"Modbus TCP enabled on<br/>the Navigator?"}
+    add["Add Integration → IDM Heatpump"] --> start{"Enter the address manually<br/>or scan the network?"}
+    start -- "manually" --> prereq{"Modbus TCP enabled on<br/>the Navigator?"}
+    start -- "network scan" --> scan["Subnet form (pre-filled from<br/>Home Assistant's adapters)"]
+    scan --> scanres["Result list: IP plus<br/>reverse-DNS name,<br/>no Modbus data sent"]
+    scanres --> prereq
     prereq -- "no" --> enable["Enable it on the controller:<br/>Building management system → Modbus TCP"]
     enable --> conn
-    prereq -- "yes" --> conn["Connection form: name, host, port 502,<br/>slave ID 1, optional web PIN / proxy"]
+    prereq -- "yes" --> conn["Connection form: name, host, port 502,<br/>slave ID 1, optional web PIN / proxy<br/>(host pre-filled after a scan)"]
     conn --> validate{"Connection validated:<br/>DNS/TCP check, Modbus probe,<br/>web login when a PIN is set"}
     validate -- "error" --> cause["Error form names the cause<br/>(see the table below)"]
     cause --> conn

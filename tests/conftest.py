@@ -368,6 +368,29 @@ def _stub_homeassistant() -> None:
     ha.components = _make_module("homeassistant.components")
     ha.components.repairs = _make_module("homeassistant.components.repairs")
 
+    # homeassistant.components.network — the config flow's network scan asks
+    # for the default-routed adapter to pre-fill the scan subnet. The stub
+    # answers from STUB_ADAPTERS so tests can shape the adapter list; tests
+    # that need finer control monkeypatch the `async_get_adapters` name
+    # imported into custom_components.idm_heatpump.network_scan.
+    network_mod = _make_module("homeassistant.components.network")
+    network_mod.STUB_ADAPTERS = [
+        {
+            "name": "eth0",
+            "enabled": True,
+            "auto": True,
+            "default": True,
+            "ipv4": [{"address": "192.168.1.10", "network_prefix": 24}],
+            "ipv6": [],
+        }
+    ]
+
+    async def _async_get_adapters(_hass: object) -> list[dict[str, object]]:
+        return list(network_mod.STUB_ADAPTERS)
+
+    network_mod.async_get_adapters = _async_get_adapters
+    ha.components.network = network_mod
+
     # homeassistant.const values used in the integration
     ha.const.CONF_HOST = "host"
     ha.const.CONF_PORT = "port"
@@ -743,6 +766,7 @@ def _stub_homeassistant() -> None:
         "NumberSelector",
         "NumberSelectorConfig",
         "NumberSelectorMode",
+        "SelectOptionDict",
         "SelectSelector",
         "SelectSelectorConfig",
         "SelectSelectorMode",

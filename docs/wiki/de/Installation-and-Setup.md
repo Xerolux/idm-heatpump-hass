@@ -118,6 +118,7 @@ Navigators zusätzlich in der [technischen PV-/GLT-Dokumentation](https://www.id
 3. Suche nach **"IDM Heatpump"**
 4. Folge dem Konfigurationsassistenten:
    - **Im Flow angezeigte Voraussetzung**: Bestätige, dass am Navigator **Gebäudeleittechnik → Modbus TCP** aktiviert ist
+   - **Start**: Wähle **Verbindungsdaten manuell eingeben** oder **Netzwerk nach der Wärmepumpe durchsuchen**. Der Scan fragt jeden Rechner eines Subnetzes einmalig auf dem Modbus-TCP-Port 502 ab — es werden keine Modbus-Daten gesendet oder gelesen — und listet die antwortenden Geräte mit IP-Adresse und, falls auflösbar, Reverse-DNS-Hostnamen; die gewählte Adresse legt das Verbindungsformular vor. Das Subnetz-Feld ist mit dem Netzwerk des Home-Assistant-Hosts vorbelegt
    - **Verbindung**: Gib einen Namen, die IP/den Hostnamen der Wärmepumpe, Port 502 und Slave-ID 1 ein
    - **Automatische Anlagenerkennung**: Nach erfolgreichem Verbindungstest liest der Assistent die Anlagenkonfiguration nur-lesend vom Regler (Modell, aktive Heizkreise, Zonenmodule, Kaskade) und zeigt sie im Review-Schritt; die folgenden Schritte öffnen mit diesen Werten statt mit Standardwerten. Eine gescheiterte Erkennung behält stillschweigend die Standardwerte.
    - **Optionaler Webzugriff**: Gib den lokalen Navigator-Web-PIN ein; bei Verwendung eines Modbus-Proxys aktiviere zusätzlich die Proxy-Option und gib die ursprüngliche Wärmepumpen-Adresse als Web-Host ein
@@ -133,10 +134,14 @@ Derselbe Ablauf als Diagramm. Jeder Pfad endet in einem funktionierenden Eintrag
 
 ```mermaid
 flowchart TD
-    add["Integration hinzufügen → IDM Heatpump"] --> prereq{"Modbus TCP am Navigator<br/>aktiviert?"}
+    add["Integration hinzufügen → IDM Heatpump"] --> start{"Adresse manuell eingeben<br/>oder Netzwerk durchsuchen?"}
+    start -- "manuell" --> prereq{"Modbus TCP am Navigator<br/>aktiviert?"}
+    start -- "Netzwerkscan" --> scan["Subnetz-Formular (voreingestellt aus<br/>den Adaptern von Home Assistant)"]
+    scan --> scanres["Ergebnisliste: IP plus<br/>Reverse-DNS-Name,<br/>keine Modbus-Daten gesendet"]
+    scanres --> prereq
     prereq -- "nein" --> enable["Am Regler aktivieren:<br/>Gebäudeleittechnik → Modbus TCP"]
     enable --> conn
-    prereq -- "ja" --> conn["Verbindungsformular: Name, Host, Port 502,<br/>Slave-ID 1, optionaler Web-PIN / Proxy"]
+    prereq -- "ja" --> conn["Verbindungsformular: Name, Host, Port 502,<br/>Slave-ID 1, optionaler Web-PIN / Proxy<br/>(Host nach einem Scan vorbelegt)"]
     conn --> validate{"Verbindung geprüft:<br/>DNS/TCP-Check, Modbus-Sonde,<br/>Web-Login bei gesetztem PIN"}
     validate -- "Fehler" --> cause["Fehlerformular nennt die Ursache<br/>(siehe Tabelle unten)"]
     cause --> conn

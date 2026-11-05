@@ -125,6 +125,7 @@ KNX bridge**. Full details: **[KNX Bridge documentation][wiki-knx]**.
 | **🛡️ Error Management** | Error detection, readable internal messages, error acknowledgment, diagnostics export |
 | **🧭 Guided Setup Diagnostics** | Distinguishes unknown hosts, refused/disabled Modbus TCP, timeouts, unreachable networks, wrong slave IDs, invalid web PINs and unavailable web interfaces |
 | **🌱 Live Plant Detection** | After the connection test the setup wizard reads the plant configuration read-only from the controller (model, active heating circuits, zone modules, cascade) and prefills every setup profile with it |
+| **🔍 Network Scan Setup** | The setup wizard can scan the LAN subnet for Modbus TCP devices (port 502, no Modbus data sent) and lists found hosts with IP and reverse-DNS name — the picked address prefills the connection form |
 | **🗣️ Assist & Dashboard** | Local Assist agent answers "why is the heat pump running?" in German or English — deterministic, no utterance leaves the instance; `generate_dashboard` composes a ready-to-use Lovelace dashboard from your real entity IDs |
 | **🔗 Shared Modbus Connection** *(HA 2026.10+)* | Each entry claims Home Assistant's central shared Modbus connection — several entries on one controller and other integrations share a single socket; the private per-entry socket stays as fallback |
 | **🧪 Read-only Connection Test** | Reconfigure menu can test the saved Modbus and optional local web connection without changing settings or writing registers |
