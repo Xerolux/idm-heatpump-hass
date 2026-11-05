@@ -127,3 +127,9 @@ Nach längerer Unterbrechung werden überfällige Berichte zusätzlich zufällig
 bis zu eine Stunde verteilt. Es gibt keine sofortigen Wiederholungen und keinen
 stapelweisen Versand alter Berichte. Die lokale Minutenprüfung selbst erzeugt
 keinen Netzwerkkontakt. Bereits bestehende Tagespläne erhalten einmalig Streuung.
+
+
+Am 5. November 2026 bestätigt der Betreiber: Server und Backups liegen bei
+netcup in Nürnberg, Deutschland. Damit ist der Standort nach Betreiberangabe
+geklärt. Auftragsverarbeitungsvertrag und die tatsächliche Backup-Aufbewahrung
+bzw. Löschung bleiben getrennt zu prüfen.

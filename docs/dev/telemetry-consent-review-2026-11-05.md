@@ -57,3 +57,11 @@ processor agreements and provider backups still require operator verification.
 - DE/EN public privacy pages explain independent firmware consent, minimal
   metadata, transient server queries and possible local Recorder/backup retention.
   Their legal-notice footer remains present. No public git push or release.
+
+
+## Hosting clarification from the operator
+
+The operator subsequently confirmed that both server and backups are at netcup
+in Nuremberg, Germany. Location is no longer an unanswered operator question;
+this statement has not been independently verified. Processor agreements and
+actual backup retention/erasure are still separate operational checks.

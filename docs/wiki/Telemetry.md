@@ -116,3 +116,9 @@ telemetry helps build the catalog, but is not required to use firmware queries.
 Telemetry notice v3 remains unchanged; independent firmware consent uses
 `idm-firmware-v1`. The locally recorded consent time/revision is not sent in
 firmware queries. Only telemetry uploads carry their own identity and consent.
+
+
+On 5 November 2026 the operator confirmed that the server and backups are
+hosted by netcup in Nuremberg, Germany. This resolves the location according to
+the operator. Processing agreements and actual backup retention/erasure remain
+separate checks.
