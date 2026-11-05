@@ -219,8 +219,11 @@ rules:
   discovery:
     status: exempt
     comment: >
-      Modbus TCP devices have no network discovery protocol. Manual IP
-      configuration is required.
+      Modbus TCP devices have no passive discovery protocol (no SSDP,
+      zeroconf or vendor-MAC basis for DHCP discovery). Setup instead offers
+      an explicit user-triggered subnet scan (network_scan.py) that probes
+      port 502 on every host of a chosen subnet without sending Modbus data
+      and prefills the picked address.
 
   discovery-update-info:
     status: exempt

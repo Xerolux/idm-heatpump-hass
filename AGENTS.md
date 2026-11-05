@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.25.0` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
+- **Current Version**: `0.26.0-b1` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.11.0 (the 2026.8.1–2026.10 line stays on integration 0.24.x)
@@ -55,6 +55,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── modbus_client.py              # API client adapter routing raw I/O through the local transport
 │   ├── modbus_transport.py           # Backend-neutral contract + modbus-connection/tmodbus implementation
 │   ├── modbus_shared_transport.py    # Claims Home Assistant's shared Modbus connection, private-socket fallback
+│   ├── network_scan.py               # Config-flow subnet scan for Modbus TCP endpoints (port probe + reverse DNS)
 │   ├── versions.py                   # Runtime dependency versions for logs, sensors, and diagnostics
 │   ├── ha_compat.py                  # Version-tolerant imports across the supported HA range (vol/probatio, moved enums)
 │   ├── recovery_watchdog.py          # Self-healing reload for entries in setup retry once the endpoint answers again
@@ -179,6 +180,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_modbus_client.py
 │   ├── test_modbus_shared_transport.py
 │   ├── test_modbus_transport.py
+│   ├── test_network_scan.py
 │   ├── test_model_resolution.py
 │   ├── test_operation_analysis.py
 │   ├── test_operation_entities.py
@@ -555,12 +557,14 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
 
 The config flow (defined in `config_flow.py`) has these steps:
 
-1. **user**: Integration name, host, port, slave ID, optional web PIN, Modbus proxy / web host. On a successful connection test the flow also reads the plant topology read-only (`detect_model`) and shows it on the review step; the detected heating circuits, zone count and cascade presence prefill every setup profile
-2. **options**: Connection mode (auto / modbus+web / web-only / modbus-only), scan interval, hide unused registers, heating circuits, zone count, cascade, web settings, room temperature forwarding, Modbus timeout/retries
-3. **zones**: Room count per zone (up to `MAX_ZONE_COUNT` zones × `MAX_ROOM_COUNT` rooms)
-4. **modbus_failed**: Fallback step offering web-only mode when Modbus connection fails but a web PIN is configured
-5. **reconfigure**: Update connection settings without removing the integration
-6. **options_flow**: Re-run options after setup
+1. **user**: Menu choosing between `manual` entry and a network `scan`
+2. **manual**: Integration name, host, port, slave ID, optional web PIN, Modbus proxy / web host. On a successful connection test the flow also reads the plant topology read-only (`detect_model`) and shows it on the review step; the detected heating circuits, zone count and cascade presence prefill every setup profile
+3. **scan / scan_results**: Optional subnet scan (`network_scan.py`): TCP probe of port 502 on every host (no Modbus bytes), reverse-DNS names in the result list; the picked IP prefills the manual step
+4. **options**: Connection mode (auto / modbus+web / web-only / modbus-only), scan interval, hide unused registers, heating circuits, zone count, cascade, web settings, room temperature forwarding, Modbus timeout/retries
+5. **zones**: Room count per zone (up to `MAX_ZONE_COUNT` zones × `MAX_ROOM_COUNT` rooms)
+6. **modbus_failed**: Fallback step offering web-only mode when Modbus connection fails but a web PIN is configured
+7. **reconfigure**: Update connection settings without removing the integration
+8. **options_flow**: Re-run options after setup
 
 ---
 

@@ -5,6 +5,17 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.26.0-b1 — 2026-11-05
+
+Der Einrichtungsassistent kann die Wärmepumpe jetzt selbst finden. Das Setup beginnt mit
+der Wahl zwischen manueller Eingabe und Netzwerkscan: Der Scan fragt jeden Rechner eines
+gewählten IPv4-Subnetzes einmalig auf dem Modbus-TCP-Port 502 ab — es werden keine
+Modbus-Daten gesendet oder gelesen — und listet die antwortenden Geräte mit IP-Adresse und,
+falls auflösbar, Reverse-DNS-Hostnamen. Die gewählte Adresse legt das Verbindungsformular
+vor, in dem Verbindungstest, Webzugriff und Modbus-Proxy wie bisher abgeschlossen werden.
+Das Subnetz-Feld ist mit dem Netzwerk des Home-Assistant-Hosts vorbelegt. Ein Rollback
+ist sicher; bestehende Einträge bleiben unberührt.
+
 ## v0.25.0 — 2026-11-05
 
 Der stabile Schnitt der 0.25.0-Linie und das Release auf die Home-Assistant-2026.11-Plattform:

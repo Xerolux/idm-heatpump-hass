@@ -5,6 +5,17 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.0-b1 — 2026-11-05
+
+The setup assistant can now find the heat pump by itself. Setup starts with a
+choice between manual entry and a network scan: the scan probes every host of
+a chosen IPv4 subnet once on the Modbus TCP port 502 — no Modbus data is sent
+or read — and lists the responding devices with IP address and, when
+resolvable, reverse-DNS hostname. The picked address pre-fills the connection
+form, where the connection test, web access and Modbus-proxy settings are
+completed as before. The subnet field is pre-filled from Home Assistant's
+network adapter. Rollback is safe; existing entries are untouched.
+
 ## v0.25.0 — 2026-11-05
 
 The stable cut of the 0.25.0 line and the Home Assistant 2026.11 platform
