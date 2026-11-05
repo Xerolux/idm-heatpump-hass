@@ -16,7 +16,7 @@ MANIFEST = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 EXPECTED_RUNTIME_REQUIREMENTS = [
     "modbus-connection>=4.12.7",
     "tmodbus[async-serial]>=0.6.2",
-    "idm-heatpump-api[web]==2.16.0b3",
+    "idm-heatpump-api[web]==2.16.0",
 ]
 
 
@@ -102,7 +102,7 @@ def test_ci_and_release_share_complete_python_quality_workflow() -> None:
     assert "from modbus_connection.tmodbus import ModbusConnection" in quality
     assert "pytest tests/" in quality
     assert "--cov=custom_components/idm_heatpump" in quality
-    assert 'home-assistant-version: "2026.11.0b0"' in release
+    assert 'home-assistant-version: "2026.11.0"' in release
     assert "api-dependency-mode: manifest-pinned" in release
 
 
@@ -266,7 +266,7 @@ def test_dependency_update_runs_the_quality_gate_before_merging() -> None:
     assert "home-assistant/actions/hassfest" in gate
     assert "pytest tests_ha/ -v --tb=short" in gate
     # The gate runs against the Home Assistant the release workflow validates.
-    assert 'MINIMUM_HOME_ASSISTANT: "2026.11.0b0"' in workflow
+    assert 'MINIMUM_HOME_ASSISTANT: "2026.11.0"' in workflow
     assert "Requested Home Assistant {requested}, but {__version__} is installed" in workflow
 
 

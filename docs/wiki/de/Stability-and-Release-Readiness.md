@@ -4,6 +4,29 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.25.0
+
+**0.25.0** ist der stabile Schnitt der b1–b9-Linie (2026-10-29 bis
+2026-11-04; der unveröffentlichte b8-Kandidat ist vollständig in b9
+enthalten) und das Release auf die Home-Assistant-2026.11-Plattform.
+Jede Beta der Linie durchlief vor ihrem Merge die vollständige
+Qualitätsschranke — die zweibeinige CI-Matrix (Python 3.14 × HA
+2026.11.0 × manifest-pinned/api-main) mit den Coverage-Schranken,
+strenges mypy gegen die echte Home-Assistant-Runtime, ruff, hassfest,
+die Real-Home-Assistant-Lebenszyklus-Smoke-Tests und der
+Anmeldedaten-Scan — und der Schnitt selbst rannte die gesamte Suite
+gegen den promovierten stabilen API-Pin (3.350+ Tests, 98,8 % Coverage
+am minimalen Home Assistant 2026.11.0). Die Advisor-Ergänzungen sind
+strikt lesend (gemeinsame Evidenz-Ablage, kein Schreibpfad, kein
+EEPROM-sensitives Register); das GLT-Sentinel-Logging ist reine
+Diagnose und ohne Debug-Logging stumm. Das 2026.11-Minimum steht im
+Manifest-Schlüssel `homeassistant` und in HACS und wird beim Setup
+geprüft (#632, Feldmeldung von @x29a); Installationen auf
+2026.8–2026.10 bleiben bei 0.24.0-b2. `idm-heatpump-api` `2.16.0` —
+identischer Code zum Linien-Pin `2.16.0b3`, reine Promotion — ist der
+validierte Partner dieses Schnitts und lag vor dem Integrations-Tag auf
+PyPI.
+
 ## Prüfumfang zu 0.23.2-b4
 
 Diese Beta behebt die Navigator-10-Doppellabel-Sensoren (#598) rein auf
@@ -424,7 +447,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.25.0-b9` und `idm-heatpump-api` `2.16.0b3` bilden das aktuelle exakt
+Integration im Quellstand `0.25.0` und `idm-heatpump-api` `2.16.0` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

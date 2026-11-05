@@ -13,156 +13,43 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.25.0-b9] - 2026-11-04
+## [0.25.0] - 2026-11-05
+
+This release completes the step onto the Home Assistant 2026.11 platform — the 2026.11.0 minimum is now declared in the manifest and enforced at install time — and makes the advisor explain itself: reports, Predictive Advisor sensors and local Assist share one evidence base for what changed, what is missing and what an observed heating-curve adjustment actually did.
 
 ### ⚠️ Upgrade notes
 
-- **Existing local AI measurements are reused automatically**: no reset or manual migration is needed. Backfill preserves recorded energy, temperature and operating-mode observations. Missing historical compressor starts, room comfort and heating-curve changes remain unknown. Rollback retains the original AI history.
-
-- **Transport floor aligned with the tested HA runtime**: `modbus-connection>=4.12.7` matches Home Assistant 2026.11.0b0's own Modbus dependency and the validated runtime. The API stays at `2.16.0b3`. The unpublished b8 release was stopped by the freshness gate; b9 contains its complete report and Recorder corrections.
-
-### 🐛 Bugfixes
-
-- **Daily and weekly reports retain their existing observation history**: the shared advisor evidence now imports the local AI measurements on load instead of replacing a mature history with a few new samples. Existing shared records take precedence, and repeated reloads do not duplicate observations or invent missing evidence.
-
-- **Recommendation details no longer exceed Recorder's attribute limit**: full explanations and recent recommendation history stay available in the entity attributes, but their large payloads are excluded from Recorder. The recommendation count remains recorded. This removes the maximum-size warning without truncating the explanations shown in Home Assistant.
-
-- **Dependency updates preserve historical examples**: the transport-floor updater now recognizes the dated Home Assistant pin example in the contributor instructions as history, preventing a successful current-pin rewrite from being rejected because that example still names its original version.
-
-## [0.25.0-b7] - 2026-11-04
-
-The advisor now explains what changed and can review an observed heating-curve change against comparable operating history. Reports, local Assist and new advisor sensors share the same evidence while keeping uncertain outcomes open.
-
-### ⚠️ Upgrade notes
-
-- **No migration required**: existing energy totals remain intact. This correction applies to future samples; previously misattributed heating or hot-water energy cannot be reconstructed automatically. Rollback is safe.
-
+- **Home Assistant 2026.11 or newer is required**: the manifest and HACS declare the 2026.11.0 minimum, and setup refuses older builds with a clear message instead of crashing mid-platform (#632). Installations on Home Assistant 2026.8–2026.10 stay on integration 0.24.0-b2. No configuration migration: settings, entities and dashboards survive the update untouched.
+- **Three one-time entity retargets**: the heating-circuit changeover valve becomes an enum sensor and the heat-source circuit fault becomes a binary sensor, both with new entity IDs, and legacy differential-circuit IDs from 0.20.1-b1…b4 shorten to the `heizkreis_x_` form (#429). Automations or dashboards targeting the old entities need one retarget; all other installations are untouched.
+- **Sub-devices convert once on the first setup**: heating circuits, rooms and modules that were linked with `via_device` become child devices in place, keeping their device IDs, so device-targeted automations, areas and dashboards continue to work without changes. Zone modules stay ordinary linked devices as before.
 - **New read-only advisor evidence starts collecting after update**: the changes and optimization-review sensors appear with the Predictive Advisor. Shared history retains up to 28 days within a separate 4 MiB cap; existing AI report history is preserved. Optimization review needs three days before and after a readback change, plus six settling hours. No settings are changed automatically.
-
-- **API updated to `idm-heatpump-api[web]==2.16.0b3`**: Navigator 10 web saves with an uncertain transport outcome are no longer automatically replayed. Existing configuration and counters are retained; the new pin is validated with the integration before release.
+- **Rollback is safe**: settings, entities and dashboards survive in both directions. The previous line, 0.24.0-b2, requires Home Assistant 2026.8–2026.10 and rebuilds the previous device links automatically; on Home Assistant 2026.11 the betas remain the nearest stop.
 
 ### ✨ New
 
 - **One evidence base for reports, Predictive Advisor and Assist**: shared numerical history publishes observed changes in energy, COP, compressor starts, hot-water time share and room-temperature deviation. Comparable periods retain weather and coverage context. Missing evidence and an unchanged period are distinguished explicitly.
-
 - **Observed optimization review**: heating-curve readback changes are recorded across restarts. Before/after heating intervals are matched in two-degree outdoor bins, with coverage, operating mode, room targets, comfort and cycling guards. Results distinguish improvement, deterioration, mixed outcomes and insufficient evidence; an observed association never establishes causality or savings.
-
 - **Explainable recommendations**: recommendations include localized observations, supporting reasons, current/suggested values, confidence meaning, missing evidence and a first check. German and English Assist answers use the same structured explanations as the recommendation sensor.
-
 - **Additional local Assist questions**: ask what changed, whether consumption increased, how cycling developed, which evidence is missing or whether a change helped. Answers use shared evidence and explain unavailable history instead of guessing.
-
 - **Advisor dashboard view**: generated plant dashboards include the available advisor status, confidence, recommendations, changes and optimization review. Explanation cards use actual registry IDs and remain absent when the corresponding entities do not exist.
-
-### 🐛 Bugfixes
-
-- **Per-mode energy and COP statistics reject ambiguous status values**: only pure heating or pure hot-water operation contributes to its dedicated counters. Combined cooling flags, unknown bits and negative status values remain in the overall energy totals without contaminating the heating or hot-water COP.
-
-- **AI reports explain their evidence**: daily, weekly, health and efficiency reports have distinct introductions, observed and missing hours, explicit unknown checks and guarded period comparisons. Equal-duration windows need at least 90% coverage each and similar coverage before percentage changes are shown. Prompts distinguish observed changes from savings, and negative reported changes pass the numeric guard correctly.
-
-- **Advisor learning uses consistent inputs**: mapped Fahrenheit/Kelvin room sensors are converted to Celsius; unavailable or mismatched sources do not fall back to registers. Failed updates break training intervals, ambiguous modes do not feed dedicated COP domains, and legacy learning records without dispersion moments no longer imply perfect statistical certainty. Missing COP values remain unknown.
-
-- **Forecasts and running explanations avoid unsupported conclusions**: short or gapped weather forecasts cannot become 24-hour demand estimates, warm hours cannot cancel cold-hour demand, and PV energy is split across hour boundaries without duplicate counting. PV generation is not called confirmed surplus. Controller demand and operating modes take priority over temperature guesses; DHW explanations handle targets already reached.
-
-- **Local Assist answers stay grounded in available readings**: negative outdoor temperatures remain readable, instantaneous COP is clearly labelled and uses the available thermal-power source, missing alarm data cannot establish a fault-free plant, and failed updates produce an explanation instead of cached live readings. German answers use decimal commas.
-
-### 💼 Maintenance
-
-- **Navigator web lifecycle hardening from API 2.16.0b3**: invalid non-finite parameter values are rejected before network access, cancelled connection setup releases sessions and sockets, and Navigator 2.0 statistics reuse authentication with one controlled renewal. Raw-statistics responses are supported consistently. Generated catalogs and current dependency documentation match the new exact pin.
-
-- **API development compatibility checks stay independent of release catalogs**: the API-main CI leg skips only the committed register-catalog freshness assertion, which deliberately requires the exact manifest pin. The pinned release leg still enforces it, and a regression test confirms the generator rejects mismatched runtime versions. Functional tests remain enabled in both legs.
-
-## [0.25.0-b6] - 2026-11-02
-
-### ⚠️ Upgrade notes
-
-- **Nothing to configure, nothing to migrate**: the new GLT sentinel logging is built in and stays silent unless you enable debug logging for `custom_components.idm_heatpump`, so only users chasing an issue see the extra lines. Rollback is safe.
-
-### ✨ New
-
 - **Sentinel readbacks on writable controls are countable in the debug log**: when the controller erases a GLT RAM input between two forwarding writes, the affected Number reports unknown for that sample, and the log names the register once per affected cycle (#493). Counting these lines against the `Forwarded external power …` cadence distinguishes late writes from controller-side erases.
 
-### 💼 Maintenance
-
-- **Hassfest validation action bumped** to the current Home Assistant tools release; no integration behaviour change.
-
-## [0.25.0-b5] - 2026-11-01
-
-### ⚠️ Upgrade notes
-
-- **Long-term statistics resume without data loss**: 0.25.0-b4 dropped the `measurement` state class of the heat-sink flow sensor ("Durchfluss Wärmesenke (B2)") and the heat-sink charging-pump signal, so Home Assistant retired their statistics and showed the state-class repair dialog. Updating restores both classes automatically; keep the statistics, do not accept the delete prompt.
-
 ### 🐛 Bugfixes
 
-- **Sensors without a device class keep their state class**: an overlay entry that deliberately sets `device_class: None` no longer loses its measurement annotation — the library's own register annotation or the unit map (L/min, %) restores it, while enum-option sensors stay state-class-free as Home Assistant requires. Fixes the statistics regression reported on a Navigator 10 plant.
-
-### 💼 Maintenance
-
-- **Rollback is safe**: 0.25.0-b4 keeps running with the same API pin and configuration; the fix changes only sensor description metadata, so no stored setting, unique ID or register write path changes.
-
-## [0.25.0-b4] - 2026-10-31
-
-### ⚠️ Upgrade notes
-
-- **Legacy differential-circuit entity IDs are shortened once at setup (#429)**: IDs registered while the circuit name carried the retired "(Differenztemperaturgeregelt)" suffix in 0.20.1-b1…b4 are rewritten to the short `heizkreis_x_` form. Automations and dashboards still targeting a long ID need a one-time retarget; all other installations are untouched, and rolling back keeps working.
-
-### 🐛 Bugfixes
-
-- **Web-only plants keep their heating-circuit controls**: the select platform registers the web heating-circuit selects again for `modbus_web` and `web_only` entries, climate cards expose correct min/max target-temperature ranges, and a partially failing setup tears down what it already added instead of leaving half a platform behind.
-
-- **Service calls resolve devices and speak translated errors**: `device_id` targets resolve through the device registry, `set_controller_clock`, `start_dhw_boost` and `cancel_dhw_boost` offer a real config-entry selector instead of a text field, and `write_register` accepts addresses up to 65535 and parses boolean strings such as "ein" or "off".
-
-- **Navigator 1.7 accepts system-mode service calls again**: `set_system_mode` falls back to the Navigator 1.7 system-mode register when the 2.0 register is absent, so mode changes no longer fail on 1.x plants.
-
-- **Comfort scheduler and DHW boost respect stale data and register steps**: scheduling skips rounds with failed coordinator updates or unused registers, targets are rounded to the register's step so writes don't bounce off validation, and the DHW boost checks sentinel values and its lifecycle guards before writing.
-
-- **Advisor baselines align to local midnight and guard the math**: day boundaries in the rolling analytics align to local midnight, the DHW daily-minutes tracking is corrected, and non-finite or implausible samples are discarded before they enter the COP map or building model.
-
-- **The Assist agent matches keywords on word boundaries**: intent routing no longer triggers on substrings inside unrelated words, responses stay localized, and plant-side errors are reported to the conversation instead of disappearing.
-
-### 💼 Maintenance
-
-- **Entity icons and translations line up with the audit**: stale icon keys point at their current entities again, EntityCategory imports follow the enums moved by Home Assistant 2026.11, and the CI dependency-pin tracker, test coverage and documentation were brought back in sync as part of the October code audit.
-
-- **Rollback is safe**: 0.25.0-b3 keeps running with the same API pin and configuration; no stored setting, register write path, or unique ID changes beyond the one-time differential rename covered above.
-
-## [0.25.0-b3] - 2026-10-31
-
-### ⚠️ Upgrade notes
-
-- **The changeover valve reports unavailable again on plants without heating/cooling**: the API pin moves to `idm-heatpump-api[web]==2.16.0b2`, which accepts the UINT16 "not configured" answer `65535` at register 1110 as a sentinel — 0.25.0-b2 dropped the entity from every update with a `not_in_enum` warning. No configuration migration; automations keep working untouched.
-
-### 🐛 Bugfixes
-
+- **Unsupported Home Assistant builds fail loudly at setup instead of half-loading**: a 2026.10 installation could install the integration and die mid-platform with `AttributeError`s in climate and water-heater (#632). The manifest, HACS minimum and a setup gate now cover every path, including manual ZIP installs, and the error names the running version.
 - **Valve sensor no longer vanishes with a validation warning**: plants without the heating/cooling function answer `65535` although the official table documents only 0 and 1, so the new enum rejected it as `not_in_enum` and omitted it from every poll ([API #159](https://github.com/Xerolux/idm-heatpump-api/pull/159)). The register now declares the sentinel; genuine out-of-table states stay rejected.
-
-### 💼 Maintenance
-
-- **Rollback is safe**: 0.25.0-b2 shows the valve as unavailable-with-warning on the same plants; neither release changes stored settings, other entities or unique IDs, and the API change touches only register 1110's read validation.
-
-## [0.25.0-b2] - 2026-10-30
-
-### ⚠️ Upgrade notes
-
-- **Home Assistant now enforces the 2026.11 minimum at setup**: component setup refuses builds older than `2026.11.0b0` with a clear message instead of crashing while adding climate and water-heater entities (#632). The check lives in the integration because hassfest rejects prerelease manifest minimums and a stable key would also lock out the 2026.11 beta. No configuration migration.
-- **Two Navigator 10/2.0 entities change type with the API pin `2.16.0b1`**: the heating-circuit changeover valve becomes an enum sensor showing the documented Heating/Cooling positions, and the heat-source circuit fault becomes a binary sensor — both get new entity IDs, so automations or dashboards targeting the old numeric sensors need a one-time retarget.
-- **Rollback is safe**: 0.25.0-b1 restores the previous numeric sensor shape for both entities, and 0.24.x keeps running on the 2026.8–2026.10 line; no stored setting, unique ID beyond the two retargets, or registry cleanup changes.
-
-### 🐛 Bugfixes
-
-- **Unsupported Home Assistant builds fail loudly at setup instead of half-loading**: 0.25.0-b1 relied on the HACS minimum alone, so a 2026.10 installation could install the beta and then die mid-platform with `AttributeError`s in climate and water-heater (#632). Component setup now gates every path, including manual ZIP installs and HACS down- and redownloads, and names the running version in the error.
-
-### 💼 Maintenance
-
-- **The API pin moves to `idm-heatpump-api[web]==2.16.0b1`** for the documented value semantics audit ([API #157](https://github.com/Xerolux/idm-heatpump-api/pull/157)): the changeover valve (1110) gains the official Heating/Cooling enum, the heat-source circuit fault (1680) its inverted 0 = fault polarity through library binary metadata. Unmapped read values keep the established rejection; undocumented 0/1 neighbours stay raw pending field captures.
-- **Entity translations follow the platform move**: the fault entity's name block moves from sensor to binary sensor, and the changeover valve carries English/German state translations (Heating/Cooling, Heizen/Kühlen), so both render localized in Home Assistant from day one of the new pin.
-
-## [0.25.0-b1] - 2026-10-29
-
-### ⚠️ Upgrade notes
-
-- **Home Assistant 2026.11 is the new minimum**: the 2026.8.1–2026.10 line is no longer supported, and this beta validates against the 2026.11.0b0 beta — the HACS minimum tracks the beta until the stable ships. No configuration migration: settings, entities and dashboards survive the update untouched.
-- **Sub-devices convert once on the first setup**: heating circuits, rooms and modules that were linked with `via_device` become child devices in place, keeping their device IDs, so device-targeted automations, areas and dashboards continue to work without changes. Zone modules stay ordinary linked devices as before.
-- **Rollback is safe**: the previous 0.24.x release runs on Home Assistant 2026.8.1 through 2026.10 and rebuilds the previous device links automatically. No stored setting, unique ID or entity registry entry changes in either direction.
+- **Web-only plants keep their heating-circuit controls**: the select platform registers the web heating-circuit selects again for `modbus_web` and `web_only` entries, climate cards expose correct min/max target-temperature ranges, and a partially failing setup tears down what it already added instead of leaving half a platform behind.
+- **Service calls resolve devices and speak translated errors**: `device_id` targets resolve through the device registry, `set_controller_clock`, `start_dhw_boost` and `cancel_dhw_boost` offer a real config-entry selector instead of a text field, and `write_register` accepts addresses up to 65535 and parses boolean strings such as "ein" or "off".
+- **Navigator 1.7 accepts system-mode service calls again**: `set_system_mode` falls back to the Navigator 1.7 system-mode register when the 2.0 register is absent, so mode changes no longer fail on 1.x plants.
+- **Comfort scheduler and DHW boost respect stale data and register steps**: scheduling skips rounds with failed coordinator updates or unused registers, targets are rounded to the register's step so writes don't bounce off validation, and the DHW boost checks sentinel values and its lifecycle guards before writing.
+- **Advisor learning and baselines use consistent, guarded inputs**: mapped Fahrenheit/Kelvin room sensors convert to Celsius, failed updates break training intervals, day boundaries align to local midnight, and non-finite or implausible samples never reach the COP map or building model. Ambiguous modes stay out of dedicated domains; missing COP values remain unknown.
+- **Sensors without a device class keep their state class**: an overlay entry that deliberately sets `device_class: None` no longer loses its measurement annotation — the library's own register annotation or the unit map (L/min, %) restores it, while enum-option sensors stay state-class-free as Home Assistant requires. Fixes the statistics regression reported on a Navigator 10 plant.
+- **Per-mode energy and COP statistics reject ambiguous status values**: only pure heating or pure hot-water operation contributes to its dedicated counters. Combined cooling flags, unknown bits and negative status values remain in the overall energy totals without contaminating the heating or hot-water COP.
+- **AI reports explain their evidence**: daily, weekly, health and efficiency reports have distinct introductions, observed and missing hours, explicit unknown checks and guarded period comparisons. Equal-duration windows need at least 90% coverage each and similar coverage before percentage changes are shown. Prompts distinguish observed changes from savings, and negative reported changes pass the numeric guard correctly.
+- **Advisor learning uses consistent inputs**: mapped Fahrenheit/Kelvin room sensors are converted to Celsius; unavailable or mismatched sources do not fall back to registers. Failed updates break training intervals, ambiguous modes do not feed dedicated COP domains, and legacy learning records without dispersion moments no longer imply perfect statistical certainty. Missing COP values remain unknown.
+- **Forecasts and running explanations avoid unsupported conclusions**: short or gapped weather forecasts cannot become 24-hour demand estimates, warm hours cannot cancel cold-hour demand, and PV energy is split across hour boundaries without duplicate counting. PV generation is not called confirmed surplus. Controller demand and operating modes take priority over temperature guesses; DHW explanations handle targets already reached.
+- **Local Assist answers stay grounded and match keywords on word boundaries**: intent routing no longer triggers inside unrelated words, negative outdoor temperatures stay readable, instantaneous COP is labelled with its thermal-power source, missing alarm data cannot establish a fault-free plant, and failed updates or plant-side errors produce an explanation instead of disappearing. German answers use decimal commas.
+- **Reports keep their history and respect Recorder limits**: shared advisor evidence imports existing local AI measurements on load instead of replacing a mature history, existing shared records take precedence, and repeated reloads do not duplicate observations or invent missing evidence. Full recommendation details stay visible while their large payloads are excluded from Recorder.
 
 ### 💼 Maintenance
 
@@ -170,6 +57,14 @@ The advisor now explains what changed and can review an observed heating-curve c
 - **Config-entry lifecycle matches core**: `async_setup_entry`, `async_unload_entry` and `async_migrate_entry` return `None`, and unloading goes through `async_unload_platforms_or_raise`, so a platform that refuses to unload fails the entry loudly instead of reporting a bare `False`. Component-level `async_setup` still returns a boolean as before.
 - **Sub-devices register as `ChildDeviceInfo`**: the hierarchy builds typed child-device info instead of a `parent_device_id` key inside a plain mapping, which the 2026.11 dataclass conversion no longer accepts; the `via_device_id` value moves into the `DeviceInfo` constructor, and the `child_devices_supported()` feature probe is gone with the 2026.8 fallback.
 - **Repair issues belong to their config entry**: every issue the integration raises — web PIN, connectivity, scan interval, write rejections, KNX availability, the solar suggestion — is created with `config_entry_id`, so Home Assistant deletes them when the entry is removed and hides them while it is disabled.
+- **The API pin moves to `idm-heatpump-api[web]==2.16.0`** ([API #157](https://github.com/Xerolux/idm-heatpump-api/pull/157), [API #159](https://github.com/Xerolux/idm-heatpump-api/pull/159)): documented Heating/Cooling valve semantics, the inverted heat-source fault polarity, the 65535 sentinel at register 1110, rejected non-finite parameters, released sessions on cancelled setup, reused Navigator 2.0 statistics authentication, and no replay of uncertain Navigator 10 web saves.
+- **Entity translations follow the platform move**: the fault entity's name block moves from sensor to binary sensor, and the changeover valve carries English/German state translations (Heating/Cooling, Heizen/Kühlen), so both render localized in Home Assistant from day one of the new pin.
+- **Entity icons and translations line up with the audit**: stale icon keys point at their current entities again, EntityCategory imports follow the enums moved by Home Assistant 2026.11, and the CI dependency-pin tracker, test coverage and documentation were brought back in sync as part of the October code audit.
+- **Tooling tracks the validated runtime**: `modbus-connection>=4.12.7` matches Home Assistant 2026.11's own Modbus dependency, the hassfest validation action is current, the API-main CI leg skips only the committed catalog-freshness assertion, and the transport-floor updater treats dated pin examples as history.
+
+### ❤️ Thanks
+
+- **Field reports shaped this release**: @x29a's #632 report produced the loud setup gate for unsupported Home Assistant builds and #493 the countable GLT sentinel readbacks; @ernstjerome's #429 drove the one-time differential-circuit rename.
 
 ## [0.24.0-b2] - 2026-10-28
 

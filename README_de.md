@@ -30,6 +30,9 @@
   <a href="https://ts.la/sebastian564489"><img src="https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge" alt="Tesla referral"></a>
 </p>
 
+> [!IMPORTANT]
+> **Erfordert Home Assistant 2026.11 oder neuer.** Seit v0.25.0 baut die Integration auf den 2026.11-Plattform-APIs auf, und die Mindestversion wird bei der Installation erzwungen. Du nutzt noch Home Assistant 2026.10 oder älter? Bleibe beim Release [`v0.24.0-b2`](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.24.0-b2), das die Linie 2026.8–2026.10 unterstützt.
+
 > [!TIP]
 > Neu hier? Beginne mit der **[Installationsanleitung][wiki-install]** oder öffne die **[durchsuchbare Dokumentation][wiki]**.
 
@@ -219,7 +222,7 @@ Maintainer sollten vor einem stabilen Release den
 - Lokale Navigator-Web-PIN für optionale Web-Daten und unterstützte Navigator-10/Pro-Steuerungen im reinen Web-Betrieb
 - Python 3.14+ (wird von Home Assistant bereitgestellt)
 - `modbus-connection>=4.12.7` · `tmodbus[async-serial]>=0.6.2` (direkter Modbus-Socket)
-- `idm-heatpump-api[web]==2.16.0b3` (Gerätelogik: Registermetadaten, Batching, Decoding, Modellerkennung, Schreibschutz)
+- `idm-heatpump-api[web]==2.16.0` (Gerätelogik: Registermetadaten, Batching, Decoding, Modellerkennung, Schreibschutz)
 
 ---
 
@@ -278,7 +281,7 @@ Home Assistant
 - **Datentypen**: FLOAT (IEEE 754, zwei Register), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden erfasst und vor zu häufigem Schreiben geschützt
 - **Direkter lokaler Transport**: FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe laufen über die HA-kompatiblen Anforderungen `modbus-connection>=4.12.7` und `tmodbus[async-serial]>=0.6.2`; `4.12.7` ist die Version der Verbindungsbibliothek, nicht die IDM-Integrationsversion
-- **API-Grenze**: `idm-heatpump-api[web]==2.16.0b3` liefert Registermetadaten, Batching, Encoding/Decoding, Modellerkennung und Schreibschutz. Seit diesem Release besitzt die API ihre eigene Fehlerhierarchie, und pymodbus entfällt: die Integration installiert keinen Modbus-Stack mehr, den sie nicht spricht
+- **API-Grenze**: `idm-heatpump-api[web]==2.16.0` liefert Registermetadaten, Batching, Encoding/Decoding, Modellerkennung und Schreibschutz. Seit diesem Release besitzt die API ihre eigene Fehlerhierarchie, und pymodbus entfällt: die Integration installiert keinen Modbus-Stack mehr, den sie nicht spricht
 - **Auto-Recovery**: Retry-/Backoff-Strategie der API plus bedarfsgesteuerter Reconnect der tmodbus-Verbindung
 - **Bibliotheksbasiert**: Alle Registerdefinitionen stammen aus [`idm-heatpump-api`](https://github.com/Xerolux/idm-heatpump-api) und bleiben so über alle Werkzeuge hinweg konsistent
 - **Navigator-10-Unterstützung**: Trennwärmetauscher-Sensoren, Durchflussüberwachung (Sieb-Erkennung), Grundwassertemperaturen, Booster-A/B-Diagnose

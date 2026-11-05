@@ -89,7 +89,7 @@ class TestAsyncSetupVersionGate:
                 "custom_components.idm_heatpump.services.async_setup_services",
                 mock_setup_services,
             ),
-            pytest.raises(HomeAssistantError, match="2026.11.0b0 or newer; found 2026.10.4"),
+            pytest.raises(HomeAssistantError, match="2026.11.0 or newer; found 2026.10.4"),
         ):
             await async_setup(mock_hass, {})
         mock_setup_services.assert_not_awaited()

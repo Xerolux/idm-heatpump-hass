@@ -5,6 +5,17 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.25.0 — 2026-11-05
+
+Der stabile Schnitt der 0.25.0-Linie und das Release auf die Home-Assistant-2026.11-Plattform:
+das Minimum 2026.11.0 steht im Manifest und in HACS und wird beim Setup erzwungen —
+Installationen auf 2026.8–2026.10 bleiben auf 0.24.0-b2. Der Advisor nutzt eine gemeinsame
+Evidenzbasis für Berichte, Sensoren und lokalen Assist — beobachtete Veränderungen,
+erklärbare Empfehlungen, die Bewertung von Heizkurvenänderungen und eine Advisor-Dashboard-Ansicht —
+und der API-Pin wechselt auf `idm-heatpump-api[web]==2.16.0`. GLT-Sentinel-Readbacks werden im
+Debug-Log zählbar (#493). Untergeordnete Geräte werden einmalig zu Child Devices, drei Entitäten brauchen
+ein einmaliges Retarget, und ein Rollback bleibt sicher.
+
 ## v0.25.0-b9 — 2026-11-04
 
 Tages- und Wochenberichte übernehmen bestehende lokale KI-Messpunkte in die
