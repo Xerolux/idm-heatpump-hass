@@ -326,7 +326,7 @@ async def test_telemetry_reload_preserves_aggregates_and_refusal_erases_them(
 
     from custom_components.idm_heatpump.telemetry import TELEMETRY_POLICY
 
-    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession") as session:
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession") as session:
         await smoke_hass.config_entries.async_add(smoke_entry)
         await smoke_hass.async_block_till_done()
         assert smoke_entry.runtime_data.telemetry is None
@@ -335,6 +335,9 @@ async def test_telemetry_reload_preserves_aggregates_and_refusal_erases_them(
             "telemetry_myidm_id": "TEST-Smoke-123",
             "telemetry_consent_at": datetime.now(UTC).isoformat(),
             "telemetry_policy": TELEMETRY_POLICY,
+            "firmware_check": True,
+            "firmware_policy": "idm-firmware-v1",
+            "firmware_consent_at": datetime.now(UTC).isoformat(),
         })
         await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
         await smoke_hass.async_block_till_done()
@@ -343,8 +346,8 @@ async def test_telemetry_reload_preserves_aggregates_and_refusal_erases_them(
         firmware_entities = [e for e in er.async_entries_for_config_entry(er.async_get(smoke_hass), smoke_entry.entry_id) if e.unique_id.endswith("_telemetry_latest_firmware")]
         assert len(firmware_entities) == 1
         firmware_entity_id = firmware_entities[0].entity_id
-        telemetry.firmware_result = {"status":"no_matching_observations", "latest_firmware":None}
-        for listener in tuple(telemetry._firmware_listeners):
+        smoke_entry.runtime_data.firmware.firmware_result = {"status":"no_matching_observations", "latest_firmware":None}
+        for listener in tuple(smoke_entry.runtime_data.firmware._firmware_listeners):
             listener()
         await smoke_hass.async_block_till_done()
         firmware_state = smoke_hass.states.get(firmware_entity_id)
@@ -370,3 +373,48 @@ async def test_telemetry_reload_preserves_aggregates_and_refusal_erases_them(
         await smoke_hass.async_block_till_done()
     pending = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
     assert not pending
+
+
+async def test_firmware_only_works_without_identity_or_telemetry_store(smoke_hass, patched_client, smoke_entry) -> None:
+    """Exercise both independent consent boundaries in a genuine HA lifecycle."""
+    from datetime import UTC, datetime
+    from pathlib import Path
+    from unittest.mock import patch
+
+    options = {
+        "firmware_check": True,
+        "firmware_policy": "idm-firmware-v1",
+        "firmware_consent_at": datetime.now(UTC).isoformat(),
+        "telemetry": False,
+    }
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession") as firmware_session, patch("custom_components.idm_heatpump.telemetry.async_get_clientsession") as analytics_session:
+        await smoke_hass.config_entries.async_add(smoke_entry)
+        await smoke_hass.async_block_till_done()
+        smoke_hass.config_entries.async_update_entry(smoke_entry, options=options)
+        await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+        assert smoke_entry.runtime_data.telemetry is None
+        assert smoke_entry.runtime_data.firmware is not None
+        assert set(firmware_session.return_value.post.call_args.kwargs["json"]) == {
+            "navigator", "navigator_model", "heatpump_model", "firmware"
+        }
+        analytics_session.assert_not_called()
+        store = Path(smoke_hass.config.path(".storage", "idm_heatpump.telemetry." + smoke_entry.entry_id))
+        assert not store.exists()
+        entities = [e for e in er.async_entries_for_config_entry(er.async_get(smoke_hass), smoke_entry.entry_id) if e.unique_id.endswith("_telemetry_latest_firmware")]
+        assert len(entities) == 1
+        entity_id = entities[0].entity_id
+        options.update({"firmware_check": False, "telemetry": True, "telemetry_myidm_id": "TEST-INDEPENDENT", "telemetry_policy": "idm-telemetry-v3", "telemetry_consent_at": datetime.now(UTC).isoformat()})
+        count = firmware_session.call_count
+        smoke_hass.config_entries.async_update_entry(smoke_entry, options=dict(options))
+        await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+        assert smoke_entry.runtime_data.firmware is None
+        assert smoke_entry.runtime_data.telemetry is not None
+        assert er.async_get(smoke_hass).async_get(entity_id) is None
+        assert smoke_hass.states.get(entity_id) is None
+        assert firmware_session.call_count == count
+        assert store.exists()
+        analytics_session.assert_not_called()
+        assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()

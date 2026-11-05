@@ -193,6 +193,7 @@ from .error_messages import (
     scoped_issue_id,
 )
 from .external_power_forwarding import ExternalPowerForwarder, ExternalPowerForwardingConfig
+from .firmware_observations import FirmwareObservations
 from .internal_messages import warm_error_code_database
 from .knx_bridge import KnxBridge, KnxBridgeConfig
 from .knx_catalog import OBJECT_GROUPS, InvalidGroupAddressError
@@ -281,6 +282,7 @@ class IdmHeatpumpData:
     humidity_forwarding_task: asyncio.Task[None] | None = None
     storage_temp_forwarding_task: asyncio.Task[None] | None = None
     external_power_forwarding_task: asyncio.Task[None] | None = None
+    firmware: FirmwareObservations | None = None
     telemetry: Telemetry | None = None
     energy_manager: EnergyManager | None = None
     ai_advisor: AiAdvisor | None = None
@@ -454,6 +456,8 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
 
 async def _async_start_entry_telemetry(entry: IdmConfigEntry) -> None:
     """Keep optional telemetry failure independent of either local transport mode."""
+    if entry.runtime_data.firmware is not None and not await entry.runtime_data.firmware.async_start():
+        entry.runtime_data.firmware = None
     if entry.runtime_data.telemetry is not None:
         try:
             if not await entry.runtime_data.telemetry.async_start():
@@ -614,7 +618,10 @@ async def _async_setup_web_only_entry(
         loaded_platforms=platforms_to_load,
     )
 
-    from .const import CONF_TELEMETRY
+    from .const import CONF_FIRMWARE_CHECK, CONF_TELEMETRY
+
+    if entry.options.get(CONF_FIRMWARE_CHECK) is True:
+        entry.runtime_data.firmware = FirmwareObservations(hass, entry, coordinator)
 
     if entry.options.get(CONF_TELEMETRY) is True:
         integration = await async_get_integration(hass, DOMAIN)
@@ -1185,7 +1192,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
             loaded_platforms=platforms,
         )
 
-        from .const import CONF_TELEMETRY
+        from .const import CONF_FIRMWARE_CHECK, CONF_TELEMETRY
+
+        if entry.options.get(CONF_FIRMWARE_CHECK) is True:
+            entry.runtime_data.firmware = FirmwareObservations(hass, entry, coordinator)
 
         if entry.options.get(CONF_TELEMETRY) is True:
             entry.runtime_data.telemetry = Telemetry(hass, entry, coordinator, versions.integration)
@@ -1420,6 +1430,10 @@ async def _async_teardown_partial_setup(hass: HomeAssistant, entry: IdmConfigEnt
         except Exception:
             _LOGGER.debug("Error stopping the KNX bridge while unwinding setup", exc_info=True)
 
+    firmware = getattr(runtime, "firmware", None)
+    if isinstance(firmware, FirmwareObservations):
+        await firmware.async_stop()
+
     telemetry = getattr(runtime, "telemetry", None)
     if isinstance(telemetry, Telemetry):
         try:
@@ -1485,6 +1499,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None
     # Raises a translated ConfigEntryError instead of reporting a bare False,
     # so a platform that refuses to unload fails the entry loudly (2026.11).
     await hass.config_entries.async_unload_platforms_or_raise(entry, list(platforms))
+    firmware = getattr(entry.runtime_data, "firmware", None)
+    if isinstance(firmware, FirmwareObservations):
+        await firmware.async_stop()
+
     telemetry = getattr(entry.runtime_data, "telemetry", None)
     if isinstance(telemetry, Telemetry):
         try:

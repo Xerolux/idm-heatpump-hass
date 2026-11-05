@@ -5,14 +5,13 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
-## v0.26.0-b4 — 2026-11-05
+## v0.26.0-b6 — 2026-11-05
 
 Lokaler Teststand ohne öffentliche Veröffentlichung: aktuelle stabile Basis und
 Modbus-Netzwerksuche, ausdrücklich freigegebene Anlagen-Telemetrie mit myIDM-ID,
 neustartfeste Tagesberichte und privater Löschanfrage. Der optionale Sensor
 „Neueste gemeldete Firmware“ vergleicht nur dieselbe Regler-, Modell- und
-Firmware-Reihe; Test- und stabile Kanäle bleiben getrennt. Ohne Telemetrie
-wird der Sensor sofort entfernt und nichts abgefragt.
+Firmware-Reihe; Test- und stabile Kanäle bleiben getrennt. Die Firmware-Abfrage hat jetzt eine eigene Einwilligung und funktioniert ohne Telemetrie.
 
 ## v0.26.0-b1 — 2026-11-05
 

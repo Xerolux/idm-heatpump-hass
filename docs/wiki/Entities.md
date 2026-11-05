@@ -982,16 +982,36 @@ writes are added. This mapping is based on the Navigator 10 report in #429;
 it still needs confirmation on the reporter's hardware.
 
 
-## Optional telemetry: firmware observations
+## Independent firmware observations
 
-The **Latest reported firmware** diagnostic sensor exists only with telemetry
-consent. It shows the highest version reported to the server for the same
-Navigator family, controller/plant model and firmware prefix/major line. Test
-and stable channels remain separate. Attributes show the installed version,
-matching series and whether a higher version was observed. Missing identity or
-evidence remains unknown. This is not manufacturer approval; IDM/the installer
-must assess suitability and perform installation. Disabling removes the sensor
-and its registry entry immediately and stops firmware queries.
-[Scope, benefits and privacy](Telemetry).
+Under **Reconfigure → Firmware query**, a separate explicit switch enables
+**Latest reported firmware**. It is off by default and never inherits consent
+from telemetry. Firmware-only operation works without a myIDM ID or telemetry.
+Disabling telemetry does not disable separately authorized firmware queries.
+Disabling firmware queries cancels the request and removes the sensor and its
+registry entry immediately. Without firmware consent there is no catalog contact.
 
-Missing plant types are matched only with other missing-type observations in the same known controller/firmware series. Known plant models remain separate.
+The query sends only Navigator family, controller/plant model and installed
+firmware, on startup and every six hours. It sends no myIDM ID, operating counters,
+temperatures, credentials or other HA data. There is no persistent firmware queue;
+the integration keeps only the current result. HA may retain sensor states
+according to the local Recorder/backup configuration. The server uses metadata transiently and does not
+save a plant report. The connection IP is technically visible; short-lived rate
+identifiers expire within two hours at the next hourly cleanup. Both features
+have a prominent link to the full privacy notice before their consent switch.
+
+The catalog uses community telemetry observations only, never old diagnostic
+ZIPs. Matching requires the same Navigator/controller and known plant model,
+firmware prefix/channel and major line. Missing plant types match only other
+missing-type reports in that same known controller/software series. Test and
+stable channels remain separate. Ordering includes numeric build numbers.
+Unknown metadata or absent observations produce no version recommendation.
+
+This is not official IDM availability, installation permission or compatibility
+approval. Only IDM/your installer can assess and install firmware. Sharing
+telemetry helps build the catalog, but is not required to use firmware queries.
+Telemetry notice v3 remains unchanged; independent firmware consent uses
+`idm-firmware-v1`. The locally recorded consent time/revision is not sent in
+firmware queries. Only telemetry uploads carry their own identity and consent.
+
+[Privacy and delivery details](Telemetry).

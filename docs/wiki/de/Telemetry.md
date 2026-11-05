@@ -9,7 +9,8 @@ Nur die angebundene IDM-Anlage, ihr Regler und ihre Anbindung über diese
 Integration gehören zum Umfang. Andere HA-Geräte, Entitäts- und Raumnamen,
 Personen, Anwesenheit, Haushaltszähler, fremde Integrationen, Dateien, Zugangsdaten
 und PINs werden für Telemetrie nicht gelesen. Nein bedeutet keine Sammlung,
-keinen Timer, keine Warteschlange und keinen Netzwerkkontakt oder Verbindungstest.
+keinen Telemetrie-Timer, keine Telemetrie-Warteschlange und keinen Kontakt
+zum Telemetrie-Endpunkt. Die Firmware-Abfrage hat eine separate Einwilligung.
 Der lokale Integrationsbetrieb bleibt davon unabhängig.
 
 ## Daten und Versand
@@ -79,32 +80,37 @@ beobachtete Zähler und offene Löschanfragen. Vor der Löschaktion Rückkontakt
 Berechtigung prüfen. Das öffentliche Formular gewährt keinen Lesezugriff.
 
 
-## Warum die Meldungen helfen – und dein Firmware-Sensor
+## Unabhängige Firmware-Beobachtungen
 
-Freigegebene Anlagenmeldungen zeigen, welche Firmware mit welchen Funktionen
-arbeitet und wo Verbindungsprobleme oder Störungen auftreten. Damit lässt sich
-die Integration gezielt verbessern. Zusätzlich erscheint ausschließlich bei
-aktivierter Telemetrie der Sensor **Neueste gemeldete Firmware**. Er fragt beim
-Start und höchstens alle sechs Stunden den passenden Firmware-Katalog ab.
+Unter **Neu konfigurieren → Firmware-Abfrage** aktiviert ein eigener freiwilliger
+Schalter den Sensor **Neueste gemeldete Firmware**. Er ist standardmäßig aus und
+übernimmt keine Telemetrie-Einwilligung. Die Firmware-Abfrage funktioniert ohne
+myIDM-ID und ohne Telemetrie. Telemetrie auszuschalten beendet eine separat
+freigegebene Firmware-Abfrage nicht. Ausschalten der Firmware-Abfrage bricht
+laufende Anfragen ab und entfernt Sensor und Registry-Eintrag sofort. Ohne diese
+Einwilligung gibt es keinen Kontakt zum Firmware-Katalog.
 
-Der Server ordnet jede Beobachtung nach Navigator-Familie, genauem Anlagenmodell,
-Firmware-Präfix und numerischer Hauptreihe zu. `T_NAV10_20.*`, `NAV10_20.*` und
-`m_20.*` werden nicht vermischt; auch andere Modelle bleiben getrennt. Die
-Versionsreihenfolge wird numerisch einschließlich Buildnummern verglichen.
-Meldet die Schnittstelle keinen W�rmepumpentyp, werden ausschlie�lich Meldungen
-ohne Typangabe innerhalb derselben erkannten Steuerung und Firmware-Reihe
-verglichen. Bekannte Anlagenmodelle bleiben getrennt. Eine unbekannte Steuerung
-oder Firmware-Reihe liefert keine Empfehlung.
+Übertragen werden ausschließlich Navigator-Familie, Regler-/Anlagenmodell und
+installierte Firmware, beim Start und alle sechs Stunden. Keine myIDM-ID,
+Betriebszähler, Temperaturen, Zugangsdaten oder fremden HA-Daten. Es gibt keine
+dauerhafte Firmware-Warteschlange; die Integration hält nur das aktuelle Ergebnis.
+HA kann Sensorzustände gemäß deiner Recorder-/Backup-Konfiguration speichern. Der
+Server verarbeitet die Abfrage vorübergehend und speichert keinen Anlagenbericht.
+Die Verbindungs-IP ist technisch sichtbar; kurzlebige Ratenkennungen verfallen
+nach spätestens zwei Stunden beim nächsten stündlichen Bereinigungslauf. Beide
+Funktionen verlinken vor ihrem Zustimmungsschalter deutlich auf die vollständigen
+Datenschutzhinweise.
 
-Die gemeldete Version ist **keine offizielle neueste IDM-Freigabe** und garantiert
-keine Verfügbarkeit für deine Anlage. Installation und Eignungsprüfung bleiben
-bei IDM bzw. dem Fachbetrieb. Passende Firmware-Versionen können anderen Nutzern
-ohne myIDM-ID oder Betriebsdaten angezeigt werden. Der Sensor zeigt zusätzlich,
-ob eine höhere Version beobachtet wurde. Zunächst kann er mangels Meldungen
-unbekannt sein; vorhandene Diagnose-ZIPs werden dafür nicht umgenutzt.
+Der Katalog verwendet nur freigegebene Community-Telemetrie, keine alten
+Diagnose-ZIPs. Navigator/Regler, bekanntes Anlagenmodell, Firmware-Präfix/Kanal und
+Hauptreihe müssen passen. Fehlende Anlagenmodelle werden nur mit anderen Meldungen
+ohne Typangabe innerhalb derselben bekannten Regler-/Firmware-Reihe verglichen.
+Test- und stabile Kanäle bleiben getrennt; Buildnummern werden numerisch verglichen.
+Unbekannte Zuordnung oder fehlende Meldungen liefern keine Versionsempfehlung.
 
-Bei Ausschalten wird der Sensor samt Registry-Eintrag entfernt und jede
-Firmware-Abfrage beendet. Ohne Einwilligung gibt es weder Anzeige noch Abfrage.
-
-Dieser zus�tzliche Zweck verwendet die Datenschutzhinweise `idm-telemetry-v3`
-und ben�tigt eine ausdr�ckliche Einwilligung.
+Das ist keine offizielle IDM-Verfügbarkeit, Installationsberechtigung oder
+Kompatibilitätsfreigabe. Eignungsprüfung und Installation bleiben bei IDM/Fachbetrieb.
+Telemetrie hilft beim Aufbau des Katalogs, ist aber keine Voraussetzung für seine
+Abfrage. Telemetrie verwendet weiterhin Hinweisfassung v3, die unabhängige
+Firmware-Einwilligung `idm-firmware-v1`. Deren Zeitpunkt und Fassung werden nur
+lokal gespeichert und nicht bei der Firmware-Abfrage übertragen.

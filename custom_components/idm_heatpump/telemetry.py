@@ -13,8 +13,7 @@ import math
 import re
 import time
 import uuid
-from collections.abc import Callable
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 import aiohttp
@@ -34,7 +33,7 @@ from .coordinator import IdmCoordinator, navigator_family
 
 _LOGGER = logging.getLogger(__name__)
 TELEMETRY_URL = "https://idmtools.xerolux.de/api/telemetry"
-FIRMWARE_URL = "https://idmtools.xerolux.de/api/telemetry/firmware"
+TELEMETRY_PRIVACY_URL = "https://idmtools.xerolux.de/telemetry.html"
 TELEMETRY_POLICY = "idm-telemetry-v3"
 _INTERVAL = 86400
 
@@ -85,9 +84,6 @@ class Telemetry:
             hass, 1, f"{DOMAIN}.telemetry.{entry.entry_id}", serialize_in_event_loop=True
         )
         self._last_attempt = 0.0
-        self._last_firmware_check = 0.0
-        self.firmware_result: dict[str, Any] = {}
-        self._firmware_listeners: set[Callable[[], None]] = set()
         self._started = time.monotonic()
         self._elapsed = 0.0
         self._pending: dict[str, float] = {}
@@ -97,7 +93,6 @@ class Telemetry:
         self._stopped = False
         self._save_scheduled = False
         self._active_task: asyncio.Task[Any] | None = None
-        self._firmware_task: asyncio.Task[Any] | None = None
         self._errors: dict[str, int] = {}
         self._last_error: int | None = None
         self._last_web_alive: bool | None = None
@@ -249,81 +244,7 @@ class Telemetry:
         self._entry.async_on_unload(self._coordinator.async_add_listener(self.observe))
         self._entry.async_on_unload(async_track_time_interval(self._hass, self.async_tick, timedelta(hours=1)))
         self.observe()
-        await self.async_refresh_firmware()
         return True
-
-    def async_add_firmware_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
-        """Subscribe the opt-in firmware entity without notifying other consumers."""
-        self._firmware_listeners.add(listener)
-        return lambda: self._firmware_listeners.discard(listener)
-
-    async def async_refresh_firmware(self) -> None:
-        """Read only the catalog for this plant; never contact it after refusal."""
-        if self._stopped or self._entry.options.get(CONF_TELEMETRY) is not True:
-            return
-        if self._firmware_task is not None:
-            return
-        self._firmware_task = asyncio.current_task()
-        self._last_firmware_check = time.time()
-        coordinator = self._coordinator
-        query = {
-            "navigator": navigator_family(coordinator.model_name),
-            "navigator_model": _label(coordinator.model_name),
-            "heatpump_model": _label(coordinator.web_supplement.heatpump_model) if coordinator.web_supplement else None,
-            "firmware": _label(coordinator.firmware_version),
-        }
-        try:
-            async with async_get_clientsession(self._hass).post(
-                FIRMWARE_URL,
-                json=query,
-                timeout=aiohttp.ClientTimeout(total=15),
-                allow_redirects=False,
-            ) as response:
-                if response.status != 200:
-                    return
-                result = await response.json()
-            if self._stopped or self._entry.options.get(CONF_TELEMETRY) is not True:
-                return
-            if (
-                not isinstance(result, dict)
-                or result.get("query") != query
-                or result.get("source") != "community_telemetry"
-            ):
-                return
-            firmware = result.get("latest_firmware")
-            if firmware is not None:
-                series = _firmware_series(query["firmware"])
-                if (
-                    _label(firmware) is None
-                    or series is None
-                    or _firmware_series(firmware) != series
-                    or result.get("series") != series
-                ):
-                    return
-            if result.get("status") not in {"observed", "insufficient_identity", "no_matching_observations"}:
-                return
-            self.firmware_result = {
-                "latest_firmware": firmware,
-                "installed_firmware": query["firmware"],
-                "matching_model": query["heatpump_model"],
-                "series": _label(result.get("series")),
-                "status": result["status"],
-                "model_scope": result.get("model_scope")
-                if result.get("model_scope") in {"controller_series_only", "controller_and_plant_model"}
-                else None,
-                "source": "community_telemetry",
-                "newer_observed": result.get("newer_observed")
-                if isinstance(result.get("newer_observed"), bool)
-                else None,
-                "observations": _number(result.get("observations")),
-                "last_checked": datetime.fromtimestamp(self._last_firmware_check, UTC).isoformat(),
-            }
-            for listener in tuple(self._firmware_listeners):
-                listener()
-        except (aiohttp.ClientError, TimeoutError, OSError, ValueError):
-            _LOGGER.debug("IDM firmware observations unavailable; local plant operation is unaffected")
-        finally:
-            self._firmware_task = None
 
     @staticmethod
     def _numeric_mapping(value: object) -> dict[str, float]:
@@ -367,7 +288,7 @@ class Telemetry:
     async def async_stop(self) -> None:
         """Flush on clean reload/shutdown; withdrawal deletes all local aggregates."""
         state = self._serialize() if self._entry.options.get(CONF_TELEMETRY) is True else None
-        tasks = {self._active_task, self._firmware_task}
+        tasks = {self._active_task}
         self.stop()
         for active in tasks:
             if active is not None and active is not asyncio.current_task():
@@ -383,8 +304,6 @@ class Telemetry:
     def stop(self) -> None:
         """Cancel an in-flight attempt and erase in-memory observations on unload."""
         self._stopped = True
-        self._firmware_listeners.clear()
-        self.firmware_result.clear()
         self._errors.clear()
         self._baseline.clear()
         self._web_outages = 0
@@ -392,8 +311,6 @@ class Telemetry:
         self._outbox = None
         if self._active_task is not None:
             self._active_task.cancel()
-        if self._firmware_task is not None:
-            self._firmware_task.cancel()
 
     async def async_options_updated(self, hass: Any, entry: Any) -> None:
         """Withdraw immediately while the ordinary reload is being scheduled."""
@@ -406,8 +323,6 @@ class Telemetry:
         del now
         if self._stopped or self._entry.options.get(CONF_TELEMETRY) is not True or self._lock.locked():
             return
-        if time.time() - self._last_firmware_check >= 6 * 3600:
-            await self.async_refresh_firmware()
         async with self._lock:
             current = time.time()
             if current - self._last_attempt < _INTERVAL:

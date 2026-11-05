@@ -2421,7 +2421,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             return await self.async_step_connection(user_input)
         return self.async_show_menu(
             step_id="reconfigure",
-            menu_options=["connection", "features", "diagnostics", "telemetry"],
+            menu_options=["connection", "features", "diagnostics", "telemetry", "firmware"],
         )
 
     async def async_step_telemetry(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -2429,7 +2429,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
         from datetime import UTC, datetime
 
         from .const import CONF_TELEMETRY, CONF_TELEMETRY_CONSENT_AT, CONF_TELEMETRY_MYIDM, CONF_TELEMETRY_POLICY
-        from .telemetry import TELEMETRY_POLICY, valid_myidm
+        from .telemetry import TELEMETRY_POLICY, TELEMETRY_PRIVACY_URL, valid_myidm
 
         entry = self._get_reconfigure_entry()
         coordinator = getattr(getattr(entry, "runtime_data", None), "coordinator", None)
@@ -2450,6 +2450,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 return self.async_update_and_abort(entry, options=options)
         return self.async_show_form(
             step_id="telemetry",
+            description_placeholders={"privacy_url": TELEMETRY_PRIVACY_URL},
             data_schema=vol.Schema(
                 {
                     vol.Required(
@@ -2461,6 +2462,37 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 }
             ),
             errors=errors,
+        )
+
+    async def async_step_firmware(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Save independent consent for a minimal firmware metadata query."""
+        from datetime import UTC, datetime
+
+        from .const import CONF_FIRMWARE_CHECK, CONF_FIRMWARE_CONSENT_AT, CONF_FIRMWARE_POLICY
+        from .firmware_observations import FIRMWARE_POLICY
+        from .telemetry import TELEMETRY_PRIVACY_URL
+
+        entry = self._get_reconfigure_entry()
+        if user_input is not None:
+            enabled = user_input.get(CONF_FIRMWARE_CHECK) is True
+            options = dict(entry.options)
+            options[CONF_FIRMWARE_CHECK] = enabled
+            options[CONF_FIRMWARE_CONSENT_AT] = datetime.now(UTC).isoformat() if enabled else ""
+            options[CONF_FIRMWARE_POLICY] = FIRMWARE_POLICY if enabled else ""
+            return self.async_update_and_abort(entry, options=options)
+        return self.async_show_form(
+            step_id="firmware",
+            description_placeholders={"privacy_url": TELEMETRY_PRIVACY_URL + "#firmware"},
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_FIRMWARE_CHECK,
+                        default=entry.options.get(CONF_FIRMWARE_CHECK) is True
+                        and entry.options.get(CONF_FIRMWARE_POLICY) == FIRMWARE_POLICY,
+                    ): BooleanSelector(BooleanSelectorConfig()),
+                }
+            ),
+            errors={},
         )
 
     async def async_step_features(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:

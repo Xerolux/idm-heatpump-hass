@@ -39,7 +39,7 @@
 >
 > New here? Start with the **[Installation & Setup guide][wiki-install]** or explore the **[searchable documentation][wiki]**.
 
-> **Optional personal plant telemetry:** off by default, one explicit consent, unchanged myIDM ID, plant-only scope and twelve-month server retention. Refusing collects and sends nothing. [Scope, local persistence and erasure](docs/wiki/Telemetry.md).
+> **Optional personal plant telemetry:** off by default, one explicit consent, unchanged myIDM ID, plant-only scope and twelve-month server retention. Refusing telemetry collects and sends no telemetry. Firmware queries have separate consent and work without telemetry. [Scope, local persistence and erasure](docs/wiki/Telemetry.md).
 
 ## Experimental AI plant adviser (read-only)
 
@@ -306,7 +306,7 @@ Home Assistant
 
 ## 💝 Support
 
-This integration keeps your heat pump **100 % local** — no cloud, no telemetry, just Modbus and spare time. If it keeps your home warm, consider keeping its developer caffeinated:
+Heat-pump control runs locally. Optional cloud reports, plant telemetry and firmware queries require their own configuration or consent. If it keeps your home warm, consider keeping its developer caffeinated:
 
 [![Sponsor on GitHub](https://img.shields.io/badge/Sponsor%20on%20GitHub-ea4aaa?logo=githubsponsors&logoColor=white&style=for-the-badge)](https://github.com/sponsors/xerolux)
 [![Tip on Ko-fi](https://img.shields.io/badge/Tip%20on-Ko--fi-ff5e5b?logo=ko-fi&logoColor=white&style=for-the-badge)](https://ko-fi.com/xerolux)

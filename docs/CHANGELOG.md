@@ -13,7 +13,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.26.0-b4] - 2026-11-05
+## [0.26.0-b6] - 2026-11-05
 
 ### ⚠️ Upgrade notes
 
@@ -21,7 +21,9 @@ All notable changes to this project will be documented in this file.
 
 ### ✨ New
 
-- **Matching firmware observations with explicit consent**: the new diagnostic sensor compares community-reported firmware only within the same Navigator family, plant model, prefix and major line. Test channels remain separate. No manufacturer availability or installation permission is implied. Disabling telemetry immediately removes the sensor and stops catalog requests. The revised notice explains the benefit and requires renewed consent.
+- **Readable consent before activation**: the telemetry form groups the unchanged data scope, transfer schedule, retention and withdrawal behavior into labelled paragraphs. A prominent Markdown link opens the full privacy notice before the explicitly labelled consent switch. Opening that page never enables collection. This presentation change retains notice revision v3 and does not restart existing daily reporting slots.
+
+- **Independent firmware consent**: firmware comparison now has its own optional switch, off by default, and works without telemetry or a myIDM ID. Queries contain only controller/model/software metadata. Telemetry consent never enables them automatically. Turning firmware queries off cancels requests and removes the sensor. Sharing operating reports is no longer a prerequisite for viewing matching community firmware observations.
 
 - **Optional plant telemetry**: daily reports describe controller compatibility, connection failures, observed alarm transitions and available operating aggregates. Personal reports use private encrypted storage with twelve-month expiry. The IDM Tools website accepts erasure requests for verification by the operator. No unrelated Home Assistant data, remote commands or automatic diagnostic captures are included.
 

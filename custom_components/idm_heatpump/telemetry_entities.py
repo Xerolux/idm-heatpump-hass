@@ -1,4 +1,4 @@
-"""Firmware observations, present only while the owner consents to telemetry."""
+"""Firmware observations gated solely by independent firmware consent."""
 
 from __future__ import annotations
 
@@ -9,10 +9,10 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 
-from .const import CONF_TELEMETRY, CONF_TELEMETRY_POLICY, DOMAIN
+from .const import CONF_FIRMWARE_CHECK, CONF_FIRMWARE_CONSENT_AT, CONF_FIRMWARE_POLICY, DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
-from .telemetry import TELEMETRY_POLICY, Telemetry
+from .firmware_observations import FIRMWARE_POLICY, FirmwareObservations
 
 KEY = "telemetry_latest_firmware"
 
@@ -21,7 +21,11 @@ def firmware_sensor_entities(
     hass: HomeAssistant, entry: Any, coordinator: IdmCoordinator
 ) -> list[IdmTelemetryFirmwareSensor]:
     """Remove registry remnants when consent is absent, including after restarts."""
-    enabled = entry.options.get(CONF_TELEMETRY) is True and entry.options.get(CONF_TELEMETRY_POLICY) == TELEMETRY_POLICY
+    enabled = (
+        entry.options.get(CONF_FIRMWARE_CHECK) is True
+        and entry.options.get(CONF_FIRMWARE_POLICY) == FIRMWARE_POLICY
+        and bool(entry.options.get(CONF_FIRMWARE_CONSENT_AT))
+    )
     if enabled:
         return [IdmTelemetryFirmwareSensor(coordinator)]
     registry = er.async_get(hass)
@@ -45,18 +49,14 @@ class IdmTelemetryFirmwareSensor(IdmCoordinatorEntityBase, SensorEntity):
         self.entity_description = SensorEntityDescription(key=KEY, translation_key=KEY)
 
     @property
-    def _telemetry(self) -> Telemetry | None:
-        telemetry = getattr(self._entry.runtime_data, "telemetry", None)
-        return telemetry if isinstance(telemetry, Telemetry) else None
+    def _telemetry(self) -> FirmwareObservations | None:
+        telemetry = getattr(self._entry.runtime_data, "firmware", None)
+        return telemetry if isinstance(telemetry, FirmwareObservations) else None
 
     @property
     def available(self) -> bool:
         telemetry = self._telemetry
-        return (
-            self._entry.options.get(CONF_TELEMETRY) is True
-            and telemetry is not None
-            and bool(telemetry.firmware_result)
-        )
+        return telemetry is not None and telemetry.enabled and bool(telemetry.firmware_result)
 
     @property
     def native_value(self) -> str | None:
@@ -81,8 +81,8 @@ class IdmTelemetryFirmwareSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     async def _async_options_updated(self, hass: HomeAssistant, entry: Any) -> None:
         if (
-            entry.options.get(CONF_TELEMETRY) is not True
-            or entry.options.get(CONF_TELEMETRY_POLICY) != TELEMETRY_POLICY
+            entry.options.get(CONF_FIRMWARE_CHECK) is not True
+            or entry.options.get(CONF_FIRMWARE_POLICY) != FIRMWARE_POLICY
         ):
             registry = er.async_get(hass)
             if self.entity_id in registry.entities:

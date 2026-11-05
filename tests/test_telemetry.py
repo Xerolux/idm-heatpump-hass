@@ -49,7 +49,6 @@ def make_telemetry(enabled=True):
         store.return_value.async_save = AsyncMock()
         store.return_value.async_remove = AsyncMock()
         telemetry = Telemetry(MagicMock(), entry, coordinator, "0.25.0-b9")
-    telemetry.async_refresh_firmware = AsyncMock()
     return telemetry, entry, coordinator
 
 
@@ -68,6 +67,15 @@ async def test_no_means_no_collection_storage_timer_or_network():
     timer.assert_not_called()
     session.assert_not_called()
     assert not telemetry._errors
+
+
+async def test_telemetry_alone_never_queries_firmware_catalog():
+    telemetry, _, _ = make_telemetry()
+    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession") as session:
+        assert await telemetry.async_start()
+        await telemetry.async_tick(datetime.now(UTC))
+    session.assert_not_called()
+    assert not hasattr(telemetry, "firmware_result")
 
 
 @pytest.mark.parametrize("myidm,consent", [("", "yes"), ("invalid@serial", "yes"), ("TEST-123", "")])
@@ -323,83 +331,3 @@ async def test_telemetry_uses_controller_myidm_without_exposing_unrelated_data()
     assert telemetry.payload()["myidm_id"] == "TEST-MYIDM-123"
     with patch("custom_components.idm_heatpump.telemetry.async_track_time_interval"):
         assert await telemetry.async_start()
-
-
-async def test_no_firmware_query_without_consent():
-    telemetry, _, _ = make_telemetry(False)
-    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession") as session:
-        await Telemetry.async_refresh_firmware(telemetry)
-    session.assert_not_called()
-
-
-async def test_firmware_response_is_bound_to_requested_plant_metadata():
-    telemetry, _, _ = make_telemetry()
-    telemetry._coordinator.firmware_version = "NAV10_20.24-9"
-    response = MagicMock(status=200)
-    query = {
-        "navigator": "navigator_10",
-        "navigator_model": "Navigator 10",
-        "heatpump_model": "AERO ALM",
-        "firmware": "NAV10_20.24-9",
-    }
-    response.json = AsyncMock(
-        return_value={
-            "query": query,
-            "source": "community_telemetry",
-            "status": "observed",
-            "latest_firmware": "NAV10_20.24-11",
-            "series": "nav10_20",
-            "observations": 2,
-            "newer_observed": True,
-        }
-    )
-    context = MagicMock()
-    context.__aenter__ = AsyncMock(return_value=response)
-    context.__aexit__ = AsyncMock(return_value=False)
-    session = MagicMock()
-    session.post.return_value = context
-    listener = MagicMock()
-    remove = telemetry.async_add_firmware_listener(listener)
-    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession", return_value=session):
-        await Telemetry.async_refresh_firmware(telemetry)
-    assert telemetry.firmware_result["latest_firmware"] == "NAV10_20.24-11"
-    listener.assert_called_once()
-    remove()
-    response.json.return_value["query"] = query | {"heatpump_model": "OTHER MODEL"}
-    telemetry.firmware_result = {}
-    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession", return_value=session):
-        await Telemetry.async_refresh_firmware(telemetry)
-    assert telemetry.firmware_result == {}
-
-
-async def test_withdrawal_cancels_firmware_request_as_well_as_upload():
-    telemetry, entry, _ = make_telemetry()
-    started = asyncio.Event()
-
-    async def wait_forever():
-        started.set()
-        await asyncio.Future()
-
-    context = MagicMock()
-    context.__aenter__ = AsyncMock(side_effect=wait_forever)
-    context.__aexit__ = AsyncMock(return_value=False)
-    session = MagicMock()
-    session.post.return_value = context
-    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession", return_value=session):
-        task = asyncio.create_task(Telemetry.async_refresh_firmware(telemetry))
-        await asyncio.wait_for(started.wait(), timeout=2)
-        entry.options[CONF_TELEMETRY] = False
-        await telemetry.async_options_updated(None, entry)
-        with pytest.raises(asyncio.CancelledError):
-            await task
-    assert telemetry._firmware_task is None
-
-
-def test_firmware_series_keeps_test_and_stable_channels_separate():
-    from custom_components.idm_heatpump.telemetry import _firmware_series
-
-    assert _firmware_series("T_NAV10_20.24-1580-g02a20b66f") == "t_nav10_20"
-    assert _firmware_series("NAV10_20.24-1580.iup") == "nav10_20"
-    assert _firmware_series("m_20.23-165") == "m_20"
-    assert _firmware_series("unknown") is None
-    assert _firmware_series(None) is None

@@ -483,3 +483,8 @@ CONF_TELEMETRY = "telemetry"
 CONF_TELEMETRY_MYIDM = "telemetry_myidm_id"
 CONF_TELEMETRY_CONSENT_AT = "telemetry_consent_at"
 CONF_TELEMETRY_POLICY = "telemetry_policy"
+
+# Separate explicit consent for firmware metadata queries.
+CONF_FIRMWARE_CHECK = "firmware_check"
+CONF_FIRMWARE_POLICY = "firmware_policy"
+CONF_FIRMWARE_CONSENT_AT = "firmware_consent_at"
