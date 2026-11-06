@@ -5,7 +5,7 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
-## v0.27.0-b1 — 2026-11-06
+## v0.26.1 — 2026-11-06
 
 The technician access-code sensors are removed for safety reasons: the
 integration no longer calculates the time-based Fachmann-Ebene codes, the
