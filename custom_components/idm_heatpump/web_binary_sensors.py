@@ -101,10 +101,13 @@ WEB_BINARY_SENSOR_DEFINITIONS: tuple[WebBinarySensorDefinition, ...] = (
         device_class=BinarySensorDeviceClass.HEAT,
     ),
     WebBinarySensorDefinition(
+        # B10 high-pressure switch: normally-closed safety contact like B5/B15,
+        # so the closed contact ("Ein"/1) of a healthy plant means no fault (#649).
         key="high_pressure_error",
         icon="mdi:gauge-full",
         device_class=BinarySensorDeviceClass.PROBLEM,
         entity_category=EntityCategory.DIAGNOSTIC,
+        inverted=True,
     ),
     WebBinarySensorDefinition(
         key="hotwater_circulation_pump",

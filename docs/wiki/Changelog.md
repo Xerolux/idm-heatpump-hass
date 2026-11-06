@@ -5,7 +5,7 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
-## v0.26.0-b1 — 2026-11-05
+## v0.26.0 — 2026-11-06
 
 The setup assistant can now find the heat pump by itself. Setup starts with a
 choice between manual entry and a network scan: the scan probes every host of
@@ -14,7 +14,10 @@ or read — and lists the responding devices with IP address and, when
 resolvable, reverse-DNS hostname. The picked address pre-fills the connection
 form, where the connection test, web access and Modbus-proxy settings are
 completed as before. The subnet field is pre-filled from Home Assistant's
-network adapter. Rollback is safe; existing entries are untouched.
+network adapter. The high-pressure fault web binary sensor no longer reads
+permanently on: the B10 safety contact is normally closed and now inverts
+like its B5/B15 siblings, so a healthy plant shows no fault (#649). Rollback
+is safe; existing entries are untouched.
 
 ## v0.25.0 — 2026-11-05
 

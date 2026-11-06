@@ -13,7 +13,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.26.0-b1] - 2026-11-05
+## [0.26.0] - 2026-11-06
 
 The setup assistant can now find the heat pump by itself: setup starts with a choice between manual entry and a network scan, so the Modbus address no longer has to be looked up in the router first.
 
@@ -25,6 +25,10 @@ The setup assistant can now find the heat pump by itself: setup starts with a ch
 
 - **Setup starts with manual entry or a network scan**: the first setup step is now a menu; *Scan the network for the heat pump* probes every host of a chosen IPv4 subnet once on Modbus TCP port 502 — no Modbus data is sent — and lists the responding hosts. The subnet field comes pre-filled from Home Assistant's network adapter.
 - **Found devices show address and name**: every scan result carries the IP address plus the reverse-DNS hostname when one resolves, so a heat pump named by the router is recognizable at a glance. Picking an entry takes the address into the connection form, where the connection test, web access and Modbus-proxy settings are completed as before.
+
+### 🐛 Bugfixes
+
+- **High-pressure fault (Web) no longer reads permanently on**: the Navigator reports the B10 high-pressure switch like its other safety inputs — contact closed means everything is fine — but the entity mapped it the other way round, so a healthy plant showed a latched fault (#649). B10 now inverts like B5/B15; an open contact reads as the fault it is.
 
 ## [0.25.0] - 2026-11-05
 
