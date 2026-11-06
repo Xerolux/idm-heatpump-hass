@@ -190,6 +190,13 @@ DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
         "description": "Install IDM Heatpump through HACS, enable Modbus TCP on an IDM Navigator controller and connect it to Home Assistant.",
     },
     {
+        "slug": "installer-checklist",
+        "file": "Installer-Checklist.md",
+        "group": "start",
+        "title": "Installer Checklist",
+        "description": "Printable checklist of everything the heating installer enables on the IDM Navigator: Modbus TCP, fixed IP, GLT/PV signal source and web PIN.",
+    },
+    {
         "slug": "configuration",
         "file": "Configuration.md",
         "group": "start",
