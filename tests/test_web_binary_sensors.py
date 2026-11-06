@@ -79,7 +79,7 @@ def test_creates_all_definitions_and_availability_tracks_values():
         _coordinator(
             {
                 "compressor_1": IdmWebSensorValue("Ein", 1.0),
-                "high_pressure_error": IdmWebSensorValue("Aus", 0.0),
+                "high_pressure_error": IdmWebSensorValue("Ein", 1.0),
                 "hotgas_temperature": IdmWebSensorValue("72.5°C", 72.5, "°C"),
             }
         )
@@ -90,6 +90,7 @@ def test_creates_all_definitions_and_availability_tracks_values():
     assert len(entities) == _SINGLE_CIRCUIT_ENTITY_COUNT
     assert entities["web_compressor_1"].is_on is True
     assert entities["web_compressor_1"].available is True
+    # Closed contact (1) on a healthy plant: the NC high-pressure switch is fine.
     assert entities["web_high_pressure_error"].is_on is False
     # Definitions without a current value stay unavailable until web provides them.
     assert entities["web_flow_pump_on"].available is False
@@ -224,6 +225,7 @@ def test_inverted_nc_binary_sensors():
                 "dewpoint_humidity_alarm": IdmWebSensorValue("1", 1.0),
                 "ew_evu_lock_contact": IdmWebSensorValue("1", 1.0),
                 "failure_eheating": IdmWebSensorValue("1", 1.0),
+                "high_pressure_error": IdmWebSensorValue("1", 1.0),
             }
         )
     )
@@ -232,6 +234,7 @@ def test_inverted_nc_binary_sensors():
     assert entities["web_dewpoint_humidity_alarm"].is_on is False
     assert entities["web_ew_evu_lock_contact"].is_on is False
     assert entities["web_failure_eheating"].is_on is False
+    assert entities["web_high_pressure_error"].is_on is False
 
     # 0.0 = open / triggered -> is_on must be True (alarm/lock/failure active)
     tripped_entities = _entities_by_key(
@@ -240,6 +243,7 @@ def test_inverted_nc_binary_sensors():
                 "dewpoint_humidity_alarm": IdmWebSensorValue("0", 0.0),
                 "ew_evu_lock_contact": IdmWebSensorValue("0", 0.0),
                 "failure_eheating": IdmWebSensorValue("0", 0.0),
+                "high_pressure_error": IdmWebSensorValue("0", 0.0),
             }
         )
     )
@@ -247,6 +251,7 @@ def test_inverted_nc_binary_sensors():
     assert tripped_entities["web_dewpoint_humidity_alarm"].is_on is True
     assert tripped_entities["web_ew_evu_lock_contact"].is_on is True
     assert tripped_entities["web_failure_eheating"].is_on is True
+    assert tripped_entities["web_high_pressure_error"].is_on is True
 
 
 class TestExpectedPowerNaming:
