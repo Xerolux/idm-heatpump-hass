@@ -76,16 +76,21 @@ eine abgeschlossene Langzeit- oder Hardware-Validierung für alle Modelle. Siehe
 
 Die offizielle iDM-Dokumentation beschreibt die relevante Navigator-Einstellung als
 **Gebäudeleittechnik / Building management system → Modbus TCP → Ein / On**.
-Ein praktisches Vorgehen:
+Dieses Menü liegt auf der Installateur-Ebene des Reglers: **Lass Modbus TCP
+von deinem Heizungsinstallateur oder dem iDM-Service aktivieren** — die
+Integration schaltet es nie frei und stellt keinen Zugangscode bereit.
+Sobald dein Installateur die Aktivierung bestätigt, ist das praktische
+Vorgehen:
 
 1. Öffne das lokale Display des IDM Navigators/Controllers.
-2. Melde dich auf der Installateur-/Fachmann-Ebene an, falls der Controller dies verlangt.
-3. Öffne **Gebäudeleittechnik** (englisch: **Building management system**).
-4. Setze **Modbus TCP** auf **Ein / Aktiv** (englisch: **On / Enabled**).
-5. Speichere die Einstellung. Starte den Navigator/Controller neu, wenn die
+2. Öffne **Gebäudeleittechnik** (englisch: **Building management system**) —
+   der Zugriff auf die Ebene erfolgt über deinen Installateur, falls das
+   Menü dies verlangt.
+3. Setze **Modbus TCP** auf **Ein / Aktiv** (englisch: **On / Enabled**).
+4. Speichere die Einstellung. Starte den Navigator/Controller neu, wenn die
    Schnittstelle nicht sofort verfügbar wird.
-6. Verbinde den Navigator mit dem lokalen Ethernet-Netzwerk und notiere seine IP-Adresse.
-7. Verwende in dieser Integration **TCP-Port 502** und normalerweise **Slave-/Unit-ID 1**.
+5. Verbinde den Navigator mit dem lokalen Ethernet-Netzwerk und notiere seine IP-Adresse.
+6. Verwende in dieser Integration **TCP-Port 502** und normalerweise **Slave-/Unit-ID 1**.
 
 Menünamen und Berechtigungen können sich zwischen Navigator 2.0, Navigator 10,
 Navigator Pro und Firmware-Versionen unterscheiden. Wenn **Gebäudeleittechnik** oder
@@ -271,7 +276,7 @@ und die Werte können pendeln.
 
 1. Öffne am Navigator/Controller die **Gebäudeleittechnik (GLT)**.
 2. Aktiviere **Modbus TCP** und verwende Port **502**. Die normale Modbus-Slave-/Unit-ID ist **1**.
-3. Aktiviere oder gib die vom installierten System benötigten GLT-/Energiemanagement-Eingangsregister frei. Manche Navigator-Generationen zeigen eine separate GLT/PV- oder Energiemanager-Berechtigung; die genaue Bezeichnung und Zugriffsebene hängen von Firmware und Installateur-Einstellungen ab.
+3. Die vom installierten System benötigten GLT-/Energiemanager-Eingangsregister werden auf der Installateur-Ebene des Reglers freigegeben: **Lass die GLT-/PV-Funktion von deinem Heizungsinstallateur aktivieren** — die Integration schaltet sie nie frei. Manche Navigator-Generationen zeigen eine separate GLT/PV- oder Energiemanager-Berechtigung; die genaue Bezeichnung und Zugriffsebene hängen von Firmware und Installateur-Einstellungen ab.
 4. Speichere die Einstellung und starte den Controller nur neu, wenn der Navigator es verlangt.
 5. Konfiguriere die Home-Assistant-Optionen und prüfe die Werte – falls vorhanden – im GLT-/Energiemanager-Monitor des Navigators.
 

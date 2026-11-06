@@ -250,8 +250,10 @@ choosing native communication instead.
 
 ### Ownership and source selection
 
-1. In the Navigator, select **Building management system / Smartfox** as the PV
-   signal. Stop native SolarEdge polling and other writers to the same GLT inputs.
+1. In the Navigator, the **Building management system / Smartfox** PV signal
+   is selected at the controller's installer level by your heating installer —
+   once set, this integration takes over the values. Stop native SolarEdge
+   polling and other writers to the same GLT inputs.
 2. Select every inverter that belongs to the same site and grid meter. Do not
    aggregate unrelated installations or both a total sensor and its components.
 3. Identify the inverter connected to the battery. Check battery status and the

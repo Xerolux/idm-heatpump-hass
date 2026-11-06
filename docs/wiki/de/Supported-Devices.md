@@ -16,7 +16,9 @@ Der detaillierte Modell- und Firmware-Status wird in der [Kompatibilitätsmatrix
 ## Voraussetzungen
 
 - **Modbus TCP** muss im Navigator-Regler aktiviert sein
-  - Einstellung: *Fachmann-Ebene → Kommunikation → Modbus TCP*
+  - Einstellung: *Kommunikation → Modbus TCP* auf der Installateur-Ebene des
+    Reglers — aktiviert durch deinen Heizungsinstallateur; die Integration
+    schaltet sie nie frei
   - Standardport: **502**
   - Standard-Slave-ID: **1**
 
