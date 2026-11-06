@@ -5,7 +5,7 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
-## v0.27.0-b1 — 2026-11-06
+## v0.26.1 — 2026-11-06
 
 Die Sensoren für die Fachmann-Zugangscodes sind aus Sicherheitsgründen
 entfernt: Die Integration berechnet die zeitbasierten Fachmann-Ebene-Codes

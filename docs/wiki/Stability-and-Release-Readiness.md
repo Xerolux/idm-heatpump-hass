@@ -4,6 +4,27 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.26.1 release decision
+
+**0.26.1** is a fast-follow stable patch on the 0.26.0 line with exactly one
+change: **the technician access-code feature is removed for safety reasons**
+(the calculation module, both sensor entities, the *Technician Level* option,
+tests and documentation). Computing the controller's installer-level codes and
+serving them as sensors cut short an access level iDM reserves for trained
+installers — in tension with the project's own write-safety rules and the
+community norm of never unlocking installer functions. Every wiki step that
+previously told users to sign in at that level now states that the heating
+installer enables Modbus TCP / the GLT-PV function, and the instructions
+continue from there. The full quality gate ran on the cut itself (two-leg CI
+matrix with coverage gates, strict mypy, ruff, hassfest, real-Home-Assistant
+lifecycle smoke, CodeQL/pip-audit, credential scan); the register catalogue
+and all runtime pins stay identical to 0.26.0 (`idm-heatpump-api[web]==2.16.0`
+— no runtime dependency moved). Removing the two entities needs no migration;
+settings, dashboards and all other entities are untouched, and rollback to
+0.26.0 restores the previous behaviour. A repository-wide scan verified that
+no original or converted iDM document is committed anywhere, and a short
+data-provenance note now opens the register pages.
+
 ## 0.26.0 release decision
 
 **0.26.0** is a deliberate fast-follow stable cut without a public beta line:
@@ -439,7 +460,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.27.0-b1` and `idm-heatpump-api` `2.16.0` form the current
+Source-tree integration `0.26.1` and `idm-heatpump-api` `2.16.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

@@ -4,6 +4,30 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.26.1
+
+**0.26.1** ist ein schneller stabiler Patch auf der 0.26.0-Linie mit genau
+einer Änderung: **Das Feature der Fachmann-Zugangscodes ist aus
+Sicherheitsgründen entfernt** (Berechnungsmodul, beide Sensor-Entitäten, die
+Option *Fachmann-Ebene*, Tests und Dokumentation). Die Installer-Codes des
+Reglers zu berechnen und als Sensoren bereitzustellen verkürzte eine
+Zugriffsebene, die iDM geschulten Installateuren vorbehält — im Widerspruch zu
+den eigenen Schreibsicherheitsregeln des Projekts und der Community-Norm,
+Installateur-Funktionen nie zu entsperren. Jeder Wiki-Schritt, der Nutzer
+bisher zur Anmeldung auf dieser Ebene aufforderte, besagt nun, dass der
+Heizungsinstallateur Modbus TCP bzw. die GLT-PV-Funktion aktiviert, und die
+Anleitung fährt von dort fort. Die vollständige Qualitätschranke lief auf dem
+Schnitt selbst (zweibeinige CI-Matrix mit Coverage-Schranken, strenges mypy,
+ruff, hassfest, Real-Home-Assistant-Lebenszyklus-Smoke-Tests, CodeQL/pip-audit,
+Anmeldedaten-Scan); Registerkatalog und alle Runtime-Pins bleiben identisch zu
+0.26.0 (`idm-heatpump-api[web]==2.16.0` — keine Runtime-Abhängigkeit hat sich
+bewegt). Das Entfernen der beiden Entitäten braucht keine Migration;
+Einstellungen, Dashboards und alle anderen Entitäten bleiben unberührt, ein
+Rollback auf 0.26.0 stellt das bisherige Verhalten wieder her. Ein
+repo-weiter Scan bestätigte, dass kein Original- oder konvertiertes
+iDM-Dokument eingecheckt ist, und ein kurzer Provenienz-Hinweis eröffnet nun
+die Registerseiten.
+
 ## Release-Entscheidung zu 0.26.0
 
 **0.26.0** ist ein bewusster schneller stabiler Schnitt ohne öffentliche
@@ -469,7 +493,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.27.0-b1` und `idm-heatpump-api` `2.16.0` bilden das aktuelle exakt
+Integration im Quellstand `0.26.1` und `idm-heatpump-api` `2.16.0` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

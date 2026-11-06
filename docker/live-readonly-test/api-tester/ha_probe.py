@@ -111,7 +111,9 @@ async def _onboard(session: aiohttp.ClientSession) -> str:
         ("/api/onboarding/integration", {"client_id": CLIENT_ID, "redirect_uri": CLIENT_ID}),
     ]:
         try:
-            async with session.post(f"{HA_URL}{path}", json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as rr:
+            async with session.post(
+                f"{HA_URL}{path}", json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=15)
+            ) as rr:
                 await rr.read()
         except Exception as e:
             log(f"onboarding step {path} best-effort failed: {e}")
@@ -204,7 +206,8 @@ async def cmd_setup(args: argparse.Namespace) -> int:
     timeout = aiohttp.ClientTimeout(total=30)
     async with aiohttp.ClientSession(timeout=timeout) as session:
         if not await _wait_ha(session):
-            log("HA did not become ready"); return 2
+            log("HA did not become ready")
+            return 2
         # Obtain a token (onboard fresh, or reuse an existing LLAT).
         token = ""
         try:
@@ -216,7 +219,8 @@ async def cmd_setup(args: argparse.Namespace) -> int:
             try:
                 token = await _load_token()
             except Exception:
-                log("no token available"); return 3
+                log("no token available")
+                return 3
 
         headers = {"Authorization": f"Bearer {token}"}
         report: dict[str, Any] = {"started_at": now_iso()}
@@ -232,7 +236,9 @@ async def cmd_setup(args: argparse.Namespace) -> int:
             report["start"] = {"status": r.status, "type": step.get("type"), "step_id": step.get("step_id")}
             log(f"flow start: status={r.status} type={step.get('type')} step={step.get('step_id')}")
             if r.status not in (200, 201) or step.get("type") != "form":
-                report["error"] = f"flow start failed: {step}"; _save(_p("setup_report.json"), report); return 4
+                report["error"] = f"flow start failed: {step}"
+                _save(_p("setup_report.json"), report)
+                return 4
             flow_id = step["flow_id"]
 
         # 2) User step — point at the read-only proxies. modbus_proxy=True means
@@ -250,7 +256,9 @@ async def cmd_setup(args: argparse.Namespace) -> int:
         step = await _flow_submit(session, flow_id, user_data, headers, label="user")
         report["after_user"] = {"type": step.get("type"), "step_id": step.get("step_id"), "errors": step.get("errors")}
         if step.get("type") == "form" and step.get("step_id") == "user" and step.get("errors"):
-            report["error"] = f"user step rejected: {step.get('errors')}"; _save(_p("setup_report.json"), report); return 5
+            report["error"] = f"user step rejected: {step.get('errors')}"
+            _save(_p("setup_report.json"), report)
+            return 5
 
         # 3) Options step (sectioned) if offered.
         steps = 0
@@ -284,11 +292,19 @@ async def cmd_setup(args: argparse.Namespace) -> int:
             else:
                 payload = {}
             step = await _flow_submit(session, flow_id, payload, headers, label=str(sid))
-            report[f"after_{sid}"] = {"type": step.get("type"), "step_id": step.get("step_id"), "errors": step.get("errors")}
+            report[f"after_{sid}"] = {
+                "type": step.get("type"),
+                "step_id": step.get("step_id"),
+                "errors": step.get("errors"),
+            }
             if step.get("type") == "create_entry":
                 break
 
-        report["final"] = {"type": step.get("type"), "title": step.get("title"), "entry_id": step.get("result", {}).get("entry_id") if isinstance(step.get("result"), dict) else None}
+        report["final"] = {
+            "type": step.get("type"),
+            "title": step.get("title"),
+            "entry_id": step.get("result", {}).get("entry_id") if isinstance(step.get("result"), dict) else None,
+        }
         _save(_p("setup_report.json"), report)
         log(f"setup final: type={step.get('type')} title={step.get('title')}")
         if step.get("type") == "create_entry":
@@ -308,7 +324,9 @@ async def _flow_submit(session: aiohttp.ClientSession, flow_id: str, payload: di
         timeout=aiohttp.ClientTimeout(total=120),
     ) as r:
         data = await r.json()
-        log(f"flow[{label}]: status={r.status} type={data.get('type')} step={data.get('step_id')} errors={data.get('errors')}")
+        log(
+            f"flow[{label}]: status={r.status} type={data.get('type')} step={data.get('step_id')} errors={data.get('errors')}"
+        )
         return data
 
 
@@ -317,18 +335,25 @@ async def cmd_bootstrap(args: argparse.Namespace) -> int:
     timeout = aiohttp.ClientTimeout(total=20)
     async with aiohttp.ClientSession(timeout=timeout) as session:
         if not await _wait_ha(session):
-            log("HA did not become ready"); return 2
+            log("HA did not become ready")
+            return 2
         try:
             access = await _onboard(session)
             report["onboard"] = "ok"
         except Exception as e:
-            log(f"onboard failed: {e}"); report["onboard"] = f"fail: {e}"; _save(_p("bootstrap_report.json"), report); return 3
+            log(f"onboard failed: {e}")
+            report["onboard"] = f"fail: {e}"
+            _save(_p("bootstrap_report.json"), report)
+            return 3
         try:
             llat = await _create_llat(session, access)
             _save_raw(os.path.join(RESULTS_DIR, ".ha_token"), llat)
             report["llat"] = "created"
         except Exception as e:
-            log(f"LLAT creation failed: {e}"); report["llat"] = f"fail: {e}"; _save(_p("bootstrap_report.json"), report); return 4
+            log(f"LLAT creation failed: {e}")
+            report["llat"] = f"fail: {e}"
+            _save(_p("bootstrap_report.json"), report)
+            return 4
         # Verify integration loaded via entity registry.
         headers = {"Authorization": f"Bearer {llat}"}
         try:
@@ -353,11 +378,29 @@ async def _wait_idm_entities(session: aiohttp.ClientSession, token: str, timeout
     last = 0
     while time.time() < deadline:
         try:
-            async with session.get(f"{HA_URL}/api/states", headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as r:
+            async with session.get(
+                f"{HA_URL}/api/states", headers=headers, timeout=aiohttp.ClientTimeout(total=10)
+            ) as r:
                 states = await r.json()
-            idm = [s for s in states if str(s.get("entity_id", "")).startswith(("sensor.idm", "binary_sensor.idm", "number.idm", "select.idm", "switch.idm", "climate.idm", "water_heater.idm", "button.idm"))]
+            idm = [
+                s
+                for s in states
+                if str(s.get("entity_id", "")).startswith(
+                    (
+                        "sensor.idm",
+                        "binary_sensor.idm",
+                        "number.idm",
+                        "select.idm",
+                        "switch.idm",
+                        "climate.idm",
+                        "water_heater.idm",
+                        "button.idm",
+                    )
+                )
+            ]
             if len(idm) > last:
-                last = len(idm); log(f"IDM entities so far: {len(idm)}")
+                last = len(idm)
+                log(f"IDM entities so far: {len(idm)}")
             if len(idm) >= 5:
                 return True
         except Exception:
@@ -425,19 +468,21 @@ async def cmd_entities(args: argparse.Namespace) -> int:
     for e in idm_entities:
         eid = e.get("entity_id", "")
         st = states.get(eid, {})
-        rows.append({
-            "entity_id": eid,
-            "platform": eid.split(".", 1)[0] if "." in eid else (e.get("platform") or ""),
-            "unique_id": e.get("unique_id"),
-            "name": e.get("name") or e.get("original_name"),
-            "device_id": e.get("device_id"),
-            "entity_category": e.get("entity_category"),
-            "disabled_by": e.get("disabled_by"),
-            "hidden_by": e.get("hidden_by"),
-            "state": st.get("state"),
-            "unit": (st.get("attributes") or {}).get("unit_of_measurement"),
-            "available": st.get("state") not in ("unavailable", None),
-        })
+        rows.append(
+            {
+                "entity_id": eid,
+                "platform": eid.split(".", 1)[0] if "." in eid else (e.get("platform") or ""),
+                "unique_id": e.get("unique_id"),
+                "name": e.get("name") or e.get("original_name"),
+                "device_id": e.get("device_id"),
+                "entity_category": e.get("entity_category"),
+                "disabled_by": e.get("disabled_by"),
+                "hidden_by": e.get("hidden_by"),
+                "state": st.get("state"),
+                "unit": (st.get("attributes") or {}).get("unit_of_measurement"),
+                "available": st.get("state") not in ("unavailable", None),
+            }
+        )
     by_platform: dict[str, int] = {}
     for r0 in rows:
         by_platform[r0["platform"]] = by_platform.get(r0["platform"], 0) + 1
@@ -453,7 +498,13 @@ async def cmd_entities(args: argparse.Namespace) -> int:
         "available_count": sum(1 for r0 in rows if r0["available"]),
         "unavailable_entities": [r0["entity_id"] for r0 in rows if not r0["available"]],
         "devices": [
-            {"id": d.get("id"), "name": d.get("name_by_user") or d.get("name"), "model": d.get("model"), "manufacturer": d.get("manufacturer"), "identifiers": d.get("identifiers")}
+            {
+                "id": d.get("id"),
+                "name": d.get("name_by_user") or d.get("name"),
+                "model": d.get("model"),
+                "manufacturer": d.get("manufacturer"),
+                "identifiers": d.get("identifiers"),
+            }
             for d in idm_devices
         ],
         "entities": rows,
@@ -480,7 +531,14 @@ async def cmd_services(args: argparse.Namespace) -> int:
 async def cmd_reload(args: argparse.Namespace) -> int:
     """#171 regression: services survive repeated config entry reloads."""
     token = await _load_token()
-    expected = {"set_external_climate", "set_system_mode", "acknowledge_errors", "write_register", "start_dhw_boost", "cancel_dhw_boost"}
+    expected = {
+        "set_external_climate",
+        "set_system_mode",
+        "acknowledge_errors",
+        "write_register",
+        "start_dhw_boost",
+        "cancel_dhw_boost",
+    }
     rounds = args.rounds
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
         async with WS(session, token) as ws:
@@ -497,28 +555,37 @@ async def cmd_reload(args: argparse.Namespace) -> int:
 
             async def reload_entry() -> None:
                 headers = {"Authorization": f"Bearer {token}"}
-                async with session.post(f"{HA_URL}/api/config/config_entries/entry/{eid}/reload", headers=headers, timeout=aiohttp.ClientTimeout(total=60)) as r:
+                async with session.post(
+                    f"{HA_URL}/api/config/config_entries/entry/{eid}/reload",
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=60),
+                ) as r:
                     if r.status not in (200, 202, 204):
                         raise RuntimeError(f"reload HTTP {r.status}: {await r.text()}")
 
             base = await snapshot()
             results = []
             for i in range(rounds):
-                log(f"reload round {i+1}/{rounds} (entry {eid})")
+                log(f"reload round {i + 1}/{rounds} (entry {eid})")
                 await reload_entry()
                 await asyncio.sleep(15)  # let platforms re-init
                 after = await snapshot()
                 missing = sorted(expected - after)
                 results.append({"round": i + 1, "services_after": sorted(after), "missing_expected": missing})
-            _save(_p("reload_test.json"), {
-                "started_at": now_iso(),
-                "entry_id": eid,
-                "base_services": sorted(base),
-                "expected_subset": sorted(expected),
-                "rounds": results,
-                "base_missing_expected": sorted(expected - base),
-                "verdict": "pass" if all(not r["missing_expected"] for r in results) and not (expected - base) else "fail",
-            })
+            _save(
+                _p("reload_test.json"),
+                {
+                    "started_at": now_iso(),
+                    "entry_id": eid,
+                    "base_services": sorted(base),
+                    "expected_subset": sorted(expected),
+                    "rounds": results,
+                    "base_missing_expected": sorted(expected - base),
+                    "verdict": "pass"
+                    if all(not r["missing_expected"] for r in results) and not (expected - base)
+                    else "fail",
+                },
+            )
     with open(_p("reload_test.json"), encoding="utf-8") as fh:
         rep = json.load(fh)
     log(f"reload verdict: {rep['verdict']}")
@@ -549,17 +616,38 @@ async def cmd_stability(args: argparse.Namespace) -> int:
             try:
                 async with session.get(f"{HA_URL}/api/states", headers=headers) as r:
                     states = await r.json()
-                idm = [s for s in states if str(s.get("entity_id", "")).startswith(("sensor.idm", "binary_sensor.idm", "number.idm", "select.idm", "switch.idm", "climate.idm", "water_heater.idm", "button.idm"))]
+                idm = [
+                    s
+                    for s in states
+                    if str(s.get("entity_id", "")).startswith(
+                        (
+                            "sensor.idm",
+                            "binary_sensor.idm",
+                            "number.idm",
+                            "select.idm",
+                            "switch.idm",
+                            "climate.idm",
+                            "water_heater.idm",
+                            "button.idm",
+                        )
+                    )
+                ]
                 unavailable = sum(1 for s in idm if s.get("state") in ("unavailable", "unknown", None))
-                samples.append({
-                    "t": now_iso(), "elapsed_s": round(time.time() - (end - minutes * 60), 1),
-                    "idm_entities": len(idm), "unavailable": unavailable, "fetch_s": round(time.time() - t0, 2),
-                })
+                samples.append(
+                    {
+                        "t": now_iso(),
+                        "elapsed_s": round(time.time() - (end - minutes * 60), 1),
+                        "idm_entities": len(idm),
+                        "unavailable": unavailable,
+                        "fetch_s": round(time.time() - t0, 2),
+                    }
+                )
             except Exception as e:
                 samples.append({"t": now_iso(), "error": str(e)})
             await asyncio.sleep(30)
     report = {
-        "started_at": now_iso(), "duration_minutes": minutes,
+        "started_at": now_iso(),
+        "duration_minutes": minutes,
         "samples": samples,
         "entity_count_min": min((s.get("idm_entities", 0) for s in samples if "idm_entities" in s), default=0),
         "entity_count_max": max((s.get("idm_entities", 0) for s in samples if "idm_entities" in s), default=0),
@@ -578,14 +666,22 @@ def main() -> int:
     sub.add_parser("setup")
     sub.add_parser("entities")
     sub.add_parser("services")
-    p_reload = sub.add_parser("reload"); p_reload.add_argument("--rounds", type=int, default=3)
-    p_stab = sub.add_parser("stability"); p_stab.add_argument("--minutes", type=float, default=60)
+    p_reload = sub.add_parser("reload")
+    p_reload.add_argument("--rounds", type=int, default=3)
+    p_stab = sub.add_parser("stability")
+    p_stab.add_argument("--minutes", type=float, default=60)
     args = parser.parse_args()
     try:
-        rc = asyncio.run({
-            "bootstrap": cmd_bootstrap, "setup": cmd_setup, "entities": cmd_entities, "services": cmd_services,
-            "reload": cmd_reload, "stability": cmd_stability,
-        }[args.cmd](args))
+        rc = asyncio.run(
+            {
+                "bootstrap": cmd_bootstrap,
+                "setup": cmd_setup,
+                "entities": cmd_entities,
+                "services": cmd_services,
+                "reload": cmd_reload,
+                "stability": cmd_stability,
+            }[args.cmd](args)
+        )
     except KeyboardInterrupt:
         rc = 130
     return rc

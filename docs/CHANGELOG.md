@@ -13,7 +13,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.27.0-b1] - 2026-11-06
+## [0.26.1] - 2026-11-06
 
 The technician access-code sensors are gone: the integration no longer calculates or displays the time-based *Fachmann Ebene* codes, and the option that created them is removed from the options flow.
 
