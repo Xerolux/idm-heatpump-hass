@@ -4,6 +4,25 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.26.0 release decision
+
+**0.26.0** is a deliberate fast-follow stable cut without a public beta line:
+the network-scan setup flow (developed and merged as 0.26.0-b1, #648) plus the
+B10 high-pressure web-sensor correction (#649). The reasoning: the B10 fix is a
+one-line metadata change (`inverted=True`, no write path, no polling change —
+display semantics of one web binary sensor only) whose field evidence was
+unambiguous, and holding it back through a beta cycle would leave a
+permanently-latched false fault on affected plants. The scan flow is
+setup-only, sends no Modbus bytes (single TCP connect on port 502) and reads
+nothing. The full quality gate ran on the cut itself: the two-leg CI matrix
+(Python 3.14 × HA 2026.11.0 × manifest-pinned/api-main) with coverage gates,
+strict mypy, ruff, hassfest, the real-Home-Assistant lifecycle smoke leg,
+CodeQL/pip-audit and the credential scan. The API pin stays at the validated
+`idm-heatpump-api[web]==2.16.0` — identical to 0.25.0, no runtime pin moved.
+No beta soak: accepted consciously for the two scoped changes above; anything
+larger returns to the beta line. Rollback is safe (no stored-data change, no
+entity-ID change).
+
 ## 0.25.0 release decision
 
 **0.25.0** is the stable cut of the b1–b9 line (2026-10-29 through

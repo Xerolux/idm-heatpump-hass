@@ -4,6 +4,28 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.26.0
+
+**0.26.0** ist ein bewusster schneller stabiler Schnitt ohne öffentliche
+Beta-Linie: der Netzwerkscan im Einrichtungsassistenten (entwickelt und
+gemergt als 0.26.0-b1, #648) plus die Korrektur des B10-Hochdruck-Web-Sensors
+(#649). Die Begründung: Der B10-Fix ist eine einzeilige Metadaten-Änderung
+(`inverted=True`, kein Schreibpfad, keine Änderung am Polling — ausschließlich
+Anzeige-Semantik eines einzelnen binären Web-Sensors) mit eindeutigem
+Feldbefund, und eine Beta-Zyklus-Wartezeit würde betroffene Anlagen weiter mit
+einer dauerhaft einstehenden Fehlalarm-Störung belassen. Der Netzwerkscan
+greift nur im Setup, sendet keine Modbus-Bytes (einzelner TCP-Connect auf Port
+502) und liest nichts. Die vollständige Qualitätschranke lief auf dem Schnitt
+selbst: die zweibeinige CI-Matrix (Python 3.14 × HA 2026.11.0 ×
+manifest-pinned/api-main) mit Coverage-Schranken, strenges mypy, ruff,
+hassfest, die Real-Home-Assistant-Lebenszyklus-Smoke-Tests, CodeQL/pip-audit
+und der Anmeldedaten-Scan. Der API-Pin bleibt beim validierten
+`idm-heatpump-api[web]==2.16.0` — identisch zu 0.25.0, kein Runtime-Pin hat
+sich bewegt. Kein Beta-Soak: für die beiden oben umrissenen, eng
+begrenzten Änderungen bewusst akzeptiert; alles Größere kehrt auf die
+Beta-Linie zurück. Ein Rollback ist sicher (keine Änderung an gespeicherten
+Daten, keine Entity-ID-Änderung).
+
 ## Release-Entscheidung zu 0.25.0
 
 **0.25.0** ist der stabile Schnitt der b1–b9-Linie (2026-10-29 bis
