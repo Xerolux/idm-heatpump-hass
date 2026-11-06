@@ -34,6 +34,24 @@ Der Verbindungsmodus entscheidet, welche Pfade ein Eintrag nutzt:
 Modbus` (die Weboberfläche wird nie kontaktiert). Siehe
 [Konfiguration](Configuration).
 
+## Steuerungen und Schnittstellen: unterstützt oder nicht, und warum
+
+| Steuerung / Schnittstelle | Status | Begründung |
+|---|---|---|
+| Navigator 2.0 · 10 · Pro | ✅ Voll unterstützt | Registerkarte über Modbus TCP plus die Web-Pfade dieser Seite — die Kombination deckt die gesamte Fähigkeiten-Matrix unten ab. |
+| Navigator 1.0 · 1.7 | ✅ Voll unterstützt *(nur Modbus)* | Offizielle Coil-Karte und RW-Holding-Block über Modbus TCP. Diese Steuerungen haben keine eigene Weboberfläche; die Web-Ergänzung bleibt für sie aus. |
+| Navigator 1.7 mit nachgerüstetem 2.0-Webmodul | ⚠️ Verbindet sich; Werte hängen vom Modul ab | Ein Webmodul der 2.0-Generation beantwortet den nav20-Client auch an einer 1.7 (#577): Login gelingt, aber die Datenseiten können Labels tragen, die der Parser nicht abbildet — die meisten `_web`-Entitäten bleiben dann nicht verfügbar, während Modbus unbeeinflusst läuft. |
+| Multitalent / Multitalent.002 (ältere Terra- und EVR-Baureihen) | ❌ Nicht unterstützt | Diese Steuerungen stellen kein Modbus TCP bereit. Sie sprechen ein proprietäres serielles Protokoll auf RS422, erreichbar nur über einen Ethernet→RS422-Konverter, der an den 4-Pin-Anschluss des Steuerungsdisplays verdrahtet wird. Eine Unterstützung hieße, einen kompletten zweiten Protokollstapel gegen Feld-Hardware zu implementieren und zu validieren — nichts der unten validierten Modbus- und Web-Pipelines würde übertragbar sein. Funktionierende Referenz: der ioBroker-Adapter [`zloe/ioBroker.idm-multitalent_002`](https://github.com/zloe/ioBroker.idm-multitalent_002), mit Zustimmung von IDM veröffentlicht; er läuft neben Home Assistant. |
+| myIDM-Cloud-Portal | ❌ Bewusst nicht genutzt | Die Integration ist per Design 100 % lokal; die Cloud ist IDMs eigener Kanal und eine Abhängigkeit, die dieses Projekt nicht eingeht. Verifizierte Referenzbefunde für künftige Forschung: [Navigator-Protokollanalyse](Navigator-Protocol-Analysis#myidm-cloud-api-reference). |
+| KNX | ↗ Überbrückt, hier nie implementiert | Die 654 IDM-Kommunikationsobjekte werden über die `knx`-Integration von Home Assistant bedient (`knx.send` / `knx.event_register`). Tunneling, Routing und KNX Secure gehören zu dieser Integration — ein eigener KNX-Stapel hier ist ausdrücklich außer Scope. |
+
+Nichts mit ❌ steht auf einer Roadmap: Jedes würde einen eigenen
+Protokollstapel (RS422 seriell, Cloud-Authentifizierung) erfordern, der
+nichts von dem wiederverwenden könnte, was diese Integration validiert hat.
+Wo es einen lokalen Pfad gibt, er aber undokumentiert ist, gilt die Regel aus
+der [Navigator-Protokollanalyse](Navigator-Protocol-Analysis): keine
+geratenen Schreibvorgänge.
+
 ## Fähigkeiten-Matrix
 
 Legende: **R** lesbar · **W** schreibbar · **R/W** beides · **—** auf diesem

@@ -23,6 +23,23 @@ The connection mode option decides which paths an entry uses:
 no web-only fallback), `web_only` (no Modbus at all), `modbus_only` (the web
 interface is never contacted). See [Configuration](Configuration).
 
+## Controllers and interfaces: supported or not, and why
+
+| Controller / interface | Status | Why |
+|---|---|---|
+| Navigator 2.0 · 10 · Pro | ✅ Fully supported | Register map over Modbus TCP plus the web paths of this page — the combination covers the whole capability matrix below. |
+| Navigator 1.0 · 1.7 | ✅ Fully supported *(Modbus only)* | Official coil map and RW holding block over Modbus TCP. These controllers have no web interface of their own; the web supplement stays off for them. |
+| Navigator 1.7 with a retrofitted 2.0 web module | ⚠️ Connects; values depend on the module | A 2.0-generation web module answers the nav20 client even on a 1.7 (#577): login succeeds, but the data pages may carry labels the parser does not map — most `_web` entities then stay unavailable while Modbus runs unaffected. |
+| Multitalent / Multitalent.002 (older Terra and EVR series) | ❌ Not supported | These controllers expose no Modbus TCP. They speak a proprietary serial protocol on RS422, reachable only through an Ethernet→RS422 converter wired to the 4-pin port of the control display. Supporting them would mean implementing and validating a complete second protocol stack against field hardware — nothing of the validated Modbus and web pipelines below would carry over. Working reference: the ioBroker adapter [`zloe/ioBroker.idm-multitalent_002`](https://github.com/zloe/ioBroker.idm-multitalent_002), published with IDM's consent; it runs alongside Home Assistant. |
+| myIDM cloud portal | ❌ Deliberately not used | The integration is 100 % local by design; the cloud is IDM's own channel and a dependency this project does not take. Verified reference findings for future research: [Navigator Protocol Analysis](Navigator-Protocol-Analysis#myidm-cloud-api-reference). |
+| KNX | ↗ Bridged, never implemented here | The 654 IDM communication objects are served through Home Assistant's `knx` integration (`knx.send` / `knx.event_register`). Tunnelling, routing and KNX Secure belong to that integration — building a KNX stack here is explicitly out of scope. |
+
+Nothing marked ❌ is on a roadmap: each would need its own protocol stack
+(RS422 serial, cloud authentication) that cannot reuse anything this
+integration has validated. Where a local path exists but is undocumented, the
+rule from [Navigator Protocol Analysis](Navigator-Protocol-Analysis) applies:
+no guessed writes.
+
 ## Capability matrix
 
 Legend: **R** readable · **W** writable · **R/W** both · **—** not available
