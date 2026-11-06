@@ -1237,7 +1237,7 @@ class TestAsyncStepOptions:
                     CONF_HIDE_UNUSED: True,
                     CONF_HEATING_CIRCUITS: ["a"],
                     CONF_ZONE_COUNT: 2,
-                    }
+                }
             )
         assert result["step_id"] == "zones"
 
@@ -2195,7 +2195,7 @@ class TestOptionsFlow:
                     CONF_HIDE_UNUSED: True,
                     CONF_HEATING_CIRCUITS: ["a"],
                     CONF_ZONE_COUNT: 1,
-                    }
+                }
             )
         assert result["step_id"] == "zones"
 
