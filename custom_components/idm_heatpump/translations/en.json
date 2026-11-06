@@ -164,7 +164,6 @@
               "energy_manager_dhw_target": "Automatic DHW target temperature",
               "energy_manager_dhw_timeout": "Automatic DHW boost duration",
               "energy_manager_cooldown": "Automation cooldown",
-              "technician_codes": "Show current installer codes as sensors",
               "enable_cascade": "Read a cascade installation",
               "solar_thermal": "Read a solar thermal system",
               "web_extra_data": "Read additional Navigator web data",
@@ -216,7 +215,6 @@
               "energy_manager_dhw_target": "Automatic boost raises only the DHW setpoint and leaves the system mode unchanged. Starts at least 5 °C below target in Automatic or Hot-water-only mode; restores the previous setpoint.",
               "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
               "energy_manager_cooldown": "Full waiting time after an automatic boost ends. Saved across reloads and restarts. Does not limit the Navigator's own PV heating-buffer charging triggered by forwarded power values.",
-              "technician_codes": "Creates access-code sensors for the resolved controller: level 1 only on Navigator 1.7, levels 1 and 2 on Navigator 2.0/10/Pro. Refreshes every minute using Home Assistant local time, which must match the controller. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
               "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
               "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
               "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -540,7 +538,6 @@
           "energy_manager_dhw_target": "Automatic DHW target temperature",
           "energy_manager_dhw_timeout": "Automatic DHW boost duration",
           "energy_manager_cooldown": "Automation cooldown",
-          "technician_codes": "Show current installer codes as sensors",
           "enable_cascade": "Read a cascade installation",
           "solar_thermal": "Read a solar thermal system",
           "web_extra_data": "Read additional Navigator web data",
@@ -625,7 +622,6 @@
           "energy_manager_dhw_target": "Automatic boost raises only the DHW setpoint and leaves the system mode unchanged. Starts at least 5 °C below target in Automatic or Hot-water-only mode; restores the previous setpoint.",
           "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
           "energy_manager_cooldown": "Full waiting time after an automatic boost ends. Saved across reloads and restarts. Does not limit the Navigator's own PV heating-buffer charging triggered by forwarded power values.",
-          "technician_codes": "Creates access-code sensors for the resolved controller: level 1 only on Navigator 1.7, levels 1 and 2 on Navigator 2.0/10/Pro. Refreshes every minute using Home Assistant local time, which must match the controller. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
           "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
           "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
           "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -692,7 +688,6 @@
           "energy_manager_dhw_target": "Automatic DHW target temperature",
           "energy_manager_dhw_timeout": "Automatic DHW boost duration",
           "energy_manager_cooldown": "Automation cooldown",
-          "technician_codes": "Show current installer codes as sensors",
           "enable_cascade": "Read a cascade installation",
           "solar_thermal": "Read a solar thermal system",
           "web_extra_data": "Read additional Navigator web data",
@@ -774,7 +769,6 @@
           "energy_manager_dhw_target": "Automatic boost raises only the DHW setpoint and leaves the system mode unchanged. Starts at least 5 °C below target in Automatic or Hot-water-only mode; restores the previous setpoint.",
           "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
           "energy_manager_cooldown": "Full waiting time after an automatic boost ends. Saved across reloads and restarts. Does not limit the Navigator's own PV heating-buffer charging triggered by forwarded power values.",
-          "technician_codes": "Creates access-code sensors for the resolved controller: level 1 only on Navigator 1.7, levels 1 and 2 on Navigator 2.0/10/Pro. Refreshes every minute using Home Assistant local time, which must match the controller. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
           "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
           "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
           "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -952,7 +946,6 @@
               "energy_manager_dhw_target": "Automatic DHW target temperature",
               "energy_manager_dhw_timeout": "Automatic DHW boost duration",
               "energy_manager_cooldown": "Automation cooldown",
-              "technician_codes": "Show current installer codes as sensors",
               "enable_cascade": "Read a cascade installation",
               "solar_thermal": "Read a solar thermal system",
               "web_extra_data": "Read additional Navigator web data",
@@ -1004,7 +997,6 @@
               "energy_manager_dhw_target": "Automatic boost raises only the DHW setpoint and leaves the system mode unchanged. Starts at least 5 °C below target in Automatic or Hot-water-only mode; restores the previous setpoint.",
               "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
               "energy_manager_cooldown": "Full waiting time after an automatic boost ends. Saved across reloads and restarts. Does not limit the Navigator's own PV heating-buffer charging triggered by forwarded power values.",
-              "technician_codes": "Creates access-code sensors for the resolved controller: level 1 only on Navigator 1.7, levels 1 and 2 on Navigator 2.0/10/Pro. Refreshes every minute using Home Assistant local time, which must match the controller. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
               "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
               "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
               "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -1293,7 +1285,6 @@
           "energy_manager_dhw_target": "Automatic DHW target temperature",
           "energy_manager_dhw_timeout": "Automatic DHW boost duration",
           "energy_manager_cooldown": "Automation cooldown",
-          "technician_codes": "Show current installer codes as sensors",
           "enable_cascade": "Read a cascade installation",
           "solar_thermal": "Read a solar thermal system",
           "web_extra_data": "Read additional Navigator web data",
@@ -1378,7 +1369,6 @@
           "energy_manager_dhw_target": "Automatic boost raises only the DHW setpoint and leaves the system mode unchanged. Starts at least 5 °C below target in Automatic or Hot-water-only mode; restores the previous setpoint.",
           "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
           "energy_manager_cooldown": "Full waiting time after an automatic boost ends. Saved across reloads and restarts. Does not limit the Navigator's own PV heating-buffer charging triggered by forwarded power values.",
-          "technician_codes": "Creates access-code sensors for the resolved controller: level 1 only on Navigator 1.7, levels 1 and 2 on Navigator 2.0/10/Pro. Refreshes every minute using Home Assistant local time, which must match the controller. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
           "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
           "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
           "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -1445,7 +1435,6 @@
           "energy_manager_dhw_target": "Automatic DHW target temperature",
           "energy_manager_dhw_timeout": "Automatic DHW boost duration",
           "energy_manager_cooldown": "Automation cooldown",
-          "technician_codes": "Show current installer codes as sensors",
           "enable_cascade": "Read a cascade installation",
           "solar_thermal": "Read a solar thermal system",
           "web_extra_data": "Read additional Navigator web data",
@@ -1527,7 +1516,6 @@
           "energy_manager_dhw_target": "Automatic boost raises only the DHW setpoint and leaves the system mode unchanged. Starts at least 5 °C below target in Automatic or Hot-water-only mode; restores the previous setpoint.",
           "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
           "energy_manager_cooldown": "Full waiting time after an automatic boost ends. Saved across reloads and restarts. Does not limit the Navigator's own PV heating-buffer charging triggered by forwarded power values.",
-          "technician_codes": "Creates access-code sensors for the resolved controller: level 1 only on Navigator 1.7, levels 1 and 2 on Navigator 2.0/10/Pro. Refreshes every minute using Home Assistant local time, which must match the controller. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
           "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
           "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
           "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -2468,6 +2456,9 @@
       "fault_charging_pump_2_intermediate": {
         "name": "Charging pump 2 intermediate circuit fault"
       },
+      "fault_heat_source_circuit": {
+        "name": "Heat source circuit fault"
+      },
       "fault_heat_source_pressure_switch": {
         "name": "Heat source pressure switch fault"
       },
@@ -2662,12 +2653,6 @@
       },
       "storage_temp": {
         "name": "Heat storage temperature"
-      },
-      "technician_level_1": {
-        "name": "Technician level 1 code"
-      },
-      "technician_level_2": {
-        "name": "Technician level 2 code"
       },
       "thermal_power_flow_sensor": {
         "name": "Thermal power (flow sensor)"
@@ -3104,7 +3089,6 @@
         "cascade": "Cascade registers",
         "solar_thermal": "Solar thermal registers",
         "device_hierarchy": "Device grouping",
-        "technician_codes": "Technician code sensors",
         "modbus": "Modbus transport",
         "ai_advisor": "AI adviser (experimental, read-only)"
       }

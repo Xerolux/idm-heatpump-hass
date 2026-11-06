@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.26.0` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
+- **Current Version**: `0.27.0-b1` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.11.0 (the 2026.8.1–2026.10 line stays on integration 0.24.x)
@@ -37,7 +37,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── coordinator.py                # DataUpdateCoordinator (polling, web supplement, writes)
 │   ├── entity.py                     # Base entity class (IdmEntity)
 │   ├── device_hierarchy.py           # Opt-in sub-device scopes, placement and registry wiring for the entity hierarchy
-│   ├── sensor.py                     # Sensor platform (Modbus + web-only sensors + technician codes)
+│   ├── sensor.py                     # Sensor platform (Modbus + web-only sensors)
 │   ├── binary_sensor.py              # Binary sensor platform
 │   ├── number.py                     # Number platform (setpoints, GLT values)
 │   ├── select.py                     # Select platform (mode registers)
@@ -72,7 +72,6 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── external_power_forwarding.py  # Optional PV, consumption and battery forwarding to IDM GLT registers
 │   ├── knx_catalog.py                # IDM KNX communication objects (from the ETS example project) + group address arithmetic
 │   ├── knx_bridge.py                 # Optional KNX bridge: knx.send / knx.event_register through the HA KNX integration
-│   ├── technician_codes.py           # Time-based Fachmann Ebene code calculation
 │   ├── internal_messages.py          # Human-readable labels for internal message codes
 │   ├── log_filter.py                 # Filters repeated idm-heatpump-api register-failure warnings
 │   ├── error_messages.py             # Classifies communication/write errors into repair issues and translation keys
@@ -131,7 +130,6 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_config_flow.py
 │   ├── test_connection_entities.py
 │   ├── test_dashboard_generator.py
-│   ├── test_technician_codes.py
 │   ├── test_const.py
 │   ├── test_controller_stats_reference.py
 │   ├── test_coordinator.py
@@ -572,7 +570,6 @@ The config flow (defined in `config_flow.py`) has these steps:
 
 | Feature | File | Notes |
 |---------|------|-------|
-| Technician codes | `technician_codes.py` | Time-based Fachmann Ebene L1/L2 codes, refreshed every 60s |
 | Cascade support | `adapter_registers.py`, `coordinator.py` | Optional registers for multi-heatpump setups |
 | Zone management | `config_flow.py`, `library_adapter.py` | Up to 10 zones × 8 rooms |
 | Web supplement | `web_data.py`, `coordinator.py` | Optional local Navigator web data (Nav 2.0 / Nav 10 / Pro) |

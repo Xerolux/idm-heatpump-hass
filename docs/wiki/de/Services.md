@@ -63,7 +63,7 @@ Home-Assistant-Zeit) über die lokale Web-Oberfläche. Es gibt kein
 Modbus-Register für die Uhrzeit, daher funktioniert der Dienst auf beiden
 Web-Varianten — dem Navigator-10-WebSocket und der Navigator-2.0-
 Weboberfläche. Ein Anwendungsfall ist die Uhr synchron zu halten, damit
-Zeitprogramme und die zeitabhängigen Fachmann-Codes korrekt bleiben.
+Zeitprogramme korrekt bleiben.
 
 **Dienst:** `idm_heatpump.set_controller_clock`
 

@@ -42,12 +42,12 @@ The integration dynamically generates entities based on your heat pump configura
 | **Button** | 1 | Acknowledge active errors on the heat pump |
 
 Exact counts depend on the detected model, active heating circuits, zones,
-rooms and optional features. Adding circuits, zones, cascade, technician codes
+rooms and optional features. Adding circuits, zones, cascade
 or web supplement data can add entities.
 
-Entities are grouped by function in Home Assistant where possible. The optional
-technician code sensors are pinned at the top, followed by configuration
-entities, switches, writable values, live measurements and diagnostics.
+Entities are grouped by function in Home Assistant where possible. Configuration
+entities come first, followed by switches, writable values, live measurements
+and diagnostics.
 
 ## Entity names and languages
 
@@ -77,21 +77,6 @@ Assistant integration.
 This sensor remains available even if heat-pump polling fails, making it useful
 when collecting information for a bug report. The direct socket runtime is
 identified by the `modbus_connection_version` and `tmodbus_version` attributes.
-
-### Technician-level access codes
-
-When enabled in the integration options, Navigator 2.0/10/Pro exposes two
-access-code sensors for *Fachmann Ebene 1* and *Fachmann Ebene 2*. Navigator 1.7
-exposes only its supported three-digit level-1 code. The resolved controller
-family selects the calculation automatically. The sensors use Home Assistant
-local time; its date and hour must agree with the controller. They update
-once per minute, are placed at the top of the IDM device entity list and are not
-Modbus registers.
-
-The option is disabled by default. Treat the values as sensitive: limit access
-to their dashboard cards and never publish them in screenshots, logs or support
-requests. See [Configuration](Configuration#technician-level-codes) for setup
-and security guidance. The calculation method is deliberately not documented.
 
 ### System Temperatures & Pressures
 
@@ -389,9 +374,8 @@ Three further read-only WebSocket controllers are evaluated on every web poll
 - **Controller clock (Web)** (`web_controller_clock`): the controller's own
   clock as a timestamp sensor, with `jsonVersion`, active user level,
   language, notification count, frost-protection flag and network flag as
-  attributes. The controller clock can drift, and the time-dependent
-  technician codes are computed from the time shown on the display — this
-  sensor makes the drift visible.
+  attributes. The controller clock can drift — this sensor makes the drift
+  visible.
 
 #### Connection state
 
@@ -897,7 +881,7 @@ their rooms are children of the module.
 | Zusatzwärmeerzeuger | Booster/bivalence/second-generator/e-heating registers present | `booster_*`, `bivalence_*`, `second_heat_generator_*`, `eheating_*`, `electric_heater_*` |
 | Warmwasser | DHW registers present | `dhw_*`, `hotwater_*`, `water_temp_*` and related keys |
 | Photovoltaik | PV registers or SG-Ready present | `pv_*`, `smart_grid_status`, PV surplus operation, web demand reason and web energy flow |
-| Diagnose | Always | Versions, technician codes, internal message, Modbus poll health, controller online time |
+| Diagnose | Always | Versions, internal message, Modbus poll health, controller online time |
 | iDM Analytics | Smart profile | Calculated sensors, operating analysis, energy statistics |
 | iDM Health Monitor | Health monitor enabled | All `health_*` entities |
 | iDM Comfort | Comfort advisory enabled | Heating curve advice, weather preheat advice |

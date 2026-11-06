@@ -507,31 +507,6 @@ def test_web_sensor_values_seed_their_subdevices() -> None:
     assert (DOMAIN, "entry_heating_circuit_a") not in expected_subdevice_identifiers(without_web_values)
 
 
-def test_technician_codes_option_seeds_the_diagnostics_device(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The technician-code entities come from an option, not the register table."""
-    from custom_components.idm_heatpump import device_hierarchy
-    from custom_components.idm_heatpump.const import CONF_TECHNICIAN_CODES
-
-    resolved: list[str] = []
-    real_resolve = device_hierarchy.resolve_device_scope
-
-    def _recording_resolve(entity_key: str):
-        resolved.append(entity_key)
-        return real_resolve(entity_key)
-
-    monkeypatch.setattr(device_hierarchy, "resolve_device_scope", _recording_resolve)
-
-    coordinator = _coordinator()
-    coordinator.active_registers = [_register_named("outdoor_temp")]
-    coordinator.web_supplement = None
-    coordinator.config_entry.options = {CONF_TECHNICIAN_CODES: True}
-
-    identifiers = device_hierarchy.expected_subdevice_identifiers(coordinator)
-
-    assert "technician_codes" in resolved
-    assert (DOMAIN, "entry_module_diagnostics") in identifiers
-
-
 def test_ai_advisor_option_seeds_the_ai_subdevice() -> None:
     from custom_components.idm_heatpump.const import CONF_AI_ADVISOR
     from custom_components.idm_heatpump.device_hierarchy import expected_subdevice_identifiers

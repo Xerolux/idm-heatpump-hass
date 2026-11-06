@@ -128,7 +128,6 @@ Konfigurieren → KNX-Bridge**. Alle Details: **[KNX-Bridge-Dokumentation][wiki-
 | **🔗 Geteilte Modbus-Verbindung** *(HA 2026.10+)* | Jeder Eintrag beansprucht Home Assistants zentrale geteilte Modbus-Verbindung — mehrere Einträge an einem Regler und andere Integrationen teilen sich ein einziges Socket; das private Socket bleibt als Fallback |
 | **🧪 Schreibgeschützter Verbindungstest** | Das Rekonfigurationsmenü testet die gespeicherte Modbus- und optionale Webverbindung, ohne Einstellungen zu ändern oder Register zu schreiben |
 | **📦 Laufzeitversionen** | Diagnose-Sensor und Export zeigen Integration, `idm-heatpump-api`, `modbus-connection` und `tmodbus` |
-| **🔑 Fachmann-Ebene** | Optionale Sensoren für die aktuellen Zugangscodes der Ebenen 1 & 2 (standardmäßig aus, minütlich aktualisiert und ganz oben angeheftet) |
 | **🚌 KNX-Bridge** *(experimentell)* | Optional: stellt die IDM-KNX-Kommunikationsobjekte über die KNX-Integration von Home Assistant bereit (inkl. KNX Secure) — ersetzt das Weinzierl-BAOS-Gateway-Modul. [Details][wiki-knx] |
 | **🔒 Sicherheit** | 100% lokal, Modbus TCP, EEPROM-Schutz, EEPROM-sensitive Register |
 
@@ -295,7 +294,6 @@ Home Assistant
 - **Sichtbarer Laufzeit-Stack**: Der Diagnose-Sensor `IDM-Heatpump-API-Version` zeigt die installierte API-Version und führt Integrations-, `modbus-connection`- und `tmodbus`-Version als Attribute; dieselben Angaben stehen im Diagnoseexport und im Startlog
 - **Verbindungsbesitz**: Jede Config-Entry besitzt ihren tmodbus-Socket; zentrales Entry-übergreifendes Home-Assistant-Sharing ist derzeit nicht verfügbar, daher meldet die Diagnose `supports_shared_connection: false`
 - **Validierungsstand**: Der Adapter ist implementiert und automatisiert getestet; die read-only Prüfung des neuen tmodbus-Pfads an realer Navigator-Hardware steht noch aus
-- **Entity-Ordnung**: Fachmann-Code-Sensoren sind ganz oben angeheftet, danach folgen Funktionsgruppen für Konfiguration, Schalter, schreibbare Werte und Diagnose
 - **PV-/GLT-Korrektheit**: Float-Eingaben nutzen die IDM-Wortreihenfolge, der Batterie-SOC ist ein einzelner vorzeichenbehafteter 16-Bit-Prozentwert, und die Dokumentation warnt davor, dasselbe Register von mehreren Energiemanagern schreiben zu lassen
 - **Hardware-gestützte Diagnose**: Die Fehlerbehebung erklärt, wie sich Home-Assistant-Werte und Zeitstempel mit dem GLT-Monitor des Navigators vergleichen lassen
 - **Private Diagnoseexporte**: Modbus-/Web-Host, Port, Slave-ID und lokale Web-PIN werden redigiert; detaillierte Web-Verbindungsfehler werden auf eine sichere Fehlerkategorie reduziert

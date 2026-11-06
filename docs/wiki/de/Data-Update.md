@@ -62,7 +62,3 @@ Zahl-, Auswahl- und Schalter-Entitäten können Werte auf die Wärmepumpe schrei
 Die optionale Raumtemperatur-Weiterleitung schreibt Home-Assistant-Sensorwerte in die externen IDM-Raumtemperatur-Register je aktivem Heizkreis. Sie nutzt eine Standardtoleranz von 0,2 °C, um unnötige wiederholte Schreibvorgänge zu vermeiden, und überspringt ungültige, nicht verfügbare, nicht-numerische oder außerhalb des Bereichs liegende Werte.
 
 Die Weiterleitung ist standardmäßig deaktiviert und startet erst, wenn mindestens ein Heizkreis in den Integrationsoptionen eine ausgewählte Home-Assistant-Temperatur-Entität hat.
-
-## Fachmann-Code-Sensoren
-
-Die optionalen Fachmann-Code-Sensoren aktualisieren sich **unabhängig** alle 60 Sekunden. Sie sind lokale Hilfssensoren und keine aus Modbus-Registern gelesenen Werte. Ihre Zustände sind als sensible Zugangsinformationen zu behandeln.

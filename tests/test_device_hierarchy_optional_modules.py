@@ -53,8 +53,6 @@ def test_diagnostic_scope_covers_system_service_entities() -> None:
         "error_acknowledge",
         "navigator_version",
         "software_version",
-        "technician_codes",
-        "technician_level_1",
     ):
         scope = resolve_device_scope(key)
         assert scope is not None
@@ -83,7 +81,7 @@ def test_optional_module_devices_are_children_of_the_navigator() -> None:
     cascade = build_subdevice_info(coordinator, "cascade_power_heating")
     auxiliary = build_subdevice_info(coordinator, "failure_eheating")
     dhw = build_subdevice_info(coordinator, "dhw_setpoint")
-    diagnostics = build_subdevice_info(coordinator, "technician_codes")
+    diagnostics = build_subdevice_info(coordinator, "navigator_version")
 
     assert solar is not None
     assert solar["identifiers"] == {(DOMAIN, "entry_module_solar")}

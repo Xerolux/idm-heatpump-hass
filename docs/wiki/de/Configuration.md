@@ -435,32 +435,6 @@ Wähle die aktiven Heizkreise (A bis G). Nur aktivierte Heizkreise erzeugen Enti
 
 Gib die Anzahl der Zonenmodule (0–10) und die aktiven Räume je Modul an. Die Integration unterstützt bis zu 8 Räume je Zone; 6 ist der API-Standard für die aktuelle Navigator-10-Hardware. Konfiguriere nur physisch vorhandene Räume, um unnötigen Validierungsverkehr für einzelne Raummodi zu vermeiden.
 
-### Codes für die Fachmann-Ebene
-
-Aktiviere diese optionale Funktion für die aktuellen Zugangscodes. Navigator
-2.0/10/Pro zeigt *Fachmann Ebene 1* und *Fachmann Ebene 2*, Navigator 1.7 nur
-seinen unterstützten dreistelligen Level-1-Code. Die Reglerfamilie wird
-automatisch ausgewählt. Das Update entfernt die alte Level-2-Entität auf
-Navigator 1.7 und erhält die Level-1-Entitäts-ID. Die lokale Home-Assistant-Zeit
-muss bei Datum und Stunde mit dem Regler übereinstimmen. Die Funktion ist
-standardmäßig deaktiviert.
-
-| Sensor | Beschreibung |
-|--------|-------------|
-| `sensor.{name}_fachmann_ebene_1` | Aktueller Zugangscode für die Fachmann-Ebene 1 |
-| `sensor.{name}_fachmann_ebene_2` | Aktueller Zugangscode für die Fachmann-Ebene 2 |
-
-Die Sensoren aktualisieren sich jede Minute und können in einem
-Home-Assistant-Dashboard oder in Benachrichtigungen verwendet werden. Es sind
-von der Integration bereitgestellte Hilfssensoren statt Modbus-Registerwerte,
-daher erscheinen sie nicht im Modbus-Registerkatalog.
-
-Behandle beide Sensorzustände als sensible Zugangsinformationen. Aktiviere sie
-nur bei Bedarf, beschränke die Sichtbarkeit im Dashboard, und gib die Werte
-nicht in öffentlichen Screenshots, Support-Beiträgen, Benachrichtigungen an
-geteilte Geräte oder Logs weiter. Die Berechnungsmethode ist bewusst nicht
-Teil der öffentlichen Dokumentation.
-
 ### Raumnamen
 
 Für jeden Raum in jeder Zone kannst du einen eigenen Namen vergeben. Diese Namen werden als Entitätsnamen in Home Assistant verwendet.
