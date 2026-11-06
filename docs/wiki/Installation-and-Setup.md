@@ -74,16 +74,19 @@ completed long-term or all-model hardware validation. See
 
 The official iDM documentation describes the relevant Navigator setting as
 **Building management system / Gebäudeleittechnik → Modbus TCP → On / Ein**.
-A practical setup sequence is:
+That menu sits at the controller's installer level: **have your heating
+installer or iDM service enable Modbus TCP** — the integration never unlocks
+it, and no access code is provided. Once your installer confirms the setting
+is active, the practical sequence on the controller is:
 
 1. Open the local IDM Navigator/controller display.
-2. Sign in to installer/technician level if the controller requires it.
-3. Open **Building management system** (German: **Gebäudeleittechnik**).
-4. Set **Modbus TCP** to **On / Enabled** (German: **Ein / Aktiv**).
-5. Save the setting. Restart the Navigator/controller if the interface does
+2. Open **Building management system** (German: **Gebäudeleittechnik**) —
+   your installer handles the level access if the menu requires it.
+3. Set **Modbus TCP** to **On / Enabled** (German: **Ein / Aktiv**).
+4. Save the setting. Restart the Navigator/controller if the interface does
    not become available immediately.
-6. Connect the Navigator to the local Ethernet network and note its IP address.
-7. Use **TCP port 502** and normally **slave/unit ID 1** in this integration.
+5. Connect the Navigator to the local Ethernet network and note its IP address.
+6. Use **TCP port 502** and normally **slave/unit ID 1** in this integration.
 
 Menu names and permissions can differ between Navigator 2.0, Navigator 10,
 Navigator Pro and firmware versions. If **Gebäudeleittechnik** or **Modbus TCP**
@@ -260,7 +263,7 @@ Only one system should actively write a given IDM GLT/PV register. Do not enable
 
 1. On the Navigator/controller, open **BMS / Gebäudeleittechnik**.
 2. Enable **Modbus TCP** and use port **502**. The normal Modbus slave/unit ID is **1**.
-3. Enable or release the GLT/energy-management input registers required by the installed system. Some Navigator generations show a separate GLT/PV or energy-manager permission; the exact wording and access level depend on firmware and installer settings.
+3. The GLT/energy-management input registers required by the installed system are released at the controller's installer level: **have your heating installer enable the GLT/PV function** — the integration never unlocks it. Some Navigator generations show a separate GLT/PV or energy-manager permission; the exact wording and access level depend on firmware and installer settings.
 4. Save the setting and restart the controller only if the Navigator requests it.
 5. Configure the Home Assistant options and verify the values in the Navigator GLT/energy-manager monitor, if available.
 

@@ -44,9 +44,8 @@ def web_status_sensor_entities(coordinator: IdmCoordinator) -> list[IdmWebContro
 class IdmWebControllerClockSensor(IdmCoordinatorEntityBase, SensorEntity):
     """Controller clock with the connection-level status facts as attributes.
 
-    The Navigator controller clock can drift, and the time-dependent L1/L2
-    technician codes must be computed from the time shown on the display —
-    exposing the clock as a sensor makes that drift visible. The attributes
+    The Navigator controller clock can drift — exposing the clock as a
+    sensor makes that drift visible. The attributes
     carry the facts that clarify support cases: jsonVersion, active user
     level, language, notification count and the frost-protection flag.
     """

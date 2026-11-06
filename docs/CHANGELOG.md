@@ -13,6 +13,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.27.0-b1] - 2026-11-06
+
+The technician access-code sensors are gone: the integration no longer calculates or displays the time-based *Fachmann Ebene* codes, and the option that created them is removed from the options flow.
+
+### ⚠️ Upgrade notes
+
+- **Technician-code sensors and their option are removed**: `sensor.…_fachmann_ebene_1` and `…_fachmann_ebene_2` disappear together with the *Technician Level* option. Access to the installer level is a matter for your heating installer, and no configuration migration is needed — remaining settings, entities and dashboards are untouched, and rollback to 0.26.0 restores the previous behaviour.
+
+### 💼 Maintenance
+
+- **No more calculated installer access codes**: computing the controller's time-based Fachmann-Ebene codes and offering them as sensors cut short an access level IDM reserves for trained installers. The calculation module, its sensors, the option, tests and documentation are removed; the controller-clock sensor keeps making clock drift visible.
+
 ## [0.26.0] - 2026-11-06
 
 The setup assistant can now find the heat pump by itself: setup starts with a choice between manual entry and a network scan, so the Modbus address no longer has to be looked up in the router first.

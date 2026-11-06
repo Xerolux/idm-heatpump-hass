@@ -48,8 +48,10 @@ indication that **Modbus TCP is not enabled** or that the wrong port was used.
 
 - On the Navigator/controller, open **Building management system
   (Gebäudeleittechnik) → Modbus TCP** and set it to **On / Ein**
-- If this menu is missing or locked, sign in at installer/technician level or
-  ask your heating installer/iDM service to enable it
+- This menu sits at the controller's installer level: **ask your heating
+  installer or iDM service to enable Modbus TCP** — the integration never
+  unlocks it and provides no access code. Once your installer confirms the
+  setting is on, continue below
 - Use TCP port **502** unless the controller or proxy was configured differently
 - Restart the Navigator/controller after enabling Modbus if the setting does not become active immediately
 - If a proxy is used, confirm that it listens on the entered host and port

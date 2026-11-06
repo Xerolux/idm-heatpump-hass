@@ -397,30 +397,6 @@ Select the active heating circuits (A through G). Only enabled circuits create e
 
 Specify the number of zone modules (0–10) and the active rooms per module. The integration supports up to 8 rooms per zone; 6 is the API default for current Navigator 10 hardware. Configure only physically present rooms to avoid unnecessary individual room-mode validation traffic.
 
-### Technician Level Codes
-
-Enable this optional feature to display the current access codes. Navigator
-2.0/10/Pro exposes *Fachmann Ebene 1* and *Fachmann Ebene 2*; Navigator 1.7
-exposes only its supported three-digit level-1 code. The controller family is
-selected automatically. Upgrading removes the obsolete level-2 entity for
-Navigator 1.7 while keeping the level-1 entity ID. Home Assistant local time
-must agree with the controller date and hour.
-The feature is disabled by default.
-
-| Sensor | Description |
-|--------|-------------|
-| `sensor.{name}_fachmann_ebene_1` | Current access code for technician level 1 |
-| `sensor.{name}_fachmann_ebene_2` | Current access code for technician level 2 |
-
-The sensors update every minute and can be used in a Home Assistant dashboard or
-notification. They are integration-provided helper sensors rather than Modbus
-register values, so they do not appear in the Modbus register catalog.
-
-Treat both sensor states as sensitive access information. Enable them only when
-needed, restrict dashboard visibility, and do not include their values in public
-screenshots, support posts, notifications to shared devices or logs. The
-calculation method is intentionally not part of the public documentation.
-
 ### Room Names
 
 For each room in each zone, you can assign a custom name. These names are used as entity names in Home Assistant.

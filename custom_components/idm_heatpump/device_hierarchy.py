@@ -20,7 +20,6 @@ from .const import (
     CONF_HEATING_CIRCUITS,
     CONF_HEATING_CURVE_ASSISTANT,
     CONF_PREDICTIVE_ADVISOR,
-    CONF_TECHNICIAN_CODES,
     CONF_WEATHER_ENTITY,
     CONF_WEATHER_PREHEAT,
     DEFAULT_FEATURE_PROFILE,
@@ -33,7 +32,6 @@ from .const import (
     FEATURE_PROFILE_SMART,
     MANUFACTURER,
 )
-from .technician_codes import technician_code_levels
 
 if TYPE_CHECKING:
     from .coordinator import IdmCoordinator
@@ -115,9 +113,6 @@ _DIAGNOSTIC_KEYS = frozenset(
         "modbus_poll_duration",
         "navigator_version",
         "software_version",
-        "technician_codes",
-        "technician_level_1",
-        "technician_level_2",
     }
 )
 
@@ -446,8 +441,6 @@ def expected_subdevices(coordinator: IdmCoordinator) -> dict[tuple[str, str], Su
     if isinstance(sensor_values, dict):
         entity_keys.update(str(key) for key in sensor_values)
     options = getattr(coordinator.config_entry, "options", {}) if coordinator.config_entry is not None else {}
-    if isinstance(options, Mapping) and options.get(CONF_TECHNICIAN_CODES, False):
-        entity_keys.add("technician_codes")
     # These entities are created by optional feature platforms rather than by
     # the register table, so seed their logical device groups explicitly.
     # Missing legacy options intentionally default to the historical Smart
@@ -612,7 +605,6 @@ def cleanup_disabled_feature_entities(hass: HomeAssistant, coordinator: IdmCoord
         key = entity.unique_id[len(prefix) :]
         disabled = (
             (key.startswith("ai_") and not options.get(CONF_AI_ADVISOR, False))
-            or (key == "technician_level_2" and "level_2" not in technician_code_levels(coordinator.model_name))
             or (key.startswith("advisor_") and not advisor)
             or (key.startswith("health_") and not health)
             or (key == "heating_curve_advice" and not heating_curve)
@@ -866,7 +858,7 @@ def cleanup_stale_model_entities(hass: HomeAssistant, coordinator: IdmCoordinato
 
     Deliberately narrow, like the heating-circuit cleanup: only entity keys
     that some supported model's register map could have created are
-    considered, so derived, web, technician and diagnostic entities are never
+    considered, so derived, web and diagnostic entities are never
     touched, and a key whose register exists in the current map always stays.
     A web-only entry has an empty register map and is skipped: it knows
     nothing about the device's registers, and its entities may legitimately

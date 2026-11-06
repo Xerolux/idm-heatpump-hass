@@ -277,7 +277,9 @@ Regler-Firmware, bevor du stattdessen die native Verbindung auswählst.
 
 ### Zuständigkeit und Quellenauswahl
 
-1. Wähle im Navigator **Gebäudeleittechnik / Smartfox** als PV-Signal. Beende die
+1. Das PV-Signal **Gebäudeleittechnik / Smartfox** wird im Navigator auf der
+   Installateur-Ebene von deinem Heizungsinstallateur gewählt — sobald es
+   gesetzt ist, übernimmt diese Integration die Werte. Beende die
    native SolarEdge-Abfrage und weitere Schreiber auf dieselben GLT-Eingänge.
 2. Wähle alle Wechselrichter derselben Anlage und desselben Netz-Zählers.
    Vermische keine anderen Anlagen und addiere keinen Summensensor zusätzlich

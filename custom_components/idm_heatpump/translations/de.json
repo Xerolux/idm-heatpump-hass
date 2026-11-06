@@ -164,7 +164,6 @@
               "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
               "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
               "energy_manager_cooldown": "Sperrzeit der Automatik",
-              "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
               "enable_cascade": "Kaskadenanlage auslesen",
               "solar_thermal": "Solaranlage auslesen",
               "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -216,7 +215,6 @@
               "energy_manager_dhw_target": "Der automatische Boost erhöht nur den Warmwasser-Sollwert; die Betriebsart bleibt unverändert. Start ab 5 °C unter dem Ziel im Automatik- oder Nur-Warmwasser-Modus. Der vorherige Sollwert wird wiederhergestellt.",
               "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
               "energy_manager_cooldown": "Volle Wartezeit nach Ende eines automatischen Boosts. Bleibt bei Reloads und Neustarts erhalten. Begrenzt nicht die eigene PV-Heizpufferladung des Navigators durch weitergeleitete Leistungswerte.",
-              "technician_codes": "Erstellt Zugangscode-Sensoren passend zum erkannten Regler: auf Navigator 1.7 nur Ebene 1, auf Navigator 2.0/10/Pro Ebene 1 und 2. Aktualisierung jede Minute mit der lokalen Home-Assistant-Zeit, die mit dem Regler übereinstimmen muss. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
               "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
               "solar_thermal": "Liest die Solarthermie-Register (Kollektor-, Lade- und Solar-Rücklauftemperatur) und gruppiert sie unter dem Gerät Solaranlage. Deaktivieren, wenn die Anlage keine Kollektoren hat: Die Solarregister werden nicht mehr abgefragt und die leere Gruppe verschwindet nach dem Neuladen. Erneutes Aktivieren stellt die Entitäten mit ihren bisherigen IDs wieder her.",
               "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -540,7 +538,6 @@
           "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
           "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
           "energy_manager_cooldown": "Sperrzeit der Automatik",
-          "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
           "enable_cascade": "Kaskadenanlage auslesen",
           "solar_thermal": "Solaranlage auslesen",
           "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -625,7 +622,6 @@
           "energy_manager_dhw_target": "Der automatische Boost erhöht nur den Warmwasser-Sollwert; die Betriebsart bleibt unverändert. Start ab 5 °C unter dem Ziel im Automatik- oder Nur-Warmwasser-Modus. Der vorherige Sollwert wird wiederhergestellt.",
           "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
           "energy_manager_cooldown": "Volle Wartezeit nach Ende eines automatischen Boosts. Bleibt bei Reloads und Neustarts erhalten. Begrenzt nicht die eigene PV-Heizpufferladung des Navigators durch weitergeleitete Leistungswerte.",
-          "technician_codes": "Erstellt Zugangscode-Sensoren passend zum erkannten Regler: auf Navigator 1.7 nur Ebene 1, auf Navigator 2.0/10/Pro Ebene 1 und 2. Aktualisierung jede Minute mit der lokalen Home-Assistant-Zeit, die mit dem Regler übereinstimmen muss. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
           "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
           "solar_thermal": "Liest die Solarthermie-Register (Kollektor-, Lade- und Solar-Rücklauftemperatur) und gruppiert sie unter dem Gerät Solaranlage. Deaktivieren, wenn die Anlage keine Kollektoren hat: Die Solarregister werden nicht mehr abgefragt und die leere Gruppe verschwindet nach dem Neuladen. Erneutes Aktivieren stellt die Entitäten mit ihren bisherigen IDs wieder her.",
           "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -692,7 +688,6 @@
           "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
           "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
           "energy_manager_cooldown": "Sperrzeit der Automatik",
-          "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
           "enable_cascade": "Kaskadenanlage auslesen",
           "solar_thermal": "Solaranlage auslesen",
           "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -774,7 +769,6 @@
           "energy_manager_dhw_target": "Der automatische Boost erhöht nur den Warmwasser-Sollwert; die Betriebsart bleibt unverändert. Start ab 5 °C unter dem Ziel im Automatik- oder Nur-Warmwasser-Modus. Der vorherige Sollwert wird wiederhergestellt.",
           "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
           "energy_manager_cooldown": "Volle Wartezeit nach Ende eines automatischen Boosts. Bleibt bei Reloads und Neustarts erhalten. Begrenzt nicht die eigene PV-Heizpufferladung des Navigators durch weitergeleitete Leistungswerte.",
-          "technician_codes": "Erstellt Zugangscode-Sensoren passend zum erkannten Regler: auf Navigator 1.7 nur Ebene 1, auf Navigator 2.0/10/Pro Ebene 1 und 2. Aktualisierung jede Minute mit der lokalen Home-Assistant-Zeit, die mit dem Regler übereinstimmen muss. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
           "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
           "solar_thermal": "Liest die Solarthermie-Register (Kollektor-, Lade- und Solar-Rücklauftemperatur) und gruppiert sie unter dem Gerät Solaranlage. Deaktivieren, wenn die Anlage keine Kollektoren hat: Die Solarregister werden nicht mehr abgefragt und die leere Gruppe verschwindet nach dem Neuladen. Erneutes Aktivieren stellt die Entitäten mit ihren bisherigen IDs wieder her.",
           "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -952,7 +946,6 @@
               "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
               "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
               "energy_manager_cooldown": "Sperrzeit der Automatik",
-              "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
               "enable_cascade": "Kaskadenanlage auslesen",
               "solar_thermal": "Solaranlage auslesen",
               "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -1004,7 +997,6 @@
               "energy_manager_dhw_target": "Der automatische Boost erhöht nur den Warmwasser-Sollwert; die Betriebsart bleibt unverändert. Start ab 5 °C unter dem Ziel im Automatik- oder Nur-Warmwasser-Modus. Der vorherige Sollwert wird wiederhergestellt.",
               "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
               "energy_manager_cooldown": "Volle Wartezeit nach Ende eines automatischen Boosts. Bleibt bei Reloads und Neustarts erhalten. Begrenzt nicht die eigene PV-Heizpufferladung des Navigators durch weitergeleitete Leistungswerte.",
-              "technician_codes": "Erstellt Zugangscode-Sensoren passend zum erkannten Regler: auf Navigator 1.7 nur Ebene 1, auf Navigator 2.0/10/Pro Ebene 1 und 2. Aktualisierung jede Minute mit der lokalen Home-Assistant-Zeit, die mit dem Regler übereinstimmen muss. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
               "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
               "solar_thermal": "Liest die Solarthermie-Register (Kollektor-, Lade- und Solar-Rücklauftemperatur) und gruppiert sie unter dem Gerät Solaranlage. Deaktivieren, wenn die Anlage keine Kollektoren hat: Die Solarregister werden nicht mehr abgefragt und die leere Gruppe verschwindet nach dem Neuladen. Erneutes Aktivieren stellt die Entitäten mit ihren bisherigen IDs wieder her.",
               "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -1293,7 +1285,6 @@
           "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
           "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
           "energy_manager_cooldown": "Sperrzeit der Automatik",
-          "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
           "enable_cascade": "Kaskadenanlage auslesen",
           "solar_thermal": "Solaranlage auslesen",
           "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -1378,7 +1369,6 @@
           "energy_manager_dhw_target": "Der automatische Boost erhöht nur den Warmwasser-Sollwert; die Betriebsart bleibt unverändert. Start ab 5 °C unter dem Ziel im Automatik- oder Nur-Warmwasser-Modus. Der vorherige Sollwert wird wiederhergestellt.",
           "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
           "energy_manager_cooldown": "Volle Wartezeit nach Ende eines automatischen Boosts. Bleibt bei Reloads und Neustarts erhalten. Begrenzt nicht die eigene PV-Heizpufferladung des Navigators durch weitergeleitete Leistungswerte.",
-          "technician_codes": "Erstellt Zugangscode-Sensoren passend zum erkannten Regler: auf Navigator 1.7 nur Ebene 1, auf Navigator 2.0/10/Pro Ebene 1 und 2. Aktualisierung jede Minute mit der lokalen Home-Assistant-Zeit, die mit dem Regler übereinstimmen muss. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
           "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
           "solar_thermal": "Liest die Solarthermie-Register (Kollektor-, Lade- und Solar-Rücklauftemperatur) und gruppiert sie unter dem Gerät Solaranlage. Deaktivieren, wenn die Anlage keine Kollektoren hat: Die Solarregister werden nicht mehr abgefragt und die leere Gruppe verschwindet nach dem Neuladen. Erneutes Aktivieren stellt die Entitäten mit ihren bisherigen IDs wieder her.",
           "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -1445,7 +1435,6 @@
           "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
           "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
           "energy_manager_cooldown": "Sperrzeit der Automatik",
-          "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
           "enable_cascade": "Kaskadenanlage auslesen",
           "solar_thermal": "Solaranlage auslesen",
           "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -1527,7 +1516,6 @@
           "energy_manager_dhw_target": "Der automatische Boost erhöht nur den Warmwasser-Sollwert; die Betriebsart bleibt unverändert. Start ab 5 °C unter dem Ziel im Automatik- oder Nur-Warmwasser-Modus. Der vorherige Sollwert wird wiederhergestellt.",
           "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
           "energy_manager_cooldown": "Volle Wartezeit nach Ende eines automatischen Boosts. Bleibt bei Reloads und Neustarts erhalten. Begrenzt nicht die eigene PV-Heizpufferladung des Navigators durch weitergeleitete Leistungswerte.",
-          "technician_codes": "Erstellt Zugangscode-Sensoren passend zum erkannten Regler: auf Navigator 1.7 nur Ebene 1, auf Navigator 2.0/10/Pro Ebene 1 und 2. Aktualisierung jede Minute mit der lokalen Home-Assistant-Zeit, die mit dem Regler übereinstimmen muss. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
           "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
           "solar_thermal": "Liest die Solarthermie-Register (Kollektor-, Lade- und Solar-Rücklauftemperatur) und gruppiert sie unter dem Gerät Solaranlage. Deaktivieren, wenn die Anlage keine Kollektoren hat: Die Solarregister werden nicht mehr abgefragt und die leere Gruppe verschwindet nach dem Neuladen. Erneutes Aktivieren stellt die Entitäten mit ihren bisherigen IDs wieder her.",
           "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -2468,6 +2456,9 @@
       "fault_charging_pump_2_intermediate": {
         "name": "Störung Ladepumpe 2 Zwischenkreis"
       },
+      "fault_heat_source_circuit": {
+        "name": "Störung Wärmequellenkreis"
+      },
       "fault_heat_source_pressure_switch": {
         "name": "Störung Druckschalter Wärmequellenkreis"
       },
@@ -2662,12 +2653,6 @@
       },
       "storage_temp": {
         "name": "Speichertemperatur"
-      },
-      "technician_level_1": {
-        "name": "00 Fachmann Ebene 1"
-      },
-      "technician_level_2": {
-        "name": "00 Fachmann Ebene 2"
       },
       "thermal_power_flow_sensor": {
         "name": "Thermische Leistung (Durchflusssensor)"
@@ -3104,7 +3089,6 @@
         "cascade": "Kaskadenregister",
         "solar_thermal": "Solarthermie",
         "device_hierarchy": "Geräte gruppieren",
-        "technician_codes": "Fachmann-Code-Sensoren",
         "modbus": "Modbus-Verbindung",
         "ai_advisor": "KI-Anlagenberater (experimentell, nur lesend)"
       }

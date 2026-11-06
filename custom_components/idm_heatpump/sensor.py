@@ -9,18 +9,15 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import timedelta
-from typing import Any, ClassVar
+from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.loader import async_get_integration
-from homeassistant.util import dt as dt_util
 
 import idm_heatpump as idm_api
 from idm_heatpump import DataType, RegisterDef
@@ -40,7 +37,6 @@ from .const import (
     CONF_FEATURE_PROFILE,
     CONF_HEALTH_MONITOR,
     CONF_HEATING_CURVE_ASSISTANT,
-    CONF_TECHNICIAN_CODES,
     CONF_WEATHER_ENTITY,
     CONF_WEATHER_PREHEAT,
     CONF_WEATHER_PREHEAT_THRESHOLD,
@@ -88,7 +84,6 @@ from .predictive_advisor_entities import (
     runtime_predictive_advisor,
 )
 from .registers import entity_order_group, sort_entity_descriptions
-from .technician_codes import calculate_codes, technician_code_levels
 from .versions import RuntimeVersions, async_runtime_versions
 from .web_binary_sensors import WEB_BINARY_VALUE_KEYS
 from .web_demand_reason_entities import IdmWebDemandReasonSensor, web_demand_reason_sensor_entities
@@ -499,7 +494,6 @@ async def async_setup_entry(
     entities: list[
         IdmSensor
         | IdmCalculatedSensor
-        | IdmTechnicianCodeSensor
         | IdmWebSensor
         | IdmWebDemandReasonSensor
         | IdmWebControllerClockSensor
@@ -529,8 +523,6 @@ async def async_setup_entry(
         advisor.start()
         entities.append(IdmAiReportSensor(coordinator, advisor))
         entities.extend(IdmAiMetricSensor(coordinator, advisor, key) for key in AI_METRICS)
-    if entry.options.get(CONF_TECHNICIAN_CODES, False):
-        entities += _technician_code_entities(coordinator)
     entities += [
         IdmSensor(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.sensor_descriptions)
@@ -719,10 +711,6 @@ def _communication_diagnostic_entities(coordinator: IdmCoordinator) -> list[IdmC
     ]
 
 
-def _technician_code_entities(coordinator: IdmCoordinator) -> list[IdmTechnicianCodeSensor]:
-    return [IdmTechnicianCodeSensor(coordinator, level) for level in technician_code_levels(coordinator.model_name)]
-
-
 class IdmSensor(IdmEntity, SensorEntity):
     def __init__(
         self,
@@ -904,62 +892,3 @@ class IdmWebSensor(IdmCoordinatorEntityBase, SensorEntity):
         if web_supplement is None or web_supplement.heatpump_model is None:
             return {}
         return {"heatpump_model": web_supplement.heatpump_model}
-
-
-class IdmTechnicianCodeBaseSensor(IdmCoordinatorEntityBase, SensorEntity):
-    """Refresh technician-code entities on the minute without coordinator polling."""
-
-    _attr_entity_registry_enabled_default = True
-
-    @property
-    def device_info(self) -> Any:
-        return build_subdevice_info(self.coordinator, "technician_codes") or build_device_info(self.coordinator)
-
-    _cancel_timer: Callable[[], None] | None = None
-    _codes_cache: dict[str, str] | None = None
-
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        self._refresh_codes()
-        self._cancel_timer = async_track_time_interval(self.hass, self._async_refresh, timedelta(seconds=60))
-
-    async def async_will_remove_from_hass(self) -> None:
-        if self._cancel_timer:
-            self._cancel_timer()
-            self._cancel_timer = None
-
-    @callback
-    def _refresh_codes(self) -> None:
-        self._codes_cache = calculate_codes(now=dt_util.now(), model_name=self.coordinator.model_name)
-
-    @callback
-    def _async_refresh(self, _now: object = None) -> None:
-        self._refresh_codes()
-        self.async_write_ha_state()
-
-    @property
-    def available(self) -> bool:
-        return True
-
-
-class IdmTechnicianCodeSensor(
-    IdmTechnicianCodeBaseSensor,
-):
-    """Sensor that shows one current Fachmann Ebene access code."""
-
-    _attr_icon = "mdi:key-variant"
-
-    LEVELS: ClassVar[tuple[str, ...]] = ("level_1", "level_2")
-
-    def __init__(self, coordinator: IdmCoordinator, level: str) -> None:
-        super().__init__(coordinator)
-        self._level = level
-        entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
-        self._attr_unique_id = build_entity_unique_id(entry_id, f"technician_{level}")
-        self._attr_translation_key = f"technician_{level}"
-
-    @property
-    def native_value(self) -> str | None:
-        if self._codes_cache is not None:
-            return self._codes_cache.get(self._level, "")
-        return calculate_codes(now=dt_util.now(), model_name=self.coordinator.model_name).get(self._level)

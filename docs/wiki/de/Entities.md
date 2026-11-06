@@ -25,9 +25,9 @@ Die Integration erzeugt Entitäten dynamisch auf Grundlage deiner Wärmepumpen-K
 | **Warmwasserbereiter** | 1 | Warmwasser-Zieltemperatur mit Ist-Temperatur-Rückmeldung |
 | **Button** | 1 | Quittiert aktive Fehler an der Wärmepumpe |
 
-Die genauen Zahlen hängen vom erkannten Modell, den aktiven Heizkreisen, Zonen, Räumen und optionalen Funktionen ab. Das Hinzufügen von Heizkreisen, Zonen, Kaskade, Fachmann-Codes oder Web-Supplement-Daten kann zusätzliche Entitäten hinzufügen.
+Die genauen Zahlen hängen vom erkannten Modell, den aktiven Heizkreisen, Zonen, Räumen und optionalen Funktionen ab. Das Hinzufügen von Heizkreisen, Zonen, Kaskade oder Web-Supplement-Daten kann zusätzliche Entitäten hinzufügen.
 
-Entitäten werden in Home Assistant, wo möglich, nach Funktion gruppiert. Die optionalen Fachmann-Code-Sensoren stehen oben angeheftet, gefolgt von Konfigurations-Entitäten, Schaltern, schreibbaren Werten, Live-Messwerten und Diagnose.
+Entitäten werden in Home Assistant, wo möglich, nach Funktion gruppiert: Konfigurations-Entitäten zuerst, gefolgt von Schaltern, schreibbaren Werten, Live-Messwerten und Diagnose.
 
 ## Entitätsnamen und Sprachen
 
@@ -46,12 +46,6 @@ Das Ändern der Home-Assistant-Sprache ändert nur die angezeigten Namen. Entit�
 | IDM Heatpump API-Version | Installierte `idm-heatpump-api`-Version | `integration_version`, `modbus_connection_version`, `tmodbus_version`, `home_assistant_version`, `python_version` | Diagnose |
 
 Dieser Sensor bleibt auch dann verfügbar, wenn die Abfrage der Wärmepumpe fehlschlägt, was ihn beim Zusammenstellen von Informationen für einen Fehlerbericht nützlich macht. Die direkte Socket-Laufzeit wird über die Attribute `modbus_connection_version` und `tmodbus_version` identifiziert.
-
-### Zugangscodes der Fachmann-Ebene
-
-Wenn die Option aktiviert ist, zeigen Navigator 2.0/10/Pro zwei Sensoren für *Fachmann Ebene 1* und *Fachmann Ebene 2*. Navigator 1.7 zeigt nur seinen unterstützten dreistelligen Level-1-Code. Die erkannte Reglerfamilie bestimmt die Berechnung automatisch. Die Sensoren verwenden die lokale Home-Assistant-Zeit; Datum und Stunde müssen mit dem Regler übereinstimmen. Sie aktualisieren sich einmal pro Minute, stehen oben in der Entitätsliste des IDM-Geräts und sind keine Modbus-Register.
-
-Die Option ist standardmäßig deaktiviert. Behandle die Werte als sensibel: beschränke den Zugriff auf ihre Dashboard-Karten und veröffentliche sie niemals in Screenshots, Logs oder Supportanfragen. Siehe [Konfiguration](Configuration#codes-fur-die-fachmann-ebene) für Einrichtung und Sicherheitshinweise. Die Berechnungsmethode ist bewusst nicht dokumentiert.
 
 ### Systemtemperaturen & Drücke
 
@@ -285,9 +279,7 @@ ausgewertet (live verifiziert auf Firmware jsonVersion 11, September 2026):
 - **Regler-Uhrzeit (Web)** (`web_controller_clock`): die eigene Uhr des
   Reglers als Zeitstempel-Sensor, mit `jsonVersion`, aktiver Benutzerebene,
   Sprache, Meldungsanzahl, Frostschutz-Flag und Netzwerk-Flag als Attribute.
-  Die Regler-Uhr kann driften, und die zeitabhängigen Fachmann-Codes werden
-  nach der auf dem Display angezeigten Zeit berechnet — dieser Sensor macht
-  den Drift sichtbar.
+  Die Regler-Uhr kann driften — dieser Sensor macht den Drift sichtbar.
 
 #### Verbindungsstatus
 
@@ -736,7 +728,7 @@ Mit aktivierter **Gerätehierarchie** (Konfigurieren → Funktionen) verteilt di
 | Zusatzwärmeerzeuger | Booster-/Bivalenz-/Zweitwärmeerzeuger-/E-Heizungs-Register vorhanden | `booster_*`, `bivalence_*`, `second_heat_generator_*`, `eheating_*`, `electric_heater_*` |
 | Warmwasser | Warmwasser-Register vorhanden | `dhw_*`, `hotwater_*`, `water_temp_*` und verwandte Schlüssel |
 | Photovoltaik | PV-Register oder SG-Ready vorhanden | `pv_*`, `smart_grid_status`, PV-Überschussbetrieb, Web-Anforderungsgrund und Web-Energiefluss |
-| Diagnose | immer | Versionen, Fachmann-Codes, interne Meldung, Modbus-Poll-Gesundheit, Regler-Online-Zeit |
+| Diagnose | immer | Versionen, interne Meldung, Modbus-Poll-Gesundheit, Regler-Online-Zeit |
 | iDM Analytics | Smart-Profil | Berechnete Sensoren, Betriebsanalyse, Energiestatistik |
 | iDM Health Monitor | Health Monitor aktiviert | Alle `health_*`-Entitäten |
 | iDM Comfort | Komfortberatung aktiviert | Heizkurven-Empfehlung, Wetter-Vorheizen-Empfehlung |

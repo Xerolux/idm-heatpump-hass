@@ -606,14 +606,13 @@ def test_model_switch_back_to_shared_family_removes_navigator_17_orphans() -> No
 
 
 def test_model_cleanup_keeps_entities_that_are_not_register_backed() -> None:
-    """Derived, web, technician and diagnostic entities are out of scope."""
+    """Derived, web and diagnostic entities are out of scope."""
     coordinator = _model_coordinator(("dhw_temp_top", "dhw_setpoint"))
     entities = [
         _entity("entry_calculated_cop", "sensor.cop"),
         _entity("entry_energy_electrical_total", "sensor.energy"),
         _entity("entry_web_compressor_1", "binary_sensor.compressor"),
         _entity("entry_health_report", "sensor.health"),
-        _entity("entry_technician_level_1", "sensor.tech_code"),
         _entity("entry_navigator_version", "sensor.navigator"),
         _entity("entry_water_heater", "water_heater.warmwasser"),
     ]

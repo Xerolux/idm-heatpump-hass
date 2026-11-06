@@ -308,7 +308,7 @@ ENGLISH_NAMES: Final[dict[str, str]] = {
 
 
 # Entities the integration derives itself instead of reading from a register:
-# calculated sensors, the operating analysis and the technician access codes.
+# calculated sensors and the operating analysis.
 # They carry their own translation keys, so their names are kept here as
 # ``(English, German)`` pairs and written to the translation files by
 # ``scripts/generate_entity_translations.py``.
@@ -388,9 +388,6 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "analysis_operating_share_dhw": ("Operating share hot water", "Betriebsanteil Warmwasser"),
         "analysis_operating_share_cooling": ("Operating share cooling", "Betriebsanteil Kühlen"),
         "analysis_operating_share_defrost": ("Operating share defrost", "Betriebsanteil Abtauen"),
-        # === Technician access codes ===
-        "technician_level_1": ("Technician level 1 code", "00 Fachmann Ebene 1"),
-        "technician_level_2": ("Technician level 2 code", "00 Fachmann Ebene 2"),
         # === Local Navigator web supplement ===
         "web_4way_valve_circuit1": ("4-way valve circuit 1 (Web)", "4-Wege-Ventil Kreis 1 (Web)"),
         "web_airsource_temperature": ("Air source temperature (Web)", "Luftquellen Temperatur (Web)"),

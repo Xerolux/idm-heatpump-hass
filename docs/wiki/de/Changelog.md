@@ -5,6 +5,16 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.27.0-b1 — 2026-11-06
+
+Die Sensoren für die Fachmann-Zugangscodes sind entfernt: Die Integration
+berechnet die zeitbasierten Fachmann-Ebene-Codes nicht mehr, die Option, die
+die Sensoren erzeugte, ist aus dem Optionen-Flow entfernt, und die beiden
+Sensor-Entitäten verschwinden beim Upgrade — keine Migration nötig, alles
+andere bleibt unberührt. Der Zugang zur Installateur-Ebene bleibt Sache des
+Heizungsinstallateurs. Der Regler-Uhr-Sensor macht Uhren-Drift weiterhin
+sichtbar, die Protokollanalyse bleibt Forschungsdokumentation.
+
 ## v0.26.0 — 2026-11-06
 
 Der Einrichtungsassistent kann die Wärmepumpe jetzt selbst finden. Das Setup beginnt mit

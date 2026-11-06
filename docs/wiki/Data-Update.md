@@ -85,9 +85,3 @@ invalid, unavailable, non-numeric or out-of-range values.
 Forwarding is disabled by default and only starts after at least one heating
 circuit has a selected Home Assistant temperature entity in the integration
 options.
-
-## Technician Code Sensors
-
-The optional technician code sensors update **independently** every 60 seconds.
-They are local helper sensors and not values read from Modbus registers. Their
-states should be treated as sensitive access information.

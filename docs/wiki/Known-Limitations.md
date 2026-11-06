@@ -60,8 +60,8 @@
 - The current firmware version is read as a diagnostic sensor (`firmware_version`)
 - Firmware updates directly from Home Assistant are **not** possible
 - Updates are done via the **myIDM cloud portal** or via a **USB stick using the
-  controller display's service menu** (unlocked with the *Fachmann Ebene* codes
-  the integration can calculate).
+  controller display's service menu**, which your heating installer or iDM
+  service operates at the controller's installer level.
 - The three local interfaces exposed by the controller (Modbus TCP 502,
   Navigator HTTP 80, Navigator 10 WebSocket 61220) **do not** carry any
   firmware-update endpoint. All candidate WebSocket controllers

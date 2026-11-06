@@ -13,6 +13,14 @@ snapshot includes each register's address, datatype, access flags, write class,
 source, source version, supported models, sentinel values and optional
 verification label.
 
+## Where this data comes from
+
+This catalogue is the project's own work. It combines facts taken from iDM's
+official technical documents (referenced by document number and revision —
+the documents themselves remain iDM's property and are neither hosted nor
+copied in this repository), our own read-only field observations on real
+Navigator controllers, and findings contributed by the community.
+
 → [Open the complete register catalog](#complete-register-catalog)
 
 ## Address Ranges
