@@ -7,6 +7,8 @@ Zugangscode. Drucke diese Seite aus (Druckdialog des Browsers,
 *Ausgabe → Als PDF speichern*) und gib sie deinem Installateur; jeder Punkt
 lässt sich in wenigen Minuten vor Ort abhaken.
 
+Druckbare Übersetzungen dieser Checkliste: [Español](../../examples/installer-checklist-es.md) · [Italiano](../../examples/installer-checklist-it.md) · [Română](../../examples/installer-checklist-ro.md) · [Čeština](../../examples/installer-checklist-cs.md) · [Polski](../../examples/installer-checklist-pl.md)
+
 ## 1. Netzwerk
 
 | ☐ | Punkt | Notizen / Wert |

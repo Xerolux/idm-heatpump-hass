@@ -84,6 +84,10 @@ GERMAN_DOCUMENTATION_PAGES: dict[str, dict[str, str]] = {
         "title": "Installation & Einrichtung",
         "description": "IDM Heatpump über HACS installieren, Modbus TCP am IDM Navigator aktivieren und mit Home Assistant verbinden.",
     },
+    "installer-checklist": {
+        "title": "Installateur-Checkliste",
+        "description": "Druckbare Checkliste für den Heizungsinstallateur: Modbus TCP, feste IP, GLT/PV-Signalquelle und Web-PIN am IDM Navigator freischalten.",
+    },
     "configuration": {
         "title": "Konfiguration",
         "description": "Host, Abfrageintervall, Heizkreise, Zonen, Web-Supplement und Verbindungsoptionen der Integration in Home Assistant konfigurieren.",
@@ -847,6 +851,31 @@ def _language_alternates(current_page: DocumentationPage, language: str) -> str:
     )
 
 
+# Offer the finished German wiki tree to German browsers on the English home
+# page once per tab session. es/it/ro/cs/pl deliberately do not redirect: the
+# integration UI ships those languages, the wiki tree does not (yet) — the
+# language switch in the page header remains available in every case.
+_LANGUAGE_REDIRECT_SNIPPET = (
+    "<script>\n"
+    "(function () {\n"
+    "  try {\n"
+    "    if (/\\/docs\\/de(\\/|$)/.test(location.pathname)) { return; }\n"
+    "    if (sessionStorage.getItem('idm-lang-redirect')) { return; }\n"
+    "    var langs = navigator.languages || [navigator.language || ''];\n"
+    "    for (var i = 0; i < langs.length; i++) {\n"
+    "      var tag = (langs[i] || '').toLowerCase();\n"
+    "      if (tag.indexOf('de') === 0) {\n"
+    "        sessionStorage.setItem('idm-lang-redirect', '1');\n"
+    "        location.replace('./de/');\n"
+    "        return;\n"
+    "      }\n"
+    "    }\n"
+    "  } catch (e) {}\n"
+    "})();\n"
+    "</script>"
+)
+
+
 def _build_documentation_page(template: str, current_page: DocumentationPage, language: str = "en") -> str:
     if language == "de" and not _german_page_available(current_page):
         raise FileNotFoundError(f"Missing German wiki page: {GERMAN_WIKI_DIR / current_page['file']}")
@@ -880,6 +909,8 @@ def _build_documentation_page(template: str, current_page: DocumentationPage, la
     )
     if language == "de":
         page = page.replace('<html lang="en"', '<html lang="de"')
+    if language == "en" and current_page["slug"] == "home":
+        page = page.replace("</head>", _LANGUAGE_REDIRECT_SNIPPET + "\n</head>")
 
     page = _replace_title(page, page_title)
     page = _replace_tag_attribute(

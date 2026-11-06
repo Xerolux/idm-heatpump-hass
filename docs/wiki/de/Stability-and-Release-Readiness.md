@@ -4,6 +4,29 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.26.2
+
+**0.26.2** ist ein stabiler Feature-Patch mit fünf neuen UI-Sprachen. Home
+Assistant legt `translations/<lang>.json` über `translations/en.json`, daher
+liefern die fünf neuen Dateien genau die sichtbare UI-Fläche — Config- und
+Options-Flow-Schritte, Fehler, Abbrüche, Dienste, Issues/Reparaturen,
+Selektoren und Exceptions, je 419 Strings — während Entitätsnamen auf Englisch
+zurückfallen. Ein neuer parametrisierter Parity-Test bewacht jede Datei: keine
+Waisen-Keys, keine leeren Werte, und jeder `{Platzhalter}` der englischen
+Quelle muss die Übersetzung überleben — eine schlechte Übersetzung kann
+keinen Bildschirm brechen. Die fünf Übersetzungen entstanden in einem Durchgang
+und sind noch nicht muttersprachlich gegengelesen; Feldkorrekturen sind
+willkommen und können als Patch-Releases erscheinen. Die
+Installateur-Checkliste (EN+DE im Wiki, fünf druckbare Übersetzungen unter
+`docs/examples/`) dokumentiert den Freischaltweg über die Installateur-Ebene,
+und die Dokumentations-Startseite leitet deutsche Browser nur einmal pro
+Sitzung weiter (der explizite Umschalter bleibt verfügbar). Vollständige
+Qualitätschranke auf dem Schnitt: zweibeinige CI-Matrix mit
+Coverage-Schranken, strenges mypy, ruff, hassfest,
+Real-Home-Assistant-Lebenszyklus-Smoke-Tests, CodeQL/pip-audit,
+Anmeldedaten-Scan. Runtime-Pins unverändert gegenüber 0.26.1
+(`idm-heatpump-api[web]==2.16.0`).
+
 ## Release-Entscheidung zu 0.26.1
 
 **0.26.1** ist ein schneller stabiler Patch auf der 0.26.0-Linie mit genau
@@ -493,7 +516,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.26.1` und `idm-heatpump-api` `2.16.0` bilden das aktuelle exakt
+Integration im Quellstand `0.26.2` und `idm-heatpump-api` `2.16.0` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

@@ -6,6 +6,8 @@ itself never unlocks anything and needs no access code. Print this page
 (browser print dialog, *Destination → Save as PDF*) and hand it to your
 installer; every item can be ticked off in a few minutes on site.
 
+Printable translations of this checklist: [Español](../examples/installer-checklist-es.md) · [Italiano](../examples/installer-checklist-it.md) · [Română](../examples/installer-checklist-ro.md) · [Čeština](../examples/installer-checklist-cs.md) · [Polski](../examples/installer-checklist-pl.md)
+
 ## 1. Network
 
 | ☐ | Item | Notes / value |
