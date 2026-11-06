@@ -1,0 +1,894 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nastavit tepelné čerpadlo IDM Navigator",
+        "menu_options": {
+          "manual": "Zadat údaje připojení ručně",
+          "scan": "Vyhledat tepelné čerpadlo v síti"
+        }
+      },
+      "manual": {
+        "title": "Nastavit tepelné čerpadlo IDM Navigator",
+        "description": "[Potřebujete pomoc? Otevřete dokumentaci]({wiki_url})\n\nZadejte údaje připojení Modbus vašeho tepelného čerpadla IDM. Ve výchozím nastavení průvodce konfiguruje **Modbus a místní webový přístup Navigator společně**; zadejte kód místní sítě jako webový PIN. Pokud záměrně chcete jen Modbus, webový přístup výslovně vypněte.\n\nPři použití proxy Modbus aktivujte „Použít proxy Modbus“ a zadejte přímou IP adresu nebo název hostitele tepelného čerpadla jako webovou adresu."
+      },
+      "scan": {
+        "title": "Prohledat síť",
+        "description": "Každý hostitel v podsíti je jednou ověřen na portu Modbus TCP 502. Neodesílají ani nečtou se žádná data Modbus; sken pouze zjišťuje, zda port odpovídá. Trvá několik sekund a najde jen zařízení dostupná z Home Assistant."
+      },
+      "scan_results": {
+        "title": "Nalezená zařízení",
+        "description": "Vyberte tepelné čerpadlo ze hostitelů, kteří odpověděli na portu Modbus TCP. Adresa se převezme do dalšího kroku, kde se otestuje připojení a nakonfiguruje webový přístup a proxy. Hostitelé zobrazení s názvem byli vyřešeni pomocí zpětného DNS."
+      },
+      "reconfigure": {
+        "title": "Připojení a diagnostika",
+        "description": "Změňte uložené připojení nebo otestujte všechny nakonfigurované místní koncové body bez ukládání nebo zápisu do tepelného čerpadla.",
+        "menu_options": {
+          "connection": "Změnit nastavení připojení",
+          "features": "Konfigurovat funkce",
+          "diagnostics": "Otestovat aktuální připojení"
+        }
+      },
+      "connection": {
+        "title": "Změnit připojení – {name}",
+        "description": "[Potřebujete pomoc? Přečtěte si dokumentaci]({wiki_url})\n\nAktuální připojení: **{host}**\n\nNové nastavení se před uložením ověří. Integrace se poté automaticky restartuje. Modbus TCP musí být na Navigatoru zapnutý v *Řízení budovy (Gebäudeleittechnik) → Modbus TCP → On (Ein)*. Pro volitelný místní webový přístup použijte kód z *Nastavení → Obecná nastavení → Nastavení sítě → Kód místní sítě*, ne cloudové přihlašovací údaje ani kód dvoufaktorového ověření."
+      },
+      "diagnostics_success": {
+        "title": "Připojení Modbus a web úspěšné",
+        "description": "Test jen pro čtení byl úspěšný pro Modbus **{host}:{port}**, ID slave **{slave_id}** a nakonfigurovaný místní webový přístup Navigator.\n\nNebylo změněno žádné nastavení a nebyl zapsán žádný registr. Odešlete znovu pro opakování testu.\n\n**Výsledky**\n- Modbus: **{modbus_status}**\n- Web Navigator: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Doba trvání: **{duration} s**"
+      },
+      "diagnostics_modbus_success": {
+        "title": "Připojení Modbus úspěšné",
+        "description": "Test Modbus jen pro čtení byl úspěšný pro **{host}:{port}**, ID slave **{slave_id}**. Webový přístup byl vynechán, protože není nakonfigurován žádný místní webový PIN.\n\nNebylo změněno žádné nastavení a nebyl zapsán žádný registr. Odešlete znovu pro opakování testu.\n\n**Výsledky**\n- Modbus: **{modbus_status}**\n- Web Navigator: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Doba trvání: **{duration} s**"
+      },
+      "diagnostics_failed": {
+        "title": "Test připojení se nezdařil",
+        "description": "Test jen pro čtení pro **{host}:{port}**, ID slave **{slave_id}**, nebyl úspěšně dokončen. Konkrétní příčina a doporučené kontroly jsou uvedeny výše.\n\nNebylo změněno žádné nastavení a nebyl zapsán žádný registr. Odešlete znovu pro opakování testu.\n\n**Výsledky**\n- Modbus: **{modbus_status}**\n- Web Navigator: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Doba trvání: **{duration} s**"
+      },
+      "options": {
+        "title": "Konfigurace – {name}",
+        "description": "Vyberte, jaká data integrace čte a jak jsou prezentována v Home Assistant. Doporučené výchozí hodnoty vyhovují většině instalací. Uložením se integrace automaticky restartuje a změny se projeví."
+      },
+      "zones": {
+        "title": "Konfigurovat zónové moduly",
+        "description": "Zadejte počet aktivních místností na zónový modul (obvykle 6 místností u Navigatoru 10 / aktuálního hardwaru; některé starší systémy používají 8). Konfiguruje se {zone_count} zónový modul(y)."
+      },
+      "room_temp_forwarding": {
+        "title": "Přeposílání vnější pokojové teploty – {name}",
+        "description": "Vyberte jeden teplotní senzor Home Assistant na každý topný okruh. Integrace zapisuje tyto hodnoty do registrů GLT pokojové teploty IDM. Prázdný okruh se přeskočí."
+      },
+      "humidity_forwarding": {
+        "title": "Přeposílání vnější vlhkosti – {name}",
+        "description": "Vyberte jeden senzor vlhkosti Home Assistant. Integrace zapisuje tuto hodnotu do registru GLT vlhkosti IDM. Ponechte prázdné pro přeskočení přeposílání vlhkosti."
+      },
+      "storage_temp_forwarding": {
+        "title": "Přeposílání vnější teploty zásobníku – {name}",
+        "description": "Vyberte jeden teplotní senzor Home Assistant na každý registr GLT zásobníku. Integrace zapisuje tyto hodnoty do registrů GLT zásobníku IDM. Prázdné pole se přeskočí."
+      },
+      "modbus_failed": {
+        "title": "Připojení Modbus se nezdařilo",
+        "description": "**Kontrola Modbus pro {host} se nezdařila.**\n\nNa Navigatoru ověřte *Řízení budovy (Gebäudeleittechnik) → Modbus TCP → On (Ein)*. Pokud tato nabídka chybí nebo je uzamčená, kontaktujte svého instalatéra nebo servis iDM.\n\nZpráva výše rozlišuje, zda je TCP koncový bod nedostupný, nebo odpovídá bez platných dat registrů IDM. Opravte údaje připojení a zkuste to znovu, nebo pokračujte **pouze s webovými daty**. Místní webový PIN můžete opravit přímo níže.\n\n**Omezení režimu pouze web:** jen hodnoty senzorů; žádné registry topných okruhů nebo zón, zapisovatelné entity, řízení režimů ani potvrzování chyb."
+      },
+      "web_only_options": {
+        "title": "Nastavení webových dat – {name}",
+        "description": "Režim pouze web je aktivní. Nakonfigurujte, jak často integrace čte data senzorů z webového rozhraní Navigator. Entity založené na Modbus (topné okruhy, zóny, zapisovatelné ovládací prvky) v tomto režimu nejsou k dispozici."
+      },
+      "setup_review": {
+        "title": "Detekován systém IDM",
+        "description": "Modbus a požadovaný místní webový přístup byly ověřeny.\n\n- Koncový bod: **{host}:{port}**\n- ID slave: **{slave_id}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Místní webový přístup: **{web}**\n- Detekovaná instalace: **{plant}**\n\nZkontrolujte automaticky detekovaný model. Přepište jej pouze tehdy, když je detekce prokazatelně chybná. Poté vyberte hloubku nastavení. Každá úroveň nabízí všechny funkce prostřednictvím krátkých průvodců."
+      },
+      "knx_bridge": {
+        "title": "Skupinové adresy KNX (experimentální) – {name}",
+        "description": "Objekty KNX IDM ({object_count}) jsou rozloženy nad základní adresou: číslo každého objektu se k ní přičítá, takže 8/0/0 umístí objekt 1 na 8/0/1 a objekt 222 na 8/0/222. Seznam přepsání použijte pro objekty, které váš projekt ETS už adresuje jinak — jeden `registr = adresa` na řádek.\n\nETS tyto adresy zná až po importu: vytvořte importní soubor pro svou základní adresu pomocí [generátoru skupinových adres KNX]({generator_url}) na webu dokumentace a importujte jej v ETS v *Skupinové adresy → Importovat skupinové adresy*."
+      },
+      "external_power_forwarding": {
+        "title": "Přeposílání vnějšího výkonu – {name}",
+        "description": "Vyberte existující senzory Home Assistant pro FVE, spotřebu domu a baterii. W/kW se převedou a zapíší do odpovídajících registrů GLT IDM. Prázdná pole se přeskočí. Neaktivujte spolu se SMARTFOX nebo openWB zapisujícími stejné registry."
+      },
+      "feature_notice": {
+        "title": "Potvrďte nové beta funkce",
+        "description": "Aktivujete nové beta funkce. Analýzy a doporučení jen pro čtení přidávají entity Home Assistant. Přeposílání vnějšího výkonu zapisuje vybrané hodnoty senzorů do registrů GLT IDM; automatické ohřívání teplé vody z FVE a harmonogram komfortu mohou měnit nastavení tepelného čerpadla. Tyto ovládací prvky aktivujte jen tehdy, když je Home Assistant jediným regulátorem dané funkce. Pokračujte, jen pokud těmto účinkům rozumíte."
+      },
+      "guided_mode": {
+        "title": "Vyberte hloubku nastavení",
+        "description": "Všechny tři úrovně nabízejí každou funkci. Standard používá bezpečné výchozí hodnoty, Pokročilé přidává běžné úpravy a Expert zpřístupní všechny parametry. Stávající hodnoty se při změně úrovně zachovají."
+      },
+      "guided_choose": {
+        "title": "Co chcete konfigurovat?",
+        "description": "Vyberte jen funkce, které chcete přidat, odebrat nebo upravit. Nevybrané funkce a jejich uložené nastavení zůstanou beze změny. Každá vybraná funkce dostane svou vlastní krátkou stránku."
+      },
+      "guided_toggle": {
+        "title": "Zapnout nebo vypnout tuto funkci",
+        "description": "Zvolte, zda má tato funkce běžet. Jejím vypnutím se její podrobné nastavení zachová pro pozdější použití."
+      },
+      "guided_detail": {
+        "title": "Konfigurovat tuto funkci",
+        "description": "Zobrazují se jen nastavení vybrané funkce. Vaše úroveň nastavení určuje míru detailů; skryté nastavení si zachovává uložené hodnoty."
+      },
+      "guided_review": {
+        "title": "Zkontrolovat a uložit",
+        "description": "Funkce vybrané k úpravě: {selected_count}. Uložení znovu načte integraci a aktualizuje její entity. Před potvrzením zkontrolujte automatické ovládací prvky a nastavení KNX."
+      },
+      "advisor_room_sources": {
+        "title": "Zdroje pokojové teploty pro poradce",
+        "description": "Volitelné teplotní senzory Home Assistant jen pro čtení, které prediktivní poradce používá pro okruhy bez připojeného pokojového senzoru. Do tepelného čerpadla se nic nezapisuje; hodnoty mimo rozsah věrohodnosti poradce se ignorují."
+      }
+    },
+    "error": {
+      "cannot_connect": "Připojení k tepelnému čerpadlu se nezdařilo. Zkontrolujte IP adresu a port a zapněte Řízení budovy (Gebäudeleittechnik) → Modbus TCP → On (Ein) na Navigatoru. Pokud Modbus není k dispozici, můžete pokračovat pouze s webovými daty (nejprve zadejte svůj místní PIN Navigator).",
+      "host_not_found": "Název hostitele nelze přeložit. Zkontrolujte překlepy, vyzkoušejte IP adresu tepelného čerpadla a ověřte místní DNS/mDNS.",
+      "modbus_connection_refused": "Zařízení aktivně odmítlo připojení. Na Navigatoru nastavte Řízení budovy (Gebäudeleittechnik) → Modbus TCP na On (Ein) a používejte port 502. Pokud nabídka chybí nebo je uzamčená, požádejte svého instalatéra nebo servis iDM o aktivaci. V případě potřeby regulátor restartujte a zkuste to znovu.",
+      "modbus_timeout": "Pokus o připojení vypršel. Ověřte, že IP patří tepelnému čerpadlu, že zařízení je zapnuté a že žádná VLAN, trasa ani firewall neblokuje port 502.",
+      "modbus_unreachable": "Koncový bod Modbus TCP není dostupný. Zkontrolujte IP/název hostitele a síť, používejte port 502 a ověřte Řízení budovy (Gebäudeleittechnik) → Modbus TCP → On (Ein) na Navigatoru.",
+      "modbus_no_response": "TCP připojení bylo otevřeno, ale nebyla přijata žádná platná odpověď registrů IDM. Zkontrolujte ID slave 1 a že Řízení budovy (Gebäudeleittechnik) → Modbus TCP je On (Ein) na Navigatoru. Po zapnutí Modbus regulátor restartujte.",
+      "host_required": "Zadejte platnou IP adresu nebo název hostitele.",
+      "invalid_web_pin": "Místní webové rozhraní Navigator tento PIN odmítlo. Zadejte správný PIN nebo ponechte pole prázdné pro použití jen Modbus.",
+      "invalid_web_pin_web_only": "Místní webové rozhraní Navigator tento PIN odmítlo. Zvolte Zkusit znovu pro opravu IP/portu/slave a nový pokus o Modbus, nebo zadejte správný PIN pro použití jen webových dat.",
+      "name_required": "Zadejte název zařízení.",
+      "web_pin_required": "Pro pokračování v režimu pouze web zadejte místní webový PIN Navigator.",
+      "web_cannot_connect": "Místní webové rozhraní Navigator se nepodařilo přečíst. Zkontrolujte původní adresu tepelného čerpadla a síťový přístup, nebo webový PIN vymažte pro pokračování jen s Modbus.",
+      "web_host_required": "Zadejte původní IP/název hostitele tepelného čerpadla pro webový přístup, nebo vypněte volbu proxy Modbus.",
+      "web_pin_required_or_disable": "Zadejte místní webový PIN Navigator, nebo výslovně vypněte „Použít místní webový přístup Navigator“ pro provoz jen s Modbus.",
+      "invalid_knx_base_address": "Není použitelná základní skupinová adresa. Použijte tříúrovňový (8/0/0), dvouúrovňový (8/0) nebo volný zápis a nechte místo pro 999 adres nad ní.",
+      "invalid_knx_overrides": "Seznam přepsání nelze přečíst. Použijte jeden `registr = adresa` na řádek se známým názvem registru IDM a nepřiřazujte jednu adresu dvakrát.",
+      "no_knx_groups": "Vyberte alespoň jednu skupinu objektů.",
+      "feature_notice_required": "Před uložením potvrďte nové beta funkce.",
+      "invalid_comfort_windows": "Použijte nejvýše 16 nepřekrývajících se oken na nakonfigurovaných okruzích, každé jako okruh,HH:MM,HH:MM,cíl (15–30 °C).",
+      "guided_review_required": "Před uložením potvrďte souhrn.",
+      "weather_entity_required": "Vyberte entitu počasí pro doporučení podle počasí.",
+      "grid_power_unused": "Síťový měřič by se nepoužil: je vybrán explicitní senzor přebytku FVE a spotřeba domu je také explicitní, nebo není vybrán žádný senzor výroby FVE pro odvození spotřeby. Odstraňte síťový senzor nebo explicitní senzory přebytku/spotřeby.",
+      "invalid_ai_endpoint": "Zadejte místní HTTP(S) URL založenou na IP bez přihlašovacích údajů, cesty nebo dotazu, například http://192.168.1.20:11434.",
+      "invalid_ai_model": "Zadejte název nainstalovaného místního modelu. Cloudové modely nejsou podporovány.",
+      "invalid_ai_language": "Zvolte de nebo en.",
+      "ai_cloud_consent_required": "Vyberte podporovaného poskytovatele cloudu a výslovně povolte odesílání vybraných provozních dat.",
+      "ai_cloud_invalid_limit": "Nastavte celé číslo od 1 do 24 cloudových požadavků na den UTC.",
+      "ai_cloud_key_required": "Zadejte platný klíč API pro vybraného poskytovatele.",
+      "ai_cloud_auth_failed": "Poskytovatel odmítl ověření nebo přístup. Zkontrolujte klíč API a přístup k modelu.",
+      "ai_cloud_rate_limited": "Poskytovatel požadavek odmítl kvůli kvótě nebo limitům frekvence. Automaticky se nezopakoval.",
+      "ai_cloud_budget_unavailable": "Rozpočet požadavků se nepodařilo bezpečně načíst nebo uložit. Nebyl odeslán žádný cloudový požadavek.",
+      "ai_cloud_daily_limit_reached": "Limit cloudových požadavků pro tento den UTC byl dosažen.",
+      "ai_task_entity_required": "Vyberte existující entitu ai_task, která podporuje generování dat.",
+      "invalid_subnet": "Není platná podsíť IPv4, nebo je příliš velká (maximálně /22). Použijte zápis jako `192.168.1.0/24`.",
+      "no_candidates": "Nebylo nalezeno žádné zařízení s otevřeným portem Modbus TCP. Ověřte, že tepelné čerpadlo je dostupné a Modbus TCP je zapnutý, zkontrolujte podsíť — nebo zadejte adresu ručně."
+    },
+    "abort": {
+      "already_configured": "Toto tepelné čerpadlo už je nakonfigurováno.",
+      "reconfigure_successful": "Údaje připojení aktualizovány. Integrace se restartuje."
+    }
+  },
+  "options": {
+    "step": {
+      "options": {
+        "title": "Konfigurace – {name}",
+        "description": "Vyberte, jaká data integrace čte a jak jsou prezentována v Home Assistant. Doporučené výchozí hodnoty vyhovují většině instalací. Uložením se integrace automaticky restartuje a změny se projeví."
+      },
+      "zones": {
+        "title": "Konfigurovat zónové moduly",
+        "description": "Zadejte počet aktivních místností na zónový modul (obvykle 6 místností u Navigatoru 10 / aktuálního hardwaru; některé starší systémy používají 8). Konfiguruje se {zone_count} zónový modul(y)."
+      },
+      "room_temp_forwarding": {
+        "title": "Přeposílání vnější pokojové teploty – {name}",
+        "description": "Vyberte jeden teplotní senzor Home Assistant na každý topný okruh. Integrace zapisuje tyto hodnoty do registrů GLT pokojové teploty IDM. Prázdný okruh se přeskočí."
+      },
+      "humidity_forwarding": {
+        "title": "Přeposílání vnější vlhkosti – {name}",
+        "description": "Vyberte jeden senzor vlhkosti Home Assistant. Integrace zapisuje tuto hodnotu do registru GLT vlhkosti IDM. Ponechte prázdné pro přeskočení přeposílání vlhkosti."
+      },
+      "storage_temp_forwarding": {
+        "title": "Přeposílání vnější teploty zásobníku – {name}",
+        "description": "Vyberte jeden teplotní senzor Home Assistant na každý registr GLT zásobníku. Integrace zapisuje tyto hodnoty do registrů GLT zásobníku IDM. Prázdné pole se přeskočí."
+      },
+      "knx_bridge": {
+        "title": "Skupinové adresy KNX (experimentální) – {name}",
+        "description": "Objekty KNX IDM ({object_count}) jsou rozloženy nad základní adresou: číslo každého objektu se k ní přičítá, takže 8/0/0 umístí objekt 1 na 8/0/1 a objekt 222 na 8/0/222. Seznam přepsání použijte pro objekty, které váš projekt ETS už adresuje jinak — jeden `registr = adresa` na řádek.\n\nETS tyto adresy zná až po importu: vytvořte importní soubor pro svou základní adresu pomocí [generátoru skupinových adres KNX]({generator_url}) na webu dokumentace a importujte jej v ETS v *Skupinové adresy → Importovat skupinové adresy*."
+      },
+      "external_power_forwarding": {
+        "title": "Přeposílání vnějšího výkonu – {name}",
+        "description": "Vyberte existující senzory Home Assistant pro FVE, spotřebu domu a baterii. W/kW se převedou a zapíší do odpovídajících registrů GLT IDM. Prázdná pole se přeskočí. Neaktivujte spolu se SMARTFOX nebo openWB zapisujícími stejné registry."
+      },
+      "feature_notice": {
+        "title": "Potvrďte nové beta funkce",
+        "description": "Aktivujete nové beta funkce. Analýzy a doporučení jen pro čtení přidávají entity Home Assistant. Přeposílání vnějšího výkonu zapisuje vybrané hodnoty senzorů do registrů GLT IDM; automatické ohřívání teplé vody z FVE a harmonogram komfortu mohou měnit nastavení tepelného čerpadla. Tyto ovládací prvky aktivujte jen tehdy, když je Home Assistant jediným regulátorem dané funkce. Pokračujte, jen pokud těmto účinkům rozumíte."
+      },
+      "guided_mode": {
+        "title": "Vyberte hloubku nastavení",
+        "description": "Všechny tři úrovně nabízejí každou funkci. Standard používá bezpečné výchozí hodnoty, Pokročilé přidává běžné úpravy a Expert zpřístupní všechny parametry. Stávající hodnoty se při změně úrovně zachovají."
+      },
+      "guided_choose": {
+        "title": "Co chcete konfigurovat?",
+        "description": "Vyberte jen funkce, které chcete přidat, odebrat nebo upravit. Nevybrané funkce a jejich uložené nastavení zůstanou beze změny. Každá vybraná funkce dostane svou vlastní krátkou stránku."
+      },
+      "guided_toggle": {
+        "title": "Zapnout nebo vypnout tuto funkci",
+        "description": "Zvolte, zda má tato funkce běžet. Jejím vypnutím se její podrobné nastavení zachová pro pozdější použití."
+      },
+      "guided_detail": {
+        "title": "Konfigurovat tuto funkci",
+        "description": "Zobrazují se jen nastavení vybrané funkce. Vaše úroveň nastavení určuje míru detailů; skryté nastavení si zachovává uložené hodnoty."
+      },
+      "guided_review": {
+        "title": "Zkontrolovat a uložit",
+        "description": "Funkce vybrané k úpravě: {selected_count}. Uložení znovu načte integraci a aktualizuje její entity. Před potvrzením zkontrolujte automatické ovládací prvky a nastavení KNX."
+      },
+      "advisor_room_sources": {
+        "title": "Zdroje pokojové teploty pro poradce",
+        "description": "Volitelné teplotní senzory Home Assistant jen pro čtení, které prediktivní poradce používá pro okruhy bez připojeného pokojového senzoru. Do tepelného čerpadla se nic nezapisuje; hodnoty mimo rozsah věrohodnosti poradce se ignorují."
+      }
+    },
+    "error": {
+      "invalid_knx_base_address": "Není použitelná základní skupinová adresa. Použijte tříúrovňový (8/0/0), dvouúrovňový (8/0) nebo volný zápis a nechte místo pro 999 adres nad ní.",
+      "invalid_knx_overrides": "Seznam přepsání nelze přečíst. Použijte jeden `registr = adresa` na řádek se známým názvem registru IDM a nepřiřazujte jednu adresu dvakrát.",
+      "no_knx_groups": "Vyberte alespoň jednu skupinu objektů.",
+      "feature_notice_required": "Před uložením potvrďte nové beta funkce.",
+      "invalid_comfort_windows": "Použijte nejvýše 16 nepřekrývajících se oken na nakonfigurovaných okruzích, každé jako okruh,HH:MM,HH:MM,cíl (15–30 °C).",
+      "guided_review_required": "Před uložením potvrďte souhrn.",
+      "weather_entity_required": "Vyberte entitu počasí pro doporučení podle počasí.",
+      "grid_power_unused": "Síťový měřič by se nepoužil: je vybrán explicitní senzor přebytku FVE a spotřeba domu je také explicitní, nebo není vybrán žádný senzor výroby FVE pro odvození spotřeby. Odstraňte síťový senzor nebo explicitní senzory přebytku/spotřeby.",
+      "invalid_ai_endpoint": "Zadejte místní HTTP(S) URL založenou na IP bez přihlašovacích údajů, cesty nebo dotazu, například http://192.168.1.20:11434.",
+      "invalid_ai_model": "Zadejte název nainstalovaného místního modelu. Cloudové modely nejsou podporovány.",
+      "invalid_ai_language": "Zvolte de nebo en.",
+      "ai_cloud_consent_required": "Vyberte podporovaného poskytovatele cloudu a výslovně povolte odesílání vybraných provozních dat.",
+      "ai_cloud_invalid_limit": "Nastavte celé číslo od 1 do 24 cloudových požadavků na den UTC.",
+      "ai_cloud_key_required": "Zadejte platný klíč API pro vybraného poskytovatele.",
+      "ai_cloud_auth_failed": "Poskytovatel odmítl ověření nebo přístup. Zkontrolujte klíč API a přístup k modelu.",
+      "ai_cloud_rate_limited": "Poskytovatel požadavek odmítl kvůli kvótě nebo limitům frekvence. Automaticky se nezopakoval.",
+      "ai_cloud_budget_unavailable": "Rozpočet požadavků se nepodařilo bezpečně načíst nebo uložit. Nebyl odeslán žádný cloudový požadavek.",
+      "ai_cloud_daily_limit_reached": "Limit cloudových požadavků pro tento den UTC byl dosažen.",
+      "ai_task_entity_required": "Vyberte existující entitu ai_task, která podporuje generování dat."
+    },
+    "abort": {}
+  },
+  "services": {
+    "set_system_mode": {
+      "name": "Nastavit režim systému",
+      "description": "Nastaví provozní režim tepelného čerpadla.",
+      "fields": {
+        "mode": {
+          "name": "Režim",
+          "description": "Provozní režim (např. standby, automatický, dovolená)."
+        }
+      }
+    },
+    "acknowledge_errors": {
+      "name": "Potvrdit chyby",
+      "description": "Potvrdí/vymaže aktivní chybové hlášky na tepelném čerpadle."
+    },
+    "write_register": {
+      "name": "Zapsat registr",
+      "description": "Zapíše hodnotu přímo do registru Modbus. Jen pro pokročilé uživatele - nesprávné hodnoty mohou systém poškodit.",
+      "fields": {
+        "address": {
+          "name": "Adresa registru",
+          "description": "Adresa registru Modbus (dekadicky)."
+        },
+        "value": {
+          "name": "Hodnota",
+          "description": "Hodnota k zápisu."
+        },
+        "datatype": {
+          "name": "Datový typ",
+          "description": "Datový typ Modbus (uint16, int16, float, uchar, bool)."
+        },
+        "acknowledge_risk": {
+          "name": "Potvrzení rizika",
+          "description": "Musí být nastaveno na `true`, aby byl zápis povolen."
+        }
+      }
+    },
+    "set_external_climate": {
+      "name": "Nastavit vnější klima",
+      "description": "Zapíše vnější pokojovou teplotu a volitelnou vlhkost do registrů GLT IDM.",
+      "fields": {
+        "heating_circuit": {
+          "name": "Topný okruh",
+          "description": "Cílový topný okruh A-G."
+        },
+        "room_temperature": {
+          "name": "Pokojová teplota",
+          "description": "Vnější pokojová teplota v °C (-20…60)."
+        },
+        "humidity": {
+          "name": "Vlhkost",
+          "description": "Volitelná vnější relativní vlhkost v % (0…100)."
+        }
+      }
+    },
+    "set_external_power": {
+      "name": "Nastavit vnější výkon",
+      "description": "Zapíše vnější měření výkonu a baterie do registrů GLT IDM.",
+      "fields": {
+        "pv_surplus": {
+          "name": "Přebytek FVE",
+          "description": "Aktuální fotovoltaický přebytek v kW."
+        },
+        "pv_production": {
+          "name": "Výroba FVE",
+          "description": "Aktuální fotovoltaická výroba v kW."
+        },
+        "house_consumption": {
+          "name": "Spotřeba domu",
+          "description": "Aktuální spotřeba domu v kW."
+        },
+        "battery_discharge": {
+          "name": "Vybíjení baterie",
+          "description": "Aktuální výkon vybíjení baterie v kW."
+        },
+        "battery_soc": {
+          "name": "Stav nabití baterie",
+          "description": "Aktuální stav nabití baterie v % (celé číslo od 0 do 100)."
+        },
+        "electric_heater_power": {
+          "name": "Výkon elektrické topné spirály",
+          "description": "Aktuální výkon elektrické topné spirály v kW."
+        }
+      }
+    },
+    "start_dhw_boost": {
+      "name": "Spustit boost teplé vody",
+      "description": "Dočasně upřednostní teplou vodu a poté obnoví přesný předchozí režim a nastavenou hodnotu.",
+      "fields": {
+        "entry_id": {
+          "name": "Konfigurační položka",
+          "description": "Potřebné jen při konfiguraci více tepelných čerpadel IDM."
+        },
+        "target_temperature": {
+          "name": "Cílová teplota",
+          "description": "Dočasné nastavení teplé vody v °C (35–65)."
+        },
+        "timeout_minutes": {
+          "name": "Maximální doba běhu",
+          "description": "Maximální doba trvání boostu v minutách před automatickým obnovením (5–240)."
+        }
+      }
+    },
+    "cancel_dhw_boost": {
+      "name": "Zrušit boost teplé vody",
+      "description": "Zruší aktivní boost a obnoví přesně uložený režim systému a nastavení teplé vody.",
+      "fields": {
+        "entry_id": {
+          "name": "Konfigurační položka",
+          "description": "Potřebné jen při konfiguraci více tepelných čerpadel IDM."
+        }
+      }
+    },
+    "export_knx_group_addresses": {
+      "name": "Exportovat skupinové adresy KNX",
+      "description": "Vrátí tabulku objektů KNX IDM tohoto regulátoru, aby ji bylo možné znovu vytvořit v ETS.",
+      "fields": {
+        "knx_base_address": {
+          "name": "Základní skupinová adresa",
+          "description": "Základní adresa, k níž se přičítají čísla objektů."
+        },
+        "knx_groups": {
+          "name": "Skupiny objektů",
+          "description": "Omezí export na tyto skupiny katalogu."
+        }
+      }
+    },
+    "generate_ai_report": {
+      "name": "Vygenerovat experimentální AI zprávu",
+      "description": "Jen pro čtení, samostatně aktivované. Používá vybraného poskytovatele; cloud vyžaduje výslovný souhlas. Až 300 sekund lokálně, 120 sekund pro cloud.",
+      "fields": {
+        "entry_id": {
+          "name": "Integrace IDM",
+          "description": "Výslovně aktivovaná položka IDM."
+        },
+        "report_type": {
+          "name": "Typ zprávy",
+          "description": "daily, weekly, health nebo efficiency."
+        }
+      }
+    },
+    "export_ai_dashboard": {
+      "name": "Exportovat experimentální AI dashboard",
+      "description": "Vrátí kompletní konfiguraci dashboardu s vašimi aktuálními ID entit.",
+      "fields": {
+        "entry_id": {
+          "name": "Integrace IDM",
+          "description": "Položka integrace IDM."
+        }
+      }
+    },
+    "snooze_anomaly": {
+      "name": "Odložit anomálii poradce",
+      "description": "Potlačí důvod anomálie prediktivního poradce na několik dní, aby se opakující, pochopené zjištění přestalo spouštět. Odložené důvody zůstávají mimo aktivní doporučení a skóre zdraví, dokud okno neuplyne.",
+      "fields": {
+        "entry_id": {
+          "name": "Integrace IDM",
+          "description": "Položka integrace IDM."
+        },
+        "reason": {
+          "name": "Důvod",
+          "description": "Stabilní kód důvodu anomálie, který má být potlačen."
+        },
+        "days": {
+          "name": "Dny",
+          "description": "Kolik dní potlačit důvod (1-365)."
+        }
+      }
+    },
+    "unsnooze_anomaly": {
+      "name": "Zrušit odložení anomálie poradce",
+      "description": "Předčasně zruší odložení anomálie, aby se důvod mohl znovu spouštět.",
+      "fields": {
+        "entry_id": {
+          "name": "Integrace IDM",
+          "description": "Položka integrace IDM."
+        },
+        "reason": {
+          "name": "Důvod",
+          "description": "Stabilní kód důvodu anomálie, jehož potlačení má být zrušeno."
+        }
+      }
+    },
+    "set_controller_clock": {
+      "name": "Nastavit hodiny regulátoru",
+      "description": "Nastaví hodiny Navigatoru na daný čas (výchozí: nyní) prostřednictvím místního webového rozhraní.",
+      "fields": {
+        "datetime": {
+          "name": "Datum a čas",
+          "description": "Čas, který má být nastaven. Vynechte pro použití aktuálního času Home Assistant."
+        }
+      }
+    },
+    "generate_dashboard": {
+      "name": "Vygenerovat dashboard instalace",
+      "description": "Vrátí připravený Lovelace dashboard pro tuto instalaci s vašimi aktuálními ID entit, jako strukturovaná data i jako YAML. Nemění existující dashboardy."
+    }
+  },
+  "issues": {
+    "solar_module_unused": {
+      "title": "Solární systém nebyl detekován",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Solární systém nebyl detekován",
+            "description": "Zvolte, zda přestat číst solární registry, nebo je ponechat a toto doporučení zrušit. Všechny solární registry celý den hlásily „nenakonfigurováno“, takže instalace s největší pravděpodobností nemá solární kolektory; skupina zařízení *Solaranlage* v tomto případě nese jen trvale nedostupné entity.",
+            "data": {
+              "action": "Akce"
+            }
+          },
+          "disable": {
+            "title": "Přestat číst solární registry",
+            "description": "Solární registry opustí dotazování a prázdná skupina zařízení *Solaranlage* po opětovném načtení zmizí. Pozdější opětovné zapnutí volby obnoví entity s jejich předchozími ID."
+          },
+          "keep": {
+            "title": "Ponechat solární registry",
+            "description": "Registry zůstanou v dotazování a toto doporučení zůstane zrušeno, dokud se skutečně neobjeví nějaká solární hodnota."
+          }
+        },
+        "abort": {
+          "entry_not_found": "Konfigurační položka IDM Heatpump nebyla nalezena."
+        }
+      }
+    },
+    "web_pin_missing": {
+      "title": "Webový PIN IDM není nakonfigurován",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Vyřešit webový přístup IDM Navigator",
+            "description": "Zvolte, zda nyní zadat nebo nahradit místní webový PIN Navigator, nebo záměrně vypnout volitelná data webového doplňku.",
+            "data": {
+              "action": "Akce"
+            }
+          },
+          "set_pin": {
+            "title": "Nastavit místní webový PIN Navigator",
+            "description": "Zadejte kód místní sítě nakonfigurovaný na Navigatoru v Nastavení → Obecná nastavení → Nastavení sítě. Nepoužívejte přihlašovací údaje cloudu/aplikace ani kód dvoufaktorového ověření. Prázdné nebo `0` vypne místní webový přístup.",
+            "data": {
+              "web_pin": "Místní síťový PIN (web Navigator)"
+            }
+          },
+          "disable_web": {
+            "title": "Vypnout volitelná data webového doplňku",
+            "description": "Potvrďte, že toto tepelné čerpadlo má zůstat v režimu jen Modbus. Data webového doplňku můžete později zapnout v průvodci rekonfigurací integrace."
+          }
+        },
+        "error": {
+          "web_pin_required": "Zadejte PIN nebo zvolte režim jen Modbus.",
+          "invalid_web_pin": "Místní webové rozhraní Navigator tento PIN odmítlo.",
+          "web_cannot_connect": "Místní webové rozhraní Navigator se nepodařilo přečíst. Zkontrolujte nakonfigurovaného webového hostitele a síťový přístup a zkuste to znovu."
+        },
+        "abort": {
+          "entry_not_found": "Konfigurační položka IDM Heatpump nebyla nalezena."
+        }
+      }
+    },
+    "web_supplement_failed": {
+      "title": "Data webového doplňku IDM nejsou k dispozici",
+      "description": "Home Assistant se nepodařilo přečíst volitelná místní webová data Navigator z **{host}**. Data Modbus nadále fungují.\n\nZkontrolujte nakonfigurovaného webového hostitele a přístup do místní sítě. Pokud problém přetrvává, zapněte ladicí protokolování."
+    },
+    "web_authentication_failed": {
+      "title": "Webový PIN IDM Navigator byl odmítnut",
+      "description": "Místní webové rozhraní Navigator na **{host}** odmítlo nakonfigurovaný PIN.\n\nOtevřete průvodce **Rekonfigurace** integrace a zadejte aktuální místní webový PIN, nebo PIN vymažte pro použití jen Modbus. Dotazování Modbus pokračuje bez ovlivnění."
+    },
+    "web_host_not_found": {
+      "title": "Webová adresa IDM Navigator nenalezena",
+      "description": "Home Assistant nemůže přeložit nakonfigurovanou webovou adresu Navigator **{host}**.\n\nZkontrolujte webového hostitele na překlepy nebo nakonfigurujte integraci s IP adresou tepelného čerpadla. Data Modbus nadále fungují."
+    },
+    "web_connection_refused": {
+      "title": "Webové připojení IDM Navigator odmítnuto",
+      "description": "Zařízení na **{host}** odmítlo místní webové připojení.\n\nOvěřte, že jde o původní adresu tepelného čerpadla a že jeho místní webové rozhraní Navigator je dostupné. Data Modbus nadále fungují."
+    },
+    "web_timeout": {
+      "title": "Webové rozhraní IDM Navigator neodpověělo",
+      "description": "Místní webové rozhraní Navigator na **{host}** včas neodpovědělo.\n\nZkontrolujte regulátor, síťové připojení, firewall a nastavení VLAN. Data Modbus nadále fungují."
+    },
+    "web_invalid_response": {
+      "title": "Odpověď webu IDM Navigator nelze přečíst",
+      "description": "Místní webové rozhraní Navigator na **{host}** vrátilo data, která integrace nedokázala přečíst.\n\nOvěřte, že detekovaný model a firmware Navigator jsou podporovány a že integrace je aktuální. Data Modbus nadále fungují."
+    },
+    "cannot_connect": {
+      "title": "Nelze se připojit k tepelnému čerpadlu IDM",
+      "description": "Home Assistant se nemůže dostat k tepelnému čerpadlu IDM na **{host}**.\n\nZkontrolujte:\n- Síťovou dostupnost zařízení\n- Řízení budovy (Gebäudeleittechnik) → Modbus TCP je On (Ein) na Navigatoru\n- IP adresa a port jsou v nastavení integrace správné\n\nPokud nabídka chybí nebo je uzamčená, požádejte svého instalatéra nebo servis iDM o aktivaci."
+    },
+    "host_not_found": {
+      "title": "Název hostitele IDM nenalezen",
+      "description": "Home Assistant nemůže přeložit **{host}**.\n\nZkontrolujte překlepy, ověřte místní DNS/mDNS nebo rekonfigurujte integraci s IP adresou tepelného čerpadla."
+    },
+    "modbus_connection_refused": {
+      "title": "Připojení Modbus TCP IDM odmítnuto",
+      "description": "Zařízení na **{host}** aktivně odmítlo TCP připojení.\n\nNa Navigatoru nastavte *Řízení budovy (Gebäudeleittechnik) → Modbus TCP* na *On (Ein)* a používejte port 502. Pokud nabídka chybí nebo je uzamčená, požádejte svého instalatéra nebo servis iDM o aktivaci. V případě potřeby regulátor restartujte a zkuste to znovu."
+    },
+    "modbus_timeout": {
+      "title": "Připojení Modbus TCP IDM vypršelo",
+      "description": "Připojení Modbus k **{host}** vypršelo.\n\nOvěřte, že adresa patří tepelnému čerpadlu, že regulátor je zapnutý a že žádné pravidlo firewallu, VLAN nebo směrování neblokuje TCP port 502."
+    },
+    "wrong_slave_id": {
+      "title": "Žádná odpověď Modbus od tepelného čerpadla IDM",
+      "description": "Home Assistant se dostane ke koncovému bodu Modbus na **{host}**, ale regulátor neodpovídá očekávaným způsobem.\n\nZkontrolujte:\n- ID slave/jednotky je obvykle 1\n- Řízení budovy (Gebäudeleittechnik) → Modbus TCP je On (Ein) na Navigatoru\n- Proxy přeposílá ke správnému zařízení IDM\n- Žádný jiný klient Modbus neblokuje připojení"
+    },
+    "incompatible_firmware": {
+      "title": "Firmware nebo funkce Modbus IDM není podporována",
+      "description": "Tepelné čerpadlo odpovědělo, ale odmítlo funkci Modbus potřebnou pro tuto integraci.\n\nZkontrolujte:\n- Firmware Navigatoru podporuje přístup Modbus TCP\n- Verze integrace a API jsou aktuální\n- Model zařízení je uveden jako podporovaný pro použitou sadu funkcí"
+    },
+    "no_data_received": {
+      "title": "Připojení IDM nevrátilo použitelná data",
+      "description": "Home Assistant se připojil k **{host}**, ale neobdržel použitelné hodnoty registrů Modbus.\n\nZkontrolujte:\n- ID slave/jednotky je obvykle 1\n- Proxy Modbus přeposílá ke správnému tepelnému čerpadlu\n- Nakonfigurovaný model Navigator a topné okruhy odpovídají zařízení\n- Žádný jiný klient Modbus neblokuje komunikaci"
+    },
+    "scan_interval_too_low": {
+      "title": "Dotazování IDM se do intervalu skenování téměř nevejde",
+      "description": "Čtení registrů **{host}** v současnosti trvá asi {duration} s z nakonfigurovaného intervalu skenování {interval} s, a to už několik dotazování v řadě.\n\nRegulátor tepelného čerpadla pak mezi požadavky téměř nemá čas na odpočinek, což se typicky projevuje vypršením časového limitu — zvlášť když regulátor sdílí jiný klient Modbus.\n\nPomůže:\n- Zvýšit interval skenování v možnostech integrace\n- Vypnout entity, které nepoužíváte (dotazování přeskočí jejich registry)\n- Ověřit, zda zároveň tepelné čerpadlo nevyptává jiný klient Modbus"
+    },
+    "write_rejected": {
+      "title": "Zápis registru IDM odmítnut",
+      "description": "Tepelné čerpadlo nepřijalo zápis do registru **{register}** na adrese **{address}**.\n\nTechnický detail: `{detail}`\n\nZkontrolujte:\n- Registr je na Navigatoru uvolněn pro zápis v **Řízení budovy** (seznam registrů GLT má nastavení přístupu pro každý registr; neuvolněný registr je odmítnut, i když je hodnota platná)\n- Funkce je pro tento okruh nebo komponentu zapnutá\n- Hodnota je v dokumentovaném rozsahu\n- Druhý systém řízení budovy, energetický manažer nebo střídač nezapisuje do stejného registru"
+    },
+    "knx_not_available": {
+      "title": "KNX most neaktivní",
+      "description": "KNX most je pro tepelné čerpadlo IDM zapnutý, ale integrace KNX v Home Assistant není nastavena. Přidejte integraci KNX (poskytuje také KNX Secure a připojení brány) a poté znovu načtěte položku IDM Heatpump."
+    },
+    "modbus_degraded_web_active": {
+      "title": "Připojení Modbus IDM přerušeno — webová data aktivní",
+      "description": "Připojení Modbus k **{host}** je aktuálně přerušeno. Data vašeho tepelného čerpadla nadále protékají místním webovým rozhraním Navigator, takže webové entity se dále aktualizují.\n\nTato zpráva zmizí automaticky, jakmile se připojení Modbus obnoví — není nutná žádná akce. Pokud přetrvává, zkontrolujte síťové připojení tepelného čerpadla nebo použijte tlačítko *Znovu načíst připojení* na stránce zařízení integrace."
+    },
+    "whats_new_0_21_0": {
+      "title": "Novinky od verze 0.20.1: mnoho nových funkcí",
+      "description": "Toto je oznámení, nikoli chyba. Aktualizace přidala mnoho nových funkcí — především Prediktivního poradce: vysvětluje, proč tepelné čerpadlo běží, detekuje anomálie, hodnotí zdraví a účinnost, učí se mapu COP a model budovy a doporučuje kroky otopné křivky, okna teplé vody z prognózy FVE nebo cen a 24hodinový plán. Vše je striktně jen pro čtení, zcela lokální a funguje bez jakékoli AI — a lze to vypnout v možnostech integrace. Klepněte na „Dozvědět se více“ pro úplný přehled všeho, co je nyní možné."
+    },
+    "write_connection_failed": {
+      "title": "Připojení při zápisu registru IDM selhalo",
+      "description": "Doručení zápisu do registru **{register}** na adrese **{address}** se nepodařilo potvrdit, protože připojení Modbus selhalo. Nejde o odmítnutí přístupu k registru regulátorem.\n\nTechnický detail: `{detail}`\n\nZkontrolujte nakonfigurovaný koncový bod a port. Pokud používáte ModBridge nebo jinou proxy, zkontrolujte její naslouchací proces, upstream trasu, dostupnost služby a připojení k Navigatoru. U přímého připojení zkontrolujte dostupnost Modbus TCP Navigatoru a síť.\n\nToto upozornění se vymaže po úspěšném zápisu do stejného registru."
+    }
+  },
+  "selector": {
+    "feature_profile": {
+      "options": {
+        "smart": "iDM Smart Energy & Comfort (doporučeno)",
+        "vanilla": "Vanilla – jen základní entity IDM"
+      }
+    },
+    "model_override": {
+      "options": {
+        "auto": "Automaticky (doporučeno)",
+        "navigator_10": "Navigator 10",
+        "navigator_20": "Navigator 2.0",
+        "navigator_pro": "Navigator Pro",
+        "navigator_17": "Navigator 1.7 (jen čtení + FVE)"
+      }
+    },
+    "heating_circuit": {
+      "options": {
+        "a": "Okruh A – Primární",
+        "b": "Okruh B",
+        "c": "Okruh C",
+        "d": "Okruh D",
+        "e": "Okruh E",
+        "f": "Okruh F",
+        "g": "Okruh G"
+      }
+    },
+    "web_pin_missing_action": {
+      "options": {
+        "set_pin": "Nastavit PIN nyní",
+        "disable_web": "Nepoužívat data webového doplňku"
+      }
+    },
+    "modbus_failed_action": {
+      "options": {
+        "retry": "Zkusit znovu připojení Modbus",
+        "web_only": "Pokračovat jen s webovými daty (omezené)"
+      }
+    },
+    "setup_profile": {
+      "options": {
+        "standard": "Standardní",
+        "advanced": "Pokročilé",
+        "expert": "Expert"
+      }
+    },
+    "knx_object_group": {
+      "options": {
+        "system": "Systém",
+        "heat_pump": "Tepelné čerpadlo",
+        "dhw": "Teplá voda",
+        "heating_circuits": "Topné okruhy",
+        "zones": "Zónové moduly",
+        "glt": "Řízení budovy (GLT)",
+        "energy": "Tepelná množství a výkon",
+        "solar": "Solární",
+        "isc": "Chlazení ISC",
+        "cascade": "Kaskáda",
+        "booster": "Booster",
+        "pv": "FVE a baterie"
+      }
+    },
+    "external_power_battery_sign": {
+      "options": {
+        "as_is": "Použít znaménko zdroje (konvence IDM)",
+        "invert": "Invertovat znaménko zdroje (zdroj ve stylu openWB)"
+      }
+    },
+    "external_power_grid_sign": {
+      "options": {
+        "import": "Kladné = odběr ze sítě (záporné = dodávka)",
+        "export": "Kladné = dodávka (záporné = odběr ze sítě)"
+      }
+    },
+    "guided_level": {
+      "options": {
+        "standard": "Standardní",
+        "advanced": "Pokročilé",
+        "expert": "Expert"
+      }
+    },
+    "guided_features": {
+      "options": {
+        "plant": "Instalace, okruhy a zóny",
+        "profile": "Profil entit",
+        "health": "Monitor zdraví",
+        "predictive_advisor": "Prediktivní poradce",
+        "energy": "Energetické náklady a uhlík",
+        "energy_manager": "Automatická teplá voda z FVE",
+        "comfort": "Harmonogram komfortu",
+        "heating_curve": "Doporučení otopné křivky",
+        "weather": "Doporučení podle počasí",
+        "web": "Místní webová data Navigator",
+        "room_forwarding": "Přeposílání pokojové teploty",
+        "humidity_forwarding": "Přeposílání vlhkosti",
+        "storage_forwarding": "Přeposílání teploty zásobníku",
+        "external_power": "Vnější senzory výkonu a baterie",
+        "knx": "KNX most",
+        "cascade": "Registry kaskády",
+        "solar_thermal": "Solární termální registry",
+        "device_hierarchy": "Seskupení zařízení",
+        "modbus": "Transport Modbus",
+        "ai_advisor": "AI poradce (experimentální, jen čtení)"
+      }
+    },
+    "ai_provider": {
+      "options": {
+        "ha_task": "Home Assistant AI Task (doporučeno)",
+        "ollama": "Ollama (lokální)",
+        "zai": "Z.ai (přímé)",
+        "openai": "OpenAI (přímá alternativa)"
+      }
+    },
+    "solar_unused_action": {
+      "options": {
+        "disable": "Přestat číst solární registry",
+        "keep": "Ponechat solární registry"
+      }
+    },
+    "connection_mode": {
+      "options": {
+        "auto": "Automaticky (doporučeno)",
+        "modbus_web": "Modbus + webový doplněk",
+        "web_only": "Pouze web",
+        "modbus_only": "Pouze Modbus"
+      }
+    }
+  },
+  "exceptions": {
+    "smart_features_disabled": {
+      "message": "Profil iDM Smart Energy & Comfort je pro toto tepelné čerpadlo vypnutý. Vyberte jej v možnostech integrace před použitím této akce."
+    },
+    "no_device_configured": {
+      "message": "Aktuálně není nakonfigurováno ani načteno žádné tepelné čerpadlo IDM."
+    },
+    "invalid_mode": {
+      "message": "Neplatný provozní režim: \"{mode}\". Platné režimy: standby, automatik, automatic, abwesend, away, urlaub, holiday, nur warmwasser, hot water only, nur heizung/kuehlung, heating/cooling only."
+    },
+    "acknowledge_risk_required": {
+      "message": "Pro použití služby write_register musíte nastavit acknowledge_risk na true."
+    },
+    "error_acknowledge_unavailable": {
+      "message": "Potvrzování chyb není v mapě registrů tohoto modelu tepelného čerpadla k dispozici."
+    },
+    "preset_mode_unavailable_while_cooling": {
+      "message": "Topný okruh {circuit} je aktuálně v režimu chlazení; přednastavený režim se vztahuje jen na topení. Nejprve přepněte do topného režimu."
+    },
+    "write_failed": {
+      "message": "Registr {register} se nepodařilo zapsat. Zkontrolujte hodnotu a zkuste to znovu. Pokud problém přetrvává, zapněte ladicí protokolování."
+    },
+    "write_eeprom_blocked": {
+      "message": "Registr {register} byl zapsán příliš nedávno. Je uložen v EEPROM regulátoru, proto integrace zápisy rozměňuje, aby chránila hardware. Vyčkejte, než uplyne interval zápisu EEPROM, a zkuste to znovu. Technický detail: {detail}"
+    },
+    "write_rejected_by_device": {
+      "message": "Tepelné čerpadlo odmítlo zápis do registru {register}. Zkontrolujte na Navigatoru v Řízení budovy, zda je tento registr uvolněn pro zápis (přístup GLT) a zda je funkce pro tento topný okruh zapnutá. Technický detail: {detail}"
+    },
+    "write_connection_failed": {
+      "message": "Registr {register} nebylo možné zapsat, protože připojení k tepelnému čerpadlu selhalo. Zkontrolujte připojení Modbus TCP a zkuste to znovu."
+    },
+    "write_read_only": {
+      "message": "Registr {register} je jen pro čtení nebo aktuálně uzamčen regulátorem a nelze jej změnit."
+    },
+    "write_out_of_range": {
+      "message": "Požadovaná hodnota pro registr {register} je mimo povolený rozsah. Zvolte hodnotu v mezích entity."
+    },
+    "write_not_supported": {
+      "message": "Registr {register} není tímto modelem, firmwarem ani nainstalovaným vybavením tepelného čerpadla podporován."
+    },
+    "write_invalid_value": {
+      "message": "Požadovaná hodnota pro registr {register} má neplatný formát nebo datový typ."
+    },
+    "entry_not_loaded": {
+      "message": "Vybraná položka integrace IDM není načtena."
+    },
+    "multiple_entries_select_entry": {
+      "message": "Je načteno více tepelných čerpadel IDM. Poskytněte entry_id pro cílení na konkrétní zařízení."
+    },
+    "invalid_datatype": {
+      "message": "Neplatný datový typ: \"{datatype}\". Platné hodnoty: uint16, int16, float, uchar, bool."
+    },
+    "write_register_missing_fields": {
+      "message": "Služba write_register vyžaduje adresu i hodnotu."
+    },
+    "invalid_address": {
+      "message": "Neplatná adresa registru \"{value}\". Poskytněte číselnou adresu registru."
+    },
+    "invalid_value": {
+      "message": "Neplatná hodnota \"{value}\" pro datový typ {datatype}."
+    },
+    "invalid_heating_circuit": {
+      "message": "Neplatný topný okruh: \"{heating_circuit}\". Platné hodnoty: A, B, C, D, E, F, G."
+    },
+    "external_climate_temperature_out_of_range": {
+      "message": "Vnější pokojová teplota {value} °C je mimo povolený rozsah -20…60 °C."
+    },
+    "external_climate_humidity_out_of_range": {
+      "message": "Vnější vlhkost {value} % je mimo povolený rozsah 0…100 %."
+    },
+    "dhw_boost_no_entry": {
+      "message": "Konfigurační položka není k dispozici."
+    },
+    "dhw_boost_already_active": {
+      "message": "Boost teplé vody už je aktivní. Před spuštěním nového jej zrušte."
+    },
+    "dhw_boost_unsupported": {
+      "message": "Potřebné registry teplé vody a režimu systému nejsou na tomto tepelném čerpadle k dispozici."
+    },
+    "dhw_boost_no_current_temp": {
+      "message": "Aktuální teplota teplé vody není k dispozici."
+    },
+    "dhw_boost_no_previous_state": {
+      "message": "Aktuální režim systému nebo nastavená hodnota teplé vody není k dispozici."
+    },
+    "dhw_boost_start_failed_rolled_back": {
+      "message": "Boost teplé vody se nepodařilo spustit; předchozí stav byl obnoven."
+    },
+    "dhw_boost_start_failed_rollback_incomplete": {
+      "message": "Boost teplé vody se nepodařilo spustit a předchozí stav se zatím nepodařilo plně obnovit. Obnovení se zopakuje při další aktualizaci koordinátora."
+    },
+    "dhw_boost_invalid_recovery_state": {
+      "message": "Uložený stav obnovení je neúplný."
+    },
+    "dhw_boost_restore_failed": {
+      "message": "Předchozí stav teplé vody se zatím nepodařilo plně obnovit. Obnovení se zopakuje při další aktualizaci koordinátora."
+    },
+    "dhw_boost_register_not_writable": {
+      "message": "Registr {register} není zapisovatelný."
+    },
+    "dhw_boost_invalid_target": {
+      "message": "Neplatná cílová teplota teplé vody."
+    },
+    "dhw_boost_target_out_of_range": {
+      "message": "Cílová teplota teplé vody musí být mezi {minimum} a {maximum} °C."
+    },
+    "dhw_boost_timeout_out_of_range": {
+      "message": "Doba trvání boostu musí být mezi {minimum} a {maximum} minutami."
+    },
+    "external_power_no_values": {
+      "message": "Musí být poskytnuta alespoň jedna vnější hodnota výkonu nebo baterie."
+    },
+    "external_power_battery_soc_out_of_range": {
+      "message": "Stav nabití baterie {value} % musí být celé číslo od 0 do 100."
+    },
+    "write_cooldown_active": {
+      "message": "Registr {register} zatím nelze zapsat. Nakonfigurovaná ochranná lhůta je {cooldown} sekund; vyčkejte dalších {remaining} sekund. Hodnota 0 tuto ochranu vypíná."
+    },
+    "invalid_ai_endpoint": {
+      "message": "Zadejte místní HTTP(S) URL založenou na IP bez přihlašovacích údajů, cesty nebo dotazu, například http://192.168.1.20:11434."
+    },
+    "invalid_ai_model": {
+      "message": "Zadejte název nainstalovaného místního modelu. Cloudové modely nejsou podporovány."
+    },
+    "invalid_ai_language": {
+      "message": "Zvolte de nebo en."
+    },
+    "ai_disabled": {
+      "message": "Nejprve pro tuto načtenou položku IDM zapněte experimentálního AI poradce."
+    },
+    "ai_invalid_report_type": {
+      "message": "Zvolte daily, weekly, health nebo efficiency."
+    },
+    "ai_busy": {
+      "message": "Zpráva se už generuje. Vyčkejte prosím."
+    },
+    "ai_cooldown": {
+      "message": "Mezi požadavky na zprávu vyčkejte alespoň 60 sekund."
+    },
+    "ai_server_error": {
+      "message": "Ollama požadavek odmítl. Zkontrolujte místní server a nainstalovaný model."
+    },
+    "ai_invalid_response": {
+      "message": "Odpověď AI byla prázdná, zkrácená, příliš velká nebo neplatná. Předchozí zpráva se zachovává."
+    },
+    "ai_local_model_required": {
+      "message": "Je vyžadován lokálně nainstalovaný model doplňování GGUF; vzdálené modely jsou odmítány."
+    },
+    "ai_unavailable": {
+      "message": "Vybraný poskytovatel AI není dostupný nebo překročil časový limit (lokálně 300 sekund, cloud 120 sekund)."
+    },
+    "ai_cloud_consent_required": {
+      "message": "Vyberte podporovaného poskytovatele cloudu a výslovně povolte odesílání vybraných provozních dat."
+    },
+    "ai_cloud_invalid_limit": {
+      "message": "Nastavte celé číslo od 1 do 24 cloudových požadavků na den UTC."
+    },
+    "ai_cloud_key_required": {
+      "message": "Zadejte platný klíč API pro vybraného poskytovatele."
+    },
+    "ai_cloud_auth_failed": {
+      "message": "Poskytovatel odmítl ověření nebo přístup. Zkontrolujte klíč API a přístup k modelu."
+    },
+    "ai_cloud_rate_limited": {
+      "message": "Poskytovatel požadavek odmítl kvůli kvótě nebo limitům frekvence. Automaticky se nezopakoval."
+    },
+    "ai_cloud_budget_unavailable": {
+      "message": "Rozpočet požadavků se nepodařilo bezpečně načíst nebo uložit. Nebyl odeslán žádný cloudový požadavek."
+    },
+    "ai_cloud_daily_limit_reached": {
+      "message": "Limit cloudových požadavků pro tento den UTC byl dosažen."
+    },
+    "ai_task_entity_required": {
+      "message": "Vyberte existující entitu ai_task, která podporuje generování dat."
+    },
+    "web_clock_requires_web_supplement": {
+      "message": "Nastavení hodin vyžaduje aktivní webový doplněk (WebSocket Navigator 10 nebo webové rozhraní Navigator 2.0)."
+    },
+    "invalid_datetime": {
+      "message": "Neplatná hodnota data/času: {value}"
+    },
+    "advisor_disabled": {
+      "message": "Nejprve pro tuto načtenou položku IDM zapněte prediktivního poradce."
+    },
+    "advisor_bad_reason": {
+      "message": "Zvolte platný kód důvodu anomálie."
+    },
+    "dashboard_no_entities": {
+      "message": "Pro tuto položku zatím nebyly nalezeny žádné entity dashboardu; vyčkejte na první úspěšné dotazování."
+    }
+  }
+}
