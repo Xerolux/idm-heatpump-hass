@@ -654,7 +654,23 @@
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
           "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
-          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds.",
+          "ai_url": "Base URL of the local Ollama instance. Leave empty when no local model is used.",
+          "ai_model": "Model name requested from the local Ollama instance; only used for local free-form explanations.",
+          "ai_language": "Language of the generated reports (de or en).",
+          "ai_provider": "Who generates on-demand reports: deterministic without a model, the local model, a Home Assistant AI Task entity or direct cloud requests.",
+          "ai_task_entity": "Entity ID of the Home Assistant AI Task helper used to generate reports.",
+          "ai_cloud_model": "Model ID used for direct cloud requests (provider-specific spelling).",
+          "ai_cloud_consent": "Explicit consent to send the redacted report payload to the configured cloud provider. Off by default.",
+          "ai_cloud_daily_limit": "Maximum number of AI-Task and direct cloud requests per UTC day; 0 blocks them entirely.",
+          "ai_interval_hours": "Hours between automatically generated reports; 0 means reports are only generated on demand.",
+          "ai_schedule_report": "Which report is generated automatically when the interval elapses.",
+          "ai_learning": "Continuously learn local operating baselines used by the deterministic analyses.",
+          "ai_notifications": "Notify when new measured health flags appear.",
+          "ai_storage_mib": "Upper bound for locally stored AI history data, in MiB.",
+          "ai_unverified_text": "Free-form AI explanations cannot be fully verified against the measurements; enable only if you accept that limitation.",
+          "ai_openai_key": "Optional OpenAI API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it.",
+          "ai_zai_key": "Optional Z.ai API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it."
         }
       },
       "guided_detail": {
@@ -804,7 +820,23 @@
           "advisor_pv_forecast_entity": "Optional — leave empty if you have none; the advisor works fully without it. A Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes) is only the basis for PV-based hot-water window recommendations.",
           "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
           "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
-          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds.",
+          "ai_url": "Base URL of the local Ollama instance. Leave empty when no local model is used.",
+          "ai_model": "Model name requested from the local Ollama instance; only used for local free-form explanations.",
+          "ai_language": "Language of the generated reports (de or en).",
+          "ai_provider": "Who generates on-demand reports: deterministic without a model, the local model, a Home Assistant AI Task entity or direct cloud requests.",
+          "ai_task_entity": "Entity ID of the Home Assistant AI Task helper used to generate reports.",
+          "ai_cloud_model": "Model ID used for direct cloud requests (provider-specific spelling).",
+          "ai_cloud_consent": "Explicit consent to send the redacted report payload to the configured cloud provider. Off by default.",
+          "ai_cloud_daily_limit": "Maximum number of AI-Task and direct cloud requests per UTC day; 0 blocks them entirely.",
+          "ai_interval_hours": "Hours between automatically generated reports; 0 means reports are only generated on demand.",
+          "ai_schedule_report": "Which report is generated automatically when the interval elapses.",
+          "ai_learning": "Continuously learn local operating baselines used by the deterministic analyses.",
+          "ai_notifications": "Notify when new measured health flags appear.",
+          "ai_storage_mib": "Upper bound for locally stored AI history data, in MiB.",
+          "ai_unverified_text": "Free-form AI explanations cannot be fully verified against the measurements; enable only if you accept that limitation.",
+          "ai_openai_key": "Optional OpenAI API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it.",
+          "ai_zai_key": "Optional Z.ai API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it."
         }
       },
       "guided_review": {
@@ -1401,7 +1433,23 @@
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
           "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
-          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds.",
+          "ai_url": "Base URL of the local Ollama instance. Leave empty when no local model is used.",
+          "ai_model": "Model name requested from the local Ollama instance; only used for local free-form explanations.",
+          "ai_language": "Language of the generated reports (de or en).",
+          "ai_provider": "Who generates on-demand reports: deterministic without a model, the local model, a Home Assistant AI Task entity or direct cloud requests.",
+          "ai_task_entity": "Entity ID of the Home Assistant AI Task helper used to generate reports.",
+          "ai_cloud_model": "Model ID used for direct cloud requests (provider-specific spelling).",
+          "ai_cloud_consent": "Explicit consent to send the redacted report payload to the configured cloud provider. Off by default.",
+          "ai_cloud_daily_limit": "Maximum number of AI-Task and direct cloud requests per UTC day; 0 blocks them entirely.",
+          "ai_interval_hours": "Hours between automatically generated reports; 0 means reports are only generated on demand.",
+          "ai_schedule_report": "Which report is generated automatically when the interval elapses.",
+          "ai_learning": "Continuously learn local operating baselines used by the deterministic analyses.",
+          "ai_notifications": "Notify when new measured health flags appear.",
+          "ai_storage_mib": "Upper bound for locally stored AI history data, in MiB.",
+          "ai_unverified_text": "Free-form AI explanations cannot be fully verified against the measurements; enable only if you accept that limitation.",
+          "ai_openai_key": "Optional OpenAI API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it.",
+          "ai_zai_key": "Optional Z.ai API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it."
         }
       },
       "guided_detail": {
@@ -1551,7 +1599,23 @@
           "advisor_pv_forecast_entity": "Optional — leave empty if you have none; the advisor works fully without it. A Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes) is only the basis for PV-based hot-water window recommendations.",
           "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
           "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
-          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds.",
+          "ai_url": "Base URL of the local Ollama instance. Leave empty when no local model is used.",
+          "ai_model": "Model name requested from the local Ollama instance; only used for local free-form explanations.",
+          "ai_language": "Language of the generated reports (de or en).",
+          "ai_provider": "Who generates on-demand reports: deterministic without a model, the local model, a Home Assistant AI Task entity or direct cloud requests.",
+          "ai_task_entity": "Entity ID of the Home Assistant AI Task helper used to generate reports.",
+          "ai_cloud_model": "Model ID used for direct cloud requests (provider-specific spelling).",
+          "ai_cloud_consent": "Explicit consent to send the redacted report payload to the configured cloud provider. Off by default.",
+          "ai_cloud_daily_limit": "Maximum number of AI-Task and direct cloud requests per UTC day; 0 blocks them entirely.",
+          "ai_interval_hours": "Hours between automatically generated reports; 0 means reports are only generated on demand.",
+          "ai_schedule_report": "Which report is generated automatically when the interval elapses.",
+          "ai_learning": "Continuously learn local operating baselines used by the deterministic analyses.",
+          "ai_notifications": "Notify when new measured health flags appear.",
+          "ai_storage_mib": "Upper bound for locally stored AI history data, in MiB.",
+          "ai_unverified_text": "Free-form AI explanations cannot be fully verified against the measurements; enable only if you accept that limitation.",
+          "ai_openai_key": "Optional OpenAI API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it.",
+          "ai_zai_key": "Optional Z.ai API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it."
         }
       },
       "guided_review": {

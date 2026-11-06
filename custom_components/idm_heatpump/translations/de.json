@@ -654,7 +654,23 @@
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
           "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
-          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
+          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
+          "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
+          "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
+          "ai_language": "Sprache der erzeugten Berichte (de oder en).",
+          "ai_provider": "Wer Bei-Bedarf-Berichte erzeugt: deterministisch ohne Modell, das lokale Modell, eine Home-Assistant-AI-Task-Entität oder direkte Cloud-Anfragen.",
+          "ai_task_entity": "Entitäts-ID des Home-Assistant-AI-Task-Helfers, der Berichte erzeugt.",
+          "ai_cloud_model": "Modell-ID für direkte Cloud-Anfragen (herstellerspezifische Schreibweise).",
+          "ai_cloud_consent": "Ausdrückliche Zustimmung, die geschwärzten Berichtsdaten an den konfigurierten Cloud-Anbieter zu senden. Standardmäßig aus.",
+          "ai_cloud_daily_limit": "Maximale Anzahl an AI-Task- und direkten Cloud-Anfragen pro UTC-Tag; 0 sperrt sie vollständig.",
+          "ai_interval_hours": "Stunden zwischen automatisch erzeugten Berichten; 0 bedeutet, dass Berichte nur auf Anforderung entstehen.",
+          "ai_schedule_report": "Welcher Bericht beim Ablauf des Intervalls automatisch erzeugt wird.",
+          "ai_learning": "Lokale Betriebs-Basenlinien für die deterministischen Analysen kontinuierlich lernen.",
+          "ai_notifications": "Benachrichtigen, wenn neue gemessene Health-Hinweise auftreten.",
+          "ai_storage_mib": "Obergrenze für lokal gespeicherte KI-Verlaufsdaten, in MiB.",
+          "ai_unverified_text": "Freie KI-Erklärungen lassen sich nicht vollständig gegen die Messwerte verifizieren; nur aktivieren, wenn diese Einschränkung akzeptiert wird.",
+          "ai_openai_key": "Optionaler OpenAI-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
+          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn."
         }
       },
       "guided_detail": {
@@ -804,7 +820,23 @@
           "advisor_pv_forecast_entity": "Optional — kann leer gelassen werden, der Advisor funktioniert auch ohne. Ein Home-Assistant-Sensor mit stündlicher PV-Erzeugungsprognose (z. B. PVForecast- oder Solcast-Attribute) ist nur die Grundlage für PV-basierte Warmwasser-Zeitfenster-Empfehlungen.",
           "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt.",
           "connection_mode": "Automatisch behält das empfohlene Verhalten: Modbus für Register und Schreibvorgänge, die lokale Web-Ergänzung für zusätzliche Werte, wenn eine PIN konfiguriert ist. Modbus + Web-Ergänzung legt beide Pfade fest und deaktiviert den Web-only-Fallback beim Einrichten. Nur Web betreibt den Eintrag ohne Modbus-Verbindung: Betriebsart und Störungsquittierung werden über die lokale Web-Oberfläche gesteuert; Sollwerte und weitere Steuermöglichkeiten erfordern weiterhin Modbus. Nur Modbus kontaktiert niemals das Web-Interface, auch nicht mit konfigurierter PIN.",
-          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
+          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
+          "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
+          "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
+          "ai_language": "Sprache der erzeugten Berichte (de oder en).",
+          "ai_provider": "Wer Bei-Bedarf-Berichte erzeugt: deterministisch ohne Modell, das lokale Modell, eine Home-Assistant-AI-Task-Entität oder direkte Cloud-Anfragen.",
+          "ai_task_entity": "Entitäts-ID des Home-Assistant-AI-Task-Helfers, der Berichte erzeugt.",
+          "ai_cloud_model": "Modell-ID für direkte Cloud-Anfragen (herstellerspezifische Schreibweise).",
+          "ai_cloud_consent": "Ausdrückliche Zustimmung, die geschwärzten Berichtsdaten an den konfigurierten Cloud-Anbieter zu senden. Standardmäßig aus.",
+          "ai_cloud_daily_limit": "Maximale Anzahl an AI-Task- und direkten Cloud-Anfragen pro UTC-Tag; 0 sperrt sie vollständig.",
+          "ai_interval_hours": "Stunden zwischen automatisch erzeugten Berichten; 0 bedeutet, dass Berichte nur auf Anforderung entstehen.",
+          "ai_schedule_report": "Welcher Bericht beim Ablauf des Intervalls automatisch erzeugt wird.",
+          "ai_learning": "Lokale Betriebs-Basenlinien für die deterministischen Analysen kontinuierlich lernen.",
+          "ai_notifications": "Benachrichtigen, wenn neue gemessene Health-Hinweise auftreten.",
+          "ai_storage_mib": "Obergrenze für lokal gespeicherte KI-Verlaufsdaten, in MiB.",
+          "ai_unverified_text": "Freie KI-Erklärungen lassen sich nicht vollständig gegen die Messwerte verifizieren; nur aktivieren, wenn diese Einschränkung akzeptiert wird.",
+          "ai_openai_key": "Optionaler OpenAI-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
+          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn."
         }
       },
       "guided_review": {
@@ -1401,7 +1433,23 @@
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
           "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
-          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
+          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
+          "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
+          "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
+          "ai_language": "Sprache der erzeugten Berichte (de oder en).",
+          "ai_provider": "Wer Bei-Bedarf-Berichte erzeugt: deterministisch ohne Modell, das lokale Modell, eine Home-Assistant-AI-Task-Entität oder direkte Cloud-Anfragen.",
+          "ai_task_entity": "Entitäts-ID des Home-Assistant-AI-Task-Helfers, der Berichte erzeugt.",
+          "ai_cloud_model": "Modell-ID für direkte Cloud-Anfragen (herstellerspezifische Schreibweise).",
+          "ai_cloud_consent": "Ausdrückliche Zustimmung, die geschwärzten Berichtsdaten an den konfigurierten Cloud-Anbieter zu senden. Standardmäßig aus.",
+          "ai_cloud_daily_limit": "Maximale Anzahl an AI-Task- und direkten Cloud-Anfragen pro UTC-Tag; 0 sperrt sie vollständig.",
+          "ai_interval_hours": "Stunden zwischen automatisch erzeugten Berichten; 0 bedeutet, dass Berichte nur auf Anforderung entstehen.",
+          "ai_schedule_report": "Welcher Bericht beim Ablauf des Intervalls automatisch erzeugt wird.",
+          "ai_learning": "Lokale Betriebs-Basenlinien für die deterministischen Analysen kontinuierlich lernen.",
+          "ai_notifications": "Benachrichtigen, wenn neue gemessene Health-Hinweise auftreten.",
+          "ai_storage_mib": "Obergrenze für lokal gespeicherte KI-Verlaufsdaten, in MiB.",
+          "ai_unverified_text": "Freie KI-Erklärungen lassen sich nicht vollständig gegen die Messwerte verifizieren; nur aktivieren, wenn diese Einschränkung akzeptiert wird.",
+          "ai_openai_key": "Optionaler OpenAI-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
+          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn."
         }
       },
       "guided_detail": {
@@ -1551,7 +1599,23 @@
           "advisor_pv_forecast_entity": "Optional — kann leer gelassen werden, der Advisor funktioniert auch ohne. Ein Home-Assistant-Sensor mit stündlicher PV-Erzeugungsprognose (z. B. PVForecast- oder Solcast-Attribute) ist nur die Grundlage für PV-basierte Warmwasser-Zeitfenster-Empfehlungen.",
           "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt.",
           "connection_mode": "Automatisch behält das empfohlene Verhalten: Modbus für Register und Schreibvorgänge, die lokale Web-Ergänzung für zusätzliche Werte, wenn eine PIN konfiguriert ist. Modbus + Web-Ergänzung legt beide Pfade fest und deaktiviert den Web-only-Fallback beim Einrichten. Nur Web betreibt den Eintrag ohne Modbus-Verbindung: Betriebsart und Störungsquittierung werden über die lokale Web-Oberfläche gesteuert; Sollwerte und weitere Steuermöglichkeiten erfordern weiterhin Modbus. Nur Modbus kontaktiert niemals das Web-Interface, auch nicht mit konfigurierter PIN.",
-          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
+          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
+          "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
+          "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
+          "ai_language": "Sprache der erzeugten Berichte (de oder en).",
+          "ai_provider": "Wer Bei-Bedarf-Berichte erzeugt: deterministisch ohne Modell, das lokale Modell, eine Home-Assistant-AI-Task-Entität oder direkte Cloud-Anfragen.",
+          "ai_task_entity": "Entitäts-ID des Home-Assistant-AI-Task-Helfers, der Berichte erzeugt.",
+          "ai_cloud_model": "Modell-ID für direkte Cloud-Anfragen (herstellerspezifische Schreibweise).",
+          "ai_cloud_consent": "Ausdrückliche Zustimmung, die geschwärzten Berichtsdaten an den konfigurierten Cloud-Anbieter zu senden. Standardmäßig aus.",
+          "ai_cloud_daily_limit": "Maximale Anzahl an AI-Task- und direkten Cloud-Anfragen pro UTC-Tag; 0 sperrt sie vollständig.",
+          "ai_interval_hours": "Stunden zwischen automatisch erzeugten Berichten; 0 bedeutet, dass Berichte nur auf Anforderung entstehen.",
+          "ai_schedule_report": "Welcher Bericht beim Ablauf des Intervalls automatisch erzeugt wird.",
+          "ai_learning": "Lokale Betriebs-Basenlinien für die deterministischen Analysen kontinuierlich lernen.",
+          "ai_notifications": "Benachrichtigen, wenn neue gemessene Health-Hinweise auftreten.",
+          "ai_storage_mib": "Obergrenze für lokal gespeicherte KI-Verlaufsdaten, in MiB.",
+          "ai_unverified_text": "Freie KI-Erklärungen lassen sich nicht vollständig gegen die Messwerte verifizieren; nur aktivieren, wenn diese Einschränkung akzeptiert wird.",
+          "ai_openai_key": "Optionaler OpenAI-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
+          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn."
         }
       },
       "guided_review": {

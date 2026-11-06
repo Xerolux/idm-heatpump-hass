@@ -7,13 +7,13 @@ This page only summarizes recent milestones.
 
 ## v0.27.0-b1 — 2026-11-06
 
-The technician access-code sensors are removed: the integration no longer
-calculates the time-based Fachmann-Ebene codes, the option that created the
-sensors is gone from the options flow, and the two sensor entities disappear
-on upgrade — no migration is needed and everything else is untouched. Access
-to the installer level remains a matter for the heating installer. The
-controller-clock sensor keeps making clock drift visible, and the
-protocol-analysis notes remain research documentation.
+The technician access-code sensors are removed for safety reasons: the
+integration no longer calculates the time-based Fachmann-Ebene codes, the
+option that created the sensors is gone from the options flow, and the two
+sensor entities disappear on upgrade — no migration is needed and everything
+else is untouched. Access to the installer level remains a matter for the
+heating installer. The controller-clock sensor keeps making clock drift
+visible, and the protocol-analysis notes remain research documentation.
 
 ## v0.26.0 — 2026-11-06
 

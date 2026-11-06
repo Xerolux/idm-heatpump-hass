@@ -266,7 +266,6 @@ async def cmd_setup(args: argparse.Namespace) -> int:
                     "features": {
                         "device_hierarchy": True,
                         "short_cycle_minutes": 15,
-                        "technician_codes": False,
                         "enable_cascade": False,
                         "web_extra_data": True,
                         "web_scan_interval": 300,

@@ -43,12 +43,3 @@ views:
             name: Acknowledge errors
           - entity: binary_sensor.idm_heatpump_letzter_verdichtertakt_zu_kurz
             name: Last compressor cycle too short
-
-      - type: entities
-        title: Technician codes
-        show_header_toggle: false
-        entities:
-          - entity: sensor.idm_heatpump_technician_code_l1
-            name: Technician code L1
-          - entity: sensor.idm_heatpump_technician_code_l2
-            name: Technician code L2

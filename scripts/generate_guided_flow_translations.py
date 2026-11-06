@@ -26,7 +26,6 @@ FEATURES = (
     "cascade",
     "solar_thermal",
     "device_hierarchy",
-    "technician_codes",
     "modbus",
     "ai_advisor",
 )
@@ -50,7 +49,6 @@ LABELS = {
         "Cascade registers",
         "Solar thermal registers",
         "Device grouping",
-        "Technician code sensors",
         "Modbus transport",
         "AI adviser (experimental, read-only)",
     ),
@@ -73,7 +71,6 @@ LABELS = {
         "Kaskadenregister",
         "Solarthermie",
         "Geräte gruppieren",
-        "Fachmann-Code-Sensoren",
         "Modbus-Verbindung",
         "KI-Anlagenberater (experimentell, nur lesend)",
     ),

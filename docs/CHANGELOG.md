@@ -23,7 +23,7 @@ The technician access-code sensors are gone: the integration no longer calculate
 
 ### 💼 Maintenance
 
-- **No more calculated installer access codes**: computing the controller's time-based Fachmann-Ebene codes and offering them as sensors cut short an access level IDM reserves for trained installers. The calculation module, its sensors, the option, tests and documentation are removed; the controller-clock sensor keeps making clock drift visible.
+- **Technician-code sensors removed for safety reasons**: computing the controller's installer-level codes and offering them as sensors cut short an access level iDM reserves for trained installers. The calculation module, its sensors, the option, tests and documentation are removed; the controller-clock sensor keeps making clock drift visible.
 
 ## [0.26.0] - 2026-11-06
 
