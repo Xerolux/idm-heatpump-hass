@@ -1,0 +1,894 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurare pompă de căldură IDM Navigator",
+        "menu_options": {
+          "manual": "Introdu datele de conectare manual",
+          "scan": "Caută pompa de căldură în rețea"
+        }
+      },
+      "manual": {
+        "title": "Configurare pompă de căldură IDM Navigator",
+        "description": "[Ai nevoie de ajutor? Deschide documentația]({wiki_url})\n\nIntrodu datele de conectare Modbus ale pompei tale de căldură IDM. Implicit, asistentul configurează **Modbus și accesul web local al Navigator împreună**; introdu codul de rețea locală ca PIN web. Dacă vrei deliberat doar Modbus, dezactivează explicit accesul web.\n\nDacă folosești un proxy Modbus, activează «Folosește un proxy Modbus» și introdu adresa IP sau numele de gazdă direct al pompei de căldură ca adresă web."
+      },
+      "scan": {
+        "title": "Scanarea rețelei",
+        "description": "Fiecare gazdă din subrețea este testată o dată pe portul Modbus TCP 502. Nu se trimit și nu se citesc date Modbus; scanarea verifică doar dacă portul răspunde. Durează câteva secunde și găsește doar dispozitivele accesibile din Home Assistant."
+      },
+      "scan_results": {
+        "title": "Dispozitive găsite",
+        "description": "Alege pompa de căldură dintre gazdele care au răspuns pe portul Modbus TCP. Adresa este transmisă la pasul următor, unde se testează conexiunea și se configurează accesul web și proxy. Gazdele afișate cu nume au fost rezolvate prin DNS invers."
+      },
+      "reconfigure": {
+        "title": "Conexiune și diagnostic",
+        "description": "Schimbă conexiunea salvată sau testează toate endpoint-urile locale configurate fără a salva sau scrie în pompa de căldură.",
+        "menu_options": {
+          "connection": "Schimbă setările conexiunii",
+          "features": "Configurare funcții",
+          "diagnostics": "Testează conexiunea curentă"
+        }
+      },
+      "connection": {
+        "title": "Schimbare conexiune – {name}",
+        "description": "[Ai nevoie de ajutor? Citește documentația]({wiki_url})\n\nConexiune curentă: **{host}**\n\nSetările noi sunt validate înainte de salvare. Integrarea se repornește automat apoi. Modbus TCP trebuie activat pe Navigator în *Managementul clădirii (Gebäudeleittechnik) → Modbus TCP → On (Ein)*. Pentru accesul web local opțional folosește codul din *Setări → Setări generale → Setări de rețea → Cod de rețea locală*, nu date de conectare cloud și nici un cod în doi pași."
+      },
+      "diagnostics_success": {
+        "title": "Conexiune Modbus și web reușită",
+        "description": "Testul doar-citire a reușit pentru Modbus **{host}:{port}**, ID slave **{slave_id}** și accesul web local configurat al Navigator.\n\nNicio setare nu a fost schimbată și niciun registru scris. Trimite din nou pentru a repeta testul.\n\n**Rezultate**\n- Modbus: **{modbus_status}**\n- Web Navigator: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Durată: **{duration} s**"
+      },
+      "diagnostics_modbus_success": {
+        "title": "Conexiune Modbus reușită",
+        "description": "Testul Modbus doar-citire a reușit pentru **{host}:{port}**, ID slave **{slave_id}**. Accesul web a fost omis deoarece nu există PIN web local configurat.\n\nNicio setare nu a fost schimbată și niciun registru scris. Trimite din nou pentru a repeta testul.\n\n**Rezultate**\n- Modbus: **{modbus_status}**\n- Web Navigator: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Durată: **{duration} s**"
+      },
+      "diagnostics_failed": {
+        "title": "Testul de conexiune a eșuat",
+        "description": "Testul doar-citire pentru **{host}:{port}**, ID slave **{slave_id}**, nu s-a încheiat cu succes. Cauza concretă și verificările recomandate sunt afișate mai sus.\n\nNicio setare nu a fost schimbată și niciun registru scris. Trimite din nou pentru a repeta testul.\n\n**Rezultate**\n- Modbus: **{modbus_status}**\n- Web Navigator: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Durată: **{duration} s**"
+      },
+      "options": {
+        "title": "Configurare – {name}",
+        "description": "Alege ce date citește integrarea și cum sunt prezentate în Home Assistant. Valorile implicite recomandate se potrivesc majorității instalațiilor. La salvare integrarea se repornește automat pentru a aplica modificările."
+      },
+      "zones": {
+        "title": "Configurare module de zonă",
+        "description": "Introdu numărul de camere active per modul de zonă (de regulă 6 camere pe Navigator 10 / hardware actual; unele sisteme mai vechi folosesc 8). Se configurează {zone_count} modul(e) de zonă."
+      },
+      "room_temp_forwarding": {
+        "title": "Redirecționare temperatură exterioară a camerei – {name}",
+        "description": "Selectează un senzor de temperatură Home Assistant per circuit de încălzire. Integrarea scrie aceste valori în registrele GLT de temperatură a camerei IDM. Lasă un circuit gol pentru a-l omite."
+      },
+      "humidity_forwarding": {
+        "title": "Redirecționare umiditate exterioară – {name}",
+        "description": "Selectează un senzor de umiditate Home Assistant. Integrarea scrie această valoare în registrul GLT de umiditate IDM. Lasă-l gol pentru a omite redirecționarea umidității."
+      },
+      "storage_temp_forwarding": {
+        "title": "Redirecționare temperatură exterioară a acumulatorului – {name}",
+        "description": "Selectează un senzor de temperatură Home Assistant per registru GLT de acumulator. Integrarea scrie aceste valori în registrele GLT de acumulator IDM. Lasă un câmp gol pentru a-l omite."
+      },
+      "modbus_failed": {
+        "title": "Conexiune Modbus eșuată",
+        "description": "**Verificarea Modbus pentru {host} a eșuat.**\n\nPe Navigator verifică *Managementul clădirii (Gebäudeleittechnik) → Modbus TCP → On (Ein)*. Dacă acest meniu lipsește sau este blocat, contactează instalatorul tău sau service-ul iDM.\n\nMesajul de mai sus distinge dacă endpoint-ul TCP este inaccesibil sau răspunde fără date de registru IDM valide. Corectează datele de conectare și reîncearcă, sau continuă cu **doar date web**. Poți corecta PIN-ul web local chiar mai jos.\n\n**Limitele modului doar web:** doar valori de senzori; fără registre de circuite de încălzire sau zone, entități inscriptibile, control de mod sau confirmare de erori."
+      },
+      "web_only_options": {
+        "title": "Setări date web – {name}",
+        "description": "Modul doar web este activ. Configurează cât de des citește integrarea datele senzorilor din interfața web a Navigator. Entitățile bazate pe Modbus (circuite de încălzire, zone, comenzi inscriptibile) nu sunt disponibile în acest mod."
+      },
+      "setup_review": {
+        "title": "Sistem IDM detectat",
+        "description": "Modbus și accesul web local solicitat au fost verificate.\n\n- Endpoint: **{host}:{port}**\n- ID slave: **{slave_id}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Acces web local: **{web}**\n- Instalație detectată: **{plant}**\n\nVerifică modelul detectat automat. Suprascrie-l doar când detecția este demonstrabil greșită. Apoi alege profunzimea configurării. Fiecare nivel oferă toate funcțiile prin pași ghidați scurți."
+      },
+      "knx_bridge": {
+        "title": "Adrese de grup KNX (experimental) – {name}",
+        "description": "Cele {object_count} obiecte KNX IDM sunt așezate peste o adresă de bază: fiecare număr de obiect i se adaugă, deci 8/0/0 pune obiectul 1 pe 8/0/1 și obiectul 222 pe 8/0/222. Folosește lista de suprascrieri pentru obiectele pe care proiectul tău ETS le adresează deja diferit — un `registru = adresă` pe linie.\n\nETS cunoaște aceste adrese doar după o importare: generează fișierul de import pentru adresa ta de bază cu [generatorul de adrese de grup KNX]({generator_url}) de pe site-ul documentației, apoi importă-l în ETS în *Adrese de grup → Importă adrese de grup*."
+      },
+      "external_power_forwarding": {
+        "title": "Redirecționare energie exterioară – {name}",
+        "description": "Selectează senzori Home Assistant existenți pentru FV, consumul casei și baterie. W/kW sunt convertiți și scriși în registrele GLT IDM corespunzătoare. Câmpurile goale se omit. Nu activa asta împreună cu SMARTFOX sau openWB care scriu aceleași registre."
+      },
+      "feature_notice": {
+        "title": "Confirmă noile funcții beta",
+        "description": "Activezi funcții beta noi. Analizele și sfaturile doar-citire adaugă entități Home Assistant. Redirecționarea energiei exterioară scrie valori de senzori selectate în registre GLT IDM; încărcarea automată a apei calde din FV și programarea de confort pot schimba setări ale pompei de căldură. Activează acele comenzi doar când Home Assistant este unicul regulator pentru funcția afectată. Continuă doar dacă înțelegi aceste efecte."
+      },
+      "guided_mode": {
+        "title": "Alege profunzimea configurării",
+        "description": "Toate cele trei niveluri oferă fiecare funcție. Standard folosește valori sigure, Avansat adaugă ajustări uzuale, iar Expert expune toți parametrii. Valorile existente rămân salvate când schimbi nivelul."
+      },
+      "guided_choose": {
+        "title": "Ce vrei să configurezi?",
+        "description": "Selectează doar funcțiile pe care vrei să le adaugi, elimini sau editezi. Funcțiile neselectate și setările lor salvate rămân neschimbate. Fiecare funcție selectată primește propria pagină scurtă."
+      },
+      "guided_toggle": {
+        "title": "Activează sau dezactivează această funcție",
+        "description": "Alege dacă această funcție trebuie să ruleze. La dezactivare, setările ei detaliate se păstrează pentru o utilizare ulterioară."
+      },
+      "guided_detail": {
+        "title": "Configurează această funcție",
+        "description": "Sunt afișate doar setările funcției selectate. Nivelul tău de configurare determină gradul de detaliu; setările ascunse își păstrează valorile salvate."
+      },
+      "guided_review": {
+        "title": "Verifică și salvează",
+        "description": "Funcții selectate pentru editare: {selected_count}. Salvarea reîncarcă integrarea și îi actualizează entitățile. Verifică comenzile automate și setările KNX înainte de confirmare."
+      },
+      "advisor_room_sources": {
+        "title": "Surse de temperatură a camerei pentru consultant",
+        "description": "Senzori de temperatură opționali doar-citire din Home Assistant pe care consultantul predictiv îi folosește pentru circuitele fără senzor de cameră cablat. Nu se scrie nimic în pompa de căldură; valorile în afara intervalului de plauzibilitate al consultantului sunt ignorate."
+      }
+    },
+    "error": {
+      "cannot_connect": "Conectarea la pompa de căldură a eșuat. Verifică adresa IP și portul și activează Managementul clădirii (Gebäudeleittechnik) → Modbus TCP → On (Ein) pe Navigator. Dacă Modbus nu este disponibil, poți continua cu doar date web (introdu mai întâi PIN-ul local al Navigator).",
+      "host_not_found": "Numele de gazdă nu a putut fi rezolvat. Verifică greșelile de tastare, încearcă adresa IP a pompei de căldură și verifică DNS/mDNS local.",
+      "modbus_connection_refused": "Dispozitivul a refuzat activ conexiunea. Pe Navigator setează Managementul clădirii (Gebäudeleittechnik) → Modbus TCP pe On (Ein) și folosește portul 502. Dacă meniul lipsește sau este blocat, cere instalatorului tău sau service-ului iDM să îl activeze. Repornește regulatorul dacă este necesar, apoi reîncearcă.",
+      "modbus_timeout": "Încercarea de conectare a expirat. Verifică că IP-ul aparține pompei de căldură, că dispozitivul este pornit și că nicio VLAN, rută sau firewall nu blochează portul 502.",
+      "modbus_unreachable": "Endpoint-ul Modbus TCP nu este accesibil. Verifică IP/numele de gazdă și rețeaua, folosește portul 502 și verifică Managementul clădirii (Gebäudeleittechnik) → Modbus TCP → On (Ein) pe Navigator.",
+      "modbus_no_response": "Conexiunea TCP s-a deschis, dar nu s-a primit niciun răspuns valid de registru IDM. Verifică ID-ul slave 1 și că Managementul clădirii (Gebäudeleittechnik) → Modbus TCP este On (Ein) pe Navigator. Repornește regulatorul după activarea Modbus.",
+      "host_required": "Te rugăm să introduci o adresă IP sau un nume de gazdă valid.",
+      "invalid_web_pin": "Interfața web locală a Navigator a respins acest PIN. Introdu PIN-ul corect sau lasă câmpul gol pentru a folosi doar Modbus.",
+      "invalid_web_pin_web_only": "Interfața web locală a Navigator a respins acest PIN. Alege Reîncearcă pentru a corecta IP/port/slave și a reîncerca Modbus, sau introdu PIN-ul corect pentru a folosi doar date web.",
+      "name_required": "Te rugăm să introduci un nume pentru dispozitiv.",
+      "web_pin_required": "Introdu PIN-ul web local al Navigator pentru a continua în modul doar web.",
+      "web_cannot_connect": "Interfața web locală a Navigator nu a putut fi citită. Verifică adresa originală a pompei de căldură și accesul în rețea, sau șterge PIN-ul web pentru a continua doar cu Modbus.",
+      "web_host_required": "Introdu IP-ul/numele de gazdă original al pompei de căldură pentru acces web, sau dezactivează opțiunea de proxy Modbus.",
+      "web_pin_required_or_disable": "Introdu PIN-ul web local al Navigator, sau dezactivează explicit «Folosește accesul web local al Navigator» pentru funcționare doar cu Modbus.",
+      "invalid_knx_base_address": "Nu este o adresă de grup de bază utilizabilă. Folosește notația pe trei niveluri (8/0/0), pe două niveluri (8/0) sau liberă și lasă loc pentru 999 de adrese deasupra.",
+      "invalid_knx_overrides": "Lista de suprascrieri nu a putut fi citită. Folosește un `registru = adresă` pe linie cu un nume de registru IDM cunoscut și nu atribui aceeași adresă de două ori.",
+      "no_knx_groups": "Selectează cel puțin un grup de obiecte.",
+      "feature_notice_required": "Confirmă noile funcții beta înainte de salvare.",
+      "invalid_comfort_windows": "Folosește maximum 16 ferestre care nu se suprapun pe circuitele configurate, fiecare ca circuit,HH:MM,HH:MM,țintă (15–30 °C).",
+      "guided_review_required": "Confirmă rezumatul înainte de salvare.",
+      "weather_entity_required": "Alege o entitate de meteorologie pentru sfaturile meteo.",
+      "grid_power_unused": "Contorul de rețea nu ar fi folosit: este selectat un senzor explicit de surplus FV și consumul casei este și el explicit, sau nu este selectat niciun senzor de producție FV pentru derivarea consumului. Elimină senzorul de rețea sau senzorii expliciți de surplus/consum.",
+      "invalid_ai_endpoint": "Introdu un URL HTTP(S) local bazat pe IP, fără date de autentificare, cale sau interogare, de exemplu http://192.168.1.20:11434.",
+      "invalid_ai_model": "Introdu numele unui model local instalat. Modelele cloud nu sunt acceptate.",
+      "invalid_ai_language": "Alege de sau en.",
+      "ai_cloud_consent_required": "Selectează un furnizor cloud acceptat și permite explicit trimiterea datelor de operare selectate.",
+      "ai_cloud_invalid_limit": "Setează un număr întreg de la 1 la 24 de cereri cloud pe zi UTC.",
+      "ai_cloud_key_required": "Introdu o cheie API validă pentru furnizorul selectat.",
+      "ai_cloud_auth_failed": "Furnizorul a respins autentificarea sau accesul. Verifică cheia API și accesul la model.",
+      "ai_cloud_rate_limited": "Furnizorul a respins cererea din cauza cotei sau a limitelor de frecvență. Nu s-a reîncercat automat.",
+      "ai_cloud_budget_unavailable": "Bugetul de cereri nu a putut fi încărcat sau salvat în siguranță. Nu s-a trimis nicio cerere cloud.",
+      "ai_cloud_daily_limit_reached": "Limita de cereri cloud pentru această zi UTC a fost atinsă.",
+      "ai_task_entity_required": "Selectează o entitate ai_task existentă care acceptă generarea de date.",
+      "invalid_subnet": "Nu este o subrețea IPv4 validă sau este prea mare (maximum /22). Folosește o notație precum `192.168.1.0/24`.",
+      "no_candidates": "Nu s-a găsit niciun dispozitiv cu portul Modbus TCP deschis. Verifică că pompa de căldură este accesibilă și Modbus TCP activ, verifică subrețeaua — sau introdu adresa manual."
+    },
+    "abort": {
+      "already_configured": "Această pompă de căldură este deja configurată.",
+      "reconfigure_successful": "Datele de conectare au fost actualizate. Integrarea se va reporni."
+    }
+  },
+  "options": {
+    "step": {
+      "options": {
+        "title": "Configurare – {name}",
+        "description": "Alege ce date citește integrarea și cum sunt prezentate în Home Assistant. Valorile implicite recomandate se potrivesc majorității instalațiilor. La salvare integrarea se repornește automat pentru a aplica modificările."
+      },
+      "zones": {
+        "title": "Configurare module de zonă",
+        "description": "Introdu numărul de camere active per modul de zonă (de regulă 6 camere pe Navigator 10 / hardware actual; unele sisteme mai vechi folosesc 8). Se configurează {zone_count} modul(e) de zonă."
+      },
+      "room_temp_forwarding": {
+        "title": "Redirecționare temperatură exterioară a camerei – {name}",
+        "description": "Selectează un senzor de temperatură Home Assistant per circuit de încălzire. Integrarea scrie aceste valori în registrele GLT de temperatură a camerei IDM. Lasă un circuit gol pentru a-l omite."
+      },
+      "humidity_forwarding": {
+        "title": "Redirecționare umiditate exterioară – {name}",
+        "description": "Selectează un senzor de umiditate Home Assistant. Integrarea scrie această valoare în registrul GLT de umiditate IDM. Lasă-l gol pentru a omite redirecționarea umidității."
+      },
+      "storage_temp_forwarding": {
+        "title": "Redirecționare temperatură exterioară a acumulatorului – {name}",
+        "description": "Selectează un senzor de temperatură Home Assistant per registru GLT de acumulator. Integrarea scrie aceste valori în registrele GLT de acumulator IDM. Lasă un câmp gol pentru a-l omite."
+      },
+      "knx_bridge": {
+        "title": "Adrese de grup KNX (experimental) – {name}",
+        "description": "Cele {object_count} obiecte KNX IDM sunt așezate peste o adresă de bază: fiecare număr de obiect i se adaugă, deci 8/0/0 pune obiectul 1 pe 8/0/1 și obiectul 222 pe 8/0/222. Folosește lista de suprascrieri pentru obiectele pe care proiectul tău ETS le adresează deja diferit — un `registru = adresă` pe linie.\n\nETS cunoaște aceste adrese doar după o importare: generează fișierul de import pentru adresa ta de bază cu [generatorul de adrese de grup KNX]({generator_url}) de pe site-ul documentației, apoi importă-l în ETS în *Adrese de grup → Importă adrese de grup*."
+      },
+      "external_power_forwarding": {
+        "title": "Redirecționare energie exterioară – {name}",
+        "description": "Selectează senzori Home Assistant existenți pentru FV, consumul casei și baterie. W/kW sunt convertiți și scriși în registrele GLT IDM corespunzătoare. Câmpurile goale se omit. Nu activa asta împreună cu SMARTFOX sau openWB care scriu aceleași registre."
+      },
+      "feature_notice": {
+        "title": "Confirmă noile funcții beta",
+        "description": "Activezi funcții beta noi. Analizele și sfaturile doar-citire adaugă entități Home Assistant. Redirecționarea energiei exterioară scrie valori de senzori selectate în registre GLT IDM; încărcarea automată a apei calde din FV și programarea de confort pot schimba setări ale pompei de căldură. Activează acele comenzi doar când Home Assistant este unicul regulator pentru funcția afectată. Continuă doar dacă înțelegi aceste efecte."
+      },
+      "guided_mode": {
+        "title": "Alege profunzimea configurării",
+        "description": "Toate cele trei niveluri oferă fiecare funcție. Standard folosește valori sigure, Avansat adaugă ajustări uzuale, iar Expert expune toți parametrii. Valorile existente rămân salvate când schimbi nivelul."
+      },
+      "guided_choose": {
+        "title": "Ce vrei să configurezi?",
+        "description": "Selectează doar funcțiile pe care vrei să le adaugi, elimini sau editezi. Funcțiile neselectate și setările lor salvate rămân neschimbate. Fiecare funcție selectată primește propria pagină scurtă."
+      },
+      "guided_toggle": {
+        "title": "Activează sau dezactivează această funcție",
+        "description": "Alege dacă această funcție trebuie să ruleze. La dezactivare, setările ei detaliate se păstrează pentru o utilizare ulterioară."
+      },
+      "guided_detail": {
+        "title": "Configurează această funcție",
+        "description": "Sunt afișate doar setările funcției selectate. Nivelul tău de configurare determină gradul de detaliu; setările ascunse își păstrează valorile salvate."
+      },
+      "guided_review": {
+        "title": "Verifică și salvează",
+        "description": "Funcții selectate pentru editare: {selected_count}. Salvarea reîncarcă integrarea și îi actualizează entitățile. Verifică comenzile automate și setările KNX înainte de confirmare."
+      },
+      "advisor_room_sources": {
+        "title": "Surse de temperatură a camerei pentru consultant",
+        "description": "Senzori de temperatură opționali doar-citire din Home Assistant pe care consultantul predictiv îi folosește pentru circuitele fără senzor de cameră cablat. Nu se scrie nimic în pompa de căldură; valorile în afara intervalului de plauzibilitate al consultantului sunt ignorate."
+      }
+    },
+    "error": {
+      "invalid_knx_base_address": "Nu este o adresă de grup de bază utilizabilă. Folosește notația pe trei niveluri (8/0/0), pe două niveluri (8/0) sau liberă și lasă loc pentru 999 de adrese deasupra.",
+      "invalid_knx_overrides": "Lista de suprascrieri nu a putut fi citită. Folosește un `registru = adresă` pe linie cu un nume de registru IDM cunoscut și nu atribui aceeași adresă de două ori.",
+      "no_knx_groups": "Selectează cel puțin un grup de obiecte.",
+      "feature_notice_required": "Confirmă noile funcții beta înainte de salvare.",
+      "invalid_comfort_windows": "Folosește maximum 16 ferestre care nu se suprapun pe circuitele configurate, fiecare ca circuit,HH:MM,HH:MM,țintă (15–30 °C).",
+      "guided_review_required": "Confirmă rezumatul înainte de salvare.",
+      "weather_entity_required": "Alege o entitate de meteorologie pentru sfaturile meteo.",
+      "grid_power_unused": "Contorul de rețea nu ar fi folosit: este selectat un senzor explicit de surplus FV și consumul casei este și el explicit, sau nu este selectat niciun senzor de producție FV pentru derivarea consumului. Elimină senzorul de rețea sau senzorii expliciți de surplus/consum.",
+      "invalid_ai_endpoint": "Introdu un URL HTTP(S) local bazat pe IP, fără date de autentificare, cale sau interogare, de exemplu http://192.168.1.20:11434.",
+      "invalid_ai_model": "Introdu numele unui model local instalat. Modelele cloud nu sunt acceptate.",
+      "invalid_ai_language": "Alege de sau en.",
+      "ai_cloud_consent_required": "Selectează un furnizor cloud acceptat și permite explicit trimiterea datelor de operare selectate.",
+      "ai_cloud_invalid_limit": "Setează un număr întreg de la 1 la 24 de cereri cloud pe zi UTC.",
+      "ai_cloud_key_required": "Introdu o cheie API validă pentru furnizorul selectat.",
+      "ai_cloud_auth_failed": "Furnizorul a respins autentificarea sau accesul. Verifică cheia API și accesul la model.",
+      "ai_cloud_rate_limited": "Furnizorul a respins cererea din cauza cotei sau a limitelor de frecvență. Nu s-a reîncercat automat.",
+      "ai_cloud_budget_unavailable": "Bugetul de cereri nu a putut fi încărcat sau salvat în siguranță. Nu s-a trimis nicio cerere cloud.",
+      "ai_cloud_daily_limit_reached": "Limita de cereri cloud pentru această zi UTC a fost atinsă.",
+      "ai_task_entity_required": "Selectează o entitate ai_task existentă care acceptă generarea de date."
+    },
+    "abort": {}
+  },
+  "services": {
+    "set_system_mode": {
+      "name": "Setează modul sistemului",
+      "description": "Setează modul de funcționare al pompei de căldură.",
+      "fields": {
+        "mode": {
+          "name": "Mod",
+          "description": "Mod de funcționare (de ex. standby, automat, vacanță)."
+        }
+      }
+    },
+    "acknowledge_errors": {
+      "name": "Confirmă erorile",
+      "description": "Confirmă/șterge mesajele de eroare active de pe pompa de căldură."
+    },
+    "write_register": {
+      "name": "Scriere registru",
+      "description": "Scrie o valoare direct într-un registru Modbus. Doar pentru utilizatori avansați - valori greșite pot deteriora sistemul.",
+      "fields": {
+        "address": {
+          "name": "Adresa registrului",
+          "description": "Adresa registrului Modbus (zecimal)."
+        },
+        "value": {
+          "name": "Valoare",
+          "description": "Valoarea de scris."
+        },
+        "datatype": {
+          "name": "Tip de date",
+          "description": "Tip de date Modbus (uint16, int16, float, uchar, bool)."
+        },
+        "acknowledge_risk": {
+          "name": "Confirmare risc",
+          "description": "Trebuie setat pe `true` pentru a permite operațiunea de scriere."
+        }
+      }
+    },
+    "set_external_climate": {
+      "name": "Setează clima exterioară",
+      "description": "Scrie temperatura exterioară a camerei și umiditatea opțională în registrele GLT IDM.",
+      "fields": {
+        "heating_circuit": {
+          "name": "Circuit de încălzire",
+          "description": "Circuitul de încălzire țintă A-G."
+        },
+        "room_temperature": {
+          "name": "Temperatura camerei",
+          "description": "Temperatura exterioară a camerei în °C (-20…60)."
+        },
+        "humidity": {
+          "name": "Umiditate",
+          "description": "Umiditatea relativă exterioară opțională în % (0…100)."
+        }
+      }
+    },
+    "set_external_power": {
+      "name": "Setează energia exterioară",
+      "description": "Scrie măsurători exterioare de energie și baterie în registrele GLT IDM.",
+      "fields": {
+        "pv_surplus": {
+          "name": "Surplus FV",
+          "description": "Surplusul fotovoltaic curent în kW."
+        },
+        "pv_production": {
+          "name": "Producție FV",
+          "description": "Producția fotovoltaică curentă în kW."
+        },
+        "house_consumption": {
+          "name": "Consumul casei",
+          "description": "Consumul curent al casei în kW."
+        },
+        "battery_discharge": {
+          "name": "Descărcare baterie",
+          "description": "Puterea curentă de descărcare a bateriei în kW."
+        },
+        "battery_soc": {
+          "name": "Starea de încărcare a bateriei",
+          "description": "Starea de încărcare curentă a bateriei în % (număr întreg de la 0 la 100)."
+        },
+        "electric_heater_power": {
+          "name": "Puterea rezistenței electrice",
+          "description": "Puterea curentă a rezistenței electrice în kW."
+        }
+      }
+    },
+    "start_dhw_boost": {
+      "name": "Pornește boost apă caldă",
+      "description": "Priorizează temporar apa caldă menajeră și restabilește ulterior exact modul și consigna anterioare.",
+      "fields": {
+        "entry_id": {
+          "name": "Intrare de configurare",
+          "description": "Necesar doar când sunt configurate mai multe pompe de căldură IDM."
+        },
+        "target_temperature": {
+          "name": "Temperatura țintă",
+          "description": "Consigna temporară a apei caldă menajere în °C (35–65)."
+        },
+        "timeout_minutes": {
+          "name": "Durată maximă",
+          "description": "Durata maximă a boost-ului în minute înainte de restabilirea automată (5–240)."
+        }
+      }
+    },
+    "cancel_dhw_boost": {
+      "name": "Anulează boost apă caldă",
+      "description": "Anulează un boost activ și restabilește exact modul de sistem și consigna apei calde salvate.",
+      "fields": {
+        "entry_id": {
+          "name": "Intrare de configurare",
+          "description": "Necesar doar când sunt configurate mai multe pompe de căldură IDM."
+        }
+      }
+    },
+    "export_knx_group_addresses": {
+      "name": "Exportă adresele de grup KNX",
+      "description": "Returnează tabelul obiectelor KNX IDM pentru acest regulator, pentru a putea fi recreat în ETS.",
+      "fields": {
+        "knx_base_address": {
+          "name": "Adresa de grup de bază",
+          "description": "Adresa de bază la care se adaugă numerele de obiecte."
+        },
+        "knx_groups": {
+          "name": "Grupuri de obiecte",
+          "description": "Limitează exportul la aceste grupuri din catalog."
+        }
+      }
+    },
+    "generate_ai_report": {
+      "name": "Generează raport IA experimental",
+      "description": "Doar-citire, activat separat. Folosește furnizorul selectat; cloud necesită consimțământ explicit. Până la 300 de secunde local, 120 de secunde pentru cloud.",
+      "fields": {
+        "entry_id": {
+          "name": "Integrarea IDM",
+          "description": "Intrarea IDM activată explicit."
+        },
+        "report_type": {
+          "name": "Tip de raport",
+          "description": "daily, weekly, health sau efficiency."
+        }
+      }
+    },
+    "export_ai_dashboard": {
+      "name": "Exportă tablou de bord IA experimental",
+      "description": "Returnează o configurație completă de tablou de bord cu ID-urile tale curente de entități.",
+      "fields": {
+        "entry_id": {
+          "name": "Integrarea IDM",
+          "description": "Intrarea integrării IDM."
+        }
+      }
+    },
+    "snooze_anomaly": {
+      "name": "Amână anomalia consultantului",
+      "description": "Suprimă un motiv de anomalie al consultantului predictiv pentru un număr de zile, astfel încât o constatare recurentă și înțeleasă să nu se mai declanșeze. Motivele amânate rămân în afara recomandărilor active și a scorului de sănătate până la expirarea ferestrei.",
+      "fields": {
+        "entry_id": {
+          "name": "Integrarea IDM",
+          "description": "Intrarea integrării IDM."
+        },
+        "reason": {
+          "name": "Motiv",
+          "description": "Codul de motiv stabil al anomaliei de suprimat."
+        },
+        "days": {
+          "name": "Zile",
+          "description": "Câte zile să fie suprimat motivul (1-365)."
+        }
+      }
+    },
+    "unsnooze_anomaly": {
+      "name": "Reactivează anomalia consultantului",
+      "description": "Anulează anticipat o amânare de anomalie pentru ca motivul să se poată declanșa din nou.",
+      "fields": {
+        "entry_id": {
+          "name": "Integrarea IDM",
+          "description": "Intrarea integrării IDM."
+        },
+        "reason": {
+          "name": "Motiv",
+          "description": "Codul de motiv stabil al anomaliei de reactivat."
+        }
+      }
+    },
+    "set_controller_clock": {
+      "name": "Setează ceasul regulatorului",
+      "description": "Setează ceasul Navigator la ora dată (implicit: acum) prin interfața web locală.",
+      "fields": {
+        "datetime": {
+          "name": "Data și ora",
+          "description": "Ora de setat. Omitere pentru a folosi ora curentă a Home Assistant."
+        }
+      }
+    },
+    "generate_dashboard": {
+      "name": "Generează tabloul de bord al instalației",
+      "description": "Returnează un tablou de bord Lovelace gata de folosit pentru această instalație cu ID-urile tale curente de entități, ca date structurate și ca YAML. Nu modifică tablourile de bord existente."
+    }
+  },
+  "issues": {
+    "solar_module_unused": {
+      "title": "Sistem solar termic nedetectat",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Sistem solar termic nedetectat",
+            "description": "Alege dacă să oprești citirea registrelor solare termice sau să le păstrezi și să respingi această sugestie. Toate registrele solare au raportat „neconfigurat” timp de o zi întreagă, deci instalația foarte probabil nu are colectori solari termici; în acest caz grupul de dispozitive *Solaranlage* conține doar entități permanent indisponibile.",
+            "data": {
+              "action": "Acțiune"
+            }
+          },
+          "disable": {
+            "title": "Oprește citirea registrelor solare termice",
+            "description": "Registrele solare ies din interogare, iar grupul de dispozitive *Solaranlage* gol dispare după o reîncărcare. Reactivarea opțiunii mai târziu restabilește entitățile cu ID-urile lor anterioare."
+          },
+          "keep": {
+            "title": "Păstrează registrele solare termice",
+            "description": "Registrele rămân în interogare, iar această sugestie rămâne respinsă până când o valoare solară raportează efectiv."
+          }
+        },
+        "abort": {
+          "entry_not_found": "Intrarea de configurare IDM Heatpump nu a fost găsită."
+        }
+      }
+    },
+    "web_pin_missing": {
+      "title": "PIN web IDM neconfigurat",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Rezolvă accesul web al IDM Navigator",
+            "description": "Alege dacă să introduci sau să înlocuiești acum PIN-ul web local al Navigator, sau să dezactivezi deliberat datele opționale ale suplimentului web.",
+            "data": {
+              "action": "Acțiune"
+            }
+          },
+          "set_pin": {
+            "title": "Setează PIN-ul web local al Navigator",
+            "description": "Introdu codul de rețea locală configurat pe Navigator în Setări → Setări generale → Setări de rețea. Nu folosi date de conectare cloud/aplicație și nici un cod în doi pași. Gol sau `0` dezactivează accesul web local.",
+            "data": {
+              "web_pin": "PIN de rețea locală (web Navigator)"
+            }
+          },
+          "disable_web": {
+            "title": "Dezactivează datele opționale ale suplimentului web",
+            "description": "Confirmă că această pompă de căldură trebuie să rămână în modul doar Modbus. Poți activa datele suplimentului web mai târziu din fluxul de reconfigurare al integrării."
+          }
+        },
+        "error": {
+          "web_pin_required": "Introdu un PIN sau alege modul doar Modbus.",
+          "invalid_web_pin": "Interfața web locală a Navigator a respins acest PIN.",
+          "web_cannot_connect": "Interfața web locală a Navigator nu a putut fi citită. Verifică gazda web configurată și accesul în rețea, apoi reîncearcă."
+        },
+        "abort": {
+          "entry_not_found": "Intrarea de configurare IDM Heatpump nu a fost găsită."
+        }
+      }
+    },
+    "web_supplement_failed": {
+      "title": "Datele suplimentului web IDM indisponibile",
+      "description": "Home Assistant nu a putut citi datele opționale ale web-ului local al Navigator de la **{host}**. Datele Modbus continuă să funcționeze.\n\nVerifică gazda web configurată și accesul la rețeaua locală. Activează jurnalul de depanare dacă problema persistă."
+    },
+    "web_authentication_failed": {
+      "title": "PIN web IDM Navigator respins",
+      "description": "Interfața web locală a Navigator de la **{host}** a respins PIN-ul configurat.\n\nDeschide fluxul **Reconfigurare** al integrării și introdu PIN-ul web local actual, sau șterge PIN-ul pentru a folosi doar Modbus. Interogarea Modbus continuă neafectată."
+    },
+    "web_host_not_found": {
+      "title": "Adresa web IDM Navigator negăsită",
+      "description": "Home Assistant nu poate rezolva adresa web configurată a Navigator **{host}**.\n\nVerifică greșelile de tastare ale gazdei web sau configurează integrarea cu adresa IP a pompei de căldură. Datele Modbus continuă să funcționeze."
+    },
+    "web_connection_refused": {
+      "title": "Conexiune web IDM Navigator refuzată",
+      "description": "Dispozitivul de la **{host}** a refuzat conexiunea web locală.\n\nVerifică că aceasta este adresa originală a pompei de căldură și că interfața sa web locală Navigator este disponibilă. Datele Modbus continuă să funcționeze."
+    },
+    "web_timeout": {
+      "title": "Interfața web IDM Navigator nu a răspuns",
+      "description": "Interfața web locală a Navigator de la **{host}** nu a răspuns la timp.\n\nVerifică regulatorul, conexiunea de rețea, firewall-ul și setările VLAN. Datele Modbus continuă să funcționeze."
+    },
+    "web_invalid_response": {
+      "title": "Răspunsul web IDM Navigator nu a putut fi citit",
+      "description": "Interfața web locală a Navigator de la **{host}** a returnat date pe care integrarea nu le-a putut citi.\n\nVerifică dacă modelul și firmware-ul Navigator detectate sunt acceptate și dacă integrarea este actualizată. Datele Modbus continuă să funcționeze."
+    },
+    "cannot_connect": {
+      "title": "Imposibil de conectat la pompa de căldură IDM",
+      "description": "Home Assistant nu poate ajunge la pompa de căldură IDM la **{host}**.\n\nVerifică:\n- Conectivitatea de rețea către dispozitiv\n- Managementul clădirii (Gebäudeleittechnik) → Modbus TCP este On (Ein) pe Navigator\n- Adresa IP și portul sunt corecte în setările integrării\n\nDacă meniul lipsește sau este blocat, cere instalatorului tău sau service-ului iDM să îl activeze."
+    },
+    "host_not_found": {
+      "title": "Nume de gazdă IDM negăsit",
+      "description": "Home Assistant nu poate rezolva **{host}**.\n\nVerifică greșelile de tastare, verifică DNS/mDNS local sau reconfigurează integrarea cu adresa IP a pompei de căldură."
+    },
+    "modbus_connection_refused": {
+      "title": "Conexiune Modbus TCP IDM refuzată",
+      "description": "Dispozitivul de la **{host}** a refuzat activ conexiunea TCP.\n\nPe Navigator setează *Managementul clădirii (Gebäudeleittechnik) → Modbus TCP* pe *On (Ein)* și folosește portul 502. Dacă meniul lipsește sau este blocat, cere instalatorului tău sau service-ului iDM să îl activeze. Repornește regulatorul dacă este necesar, apoi reîncearcă."
+    },
+    "modbus_timeout": {
+      "title": "Conexiune Modbus TCP IDM expirată",
+      "description": "Conexiunea Modbus către **{host}** a expirat.\n\nVerifică că adresa aparține pompei de căldură, că regulatorul este pornit și că nicio regulă de firewall, VLAN sau rutare nu blochează portul TCP 502."
+    },
+    "wrong_slave_id": {
+      "title": "Niciun răspuns Modbus de la pompa de căldură IDM",
+      "description": "Home Assistant poate ajunge la endpoint-ul Modbus de la **{host}**, dar regulatorul nu răspunde conform așteptărilor.\n\nVerifică:\n- ID-ul slave/unități este de regulă 1\n- Managementul clădirii (Gebäudeleittechnik) → Modbus TCP este On (Ein) pe Navigator\n- Proxy-ul redirecționează către dispozitivul IDM corect\n- Niciun alt client Modbus nu blochează conexiunea"
+    },
+    "incompatible_firmware": {
+      "title": "Firmware sau funcție Modbus IDM neacceptați",
+      "description": "Pompa de căldură a răspuns, dar a respins o funcție Modbus necesară acestei integrări.\n\nVerifică:\n- Firmware-ul Navigator acceptă accesul Modbus TCP\n- Versiunile integrării și API sunt actuale\n- Modelul dispozitivului figurează ca acceptat pentru setul de funcții folosit"
+    },
+    "no_data_received": {
+      "title": "Conexiunea IDM nu a returnat date utilizabile",
+      "description": "Home Assistant s-a conectat la **{host}**, dar nu a primit valori de registru Modbus utilizabile.\n\nVerifică:\n- ID-ul slave/unități este de regulă 1\n- Proxy-ul Modbus redirecționează către pompa de căldură corectă\n- Modelul Navigator configurat și circuitele de încălzire corespund dispozitivului\n- Niciun alt client Modbus nu blochează comunicarea"
+    },
+    "scan_interval_too_low": {
+      "title": "Interogarea IDM abia încape în intervalul de scanare",
+      "description": "Citirea registrelor de la **{host}** durează în prezent aproximativ {duration} s din intervalul configurat de {interval} s, și așa de mai multe interogări la rând.\n\nRegulatorul pompei de căldură nu primește aproape deloc timp de repaus între cereri, ceea ce se manifestă de regulă prin timeout-uri — mai ales când un alt client Modbus partajează regulatorul.\n\nAjută:\n- Creșterea intervalului de scanare în opțiunile integrării\n- Dezactivarea entităților pe care nu le folosești (interogarea omite registrele lor)\n- Verificarea dacă un alt client Modbus interoghează pompa de căldură în același timp"
+    },
+    "write_rejected": {
+      "title": "Scriere registru IDM respinsă",
+      "description": "Pompa de căldură nu a acceptat o scriere în registrul **{register}** la adresa **{address}**.\n\nDetaliu tehnic: `{detail}`\n\nVerifică:\n- Registrul este eliberat pentru scriere pe Navigator în **Managementul clădirii** (lista de registre GLT are o setare de acces per registru; un registru neeliberat acolo este respins chiar dacă valoarea este validă)\n- Funcția este activată pentru acest circuit sau componentă\n- Valoarea este în intervalul documentat\n- Niciun al doilea sistem de management al clădirii, manager de energie sau invertor nu scrie același registru"
+    },
+    "knx_not_available": {
+      "title": "Podul KNX inactiv",
+      "description": "Podul KNX este activat pentru pompa de căldură IDM, dar integrarea KNX din Home Assistant nu este configurată. Adaugă integrarea KNX (oferă și KNX Secure și conexiunea la gateway), apoi reîncarcă intrarea IDM Heatpump."
+    },
+    "modbus_degraded_web_active": {
+      "title": "Conexiune Modbus IDM întreruptă — date web active",
+      "description": "Conexiunea Modbus către **{host}** este momentan întreruptă. Datele pompei tale de căldură continuă să curgă prin interfața web locală a Navigator, deci entitățile web continuă să se actualizeze.\n\nAcest mesaj dispare automat de îndată ce conexiunea Modbus se recuperează — nu este nevoie de nicio acțiune. Dacă persistă, verifică conexiunea de rețea a pompei de căldură sau folosește butonul *Reîncarcă conexiunea* de pe pagina dispozitivului integrării."
+    },
+    "whats_new_0_21_0": {
+      "title": "Noutăți de la 0.20.1: multe funcții noi",
+      "description": "Aceasta este o notificare, nu o eroare. Actualizarea a adăugat multe funcții noi — mai ales Consultantul Predictiv: explică de ce funcționează pompa de căldură, detectează anomalii, evaluează sănătatea și eficiența, învață o hartă COP și un model al clădirii și recomandă pași ai curbei de încălzire, ferestre de apă caldă din prognoză FV sau preț și un plan pe 24 de ore. Totul este strict doar-citire, complet local și funcționează fără nicio IA — și poate fi dezactivat în opțiunile integrării. Atinge „Află mai multe” pentru prezentarea completă a tot ceea ce este acum posibil."
+    },
+    "write_connection_failed": {
+      "title": "Conexiune eșuată la scrierea registrului IDM",
+      "description": "Livrarea scrierii în registrul **{register}** la adresa **{address}** nu a putut fi confirmată deoarece conexiunea Modbus a eșuat. Nu este o respingere de acces la registru din partea regulatorului.\n\nDetaliu tehnic: `{detail}`\n\nVerifică endpoint-ul și portul configurate. Dacă folosești ModBridge sau alt proxy, verifică listener-ul, ruta upstream, disponibilitatea serviciului și conexiunea la Navigator. Pentru o conexiune directă, verifică disponibilitatea Modbus TCP a Navigator și rețeaua.\n\nAvertismentul se șterge după o scriere reușită în același registru."
+    }
+  },
+  "selector": {
+    "feature_profile": {
+      "options": {
+        "smart": "iDM Smart Energy & Comfort (recomandat)",
+        "vanilla": "Vanilla – doar entitățile IDM de bază"
+      }
+    },
+    "model_override": {
+      "options": {
+        "auto": "Automat (recomandat)",
+        "navigator_10": "Navigator 10",
+        "navigator_20": "Navigator 2.0",
+        "navigator_pro": "Navigator Pro",
+        "navigator_17": "Navigator 1.7 (doar citire + FV)"
+      }
+    },
+    "heating_circuit": {
+      "options": {
+        "a": "Circuitul A – Primar",
+        "b": "Circuitul B",
+        "c": "Circuitul C",
+        "d": "Circuitul D",
+        "e": "Circuitul E",
+        "f": "Circuitul F",
+        "g": "Circuitul G"
+      }
+    },
+    "web_pin_missing_action": {
+      "options": {
+        "set_pin": "Setează PIN acum",
+        "disable_web": "Nu folosi datele suplimentului web"
+      }
+    },
+    "modbus_failed_action": {
+      "options": {
+        "retry": "Reîncearcă conexiunea Modbus",
+        "web_only": "Continuă doar cu date web (limitat)"
+      }
+    },
+    "setup_profile": {
+      "options": {
+        "standard": "Standard",
+        "advanced": "Avansat",
+        "expert": "Expert"
+      }
+    },
+    "knx_object_group": {
+      "options": {
+        "system": "Sistem",
+        "heat_pump": "Pompă de căldură",
+        "dhw": "Apă caldă",
+        "heating_circuits": "Circuite de încălzire",
+        "zones": "Module de zonă",
+        "glt": "Managementul clădirii (GLT)",
+        "energy": "Cantități de căldură și putere",
+        "solar": "Solar",
+        "isc": "Răcire ISC",
+        "cascade": "Cascadă",
+        "booster": "Booster",
+        "pv": "FV și baterie"
+      }
+    },
+    "external_power_battery_sign": {
+      "options": {
+        "as_is": "Folosește semnul sursei (convenție IDM)",
+        "invert": "Inversează semnul sursei (sursă în stil openWB)"
+      }
+    },
+    "external_power_grid_sign": {
+      "options": {
+        "import": "Pozitiv = import din rețea (negativ = export)",
+        "export": "Pozitiv = export (negativ = import din rețea)"
+      }
+    },
+    "guided_level": {
+      "options": {
+        "standard": "Standard",
+        "advanced": "Avansat",
+        "expert": "Expert"
+      }
+    },
+    "guided_features": {
+      "options": {
+        "plant": "Instalație, circuite și zone",
+        "profile": "Profil de entități",
+        "health": "Monitor de sănătate",
+        "predictive_advisor": "Consultant predictiv",
+        "energy": "Costuri energetice și carbon",
+        "energy_manager": "Apă caldă FV automată",
+        "comfort": "Programare confort",
+        "heating_curve": "Sfat pentru curba de încălzire",
+        "weather": "Sfat meteo",
+        "web": "Date web locale Navigator",
+        "room_forwarding": "Redirecționare temperatură cameră",
+        "humidity_forwarding": "Redirecționare umiditate",
+        "storage_forwarding": "Redirecționare temperatură acumulator",
+        "external_power": "Senzori externi de energie și baterie",
+        "knx": "Pod KNX",
+        "cascade": "Registre de cascadă",
+        "solar_thermal": "Registre solare termice",
+        "device_hierarchy": "Grupare dispozitive",
+        "modbus": "Transport Modbus",
+        "ai_advisor": "Consultant IA (experimental, doar citire)"
+      }
+    },
+    "ai_provider": {
+      "options": {
+        "ha_task": "Home Assistant AI Task (recomandat)",
+        "ollama": "Ollama (local)",
+        "zai": "Z.ai (direct)",
+        "openai": "OpenAI (alternativă directă)"
+      }
+    },
+    "solar_unused_action": {
+      "options": {
+        "disable": "Oprește citirea registrelor solare",
+        "keep": "Păstrează registrele solare"
+      }
+    },
+    "connection_mode": {
+      "options": {
+        "auto": "Automat (recomandat)",
+        "modbus_web": "Modbus + supliment web",
+        "web_only": "Doar web",
+        "modbus_only": "Doar Modbus"
+      }
+    }
+  },
+  "exceptions": {
+    "smart_features_disabled": {
+      "message": "Profilul iDM Smart Energy & Comfort este dezactivat pentru această pompă de căldură. Selectează-l în opțiunile integrării înainte de a folosi această acțiune."
+    },
+    "no_device_configured": {
+      "message": "Momentan nicio pompă de căldură IDM nu este configurată sau încărcată."
+    },
+    "invalid_mode": {
+      "message": "Mod de funcționare invalid: \"{mode}\". Moduri valide: standby, automatik, automatic, abwesend, away, urlaub, holiday, nur warmwasser, hot water only, nur heizung/kuehlung, heating/cooling only."
+    },
+    "acknowledge_risk_required": {
+      "message": "Trebuie să setezi acknowledge_risk pe true pentru a folosi serviciul write_register."
+    },
+    "error_acknowledge_unavailable": {
+      "message": "Confirmarea erorilor nu este disponibilă în harta de registre a acestui model de pompă de căldură."
+    },
+    "preset_mode_unavailable_while_cooling": {
+      "message": "Circuitul de încălzire {circuit} este momentan în modul de răcire; modul preset se aplică doar la încălzire. Treci mai întâi în modul căldură."
+    },
+    "write_failed": {
+      "message": "Registrul {register} nu a putut fi scris. Verifică valoarea și reîncearcă. Activează jurnalul de depanare dacă problema continuă."
+    },
+    "write_eeprom_blocked": {
+      "message": "Registrul {register} a fost scris prea recent. Este stocat în EEPROM-ul regulatorului, deci integrarea spațiază scrierile pentru a proteja hardware-ul. Așteaptă să treacă intervalul de scriere EEPROM și reîncearcă. Detaliu tehnic: {detail}"
+    },
+    "write_rejected_by_device": {
+      "message": "Pompa de căldură a refuzat scrierea registrului {register}. Verifică pe Navigator, la Managementul clădirii, dacă acest registru este eliberat pentru scriere (acces GLT) și dacă funcția este activată pentru acest circuit de încălzire. Detaliu tehnic: {detail}"
+    },
+    "write_connection_failed": {
+      "message": "Registrul {register} nu a putut fi scris deoarece conexiunea la pompa de căldură a eșuat. Verifică conexiunea Modbus TCP și reîncearcă."
+    },
+    "write_read_only": {
+      "message": "Registrul {register} este doar-citire sau momentan blocat de regulator și nu poate fi schimbat."
+    },
+    "write_out_of_range": {
+      "message": "Valoarea cerută pentru registrul {register} este în afara intervalului permis. Alege o valoare în limitele entității."
+    },
+    "write_not_supported": {
+      "message": "Registrul {register} nu este acceptat de acest model, firmware sau echipament instalat al pompei de căldură."
+    },
+    "write_invalid_value": {
+      "message": "Valoarea cerută pentru registrul {register} are un format sau un tip de date invalid."
+    },
+    "entry_not_loaded": {
+      "message": "Intrarea de integrare IDM selectată nu este încărcată."
+    },
+    "multiple_entries_select_entry": {
+      "message": "Sunt încărcate mai multe pompe de căldură IDM. Te rugăm să furnizezi entry_id pentru a ținti un anumit dispozitiv."
+    },
+    "invalid_datatype": {
+      "message": "Tip de date invalid: \"{datatype}\". Valori valide: uint16, int16, float, uchar, bool."
+    },
+    "write_register_missing_fields": {
+      "message": "Serviciul write_register necesită atât address, cât și value."
+    },
+    "invalid_address": {
+      "message": "Adresă de registru invalidă \"{value}\". Furnizează o adresă de registru numerică."
+    },
+    "invalid_value": {
+      "message": "Valoare invalidă \"{value}\" pentru tipul de date {datatype}."
+    },
+    "invalid_heating_circuit": {
+      "message": "Circuit de încălzire invalid: \"{heating_circuit}\". Valori valide: A, B, C, D, E, F, G."
+    },
+    "external_climate_temperature_out_of_range": {
+      "message": "Temperatura exterioară a camerei {value} °C este în afara intervalului permis -20…60 °C."
+    },
+    "external_climate_humidity_out_of_range": {
+      "message": "Umiditatea exterioară {value} % este în afara intervalului permis 0…100 %."
+    },
+    "dhw_boost_no_entry": {
+      "message": "Intrarea de configurare nu este disponibilă."
+    },
+    "dhw_boost_already_active": {
+      "message": "Un boost de apă caldă este deja activ. Anulează-l înainte de a porni unul nou."
+    },
+    "dhw_boost_unsupported": {
+      "message": "Registrele necesare de apă caldă și mod de sistem nu sunt disponibile pe această pompă de căldură."
+    },
+    "dhw_boost_no_current_temp": {
+      "message": "Temperatura curentă a apei calde menajere nu este disponibilă."
+    },
+    "dhw_boost_no_previous_state": {
+      "message": "Modul de sistem curent sau consigna apei calde nu este disponibilă."
+    },
+    "dhw_boost_start_failed_rolled_back": {
+      "message": "Boost-ul de apă caldă nu a putut porni; starea anterioară a fost restabilită."
+    },
+    "dhw_boost_start_failed_rollback_incomplete": {
+      "message": "Boost-ul de apă caldă nu a putut porni, iar starea anterioară nu a putut fi restabilită complet. Recuperarea va reîncerca la următoarea actualizare a coordonatorului."
+    },
+    "dhw_boost_invalid_recovery_state": {
+      "message": "Starea de recuperare persistată este incompletă."
+    },
+    "dhw_boost_restore_failed": {
+      "message": "Starea anterioară a apei calde nu a putut fi restabilită complet încă. Recuperarea va reîncerca la următoarea actualizare a coordonatorului."
+    },
+    "dhw_boost_register_not_writable": {
+      "message": "Registrul {register} nu este inscriptibil."
+    },
+    "dhw_boost_invalid_target": {
+      "message": "Temperatură țintă a apei calde invalidă."
+    },
+    "dhw_boost_target_out_of_range": {
+      "message": "Temperatura țintă a apei calde trebuie să fie între {minimum} și {maximum} °C."
+    },
+    "dhw_boost_timeout_out_of_range": {
+      "message": "Durata boost-ului trebuie să fie între {minimum} și {maximum} minute."
+    },
+    "external_power_no_values": {
+      "message": "Trebuie furnizată cel puțin o valoare de energie sau baterie exterioară."
+    },
+    "external_power_battery_soc_out_of_range": {
+      "message": "Starea de încărcare a bateriei {value} % trebuie să fie un număr întreg de la 0 la 100."
+    },
+    "write_cooldown_active": {
+      "message": "Registrul {register} nu poate fi scris încă. Răcirea configurată este de {cooldown} secunde; mai așteaptă {remaining} secunde. O valoare de 0 dezactivează această protecție."
+    },
+    "invalid_ai_endpoint": {
+      "message": "Introdu un URL HTTP(S) local bazat pe IP, fără date de autentificare, cale sau interogare, de exemplu http://192.168.1.20:11434."
+    },
+    "invalid_ai_model": {
+      "message": "Introdu numele unui model local instalat. Modelele cloud nu sunt acceptate."
+    },
+    "invalid_ai_language": {
+      "message": "Alege de sau en."
+    },
+    "ai_disabled": {
+      "message": "Activează mai întâi consultantul IA experimental pentru această intrare IDM încărcată."
+    },
+    "ai_invalid_report_type": {
+      "message": "Alege daily, weekly, health sau efficiency."
+    },
+    "ai_busy": {
+      "message": "Un raport este deja în curs de generare. Te rugăm să aștepți."
+    },
+    "ai_cooldown": {
+      "message": "Așteaptă cel puțin 60 de secunde între cererile de raport."
+    },
+    "ai_server_error": {
+      "message": "Ollama a respins cererea. Verifică serverul local și modelul instalat."
+    },
+    "ai_invalid_response": {
+      "message": "Răspunsul IA a fost gol, trunchiat, prea mare sau invalid. Raportul anterior este păstrat."
+    },
+    "ai_local_model_required": {
+      "message": "Este necesar un model de completare GGUF instalat local; modelele la distanță sunt respinse."
+    },
+    "ai_unavailable": {
+      "message": "Furnizorul IA selectat nu este disponibil sau și-a depășit timeout-ul (local 300 de secunde, cloud 120 de secunde)."
+    },
+    "ai_cloud_consent_required": {
+      "message": "Selectează un furnizor cloud acceptat și permite explicit trimiterea datelor de operare selectate."
+    },
+    "ai_cloud_invalid_limit": {
+      "message": "Setează un număr întreg de la 1 la 24 de cereri cloud pe zi UTC."
+    },
+    "ai_cloud_key_required": {
+      "message": "Introdu o cheie API validă pentru furnizorul selectat."
+    },
+    "ai_cloud_auth_failed": {
+      "message": "Furnizorul a respins autentificarea sau accesul. Verifică cheia API și accesul la model."
+    },
+    "ai_cloud_rate_limited": {
+      "message": "Furnizorul a respins cererea din cauza cotei sau a limitelor de frecvență. Nu s-a reîncercat automat."
+    },
+    "ai_cloud_budget_unavailable": {
+      "message": "Bugetul de cereri nu a putut fi încărcat sau salvat în siguranță. Nu s-a trimis nicio cerere cloud."
+    },
+    "ai_cloud_daily_limit_reached": {
+      "message": "Limita de cereri cloud pentru această zi UTC a fost atinsă."
+    },
+    "ai_task_entity_required": {
+      "message": "Selectează o entitate ai_task existentă care acceptă generarea de date."
+    },
+    "web_clock_requires_web_supplement": {
+      "message": "Setarea ceasului necesită un supliment web activ (WebSocket Navigator 10 sau interfața web Navigator 2.0)."
+    },
+    "invalid_datetime": {
+      "message": "Valoare dată/oră invalidă: {value}"
+    },
+    "advisor_disabled": {
+      "message": "Activează mai întâi consultantul predictiv pentru această intrare IDM încărcată."
+    },
+    "advisor_bad_reason": {
+      "message": "Alege un cod de motiv de anomalie valid."
+    },
+    "dashboard_no_entities": {
+      "message": "Nu au fost găsite încă entități de tablou de bord pentru această intrare; așteaptă prima interogare reușită."
+    }
+  }
+}

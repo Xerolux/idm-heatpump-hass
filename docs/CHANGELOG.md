@@ -13,6 +13,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.2] - 2026-11-06
+
+The integration speaks five more languages: setup, options, services, repairs and error texts now arrive in Spanish, Italian, Romanian, Czech and Polish whenever Home Assistant runs in one of them.
+
+### ⚠️ Upgrade notes
+
+- **New UI languages appear automatically**: with Home Assistant set to Español, Italiano, Română, Čeština or Polski, the integration's flows, services, repairs and errors display in that language; entity names keep falling back to English and Deutsch/English remain unchanged. No setting changes — rollback is safe.
+
+### ✨ New
+
+- **Setup, options, services, repairs and errors in five more languages**: 419 texts each — every flow step, menu, error, repair flow, service field and selector option — translated for Spanish, Italian, Romanian, Czech and Polish installations, with a parity test guarding keys and placeholders so no translation can break a screen.
+- **Installer checklist with printable translations**: the new wiki page hands the heating installer a printable page covering Modbus TCP, fixed IP, GLT/PV signal source, web PIN and plant data, with PDF-ready versions in all five new languages.
+- **German-speaking visitors land on the German documentation**: the English documentation home forwards German browsers once per session; the header language switch stays available, and short README summaries now exist for all five new languages.
+
 ## [0.26.1] - 2026-11-06
 
 The technician access-code sensors are gone: the integration no longer calculates or displays the time-based *Fachmann Ebene* codes, and the option that created them is removed from the options flow.

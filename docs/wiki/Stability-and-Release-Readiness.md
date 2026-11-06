@@ -4,6 +4,25 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.26.2 release decision
+
+**0.26.2** is a stable feature patch adding five UI languages. Home Assistant
+merges `translations/<lang>.json` over `translations/en.json`, so the five new
+files ship exactly the visible UI surface — config and options flow steps,
+errors, aborts, services, issues/repairs, selectors and exceptions, 419
+strings each — while entity names keep the English fallback. A new parametrized
+parity test guards every file: no orphan keys, no empty values, and every
+`{placeholder}` of the English source must survive the translation, so a bad
+translation cannot break a screen. The five translations were produced in one
+pass and are not yet native-reviewed; corrections from the field are welcome
+and can ship as patch releases. The installer checklist page (EN+DE in the
+wiki, five printable translations under `docs/examples/`) documents the
+installer-level enablement path, and the documentation home forwards German
+browsers once per session only (explicit switch stays available). Full quality
+gate on the cut: two-leg CI matrix with coverage gates, strict mypy, ruff,
+hassfest, real-Home-Assistant lifecycle smoke, CodeQL/pip-audit, credential
+scan. Runtime pins unchanged from 0.26.1 (`idm-heatpump-api[web]==2.16.0`).
+
 ## 0.26.1 release decision
 
 **0.26.1** is a fast-follow stable patch on the 0.26.0 line with exactly one
@@ -460,7 +479,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.26.1` and `idm-heatpump-api` `2.16.0` form the current
+Source-tree integration `0.26.2` and `idm-heatpump-api` `2.16.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

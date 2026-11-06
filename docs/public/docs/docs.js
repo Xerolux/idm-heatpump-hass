@@ -78,6 +78,7 @@ const GROUPS = [
 const PAGES = [
   { slug: 'home', file: 'Home.md', group: 'start', de: 'Übersicht', en: 'Overview' },
   { slug: 'installation-and-setup', file: 'Installation-and-Setup.md', group: 'start', de: 'Installation & Einrichtung', en: 'Installation & setup' },
+  { slug: 'installer-checklist', file: 'Installer-Checklist.md', group: 'start', de: 'Installateur-Checkliste', en: 'Installer checklist' },
   { slug: 'configuration', file: 'Configuration.md', group: 'start', de: 'Konfiguration', en: 'Configuration' },
   { slug: 'entities', file: 'Entities.md', group: 'entities', de: 'Alle Entitäten', en: 'All entities' },
   { slug: 'supported-devices', file: 'Supported-Devices.md', group: 'entities', de: 'Unterstützte Geräte', en: 'Supported devices' },

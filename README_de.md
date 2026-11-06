@@ -1,4 +1,4 @@
-<p align="center"><a href="README.md">English</a> · <strong>Deutsch</strong></p>
+<p align="center"><a href="README.md">English</a> · <strong>Deutsch</strong> · <a href="README_es.md">Español</a> · <a href="README_it.md">Italiano</a> · <a href="README_ro.md">Română</a> · <a href="README_cs.md">Čeština</a> · <a href="README_pl.md">Polski</a></p>
 
 <div align="center">
   <a href="https://xerolux.github.io/idm-heatpump-hass/">

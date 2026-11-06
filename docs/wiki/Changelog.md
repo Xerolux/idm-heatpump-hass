@@ -5,6 +5,17 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.2 — 2026-11-06
+
+The integration speaks five more languages: setup, options, services, repairs
+and error texts (419 each) now arrive in Spanish, Italian, Romanian, Czech and
+Polish whenever Home Assistant runs in one of them — entity names fall back to
+English, no settings change. A new installer checklist page hands the heating
+installer a printable PDF-ready page (Modbus TCP, fixed IP, GLT/PV signal,
+web PIN, plant data) with translations in all five languages, the English
+documentation home forwards German browsers once per session, and short
+README summaries cover the five new languages.
+
 ## v0.26.1 — 2026-11-06
 
 The technician access-code sensors are removed for safety reasons: the
