@@ -98,7 +98,6 @@ $options = [ordered]@{
     zone_count = 0
     device_hierarchy = $true
     short_cycle_minutes = 15
-    technician_codes = $false
     enable_cascade = $false
     web_extra_data = ($webPin -ne "")
     web_scan_interval = 300

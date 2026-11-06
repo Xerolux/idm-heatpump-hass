@@ -7,13 +7,14 @@ Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
 ## v0.27.0-b1 — 2026-11-06
 
-Die Sensoren für die Fachmann-Zugangscodes sind entfernt: Die Integration
-berechnet die zeitbasierten Fachmann-Ebene-Codes nicht mehr, die Option, die
-die Sensoren erzeugte, ist aus dem Optionen-Flow entfernt, und die beiden
-Sensor-Entitäten verschwinden beim Upgrade — keine Migration nötig, alles
-andere bleibt unberührt. Der Zugang zur Installateur-Ebene bleibt Sache des
-Heizungsinstallateurs. Der Regler-Uhr-Sensor macht Uhren-Drift weiterhin
-sichtbar, die Protokollanalyse bleibt Forschungsdokumentation.
+Die Sensoren für die Fachmann-Zugangscodes sind aus Sicherheitsgründen
+entfernt: Die Integration berechnet die zeitbasierten Fachmann-Ebene-Codes
+nicht mehr, die Option, die die Sensoren erzeugte, ist aus dem Optionen-Flow
+entfernt, und die beiden Sensor-Entitäten verschwinden beim Upgrade — keine
+Migration nötig, alles andere bleibt unberührt. Der Zugang zur
+Installateur-Ebene bleibt Sache des Heizungsinstallateurs. Der
+Regler-Uhr-Sensor macht Uhren-Drift weiterhin sichtbar, die
+Protokollanalyse bleibt Forschungsdokumentation.
 
 ## v0.26.0 — 2026-11-06
 

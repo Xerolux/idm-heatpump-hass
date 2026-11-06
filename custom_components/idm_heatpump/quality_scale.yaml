@@ -96,8 +96,8 @@ rules:
   entity-event-setup:
     status: done
     comment: >
-      IdmTechnicianCodeSensor subscribes to time-interval events in
-      async_added_to_hass and cleans up in async_will_remove_from_hass.
+      Optional feature entities subscribe to time-interval events in
+      async_added_to_hass and clean up in async_will_remove_from_hass.
 
   entity-unique-id:
     status: done

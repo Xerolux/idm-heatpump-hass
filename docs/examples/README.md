@@ -15,13 +15,13 @@ pump, so treat them as starting points and adjust them in the dashboard editor.
   boost status and conservative controls.
 - `dashboard-idm-energy.yaml` – energy, PV/GLT and operating-quality cards.
 - `dashboard-idm-diagnostics.yaml` – private support dashboard for versions,
-  web supplement state, alarms and technician codes.
+  web supplement state and alarms.
 
 ## Safety notes
 
 - Prefer standard entity controls (`number`, `select`, `switch`, `water_heater`)
   over raw register writes.
-- Do not expose technician-code, debug or manual-write helpers on public or
+- Do not expose debug or manual-write helpers on public or
   shared dashboards.
 - Keep PV/GLT control ownership clear: only one controller should write the same
   GLT/PV register.
