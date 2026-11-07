@@ -65,8 +65,8 @@
 - Die aktuelle Firmware-Version wird als Diagnose-Sensor (`firmware_version`) gelesen
 - Firmware-Updates direkt aus Home Assistant sind **nicht** möglich
 - Updates erfolgen über das **myIDM-Cloud-Portal** oder über einen **USB-Stick
-  über das Service-Menü des Regler-Displays** (freigeschaltet mit den
-  *Fachmann-Ebene*-Codes, die die Integration berechnen kann).
+  über das Service-Menü des Regler-Displays**, das dein Heizungsinstallateur
+  oder der iDM-Service auf der Installateur-Ebene des Reglers bedient.
 - Die drei vom Regler bereitgestellten lokalen Schnittstellen (Modbus TCP 502,
   Navigator HTTP 80, Navigator 10 WebSocket 61220) tragen **keinen**
   Firmware-Update-Endpunkt. Alle in Betracht kommenden WebSocket-Controller

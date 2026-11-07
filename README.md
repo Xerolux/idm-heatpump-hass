@@ -1,4 +1,4 @@
-<p align="center"><strong>English</strong> · <a href="README_de.md">Deutsch</a></p>
+<p align="center"><strong>English</strong> · <a href="README_de.md">Deutsch</a> · <a href="README_es.md">Español</a> · <a href="README_it.md">Italiano</a> · <a href="README_ro.md">Română</a> · <a href="README_cs.md">Čeština</a> · <a href="README_pl.md">Polski</a></p>
 
 <div align="center">
   <a href="https://xerolux.github.io/idm-heatpump-hass/">
@@ -132,7 +132,6 @@ KNX bridge**. Full details: **[KNX Bridge documentation][wiki-knx]**.
 | **🔗 Shared Modbus Connection** *(HA 2026.10+)* | Each entry claims Home Assistant's central shared Modbus connection — several entries on one controller and other integrations share a single socket; the private per-entry socket stays as fallback |
 | **🧪 Read-only Connection Test** | Reconfigure menu can test the saved Modbus and optional local web connection without changing settings or writing registers |
 | **📦 Runtime Versions** | Diagnostic sensor and export show the installed integration, `idm-heatpump-api`, `modbus-connection` and `tmodbus` versions |
-| **🔑 Technician Level** | Optional sensors for the current level 1 & 2 access codes (disabled by default, updated every minute and pinned first) |
 | **🚌 KNX Bridge** *(experimental)* | Optional: serves the IDM KNX communication objects through the Home Assistant KNX integration (incl. KNX Secure) — replaces the Weinzierl BAOS gateway module. [Details][wiki-knx] |
 | **🔒 Security** | Local plant control; opt-in cloud AI, Modbus TCP, EEPROM protection, EEPROM-sensitive registers |
 
@@ -295,7 +294,6 @@ Home Assistant
 - **Visible runtime stack**: the diagnostic `IDM Heatpump API version` sensor exposes the installed API version and includes the integration, `modbus-connection` and `tmodbus` versions as attributes; the same versions are included in diagnostics exports and startup logs
 - **Connection ownership**: each config entry owns its tmodbus socket; Home Assistant central cross-entry sharing is not currently available, so diagnostics report `supports_shared_connection: false`
 - **Validation status**: the adapter is implemented and covered by automated tests; read-only validation of the new tmodbus path on real Navigator hardware is still pending
-- **Entity organization**: technician code sensors are pinned at the top, followed by functional groups for configuration, switches, writable values and diagnostics
 - **PV/GLT correctness**: float inputs use IDM word order, battery SOC is a single signed 16-bit percentage value, and documentation warns against multiple energy managers writing the same register
 - **Hardware-assisted diagnosis**: troubleshooting explains how to compare Home Assistant values and timestamps with the Navigator GLT Monitor
 - **Private diagnostics**: Modbus/web hosts, port, slave ID and local web PIN are redacted; detailed web connection strings are reduced to a safe error category

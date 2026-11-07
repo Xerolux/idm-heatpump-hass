@@ -166,7 +166,6 @@
               "energy_manager_dhw_target": "Automatic DHW target temperature",
               "energy_manager_dhw_timeout": "Automatic DHW boost duration",
               "energy_manager_cooldown": "Automation cooldown",
-              "technician_codes": "Show current installer codes as sensors",
               "enable_cascade": "Read a cascade installation",
               "solar_thermal": "Read a solar thermal system",
               "web_extra_data": "Read additional Navigator web data",
@@ -218,7 +217,6 @@
               "energy_manager_dhw_target": "Automatic boost raises only the DHW setpoint and leaves the system mode unchanged. Starts at least 5 °C below target in Automatic or Hot-water-only mode; restores the previous setpoint.",
               "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
               "energy_manager_cooldown": "Full waiting time after an automatic boost ends. Saved across reloads and restarts. Does not limit the Navigator's own PV heating-buffer charging triggered by forwarded power values.",
-              "technician_codes": "Creates access-code sensors for the resolved controller: level 1 only on Navigator 1.7, levels 1 and 2 on Navigator 2.0/10/Pro. Refreshes every minute using Home Assistant local time, which must match the controller. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
               "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
               "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
               "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -542,7 +540,6 @@
           "weather_preheat_threshold": "Preheat temperature threshold",
           "energy_price_per_kwh": "Electricity price",
           "energy_co2_g_per_kwh": "CO₂ factor",
-          "technician_codes": "Show current installer codes as sensors",
           "enable_cascade": "Read a cascade installation",
           "solar_thermal": "Read a solar thermal system",
           "web_extra_data": "Read additional Navigator web data",
@@ -627,7 +624,6 @@
           "weather_preheat_threshold": "Below this temperature, the advisory recommends preheating. It does not change any setpoint.",
           "energy_price_per_kwh": "Used for optional cost sensors. This is a fixed local estimate and does not fetch tariff data.",
           "energy_co2_g_per_kwh": "Used for optional CO₂ sensors. Enter the emission factor of your electricity mix.",
-          "technician_codes": "Creates access-code sensors for the resolved controller: level 1 only on Navigator 1.7, levels 1 and 2 on Navigator 2.0/10/Pro. Refreshes every minute using Home Assistant local time, which must match the controller. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
           "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
           "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
           "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -660,7 +656,23 @@
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
           "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
-          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds.",
+          "ai_url": "Base URL of the local Ollama instance. Leave empty when no local model is used.",
+          "ai_model": "Model name requested from the local Ollama instance; only used for local free-form explanations.",
+          "ai_language": "Language of the generated reports (de or en).",
+          "ai_provider": "Who generates on-demand reports: deterministic without a model, the local model, a Home Assistant AI Task entity or direct cloud requests.",
+          "ai_task_entity": "Entity ID of the Home Assistant AI Task helper used to generate reports.",
+          "ai_cloud_model": "Model ID used for direct cloud requests (provider-specific spelling).",
+          "ai_cloud_consent": "Explicit consent to send the redacted report payload to the configured cloud provider. Off by default.",
+          "ai_cloud_daily_limit": "Maximum number of AI-Task and direct cloud requests per UTC day; 0 blocks them entirely.",
+          "ai_interval_hours": "Hours between automatically generated reports; 0 means reports are only generated on demand.",
+          "ai_schedule_report": "Which report is generated automatically when the interval elapses.",
+          "ai_learning": "Continuously learn local operating baselines used by the deterministic analyses.",
+          "ai_notifications": "Notify when new measured health flags appear.",
+          "ai_storage_mib": "Upper bound for locally stored AI history data, in MiB.",
+          "ai_unverified_text": "Free-form AI explanations cannot be fully verified against the measurements; enable only if you accept that limitation.",
+          "ai_openai_key": "Optional OpenAI API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it.",
+          "ai_zai_key": "Optional Z.ai API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it."
         }
       },
       "guided_detail": {
@@ -694,7 +706,6 @@
           "weather_preheat_threshold": "Preheat temperature threshold",
           "energy_price_per_kwh": "Electricity price",
           "energy_co2_g_per_kwh": "CO₂ factor",
-          "technician_codes": "Show current installer codes as sensors",
           "enable_cascade": "Read a cascade installation",
           "solar_thermal": "Read a solar thermal system",
           "web_extra_data": "Read additional Navigator web data",
@@ -776,7 +787,6 @@
           "weather_preheat_threshold": "Below this temperature, the advisory recommends preheating. It does not change any setpoint.",
           "energy_price_per_kwh": "Used for optional cost sensors. This is a fixed local estimate and does not fetch tariff data.",
           "energy_co2_g_per_kwh": "Used for optional CO₂ sensors. Enter the emission factor of your electricity mix.",
-          "technician_codes": "Creates access-code sensors for the resolved controller: level 1 only on Navigator 1.7, levels 1 and 2 on Navigator 2.0/10/Pro. Refreshes every minute using Home Assistant local time, which must match the controller. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
           "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
           "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
           "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -812,7 +822,23 @@
           "advisor_pv_forecast_entity": "Optional — leave empty if you have none; the advisor works fully without it. A Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes) is only the basis for PV-based hot-water window recommendations.",
           "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
           "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
-          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds.",
+          "ai_url": "Base URL of the local Ollama instance. Leave empty when no local model is used.",
+          "ai_model": "Model name requested from the local Ollama instance; only used for local free-form explanations.",
+          "ai_language": "Language of the generated reports (de or en).",
+          "ai_provider": "Who generates on-demand reports: deterministic without a model, the local model, a Home Assistant AI Task entity or direct cloud requests.",
+          "ai_task_entity": "Entity ID of the Home Assistant AI Task helper used to generate reports.",
+          "ai_cloud_model": "Model ID used for direct cloud requests (provider-specific spelling).",
+          "ai_cloud_consent": "Explicit consent to send the redacted report payload to the configured cloud provider. Off by default.",
+          "ai_cloud_daily_limit": "Maximum number of AI-Task and direct cloud requests per UTC day; 0 blocks them entirely.",
+          "ai_interval_hours": "Hours between automatically generated reports; 0 means reports are only generated on demand.",
+          "ai_schedule_report": "Which report is generated automatically when the interval elapses.",
+          "ai_learning": "Continuously learn local operating baselines used by the deterministic analyses.",
+          "ai_notifications": "Notify when new measured health flags appear.",
+          "ai_storage_mib": "Upper bound for locally stored AI history data, in MiB.",
+          "ai_unverified_text": "Free-form AI explanations cannot be fully verified against the measurements; enable only if you accept that limitation.",
+          "ai_openai_key": "Optional OpenAI API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it.",
+          "ai_zai_key": "Optional Z.ai API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it."
         }
       },
       "guided_review": {
@@ -970,7 +996,6 @@
               "energy_manager_dhw_target": "Automatic DHW target temperature",
               "energy_manager_dhw_timeout": "Automatic DHW boost duration",
               "energy_manager_cooldown": "Automation cooldown",
-              "technician_codes": "Show current installer codes as sensors",
               "enable_cascade": "Read a cascade installation",
               "solar_thermal": "Read a solar thermal system",
               "web_extra_data": "Read additional Navigator web data",
@@ -1022,7 +1047,6 @@
               "energy_manager_dhw_target": "Automatic boost raises only the DHW setpoint and leaves the system mode unchanged. Starts at least 5 °C below target in Automatic or Hot-water-only mode; restores the previous setpoint.",
               "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
               "energy_manager_cooldown": "Full waiting time after an automatic boost ends. Saved across reloads and restarts. Does not limit the Navigator's own PV heating-buffer charging triggered by forwarded power values.",
-              "technician_codes": "Creates access-code sensors for the resolved controller: level 1 only on Navigator 1.7, levels 1 and 2 on Navigator 2.0/10/Pro. Refreshes every minute using Home Assistant local time, which must match the controller. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
               "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
               "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
               "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -1311,7 +1335,6 @@
           "weather_preheat_threshold": "Preheat temperature threshold",
           "energy_price_per_kwh": "Electricity price",
           "energy_co2_g_per_kwh": "CO₂ factor",
-          "technician_codes": "Show current installer codes as sensors",
           "enable_cascade": "Read a cascade installation",
           "solar_thermal": "Read a solar thermal system",
           "web_extra_data": "Read additional Navigator web data",
@@ -1396,7 +1419,6 @@
           "weather_preheat_threshold": "Below this temperature, the advisory recommends preheating. It does not change any setpoint.",
           "energy_price_per_kwh": "Used for optional cost sensors. This is a fixed local estimate and does not fetch tariff data.",
           "energy_co2_g_per_kwh": "Used for optional CO₂ sensors. Enter the emission factor of your electricity mix.",
-          "technician_codes": "Creates access-code sensors for the resolved controller: level 1 only on Navigator 1.7, levels 1 and 2 on Navigator 2.0/10/Pro. Refreshes every minute using Home Assistant local time, which must match the controller. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
           "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
           "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
           "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -1429,7 +1451,23 @@
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
           "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
-          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds.",
+          "ai_url": "Base URL of the local Ollama instance. Leave empty when no local model is used.",
+          "ai_model": "Model name requested from the local Ollama instance; only used for local free-form explanations.",
+          "ai_language": "Language of the generated reports (de or en).",
+          "ai_provider": "Who generates on-demand reports: deterministic without a model, the local model, a Home Assistant AI Task entity or direct cloud requests.",
+          "ai_task_entity": "Entity ID of the Home Assistant AI Task helper used to generate reports.",
+          "ai_cloud_model": "Model ID used for direct cloud requests (provider-specific spelling).",
+          "ai_cloud_consent": "Explicit consent to send the redacted report payload to the configured cloud provider. Off by default.",
+          "ai_cloud_daily_limit": "Maximum number of AI-Task and direct cloud requests per UTC day; 0 blocks them entirely.",
+          "ai_interval_hours": "Hours between automatically generated reports; 0 means reports are only generated on demand.",
+          "ai_schedule_report": "Which report is generated automatically when the interval elapses.",
+          "ai_learning": "Continuously learn local operating baselines used by the deterministic analyses.",
+          "ai_notifications": "Notify when new measured health flags appear.",
+          "ai_storage_mib": "Upper bound for locally stored AI history data, in MiB.",
+          "ai_unverified_text": "Free-form AI explanations cannot be fully verified against the measurements; enable only if you accept that limitation.",
+          "ai_openai_key": "Optional OpenAI API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it.",
+          "ai_zai_key": "Optional Z.ai API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it."
         }
       },
       "guided_detail": {
@@ -1463,7 +1501,6 @@
           "weather_preheat_threshold": "Preheat temperature threshold",
           "energy_price_per_kwh": "Electricity price",
           "energy_co2_g_per_kwh": "CO₂ factor",
-          "technician_codes": "Show current installer codes as sensors",
           "enable_cascade": "Read a cascade installation",
           "solar_thermal": "Read a solar thermal system",
           "web_extra_data": "Read additional Navigator web data",
@@ -1545,7 +1582,6 @@
           "weather_preheat_threshold": "Below this temperature, the advisory recommends preheating. It does not change any setpoint.",
           "energy_price_per_kwh": "Used for optional cost sensors. This is a fixed local estimate and does not fetch tariff data.",
           "energy_co2_g_per_kwh": "Used for optional CO₂ sensors. Enter the emission factor of your electricity mix.",
-          "technician_codes": "Creates access-code sensors for the resolved controller: level 1 only on Navigator 1.7, levels 1 and 2 on Navigator 2.0/10/Pro. Refreshes every minute using Home Assistant local time, which must match the controller. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
           "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
           "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
           "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -1581,7 +1617,23 @@
           "advisor_pv_forecast_entity": "Optional — leave empty if you have none; the advisor works fully without it. A Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes) is only the basis for PV-based hot-water window recommendations.",
           "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
           "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
-          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds.",
+          "ai_url": "Base URL of the local Ollama instance. Leave empty when no local model is used.",
+          "ai_model": "Model name requested from the local Ollama instance; only used for local free-form explanations.",
+          "ai_language": "Language of the generated reports (de or en).",
+          "ai_provider": "Who generates on-demand reports: deterministic without a model, the local model, a Home Assistant AI Task entity or direct cloud requests.",
+          "ai_task_entity": "Entity ID of the Home Assistant AI Task helper used to generate reports.",
+          "ai_cloud_model": "Model ID used for direct cloud requests (provider-specific spelling).",
+          "ai_cloud_consent": "Explicit consent to send the redacted report payload to the configured cloud provider. Off by default.",
+          "ai_cloud_daily_limit": "Maximum number of AI-Task and direct cloud requests per UTC day; 0 blocks them entirely.",
+          "ai_interval_hours": "Hours between automatically generated reports; 0 means reports are only generated on demand.",
+          "ai_schedule_report": "Which report is generated automatically when the interval elapses.",
+          "ai_learning": "Continuously learn local operating baselines used by the deterministic analyses.",
+          "ai_notifications": "Notify when new measured health flags appear.",
+          "ai_storage_mib": "Upper bound for locally stored AI history data, in MiB.",
+          "ai_unverified_text": "Free-form AI explanations cannot be fully verified against the measurements; enable only if you accept that limitation.",
+          "ai_openai_key": "Optional OpenAI API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it.",
+          "ai_zai_key": "Optional Z.ai API key for direct cloud requests. Leave blank to keep the stored key; a single dash removes it."
         }
       },
       "guided_review": {
@@ -2486,6 +2538,9 @@
       "fault_charging_pump_2_intermediate": {
         "name": "Charging pump 2 intermediate circuit fault"
       },
+      "fault_heat_source_circuit": {
+        "name": "Heat source circuit fault"
+      },
       "fault_heat_source_pressure_switch": {
         "name": "Heat source pressure switch fault"
       },
@@ -2680,12 +2735,6 @@
       },
       "storage_temp": {
         "name": "Heat storage temperature"
-      },
-      "technician_level_1": {
-        "name": "Technician level 1 code"
-      },
-      "technician_level_2": {
-        "name": "Technician level 2 code"
       },
       "telemetry_latest_firmware": {
         "name": "Latest reported firmware"
@@ -3125,7 +3174,6 @@
         "cascade": "Cascade registers",
         "solar_thermal": "Solar thermal registers",
         "device_hierarchy": "Device grouping",
-        "technician_codes": "Technician code sensors",
         "modbus": "Modbus transport",
         "ai_advisor": "AI adviser (experimental, read-only)"
       }
@@ -3676,6 +3724,26 @@
     "generate_dashboard": {
       "name": "Generate plant dashboard",
       "description": "Return a ready-to-use Lovelace dashboard for this plant using your current entity IDs, as structured data and as YAML. Does not change existing dashboards."
+    },
+    "send_telemetry": {
+      "name": "Send plant report now",
+      "description": "Send one report with existing telemetry consent. A one-minute cooldown applies; the next daily slot is rescheduled.",
+      "fields": {
+        "entry_id": {
+          "name": "Integration",
+          "description": "Select the IDM plant."
+        }
+      }
+    },
+    "check_firmware": {
+      "name": "Check firmware now",
+      "description": "Query matching community observations with existing firmware consent. No firmware is installed.",
+      "fields": {
+        "entry_id": {
+          "name": "Integration",
+          "description": "Select the IDM plant."
+        }
+      }
     }
   }
 }

@@ -177,6 +177,7 @@ from .coordinator import IdmCoordinator
 from .device_hierarchy import (
     cleanup_deconfigured_heating_circuit_entities,
     cleanup_disabled_feature_entities,
+    cleanup_removed_technician_entities,
     cleanup_stale_hierarchy_devices,
     cleanup_stale_model_entities,
     cleanup_stale_web_sensor_entities,
@@ -633,6 +634,7 @@ async def _async_setup_web_only_entry(
         await hass.async_add_executor_job(warm_error_code_database)
         precreate_main_device(hass, coordinator)
         await hass.config_entries.async_forward_entry_setups(entry, list(platforms_to_load))
+        cleanup_removed_technician_entities(hass, coordinator)
         cleanup_disabled_feature_entities(hass, coordinator)
         cleanup_stale_model_entities(hass, coordinator)
         cleanup_deconfigured_heating_circuit_entities(hass, coordinator)
@@ -1203,6 +1205,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
         await coordinator.async_config_entry_first_refresh()
         precreate_main_device(hass, coordinator)
         await hass.config_entries.async_forward_entry_setups(entry, platforms)
+        cleanup_removed_technician_entities(hass, coordinator)
         cleanup_disabled_feature_entities(hass, coordinator)
         cleanup_stale_model_entities(hass, coordinator)
         cleanup_deconfigured_heating_circuit_entities(hass, coordinator)

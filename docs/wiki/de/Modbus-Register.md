@@ -14,6 +14,15 @@ Schema-Snapshot enthält zu jedem Register Adresse, Datentyp, Zugriffsflags,
 Schreibklasse, Quelle, Quellversion, unterstützte Modelle, Sentinel-Werte und
 ein optionales Verifikationslabel.
 
+## Woher diese Daten stammen
+
+Dieser Katalog ist die eigene Arbeit des Projekts. Er vereint Fakten aus den
+offiziellen technischen Dokumenten von iDM (nachgewiesen über Dokumentnummer
+und Revision — die Dokumente selbst bleiben Eigentum von iDM und liegen
+weder abgelegt noch kopiert in diesem Repository), unsere eigenen
+schreibgeschützten Feldbeobachtungen an realen Navigator-Reglern sowie
+Erkenntnisse aus der Community.
+
 → [Vollständigen Registerkatalog öffnen](#vollstandiger-registerkatalog)
 
 ## Adressbereiche

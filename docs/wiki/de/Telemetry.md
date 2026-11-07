@@ -161,3 +161,5 @@ Die anfängliche direkte Host-Installation wurde entfernt. Benutzer, Dateien und
 private Schlüssel sind vom Hypervisor entfernt; neue Schlüssel liegen im Container.
 Der Container selbst darf nicht gemeinsam mit netcup auf einen veralteten Stand
 zurückgesetzt werden.
+
+Manueller Test: `idm_heatpump.send_telemetry` sendet mit bestehender Zustimmung einen Anlagenbericht (mindestens eine Minute Abstand) und plant den nächsten täglichen Versand neu. `idm_heatpump.check_firmware` fragt mit eigener Zustimmung den Firmware-Vergleich ab. Beide Aktionen verwenden `entry_id` und ändern keine Heizungsparameter.

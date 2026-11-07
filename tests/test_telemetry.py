@@ -331,3 +331,32 @@ async def test_telemetry_uses_controller_myidm_without_exposing_unrelated_data()
     assert telemetry.payload()["myidm_id"] == "TEST-MYIDM-123"
     with patch("custom_components.idm_heatpump.telemetry.async_track_time_interval"):
         assert await telemetry.async_start()
+
+
+async def test_manual_send_respects_consent_and_cooldown():
+    telemetry, entry, _ = make_telemetry(False)
+    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession") as session:
+        assert not await telemetry.async_send_now()
+        entry.options[CONF_TELEMETRY] = True
+        entry.options[CONF_TELEMETRY_POLICY] = "old"
+        assert not await telemetry.async_send_now()
+        entry.options[CONF_TELEMETRY_POLICY] = "idm-telemetry-v3"
+        telemetry._last_attempt = __import__("time").time()
+        assert not await telemetry.async_send_now()
+        session.assert_not_called()
+
+
+async def test_manual_send_uses_frozen_outbox_and_replans_daily_slot():
+    telemetry, _, _ = make_telemetry()
+    response = MagicMock(status=201)
+    context = MagicMock()
+    context.__aenter__ = AsyncMock(return_value=response)
+    context.__aexit__ = AsyncMock(return_value=None)
+    telemetry._next_attempt = 1e12
+    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession") as session:
+        session.return_value.post.return_value = context
+        assert await telemetry.async_send_now()
+        assert not await telemetry.async_send_now()
+        session.return_value.post.assert_called_once()
+    assert telemetry._outbox is None
+    assert 86400 <= telemetry._next_attempt - telemetry._last_attempt <= 90000

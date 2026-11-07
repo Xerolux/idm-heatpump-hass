@@ -16,7 +16,9 @@ The detailed model and firmware status is maintained in the [Compatibility Matri
 ## Requirements
 
 - **Modbus TCP** must be enabled in the Navigator controller
-  - Setting: *Technician level → Communication → Modbus TCP*
+  - Setting: *Communication → Modbus TCP* at the controller's installer
+    level — enabled by your heating installer; the integration never
+    unlocks it
   - Default port: **502**
   - Default Slave ID: **1**
 

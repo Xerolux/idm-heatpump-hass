@@ -146,3 +146,5 @@ journal must not be rolled back together with netcup.
 The initial direct-host installation was removed, including its user, files and
 private keys. New keys reside in the guest. Do not roll the journal container
 itself back to an obsolete history together with netcup.
+
+For a manual test, `idm_heatpump.send_telemetry` submits one report with existing consent, a one-minute cooldown and a newly reserved daily slot. `idm_heatpump.check_firmware` queries observations with its independent consent. Both actions take `entry_id` and never change plant settings.

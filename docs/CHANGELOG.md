@@ -13,13 +13,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.26.0-b8] - 2026-11-05
+## [0.26.3] - 2026-11-07
 
 ### ⚠️ Upgrade notes
 
 - **Telemetry remains off unless explicitly enabled**: one consent covers only the connected IDM plant. Enabling requires the myIDM ID of the IDM plant, which is transmitted unchanged. Refusing collects and sends nothing. Existing integration operation stays local and independent of telemetry availability.
 
 ### ✨ New
+
+- **Explicit transmission tests**: the Send plant report now and Check firmware now actions use the existing independent consent settings. Refusal sends nothing. Manual reports retain persisted outbox deduplication and a one-minute cooldown, then reserve the next randomized daily slot; firmware checks never install software or send operating counters.
 
 - **Spread cloud requests across installations**: first telemetry reports are randomized across 24–48 hours, subsequent attempts across 24–25 hours, and overdue reconnects across up to one hour. Slots survive reloads and are reserved before I/O. Firmware startup checks wait up to 30 minutes, with jitter on subsequent six-hour intervals. No immediate retries or bulk backlog upload is introduced.
 
@@ -29,7 +31,37 @@ All notable changes to this project will be documented in this file.
 
 - **Optional plant telemetry**: daily reports describe controller compatibility, connection failures, observed alarm transitions and available operating aggregates. Personal reports use private encrypted storage with twelve-month expiry. The IDM Tools website accepts erasure requests for verification by the operator. No unrelated Home Assistant data, remote commands or automatic diagnostic captures are included.
 
-## [0.26.0-b1] - 2026-11-05
+### 🐛 Bugfixes
+
+- **Remove retired technician entities once**: the first setup of each integration entry removes only its obsolete technician-code registry IDs. Other sensors, renamed entities and other integrations stay untouched. A persisted marker prevents repeated migration; if removal is interrupted, the next setup retries. Installer access remains the responsibility of the heating installer.
+
+## [0.26.2] - 2026-11-06
+
+The integration speaks five more languages: setup, options, services, repairs and error texts now arrive in Spanish, Italian, Romanian, Czech and Polish whenever Home Assistant runs in one of them.
+
+### ⚠️ Upgrade notes
+
+- **New UI languages appear automatically**: with Home Assistant set to Español, Italiano, Română, Čeština or Polski, the integration's flows, services, repairs and errors display in that language; entity names keep falling back to English and Deutsch/English remain unchanged. No setting changes — rollback is safe.
+
+### ✨ New
+
+- **Setup, options, services, repairs and errors in five more languages**: 419 texts each — every flow step, menu, error, repair flow, service field and selector option — translated for Spanish, Italian, Romanian, Czech and Polish installations, with a parity test guarding keys and placeholders so no translation can break a screen.
+- **Installer checklist with printable translations**: the new wiki page hands the heating installer a printable page covering Modbus TCP, fixed IP, GLT/PV signal source, web PIN and plant data, with PDF-ready versions in all five new languages.
+- **German-speaking visitors land on the German documentation**: the English documentation home forwards German browsers once per session; the header language switch stays available, and short README summaries now exist for all five new languages.
+
+## [0.26.1] - 2026-11-06
+
+The technician access-code sensors are gone: the integration no longer calculates or displays the time-based *Fachmann Ebene* codes, and the option that created them is removed from the options flow.
+
+### ⚠️ Upgrade notes
+
+- **Technician-code sensors and their option are removed**: `sensor.…_fachmann_ebene_1` and `…_fachmann_ebene_2` disappear together with the *Technician Level* option. Access to the installer level is a matter for your heating installer, and no configuration migration is needed — remaining settings, entities and dashboards are untouched, and rollback to 0.26.0 restores the previous behaviour.
+
+### 💼 Maintenance
+
+- **Technician-code sensors removed for safety reasons**: computing the controller's installer-level codes and offering them as sensors cut short an access level iDM reserves for trained installers. The calculation module, its sensors, the option, tests and documentation are removed; the controller-clock sensor keeps making clock drift visible.
+
+## [0.26.0] - 2026-11-06
 
 The setup assistant can now find the heat pump by itself: setup starts with a choice between manual entry and a network scan, so the Modbus address no longer has to be looked up in the router first.
 
@@ -41,6 +73,10 @@ The setup assistant can now find the heat pump by itself: setup starts with a ch
 
 - **Setup starts with manual entry or a network scan**: the first setup step is now a menu; *Scan the network for the heat pump* probes every host of a chosen IPv4 subnet once on Modbus TCP port 502 — no Modbus data is sent — and lists the responding hosts. The subnet field comes pre-filled from Home Assistant's network adapter.
 - **Found devices show address and name**: every scan result carries the IP address plus the reverse-DNS hostname when one resolves, so a heat pump named by the router is recognizable at a glance. Picking an entry takes the address into the connection form, where the connection test, web access and Modbus-proxy settings are completed as before.
+
+### 🐛 Bugfixes
+
+- **High-pressure fault (Web) no longer reads permanently on**: the Navigator reports the B10 high-pressure switch like its other safety inputs — contact closed means everything is fine — but the entity mapped it the other way round, so a healthy plant showed a latched fault (#649). B10 now inverts like B5/B15; an open contact reads as the fault it is.
 
 ## [0.25.0] - 2026-11-05
 

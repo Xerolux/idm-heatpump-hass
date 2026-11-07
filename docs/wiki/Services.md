@@ -63,8 +63,7 @@ Sets the Navigator controller clock to a given time (default: the current
 Home Assistant time) through the local web interface. There is no Modbus
 register for the clock, so this works on both web variants — the Navigator 10
 WebSocket and the Navigator 2.0 web interface. A use case is keeping the
-controller clock in sync so time programs and the time-dependent technician
-codes stay correct.
+controller clock in sync so time programs stay correct.
 
 **Service:** `idm_heatpump.set_controller_clock`
 

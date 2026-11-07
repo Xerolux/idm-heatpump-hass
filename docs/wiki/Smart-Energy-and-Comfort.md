@@ -198,6 +198,16 @@ buffer settings if the buffer repeatedly charges near its upper limit. The
 integration cannot guarantee that DHW and buffer charging use one compressor
 cycle; the Navigator owns their sequencing and normal heating demand.
 
+The Navigator accepts five forwarded measurements on this path, each of them
+writable and readable back over Modbus: PV surplus (register 74), PV
+production (78), house consumption (82), battery discharge (84) and battery
+state of charge (86 — a whole-number percentage, so the forwarder rounds it),
+plus the optional electric-heating-rod power (76). Only the surplus is
+essential. The controller compares it against its own current power draw,
+which it exposes read-only as register 4122 — a useful reference when tuning
+the PV thresholds, because charging starts once the surplus exceeds what the
+heat pump itself consumes.
+
 ### Bidirectional grid meter as the surplus source
 
 A single bidirectional grid meter at the grid connection point can feed the
@@ -240,8 +250,10 @@ choosing native communication instead.
 
 ### Ownership and source selection
 
-1. In the Navigator, select **Building management system / Smartfox** as the PV
-   signal. Stop native SolarEdge polling and other writers to the same GLT inputs.
+1. In the Navigator, the **Building management system / Smartfox** PV signal
+   is selected at the controller's installer level by your heating installer —
+   once set, this integration takes over the values. Stop native SolarEdge
+   polling and other writers to the same GLT inputs.
 2. Select every inverter that belongs to the same site and grid meter. Do not
    aggregate unrelated installations or both a total sensor and its components.
 3. Identify the inverter connected to the battery. Check battery status and the

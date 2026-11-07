@@ -338,14 +338,29 @@ class Telemetry:
         if entry.options.get(CONF_TELEMETRY) is not True:
             await self.async_stop()
 
-    async def async_tick(self, now: datetime) -> None:
-        """Send at most once per 24 hours, including across entry reloads."""
+    async def async_send_now(self) -> bool:
+        """Explicitly submit one report, retaining consent and a one-minute cooldown."""
+        before = self._last_attempt
+        await self.async_tick(datetime.now().astimezone(), manual=True)
+        return self._last_attempt != before and self._outbox is None
+
+    async def async_tick(self, now: datetime, *, manual: bool = False) -> None:
+        """Send in the reserved daily slot, or on an explicit manual request."""
         del now
-        if self._stopped or self._entry.options.get(CONF_TELEMETRY) is not True or self._lock.locked():
+        if (
+            self._stopped
+            or self._entry.options.get(CONF_TELEMETRY) is not True
+            or self._entry.options.get(CONF_TELEMETRY_POLICY) != TELEMETRY_POLICY
+            or not self._entry.options.get(CONF_TELEMETRY_CONSENT_AT)
+            or not valid_myidm(self.myidm_id)
+            or self._lock.locked()
+        ):
             return
         async with self._lock:
             current = time.time()
-            if current < self._next_attempt or current - self._last_attempt < _INTERVAL:
+            if (manual and current - self._last_attempt < 60) or (
+                not manual and (current < self._next_attempt or current - self._last_attempt < _INTERVAL)
+            ):
                 return
             self._last_attempt = current
             # Reserve the next daily slot before any I/O, including failed attempts.

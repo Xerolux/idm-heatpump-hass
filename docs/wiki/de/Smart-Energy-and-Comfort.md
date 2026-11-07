@@ -221,6 +221,17 @@ Obergrenze, prüfe die PV-Heizpuffereinstellungen im Navigator. Die Integration
 kann keinen gemeinsamen Verdichterzyklus für Warmwasser und Puffer garantieren;
 der Navigator bestimmt Reihenfolge und normalen Heizbedarf.
 
+Der Navigator nimmt auf diesem Weg fünf weitergeleitete Messwerte entgegen,
+jeden davon per Modbus schreib- und zurücklesbar: PV-Überschuss (Register 74),
+PV-Produktion (78), Hausverbrauch (82), Batterieentladung (84) und
+Batteriefüllstand (86 — eine ganzzahlige Prozentangabe, deshalb rundet die
+Weiterleitung), dazu optional die Leistung des E-Heizstabs (76). Nur der
+Überschuss ist unverzichtbar. Die Regelung vergleicht ihn mit ihrer eigenen
+aktuellen Leistungsaufnahme, die sie unter Register 4122 nur-lesbar
+bereitstellt — eine nützliche Referenz beim Einstellen der PV-Schwellen, denn
+das Laden beginnt, sobald der Überschuss den Eigenverbrauch der Wärmepumpe
+übersteigt.
+
 ### Bidirektionaler Netzzähler als Überschussquelle
 
 Statt eines dedizierten Überschusssensors kann ein einzelner bidirektionaler
@@ -266,7 +277,9 @@ Regler-Firmware, bevor du stattdessen die native Verbindung auswählst.
 
 ### Zuständigkeit und Quellenauswahl
 
-1. Wähle im Navigator **Gebäudeleittechnik / Smartfox** als PV-Signal. Beende die
+1. Das PV-Signal **Gebäudeleittechnik / Smartfox** wird im Navigator auf der
+   Installateur-Ebene von deinem Heizungsinstallateur gewählt — sobald es
+   gesetzt ist, übernimmt diese Integration die Werte. Beende die
    native SolarEdge-Abfrage und weitere Schreiber auf dieselben GLT-Eingänge.
 2. Wähle alle Wechselrichter derselben Anlage und desselben Netz-Zählers.
    Vermische keine anderen Anlagen und addiere keinen Summensensor zusätzlich

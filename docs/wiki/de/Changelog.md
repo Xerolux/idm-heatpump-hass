@@ -5,17 +5,35 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
-## v0.26.0-b8 — 2026-11-05
+## v0.26.3 — 2026-11-07
 
-Lokaler Teststand ohne öffentliche Veröffentlichung: aktuelle stabile Basis und
-Modbus-Netzwerksuche, ausdrücklich freigegebene Anlagen-Telemetrie mit myIDM-ID,
-neustartfeste Tagesberichte und privater Löschanfrage. Der optionale Sensor
-„Neueste gemeldete Firmware“ vergleicht nur dieselbe Regler-, Modell- und
-Firmware-Reihe; Test- und stabile Kanäle bleiben getrennt. Die Firmware-Abfrage hat jetzt eine eigene Einwilligung und funktioniert ohne Telemetrie.
+Freiwillige Anlagenmeldungen und eine getrennte Firmware-Abfrage sind jetzt verfügbar. Beide bleiben standardmäßig aus; kurze Hinweise verlinken den vollständigen Datenschutztext. Meldungen bleiben nach Neustarts erhalten und werden zeitlich verteilt versendet. Verwaiste Technikercode-Entitäten werden beim ersten Start bereinigt.
 
-Die Dialoge für Firmware-Abfrage und Telemetrie sind jetzt kurz und verständlich. Im Dialog steht Xerolux; vollständige Anbieterangaben stehen in den verlinkten Datenschutzhinweisen.
+## v0.26.2 — 2026-11-06
 
-## v0.26.0-b1 — 2026-11-05
+Die Integration spricht fünf weitere Sprachen: Setup, Optionen, Dienste,
+Reparaturen und Fehlermeldungen (je 419 Texte) erscheinen auf Spanisch,
+Italienisch, Rumänisch, Tschechisch und Polnisch, sobald Home Assistant in
+einer dieser Sprachen läuft — Entitätsnamen fallen auf Englisch zurück, keine
+Einstellungsänderung. Eine neue Installateur-Checkliste übergibt dem
+Heizungsinstallateur eine druckbare PDF-fähige Seite (Modbus TCP, feste IP,
+GLT/PV-Signal, Web-PIN, Anlagendaten) mit Übersetzungen in alle fünf
+Sprachen, die englische Dokumentations-Startseite leitet deutsche Browser
+einmal pro Sitzung weiter, und kurze README-Zusammenfassungen decken die
+fünf neuen Sprachen ab.
+
+## v0.26.1 — 2026-11-06
+
+Die Sensoren für die Fachmann-Zugangscodes sind aus Sicherheitsgründen
+entfernt: Die Integration berechnet die zeitbasierten Fachmann-Ebene-Codes
+nicht mehr, die Option, die die Sensoren erzeugte, ist aus dem Optionen-Flow
+entfernt, und die beiden Sensor-Entitäten verschwinden beim Upgrade — keine
+Migration nötig, alles andere bleibt unberührt. Der Zugang zur
+Installateur-Ebene bleibt Sache des Heizungsinstallateurs. Der
+Regler-Uhr-Sensor macht Uhren-Drift weiterhin sichtbar, die
+Protokollanalyse bleibt Forschungsdokumentation.
+
+## v0.26.0 — 2026-11-06
 
 Der Einrichtungsassistent kann die Wärmepumpe jetzt selbst finden. Das Setup beginnt mit
 der Wahl zwischen manueller Eingabe und Netzwerkscan: Der Scan fragt jeden Rechner eines
@@ -23,7 +41,10 @@ gewählten IPv4-Subnetzes einmalig auf dem Modbus-TCP-Port 502 ab — es werden 
 Modbus-Daten gesendet oder gelesen — und listet die antwortenden Geräte mit IP-Adresse und,
 falls auflösbar, Reverse-DNS-Hostnamen. Die gewählte Adresse legt das Verbindungsformular
 vor, in dem Verbindungstest, Webzugriff und Modbus-Proxy wie bisher abgeschlossen werden.
-Das Subnetz-Feld ist mit dem Netzwerk des Home-Assistant-Hosts vorbelegt. Ein Rollback
+Das Subnetz-Feld ist mit dem Netzwerk des Home-Assistant-Hosts vorbelegt. Der binäre
+Web-Sensor für die Hochdruckstörung bleibt nicht mehr dauerhaft an: Der B10-Sicherheitskontakt
+ist als Öffner verdrahtet und wird jetzt wie die verwandten Kontakte B5/B15 invertiert,
+sodass eine gesunde Anlage keine Störung anzeigt (#649). Ein Rollback
 ist sicher; bestehende Einträge bleiben unberührt.
 
 ## v0.25.0 — 2026-11-05

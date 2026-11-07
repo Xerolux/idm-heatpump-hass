@@ -166,7 +166,6 @@
               "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
               "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
               "energy_manager_cooldown": "Sperrzeit der Automatik",
-              "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
               "enable_cascade": "Kaskadenanlage auslesen",
               "solar_thermal": "Solaranlage auslesen",
               "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -218,7 +217,6 @@
               "energy_manager_dhw_target": "Der automatische Boost erhöht nur den Warmwasser-Sollwert; die Betriebsart bleibt unverändert. Start ab 5 °C unter dem Ziel im Automatik- oder Nur-Warmwasser-Modus. Der vorherige Sollwert wird wiederhergestellt.",
               "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
               "energy_manager_cooldown": "Volle Wartezeit nach Ende eines automatischen Boosts. Bleibt bei Reloads und Neustarts erhalten. Begrenzt nicht die eigene PV-Heizpufferladung des Navigators durch weitergeleitete Leistungswerte.",
-              "technician_codes": "Erstellt Zugangscode-Sensoren passend zum erkannten Regler: auf Navigator 1.7 nur Ebene 1, auf Navigator 2.0/10/Pro Ebene 1 und 2. Aktualisierung jede Minute mit der lokalen Home-Assistant-Zeit, die mit dem Regler übereinstimmen muss. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
               "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
               "solar_thermal": "Liest die Solarthermie-Register (Kollektor-, Lade- und Solar-Rücklauftemperatur) und gruppiert sie unter dem Gerät Solaranlage. Deaktivieren, wenn die Anlage keine Kollektoren hat: Die Solarregister werden nicht mehr abgefragt und die leere Gruppe verschwindet nach dem Neuladen. Erneutes Aktivieren stellt die Entitäten mit ihren bisherigen IDs wieder her.",
               "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -542,7 +540,6 @@
           "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
           "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
           "energy_manager_cooldown": "Sperrzeit der Automatik",
-          "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
           "enable_cascade": "Kaskadenanlage auslesen",
           "solar_thermal": "Solaranlage auslesen",
           "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -627,7 +624,6 @@
           "energy_manager_dhw_target": "Der automatische Boost erhöht nur den Warmwasser-Sollwert; die Betriebsart bleibt unverändert. Start ab 5 °C unter dem Ziel im Automatik- oder Nur-Warmwasser-Modus. Der vorherige Sollwert wird wiederhergestellt.",
           "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
           "energy_manager_cooldown": "Volle Wartezeit nach Ende eines automatischen Boosts. Bleibt bei Reloads und Neustarts erhalten. Begrenzt nicht die eigene PV-Heizpufferladung des Navigators durch weitergeleitete Leistungswerte.",
-          "technician_codes": "Erstellt Zugangscode-Sensoren passend zum erkannten Regler: auf Navigator 1.7 nur Ebene 1, auf Navigator 2.0/10/Pro Ebene 1 und 2. Aktualisierung jede Minute mit der lokalen Home-Assistant-Zeit, die mit dem Regler übereinstimmen muss. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
           "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
           "solar_thermal": "Liest die Solarthermie-Register (Kollektor-, Lade- und Solar-Rücklauftemperatur) und gruppiert sie unter dem Gerät Solaranlage. Deaktivieren, wenn die Anlage keine Kollektoren hat: Die Solarregister werden nicht mehr abgefragt und die leere Gruppe verschwindet nach dem Neuladen. Erneutes Aktivieren stellt die Entitäten mit ihren bisherigen IDs wieder her.",
           "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -660,7 +656,23 @@
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
           "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
-          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
+          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
+          "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
+          "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
+          "ai_language": "Sprache der erzeugten Berichte (de oder en).",
+          "ai_provider": "Wer Bei-Bedarf-Berichte erzeugt: deterministisch ohne Modell, das lokale Modell, eine Home-Assistant-AI-Task-Entität oder direkte Cloud-Anfragen.",
+          "ai_task_entity": "Entitäts-ID des Home-Assistant-AI-Task-Helfers, der Berichte erzeugt.",
+          "ai_cloud_model": "Modell-ID für direkte Cloud-Anfragen (herstellerspezifische Schreibweise).",
+          "ai_cloud_consent": "Ausdrückliche Zustimmung, die geschwärzten Berichtsdaten an den konfigurierten Cloud-Anbieter zu senden. Standardmäßig aus.",
+          "ai_cloud_daily_limit": "Maximale Anzahl an AI-Task- und direkten Cloud-Anfragen pro UTC-Tag; 0 sperrt sie vollständig.",
+          "ai_interval_hours": "Stunden zwischen automatisch erzeugten Berichten; 0 bedeutet, dass Berichte nur auf Anforderung entstehen.",
+          "ai_schedule_report": "Welcher Bericht beim Ablauf des Intervalls automatisch erzeugt wird.",
+          "ai_learning": "Lokale Betriebs-Basenlinien für die deterministischen Analysen kontinuierlich lernen.",
+          "ai_notifications": "Benachrichtigen, wenn neue gemessene Health-Hinweise auftreten.",
+          "ai_storage_mib": "Obergrenze für lokal gespeicherte KI-Verlaufsdaten, in MiB.",
+          "ai_unverified_text": "Freie KI-Erklärungen lassen sich nicht vollständig gegen die Messwerte verifizieren; nur aktivieren, wenn diese Einschränkung akzeptiert wird.",
+          "ai_openai_key": "Optionaler OpenAI-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
+          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn."
         }
       },
       "guided_detail": {
@@ -694,7 +706,6 @@
           "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
           "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
           "energy_manager_cooldown": "Sperrzeit der Automatik",
-          "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
           "enable_cascade": "Kaskadenanlage auslesen",
           "solar_thermal": "Solaranlage auslesen",
           "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -776,7 +787,6 @@
           "energy_manager_dhw_target": "Der automatische Boost erhöht nur den Warmwasser-Sollwert; die Betriebsart bleibt unverändert. Start ab 5 °C unter dem Ziel im Automatik- oder Nur-Warmwasser-Modus. Der vorherige Sollwert wird wiederhergestellt.",
           "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
           "energy_manager_cooldown": "Volle Wartezeit nach Ende eines automatischen Boosts. Bleibt bei Reloads und Neustarts erhalten. Begrenzt nicht die eigene PV-Heizpufferladung des Navigators durch weitergeleitete Leistungswerte.",
-          "technician_codes": "Erstellt Zugangscode-Sensoren passend zum erkannten Regler: auf Navigator 1.7 nur Ebene 1, auf Navigator 2.0/10/Pro Ebene 1 und 2. Aktualisierung jede Minute mit der lokalen Home-Assistant-Zeit, die mit dem Regler übereinstimmen muss. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
           "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
           "solar_thermal": "Liest die Solarthermie-Register (Kollektor-, Lade- und Solar-Rücklauftemperatur) und gruppiert sie unter dem Gerät Solaranlage. Deaktivieren, wenn die Anlage keine Kollektoren hat: Die Solarregister werden nicht mehr abgefragt und die leere Gruppe verschwindet nach dem Neuladen. Erneutes Aktivieren stellt die Entitäten mit ihren bisherigen IDs wieder her.",
           "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -812,7 +822,23 @@
           "advisor_pv_forecast_entity": "Optional — kann leer gelassen werden, der Advisor funktioniert auch ohne. Ein Home-Assistant-Sensor mit stündlicher PV-Erzeugungsprognose (z. B. PVForecast- oder Solcast-Attribute) ist nur die Grundlage für PV-basierte Warmwasser-Zeitfenster-Empfehlungen.",
           "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt.",
           "connection_mode": "Automatisch behält das empfohlene Verhalten: Modbus für Register und Schreibvorgänge, die lokale Web-Ergänzung für zusätzliche Werte, wenn eine PIN konfiguriert ist. Modbus + Web-Ergänzung legt beide Pfade fest und deaktiviert den Web-only-Fallback beim Einrichten. Nur Web betreibt den Eintrag ohne Modbus-Verbindung: Betriebsart und Störungsquittierung werden über die lokale Web-Oberfläche gesteuert; Sollwerte und weitere Steuermöglichkeiten erfordern weiterhin Modbus. Nur Modbus kontaktiert niemals das Web-Interface, auch nicht mit konfigurierter PIN.",
-          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
+          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
+          "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
+          "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
+          "ai_language": "Sprache der erzeugten Berichte (de oder en).",
+          "ai_provider": "Wer Bei-Bedarf-Berichte erzeugt: deterministisch ohne Modell, das lokale Modell, eine Home-Assistant-AI-Task-Entität oder direkte Cloud-Anfragen.",
+          "ai_task_entity": "Entitäts-ID des Home-Assistant-AI-Task-Helfers, der Berichte erzeugt.",
+          "ai_cloud_model": "Modell-ID für direkte Cloud-Anfragen (herstellerspezifische Schreibweise).",
+          "ai_cloud_consent": "Ausdrückliche Zustimmung, die geschwärzten Berichtsdaten an den konfigurierten Cloud-Anbieter zu senden. Standardmäßig aus.",
+          "ai_cloud_daily_limit": "Maximale Anzahl an AI-Task- und direkten Cloud-Anfragen pro UTC-Tag; 0 sperrt sie vollständig.",
+          "ai_interval_hours": "Stunden zwischen automatisch erzeugten Berichten; 0 bedeutet, dass Berichte nur auf Anforderung entstehen.",
+          "ai_schedule_report": "Welcher Bericht beim Ablauf des Intervalls automatisch erzeugt wird.",
+          "ai_learning": "Lokale Betriebs-Basenlinien für die deterministischen Analysen kontinuierlich lernen.",
+          "ai_notifications": "Benachrichtigen, wenn neue gemessene Health-Hinweise auftreten.",
+          "ai_storage_mib": "Obergrenze für lokal gespeicherte KI-Verlaufsdaten, in MiB.",
+          "ai_unverified_text": "Freie KI-Erklärungen lassen sich nicht vollständig gegen die Messwerte verifizieren; nur aktivieren, wenn diese Einschränkung akzeptiert wird.",
+          "ai_openai_key": "Optionaler OpenAI-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
+          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn."
         }
       },
       "guided_review": {
@@ -970,7 +996,6 @@
               "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
               "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
               "energy_manager_cooldown": "Sperrzeit der Automatik",
-              "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
               "enable_cascade": "Kaskadenanlage auslesen",
               "solar_thermal": "Solaranlage auslesen",
               "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -1022,7 +1047,6 @@
               "energy_manager_dhw_target": "Der automatische Boost erhöht nur den Warmwasser-Sollwert; die Betriebsart bleibt unverändert. Start ab 5 °C unter dem Ziel im Automatik- oder Nur-Warmwasser-Modus. Der vorherige Sollwert wird wiederhergestellt.",
               "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
               "energy_manager_cooldown": "Volle Wartezeit nach Ende eines automatischen Boosts. Bleibt bei Reloads und Neustarts erhalten. Begrenzt nicht die eigene PV-Heizpufferladung des Navigators durch weitergeleitete Leistungswerte.",
-              "technician_codes": "Erstellt Zugangscode-Sensoren passend zum erkannten Regler: auf Navigator 1.7 nur Ebene 1, auf Navigator 2.0/10/Pro Ebene 1 und 2. Aktualisierung jede Minute mit der lokalen Home-Assistant-Zeit, die mit dem Regler übereinstimmen muss. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
               "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
               "solar_thermal": "Liest die Solarthermie-Register (Kollektor-, Lade- und Solar-Rücklauftemperatur) und gruppiert sie unter dem Gerät Solaranlage. Deaktivieren, wenn die Anlage keine Kollektoren hat: Die Solarregister werden nicht mehr abgefragt und die leere Gruppe verschwindet nach dem Neuladen. Erneutes Aktivieren stellt die Entitäten mit ihren bisherigen IDs wieder her.",
               "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -1311,7 +1335,6 @@
           "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
           "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
           "energy_manager_cooldown": "Sperrzeit der Automatik",
-          "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
           "enable_cascade": "Kaskadenanlage auslesen",
           "solar_thermal": "Solaranlage auslesen",
           "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -1396,7 +1419,6 @@
           "energy_manager_dhw_target": "Der automatische Boost erhöht nur den Warmwasser-Sollwert; die Betriebsart bleibt unverändert. Start ab 5 °C unter dem Ziel im Automatik- oder Nur-Warmwasser-Modus. Der vorherige Sollwert wird wiederhergestellt.",
           "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
           "energy_manager_cooldown": "Volle Wartezeit nach Ende eines automatischen Boosts. Bleibt bei Reloads und Neustarts erhalten. Begrenzt nicht die eigene PV-Heizpufferladung des Navigators durch weitergeleitete Leistungswerte.",
-          "technician_codes": "Erstellt Zugangscode-Sensoren passend zum erkannten Regler: auf Navigator 1.7 nur Ebene 1, auf Navigator 2.0/10/Pro Ebene 1 und 2. Aktualisierung jede Minute mit der lokalen Home-Assistant-Zeit, die mit dem Regler übereinstimmen muss. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
           "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
           "solar_thermal": "Liest die Solarthermie-Register (Kollektor-, Lade- und Solar-Rücklauftemperatur) und gruppiert sie unter dem Gerät Solaranlage. Deaktivieren, wenn die Anlage keine Kollektoren hat: Die Solarregister werden nicht mehr abgefragt und die leere Gruppe verschwindet nach dem Neuladen. Erneutes Aktivieren stellt die Entitäten mit ihren bisherigen IDs wieder her.",
           "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -1429,7 +1451,23 @@
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
           "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
-          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
+          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
+          "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
+          "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
+          "ai_language": "Sprache der erzeugten Berichte (de oder en).",
+          "ai_provider": "Wer Bei-Bedarf-Berichte erzeugt: deterministisch ohne Modell, das lokale Modell, eine Home-Assistant-AI-Task-Entität oder direkte Cloud-Anfragen.",
+          "ai_task_entity": "Entitäts-ID des Home-Assistant-AI-Task-Helfers, der Berichte erzeugt.",
+          "ai_cloud_model": "Modell-ID für direkte Cloud-Anfragen (herstellerspezifische Schreibweise).",
+          "ai_cloud_consent": "Ausdrückliche Zustimmung, die geschwärzten Berichtsdaten an den konfigurierten Cloud-Anbieter zu senden. Standardmäßig aus.",
+          "ai_cloud_daily_limit": "Maximale Anzahl an AI-Task- und direkten Cloud-Anfragen pro UTC-Tag; 0 sperrt sie vollständig.",
+          "ai_interval_hours": "Stunden zwischen automatisch erzeugten Berichten; 0 bedeutet, dass Berichte nur auf Anforderung entstehen.",
+          "ai_schedule_report": "Welcher Bericht beim Ablauf des Intervalls automatisch erzeugt wird.",
+          "ai_learning": "Lokale Betriebs-Basenlinien für die deterministischen Analysen kontinuierlich lernen.",
+          "ai_notifications": "Benachrichtigen, wenn neue gemessene Health-Hinweise auftreten.",
+          "ai_storage_mib": "Obergrenze für lokal gespeicherte KI-Verlaufsdaten, in MiB.",
+          "ai_unverified_text": "Freie KI-Erklärungen lassen sich nicht vollständig gegen die Messwerte verifizieren; nur aktivieren, wenn diese Einschränkung akzeptiert wird.",
+          "ai_openai_key": "Optionaler OpenAI-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
+          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn."
         }
       },
       "guided_detail": {
@@ -1463,7 +1501,6 @@
           "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
           "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
           "energy_manager_cooldown": "Sperrzeit der Automatik",
-          "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
           "enable_cascade": "Kaskadenanlage auslesen",
           "solar_thermal": "Solaranlage auslesen",
           "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -1545,7 +1582,6 @@
           "energy_manager_dhw_target": "Der automatische Boost erhöht nur den Warmwasser-Sollwert; die Betriebsart bleibt unverändert. Start ab 5 °C unter dem Ziel im Automatik- oder Nur-Warmwasser-Modus. Der vorherige Sollwert wird wiederhergestellt.",
           "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
           "energy_manager_cooldown": "Volle Wartezeit nach Ende eines automatischen Boosts. Bleibt bei Reloads und Neustarts erhalten. Begrenzt nicht die eigene PV-Heizpufferladung des Navigators durch weitergeleitete Leistungswerte.",
-          "technician_codes": "Erstellt Zugangscode-Sensoren passend zum erkannten Regler: auf Navigator 1.7 nur Ebene 1, auf Navigator 2.0/10/Pro Ebene 1 und 2. Aktualisierung jede Minute mit der lokalen Home-Assistant-Zeit, die mit dem Regler übereinstimmen muss. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
           "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
           "solar_thermal": "Liest die Solarthermie-Register (Kollektor-, Lade- und Solar-Rücklauftemperatur) und gruppiert sie unter dem Gerät Solaranlage. Deaktivieren, wenn die Anlage keine Kollektoren hat: Die Solarregister werden nicht mehr abgefragt und die leere Gruppe verschwindet nach dem Neuladen. Erneutes Aktivieren stellt die Entitäten mit ihren bisherigen IDs wieder her.",
           "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -1581,7 +1617,23 @@
           "advisor_pv_forecast_entity": "Optional — kann leer gelassen werden, der Advisor funktioniert auch ohne. Ein Home-Assistant-Sensor mit stündlicher PV-Erzeugungsprognose (z. B. PVForecast- oder Solcast-Attribute) ist nur die Grundlage für PV-basierte Warmwasser-Zeitfenster-Empfehlungen.",
           "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt.",
           "connection_mode": "Automatisch behält das empfohlene Verhalten: Modbus für Register und Schreibvorgänge, die lokale Web-Ergänzung für zusätzliche Werte, wenn eine PIN konfiguriert ist. Modbus + Web-Ergänzung legt beide Pfade fest und deaktiviert den Web-only-Fallback beim Einrichten. Nur Web betreibt den Eintrag ohne Modbus-Verbindung: Betriebsart und Störungsquittierung werden über die lokale Web-Oberfläche gesteuert; Sollwerte und weitere Steuermöglichkeiten erfordern weiterhin Modbus. Nur Modbus kontaktiert niemals das Web-Interface, auch nicht mit konfigurierter PIN.",
-          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
+          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
+          "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
+          "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
+          "ai_language": "Sprache der erzeugten Berichte (de oder en).",
+          "ai_provider": "Wer Bei-Bedarf-Berichte erzeugt: deterministisch ohne Modell, das lokale Modell, eine Home-Assistant-AI-Task-Entität oder direkte Cloud-Anfragen.",
+          "ai_task_entity": "Entitäts-ID des Home-Assistant-AI-Task-Helfers, der Berichte erzeugt.",
+          "ai_cloud_model": "Modell-ID für direkte Cloud-Anfragen (herstellerspezifische Schreibweise).",
+          "ai_cloud_consent": "Ausdrückliche Zustimmung, die geschwärzten Berichtsdaten an den konfigurierten Cloud-Anbieter zu senden. Standardmäßig aus.",
+          "ai_cloud_daily_limit": "Maximale Anzahl an AI-Task- und direkten Cloud-Anfragen pro UTC-Tag; 0 sperrt sie vollständig.",
+          "ai_interval_hours": "Stunden zwischen automatisch erzeugten Berichten; 0 bedeutet, dass Berichte nur auf Anforderung entstehen.",
+          "ai_schedule_report": "Welcher Bericht beim Ablauf des Intervalls automatisch erzeugt wird.",
+          "ai_learning": "Lokale Betriebs-Basenlinien für die deterministischen Analysen kontinuierlich lernen.",
+          "ai_notifications": "Benachrichtigen, wenn neue gemessene Health-Hinweise auftreten.",
+          "ai_storage_mib": "Obergrenze für lokal gespeicherte KI-Verlaufsdaten, in MiB.",
+          "ai_unverified_text": "Freie KI-Erklärungen lassen sich nicht vollständig gegen die Messwerte verifizieren; nur aktivieren, wenn diese Einschränkung akzeptiert wird.",
+          "ai_openai_key": "Optionaler OpenAI-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
+          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn."
         }
       },
       "guided_review": {
@@ -2486,6 +2538,9 @@
       "fault_charging_pump_2_intermediate": {
         "name": "Störung Ladepumpe 2 Zwischenkreis"
       },
+      "fault_heat_source_circuit": {
+        "name": "Störung Wärmequellenkreis"
+      },
       "fault_heat_source_pressure_switch": {
         "name": "Störung Druckschalter Wärmequellenkreis"
       },
@@ -2680,12 +2735,6 @@
       },
       "storage_temp": {
         "name": "Speichertemperatur"
-      },
-      "technician_level_1": {
-        "name": "00 Fachmann Ebene 1"
-      },
-      "technician_level_2": {
-        "name": "00 Fachmann Ebene 2"
       },
       "telemetry_latest_firmware": {
         "name": "Neueste gemeldete Firmware"
@@ -3125,7 +3174,6 @@
         "cascade": "Kaskadenregister",
         "solar_thermal": "Solarthermie",
         "device_hierarchy": "Geräte gruppieren",
-        "technician_codes": "Fachmann-Code-Sensoren",
         "modbus": "Modbus-Verbindung",
         "ai_advisor": "KI-Anlagenberater (experimentell, nur lesend)"
       }
@@ -3676,6 +3724,26 @@
     "generate_dashboard": {
       "name": "Anlagen-Dashboard erzeugen",
       "description": "Liefert ein fertig verwendbares Lovelace-Dashboard für diese Anlage mit deinen aktuellen Entity-IDs zurück – als strukturierte Daten und als YAML. Vorhandene Dashboards werden nicht verändert."
+    },
+    "send_telemetry": {
+      "name": "Anlagenbericht jetzt senden",
+      "description": "Sendet mit bestehender Telemetrie-Zustimmung einen Bericht. Mindestens eine Minute Abstand; der nächste tägliche Versand wird neu geplant.",
+      "fields": {
+        "entry_id": {
+          "name": "Integration",
+          "description": "Wähle die IDM-Anlage."
+        }
+      }
+    },
+    "check_firmware": {
+      "name": "Firmware jetzt prüfen",
+      "description": "Fragt mit bestehender Firmware-Zustimmung passende Community-Meldungen ab. Es wird keine Firmware installiert.",
+      "fields": {
+        "entry_id": {
+          "name": "Integration",
+          "description": "Wähle die IDM-Anlage."
+        }
+      }
     }
   }
 }

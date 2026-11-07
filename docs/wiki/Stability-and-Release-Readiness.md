@@ -4,6 +4,65 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.26.2 release decision
+
+**0.26.2** is a stable feature patch adding five UI languages. Home Assistant
+merges `translations/<lang>.json` over `translations/en.json`, so the five new
+files ship exactly the visible UI surface — config and options flow steps,
+errors, aborts, services, issues/repairs, selectors and exceptions, 419
+strings each — while entity names keep the English fallback. A new parametrized
+parity test guards every file: no orphan keys, no empty values, and every
+`{placeholder}` of the English source must survive the translation, so a bad
+translation cannot break a screen. The five translations were produced in one
+pass and are not yet native-reviewed; corrections from the field are welcome
+and can ship as patch releases. The installer checklist page (EN+DE in the
+wiki, five printable translations under `docs/examples/`) documents the
+installer-level enablement path, and the documentation home forwards German
+browsers once per session only (explicit switch stays available). Full quality
+gate on the cut: two-leg CI matrix with coverage gates, strict mypy, ruff,
+hassfest, real-Home-Assistant lifecycle smoke, CodeQL/pip-audit, credential
+scan. Runtime pins unchanged from 0.26.1 (`idm-heatpump-api[web]==2.16.0`).
+
+## 0.26.1 release decision
+
+**0.26.1** is a fast-follow stable patch on the 0.26.0 line with exactly one
+change: **the technician access-code feature is removed for safety reasons**
+(the calculation module, both sensor entities, the *Technician Level* option,
+tests and documentation). Computing the controller's installer-level codes and
+serving them as sensors cut short an access level iDM reserves for trained
+installers — in tension with the project's own write-safety rules and the
+community norm of never unlocking installer functions. Every wiki step that
+previously told users to sign in at that level now states that the heating
+installer enables Modbus TCP / the GLT-PV function, and the instructions
+continue from there. The full quality gate ran on the cut itself (two-leg CI
+matrix with coverage gates, strict mypy, ruff, hassfest, real-Home-Assistant
+lifecycle smoke, CodeQL/pip-audit, credential scan); the register catalogue
+and all runtime pins stay identical to 0.26.0 (`idm-heatpump-api[web]==2.16.0`
+— no runtime dependency moved). Removing the two entities needs no migration;
+settings, dashboards and all other entities are untouched, and rollback to
+0.26.0 restores the previous behaviour. A repository-wide scan verified that
+no original or converted iDM document is committed anywhere, and a short
+data-provenance note now opens the register pages.
+
+## 0.26.0 release decision
+
+**0.26.0** is a deliberate fast-follow stable cut without a public beta line:
+the network-scan setup flow (developed and merged as 0.26.0-b1, #648) plus the
+B10 high-pressure web-sensor correction (#649). The reasoning: the B10 fix is a
+one-line metadata change (`inverted=True`, no write path, no polling change —
+display semantics of one web binary sensor only) whose field evidence was
+unambiguous, and holding it back through a beta cycle would leave a
+permanently-latched false fault on affected plants. The scan flow is
+setup-only, sends no Modbus bytes (single TCP connect on port 502) and reads
+nothing. The full quality gate ran on the cut itself: the two-leg CI matrix
+(Python 3.14 × HA 2026.11.0 × manifest-pinned/api-main) with coverage gates,
+strict mypy, ruff, hassfest, the real-Home-Assistant lifecycle smoke leg,
+CodeQL/pip-audit and the credential scan. The API pin stays at the validated
+`idm-heatpump-api[web]==2.16.0` — identical to 0.25.0, no runtime pin moved.
+No beta soak: accepted consciously for the two scoped changes above; anything
+larger returns to the beta line. Rollback is safe (no stored-data change, no
+entity-ID change).
+
 ## 0.25.0 release decision
 
 **0.25.0** is the stable cut of the b1–b9 line (2026-10-29 through
@@ -420,7 +479,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.26.0-b8` and `idm-heatpump-api` `2.16.0` form the current
+Source-tree integration `0.26.3` and `idm-heatpump-api` `2.16.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

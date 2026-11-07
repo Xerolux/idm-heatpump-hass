@@ -1,0 +1,894 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurar bomba de calor IDM Navigator",
+        "menu_options": {
+          "manual": "Introducir los datos de conexión manualmente",
+          "scan": "Buscar la bomba de calor en la red"
+        }
+      },
+      "manual": {
+        "title": "Configurar bomba de calor IDM Navigator",
+        "description": "[¿Necesitas ayuda? Abre la documentación]({wiki_url})\n\nIntroduce los datos de conexión Modbus de tu bomba de calor IDM. Por defecto, el asistente configura **Modbus y el acceso web local del Navigator juntos**; introduce el código de red local como PIN web. Si deliberadamente quieres solo Modbus, desactiva expresamente el acceso web.\n\nSi usas un proxy Modbus, activa «Usar un proxy Modbus» e introduce la dirección IP o el nombre de host directo de la bomba de calor como dirección web."
+      },
+      "scan": {
+        "title": "Buscar en la red",
+        "description": "Se sondea una vez cada host de la subred en el puerto Modbus TCP 502. No se envían ni leen datos Modbus; la búsqueda solo comprueba si el puerto responde. Tarda unos segundos y solo encuentra dispositivos accesibles desde Home Assistant."
+      },
+      "scan_results": {
+        "title": "Dispositivos encontrados",
+        "description": "Elige la bomba de calor entre los hosts que respondieron en el puerto Modbus TCP. La dirección se pasa al siguiente paso, donde se prueba la conexión y se configuran el acceso web y el proxy. Los hosts mostrados con nombre se resolvieron mediante DNS inverso."
+      },
+      "reconfigure": {
+        "title": "Conexión y diagnóstico",
+        "description": "Cambia la conexión guardada o prueba todos los endpoints locales configurados sin guardar ni escribir en la bomba de calor.",
+        "menu_options": {
+          "connection": "Cambiar ajustes de conexión",
+          "features": "Configurar funciones",
+          "diagnostics": "Probar conexión actual"
+        }
+      },
+      "connection": {
+        "title": "Cambiar conexión – {name}",
+        "description": "[¿Necesitas ayuda? Lee la documentación]({wiki_url})\n\nConexión actual: **{host}**\n\nLos nuevos ajustes se validan antes de guardar. La integración se reinicia automáticamente después. Modbus TCP debe estar activado en el Navigator en *Gestión del edificio (Gebäudeleittechnik) → Modbus TCP → On (Ein)*. Para el acceso web local opcional, usa el código de *Ajustes → Ajustes generales → Ajustes de red → Código de red local*, no credenciales de la nube ni un código de dos factores."
+      },
+      "diagnostics_success": {
+        "title": "Conexión Modbus y web correcta",
+        "description": "La prueba de solo lectura tuvo éxito para Modbus **{host}:{port}**, ID de esclavo **{slave_id}**, y el acceso web local configurado del Navigator.\n\nNo se cambió ningún ajuste ni se escribió ningún registro. Envía de nuevo para repetir la prueba.\n\n**Resultados**\n- Modbus: **{modbus_status}**\n- Web del Navigator: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Duración: **{duration} s**"
+      },
+      "diagnostics_modbus_success": {
+        "title": "Conexión Modbus correcta",
+        "description": "La prueba de Modbus de solo lectura tuvo éxito para **{host}:{port}**, ID de esclavo **{slave_id}**. El acceso web se omitió porque no hay PIN web local configurado.\n\nNo se cambió ningún ajuste ni se escribió ningún registro. Envía de nuevo para repetir la prueba.\n\n**Resultados**\n- Modbus: **{modbus_status}**\n- Web del Navigator: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Duración: **{duration} s**"
+      },
+      "diagnostics_failed": {
+        "title": "Prueba de conexión fallida",
+        "description": "La prueba de solo lectura para **{host}:{port}**, ID de esclavo **{slave_id}**, no se completó correctamente. La causa concreta y las comprobaciones recomendadas se muestran arriba.\n\nNo se cambió ningún ajuste ni se escribió ningún registro. Envía de nuevo para repetir la prueba.\n\n**Resultados**\n- Modbus: **{modbus_status}**\n- Web del Navigator: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Duración: **{duration} s**"
+      },
+      "options": {
+        "title": "Configuración – {name}",
+        "description": "Elige qué datos lee la integración y cómo se presentan en Home Assistant. Los valores predeterminados recomendados sirven para la mayoría de las instalaciones. Al guardar, la integración se reinicia automáticamente para aplicar los cambios."
+      },
+      "zones": {
+        "title": "Configurar módulos de zona",
+        "description": "Introduce el número de habitaciones activas por módulo de zona (normalmente 6 habitaciones en Navigator 10 / hardware actual; algunos sistemas antiguos usan 8). Configurando {zone_count} módulo(s) de zona."
+      },
+      "room_temp_forwarding": {
+        "title": "Reenvío de temperatura exterior de habitación – {name}",
+        "description": "Selecciona un sensor de temperatura de Home Assistant por circuito de calefacción. La integración escribe estos valores en los registros GLT de temperatura de habitación de IDM. Deja un circuito vacío para omitirlo."
+      },
+      "humidity_forwarding": {
+        "title": "Reenvío de humedad exterior – {name}",
+        "description": "Selecciona un sensor de humedad de Home Assistant. La integración escribe este valor en el registro GLT de humedad de IDM. Déjalo vacío para omitir el reenvío de humedad."
+      },
+      "storage_temp_forwarding": {
+        "title": "Reenvío de temperatura exterior del acumulador – {name}",
+        "description": "Selecciona un sensor de temperatura de Home Assistant por registro GLT de acumulador. La integración escribe estos valores en los registros GLT de acumulador de IDM. Deja un campo vacío para omitirlo."
+      },
+      "modbus_failed": {
+        "title": "Conexión Modbus fallida",
+        "description": "**La comprobación Modbus de {host} falló.**\n\nEn el Navigator, verifica *Gestión del edificio (Gebäudeleittechnik) → Modbus TCP → On (Ein)*. Si este menú falta o está bloqueado, contacta con tu instalador o el servicio de iDM.\n\nEl mensaje anterior distingue si el endpoint TCP es inaccesible o responde sin datos de registro IDM válidos. Corrige los datos de conexión y reintenta, o continúa con **solo datos web**. Puedes corregir el PIN web local justo abajo.\n\n**Limitaciones del modo solo web:** solo valores de sensores; sin registros de circuitos de calefacción o zonas, entidades escribibles, control de modos ni confirmación de errores."
+      },
+      "web_only_options": {
+        "title": "Ajustes de datos web – {name}",
+        "description": "El modo solo web está activo. Configura cada cuánto lee la integración los datos de sensores de la interfaz web del Navigator. Las entidades basadas en Modbus (circuitos de calefacción, zonas, controles escribibles) no están disponibles en este modo."
+      },
+      "setup_review": {
+        "title": "Sistema IDM detectado",
+        "description": "Se verificaron Modbus y el acceso web local solicitado.\n\n- Endpoint: **{host}:{port}**\n- ID de esclavo: **{slave_id}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Acceso web local: **{web}**\n- Instalación detectada: **{plant}**\n\nRevisa el modelo detectado automáticamente. Anúlalo solo cuando la detección sea demostrablemente errónea. Después elige la profundidad de configuración. Cada nivel ofrece todas las funciones mediante pasos guiados cortos."
+      },
+      "knx_bridge": {
+        "title": "Direcciones de grupo KNX (experimental) – {name}",
+        "description": "Los {object_count} objetos KNX de IDM se disponen sobre una dirección base: a ella se añade cada número de objeto, de modo que 8/0/0 pone el objeto 1 en 8/0/1 y el objeto 222 en 8/0/222. Usa la lista de anulaciones para objetos que tu proyecto ETS ya direcciona de otra forma — un `registro = dirección` por línea.\n\nETS solo conoce estas direcciones tras una importación: genera el archivo de importación para tu dirección base con el [generador de direcciones de grupo KNX]({generator_url}) del sitio de documentación e impórtalo en ETS en *Direcciones de grupo → Importar direcciones de grupo*."
+      },
+      "external_power_forwarding": {
+        "title": "Reenvío de energía exterior – {name}",
+        "description": "Selecciona sensores existentes de Home Assistant para FV, consumo de la vivienda y batería. Los W/kW se convierten y escriben en los registros GLT correspondientes de IDM. Los campos vacíos se omiten. No actives esto junto con SMARTFOX u openWB escribiendo los mismos registros."
+      },
+      "feature_notice": {
+        "title": "Confirmar nuevas funciones beta",
+        "description": "Estás activando nuevas funciones beta. El análisis y los consejos de solo lectura añaden entidades de Home Assistant. El reenvío de energía exterior escribe valores de sensores seleccionados en registros GLT de IDM; la carga automática de agua caliente por FV y la programación de confort pueden cambiar ajustes de la bomba de calor. Activa esos controles solo cuando Home Assistant sea el único controlador de la función afectada. Continúa solo si entiendes estos efectos."
+      },
+      "guided_mode": {
+        "title": "Elegir profundidad de configuración",
+        "description": "Los tres niveles ofrecen todas las funciones. Estándar usa valores seguros, Avanzado añade ajustes habituales y Experto expone todos los parámetros. Los valores existentes se conservan al cambiar de nivel."
+      },
+      "guided_choose": {
+        "title": "¿Qué quieres configurar?",
+        "description": "Selecciona solo las funciones que quieres añadir, quitar o editar. Las funciones no seleccionadas y sus ajustes guardados permanecen como están. Cada función seleccionada obtiene su propia página corta."
+      },
+      "guided_toggle": {
+        "title": "Activar o desactivar esta función",
+        "description": "Elige si esta función debe ejecutarse. Al desactivarla se conservan sus ajustes detallados para un uso posterior."
+      },
+      "guided_detail": {
+        "title": "Configurar esta función",
+        "description": "Solo se muestran los ajustes de la función seleccionada. Tu nivel de configuración determina el nivel de detalle; los ajustes ocultos conservan sus valores guardados."
+      },
+      "guided_review": {
+        "title": "Revisar y guardar",
+        "description": "Funciones seleccionadas para editar: {selected_count}. Al guardar se recarga la integración y se actualizan sus entidades. Revisa los controles automáticos y los ajustes KNX antes de confirmar."
+      },
+      "advisor_room_sources": {
+        "title": "Fuentes de temperatura de habitación del asesor",
+        "description": "Sensores de temperatura opcionales de solo lectura de Home Assistant que el asesor predictivo usa para circuitos sin sensor de habitación cableado. No se escribe nada en la bomba de calor; los valores fuera del rango de plausibilidad del asesor se ignoran."
+      }
+    },
+    "error": {
+      "cannot_connect": "No se pudo conectar con la bomba de calor. Comprueba la dirección IP y el puerto, y activa Gestión del edificio (Gebäudeleittechnik) → Modbus TCP → On (Ein) en el Navigator. Si Modbus no está disponible, puedes continuar con solo datos web (introduce antes tu PIN local del Navigator).",
+      "host_not_found": "No se pudo resolver el nombre de host. Comprueba errores tipográficos, prueba la dirección IP de la bomba de calor y verifica el DNS/mDNS local.",
+      "modbus_connection_refused": "El dispositivo rechazó activamente la conexión. En el Navigator, pon Gestión del edificio (Gebäudeleittechnik) → Modbus TCP en On (Ein) y usa el puerto 502. Si el menú falta o está bloqueado, pide a tu instalador o al servicio de iDM que lo activen. Reinicia el regulador si es necesario y reintenta.",
+      "modbus_timeout": "El intento de conexión expiró. Comprueba que la IP pertenece a la bomba de calor, que el dispositivo está encendido y que ninguna VLAN, ruta o cortafuegos bloquea el puerto 502.",
+      "modbus_unreachable": "El endpoint Modbus TCP no es accesible. Comprueba IP/nombre de host y red, usa el puerto 502 y verifica Gestión del edificio (Gebäudeleittechnik) → Modbus TCP → On (Ein) en el Navigator.",
+      "modbus_no_response": "La conexión TCP se abrió, pero no se recibió ninguna respuesta de registro IDM válida. Comprueba el ID de esclavo 1 y que Gestión del edificio (Gebäudeleittechnik) → Modbus TCP esté en On (Ein) en el Navigator. Reinicia el regulador tras activar Modbus.",
+      "host_required": "Introduce una dirección IP o nombre de host válido.",
+      "invalid_web_pin": "La interfaz web local del Navigator rechazó este PIN. Introduce el PIN correcto o deja el campo vacío para usar solo Modbus.",
+      "invalid_web_pin_web_only": "La interfaz web local del Navigator rechazó este PIN. Elige Reintentar para corregir IP/puerto/esclavo y probar Modbus de nuevo, o introduce el PIN correcto para usar solo datos web.",
+      "name_required": "Introduce un nombre para el dispositivo.",
+      "web_pin_required": "Introduce el PIN web local del Navigator para continuar en modo solo web.",
+      "web_cannot_connect": "No se pudo leer la interfaz web local del Navigator. Comprueba la dirección original de la bomba de calor y el acceso de red, o borra el PIN web para continuar solo con Modbus.",
+      "web_host_required": "Introduce la IP/nombre de host original de la bomba de calor para el acceso web, o desactiva la opción de proxy Modbus.",
+      "web_pin_required_or_disable": "Introduce el PIN web local del Navigator, o desactiva expresamente «Usar acceso web local del Navigator» para operar solo con Modbus.",
+      "invalid_knx_base_address": "No es una dirección de grupo base utilizable. Usa notación de tres niveles (8/0/0), dos niveles (8/0) o libre, y deja espacio para 999 direcciones por encima.",
+      "invalid_knx_overrides": "No se pudo leer la lista de anulaciones. Usa un `registro = dirección` por línea con un nombre de registro IDM conocido y no asignes una dirección dos veces.",
+      "no_knx_groups": "Selecciona al menos un grupo de objetos.",
+      "feature_notice_required": "Confirma las nuevas funciones beta antes de guardar.",
+      "invalid_comfort_windows": "Usa como máximo 16 ventanas sin solapamiento en los circuitos configurados, cada una como circuito,HH:MM,HH:MM,objetivo (15–30 °C).",
+      "guided_review_required": "Confirma el resumen antes de guardar.",
+      "weather_entity_required": "Elige una entidad de meteorología para los consejos meteorológicos.",
+      "grid_power_unused": "El contador de red no se usaría: hay un sensor explícito de excedente FV seleccionado y el consumo de la vivienda también es explícito, o no hay sensor de producción FV para la derivación del consumo. Quita el sensor de red o los sensores explícitos de excedente/consumo.",
+      "invalid_ai_endpoint": "Introduce una URL HTTP(S) local basada en IP sin credenciales, ruta ni consulta, por ejemplo http://192.168.1.20:11434.",
+      "invalid_ai_model": "Introduce el nombre de un modelo local instalado. Los modelos de nube no están soportados.",
+      "invalid_ai_language": "Elige de o en.",
+      "ai_cloud_consent_required": "Selecciona un proveedor de nube soportado y permite expresamente el envío de datos de operación seleccionados.",
+      "ai_cloud_invalid_limit": "Establece un número entero de 1 a 24 solicitudes de nube por día UTC.",
+      "ai_cloud_key_required": "Introduce una clave API válida para el proveedor seleccionado.",
+      "ai_cloud_auth_failed": "El proveedor rechazó la autenticación o el acceso. Comprueba la clave API y el acceso al modelo.",
+      "ai_cloud_rate_limited": "El proveedor rechazó la solicitud por cuota o límites de frecuencia. No se reintentó automáticamente.",
+      "ai_cloud_budget_unavailable": "El presupuesto de solicitudes no se pudo cargar o guardar con seguridad. No se envió ninguna solicitud a la nube.",
+      "ai_cloud_daily_limit_reached": "Se alcanzó el límite de solicitudes de nube para este día UTC.",
+      "ai_task_entity_required": "Selecciona una entidad ai_task existente que soporte generación de datos.",
+      "invalid_subnet": "No es una subred IPv4 válida, o es demasiado grande (como máximo /22). Usa una notación como `192.168.1.0/24`.",
+      "no_candidates": "No se encontró ningún dispositivo con el puerto Modbus TCP abierto. Comprueba que la bomba de calor es accesible y Modbus TCP está activado, verifica la subred — o introduce la dirección manualmente."
+    },
+    "abort": {
+      "already_configured": "Esta bomba de calor ya está configurada.",
+      "reconfigure_successful": "Datos de conexión actualizados. La integración se reiniciará."
+    }
+  },
+  "options": {
+    "step": {
+      "options": {
+        "title": "Configuración – {name}",
+        "description": "Elige qué datos lee la integración y cómo se presentan en Home Assistant. Los valores predeterminados recomendados sirven para la mayoría de las instalaciones. Al guardar, la integración se reinicia automáticamente para aplicar los cambios."
+      },
+      "zones": {
+        "title": "Configurar módulos de zona",
+        "description": "Introduce el número de habitaciones activas por módulo de zona (normalmente 6 habitaciones en Navigator 10 / hardware actual; algunos sistemas antiguos usan 8). Configurando {zone_count} módulo(s) de zona."
+      },
+      "room_temp_forwarding": {
+        "title": "Reenvío de temperatura exterior de habitación – {name}",
+        "description": "Selecciona un sensor de temperatura de Home Assistant por circuito de calefacción. La integración escribe estos valores en los registros GLT de temperatura de habitación de IDM. Deja un circuito vacío para omitirlo."
+      },
+      "humidity_forwarding": {
+        "title": "Reenvío de humedad exterior – {name}",
+        "description": "Selecciona un sensor de humedad de Home Assistant. La integración escribe este valor en el registro GLT de humedad de IDM. Déjalo vacío para omitir el reenvío de humedad."
+      },
+      "storage_temp_forwarding": {
+        "title": "Reenvío de temperatura exterior del acumulador – {name}",
+        "description": "Selecciona un sensor de temperatura de Home Assistant por registro GLT de acumulador. La integración escribe estos valores en los registros GLT de acumulador de IDM. Deja un campo vacío para omitirlo."
+      },
+      "knx_bridge": {
+        "title": "Direcciones de grupo KNX (experimental) – {name}",
+        "description": "Los {object_count} objetos KNX de IDM se disponen sobre una dirección base: a ella se añade cada número de objeto, de modo que 8/0/0 pone el objeto 1 en 8/0/1 y el objeto 222 en 8/0/222. Usa la lista de anulaciones para objetos que tu proyecto ETS ya direcciona de otra forma — un `registro = dirección` por línea.\n\nETS solo conoce estas direcciones tras una importación: genera el archivo de importación para tu dirección base con el [generador de direcciones de grupo KNX]({generator_url}) del sitio de documentación e impórtalo en ETS en *Direcciones de grupo → Importar direcciones de grupo*."
+      },
+      "external_power_forwarding": {
+        "title": "Reenvío de energía exterior – {name}",
+        "description": "Selecciona sensores existentes de Home Assistant para FV, consumo de la vivienda y batería. Los W/kW se convierten y escriben en los registros GLT correspondientes de IDM. Los campos vacíos se omiten. No actives esto junto con SMARTFOX u openWB escribiendo los mismos registros."
+      },
+      "feature_notice": {
+        "title": "Confirmar nuevas funciones beta",
+        "description": "Estás activando nuevas funciones beta. El análisis y los consejos de solo lectura añaden entidades de Home Assistant. El reenvío de energía exterior escribe valores de sensores seleccionados en registros GLT de IDM; la carga automática de agua caliente por FV y la programación de confort pueden cambiar ajustes de la bomba de calor. Activa esos controles solo cuando Home Assistant sea el único controlador de la función afectada. Continúa solo si entiendes estos efectos."
+      },
+      "guided_mode": {
+        "title": "Elegir profundidad de configuración",
+        "description": "Los tres niveles ofrecen todas las funciones. Estándar usa valores seguros, Avanzado añade ajustes habituales y Experto expone todos los parámetros. Los valores existentes se conservan al cambiar de nivel."
+      },
+      "guided_choose": {
+        "title": "¿Qué quieres configurar?",
+        "description": "Selecciona solo las funciones que quieres añadir, quitar o editar. Las funciones no seleccionadas y sus ajustes guardados permanecen como están. Cada función seleccionada obtiene su propia página corta."
+      },
+      "guided_toggle": {
+        "title": "Activar o desactivar esta función",
+        "description": "Elige si esta función debe ejecutarse. Al desactivarla se conservan sus ajustes detallados para un uso posterior."
+      },
+      "guided_detail": {
+        "title": "Configurar esta función",
+        "description": "Solo se muestran los ajustes de la función seleccionada. Tu nivel de configuración determina el nivel de detalle; los ajustes ocultos conservan sus valores guardados."
+      },
+      "guided_review": {
+        "title": "Revisar y guardar",
+        "description": "Funciones seleccionadas para editar: {selected_count}. Al guardar se recarga la integración y se actualizan sus entidades. Revisa los controles automáticos y los ajustes KNX antes de confirmar."
+      },
+      "advisor_room_sources": {
+        "title": "Fuentes de temperatura de habitación del asesor",
+        "description": "Sensores de temperatura opcionales de solo lectura de Home Assistant que el asesor predictivo usa para circuitos sin sensor de habitación cableado. No se escribe nada en la bomba de calor; los valores fuera del rango de plausibilidad del asesor se ignoran."
+      }
+    },
+    "error": {
+      "invalid_knx_base_address": "No es una dirección de grupo base utilizable. Usa notación de tres niveles (8/0/0), dos niveles (8/0) o libre, y deja espacio para 999 direcciones por encima.",
+      "invalid_knx_overrides": "No se pudo leer la lista de anulaciones. Usa un `registro = dirección` por línea con un nombre de registro IDM conocido y no asignes una dirección dos veces.",
+      "no_knx_groups": "Selecciona al menos un grupo de objetos.",
+      "feature_notice_required": "Confirma las nuevas funciones beta antes de guardar.",
+      "invalid_comfort_windows": "Usa como máximo 16 ventanas sin solapamiento en los circuitos configurados, cada una como circuito,HH:MM,HH:MM,objetivo (15–30 °C).",
+      "guided_review_required": "Confirma el resumen antes de guardar.",
+      "weather_entity_required": "Elige una entidad de meteorología para los consejos meteorológicos.",
+      "grid_power_unused": "El contador de red no se usaría: hay un sensor explícito de excedente FV seleccionado y el consumo de la vivienda también es explícito, o no hay sensor de producción FV para la derivación del consumo. Quita el sensor de red o los sensores explícitos de excedente/consumo.",
+      "invalid_ai_endpoint": "Introduce una URL HTTP(S) local basada en IP sin credenciales, ruta ni consulta, por ejemplo http://192.168.1.20:11434.",
+      "invalid_ai_model": "Introduce el nombre de un modelo local instalado. Los modelos de nube no están soportados.",
+      "invalid_ai_language": "Elige de o en.",
+      "ai_cloud_consent_required": "Selecciona un proveedor de nube soportado y permite expresamente el envío de datos de operación seleccionados.",
+      "ai_cloud_invalid_limit": "Establece un número entero de 1 a 24 solicitudes de nube por día UTC.",
+      "ai_cloud_key_required": "Introduce una clave API válida para el proveedor seleccionado.",
+      "ai_cloud_auth_failed": "El proveedor rechazó la autenticación o el acceso. Comprueba la clave API y el acceso al modelo.",
+      "ai_cloud_rate_limited": "El proveedor rechazó la solicitud por cuota o límites de frecuencia. No se reintentó automáticamente.",
+      "ai_cloud_budget_unavailable": "El presupuesto de solicitudes no se pudo cargar o guardar con seguridad. No se envió ninguna solicitud a la nube.",
+      "ai_cloud_daily_limit_reached": "Se alcanzó el límite de solicitudes de nube para este día UTC.",
+      "ai_task_entity_required": "Selecciona una entidad ai_task existente que soporte generación de datos."
+    },
+    "abort": {}
+  },
+  "services": {
+    "set_system_mode": {
+      "name": "Establecer modo del sistema",
+      "description": "Establece el modo de operación de la bomba de calor.",
+      "fields": {
+        "mode": {
+          "name": "Modo",
+          "description": "Modo de operación (p. ej. standby, automático, vacaciones)."
+        }
+      }
+    },
+    "acknowledge_errors": {
+      "name": "Confirmar errores",
+      "description": "Confirma/borra los mensajes de error activos en la bomba de calor."
+    },
+    "write_register": {
+      "name": "Escribir registro",
+      "description": "Escribe un valor directamente en un registro Modbus. Solo para usuarios avanzados: los valores incorrectos pueden dañar el sistema.",
+      "fields": {
+        "address": {
+          "name": "Dirección del registro",
+          "description": "Dirección del registro Modbus (decimal)."
+        },
+        "value": {
+          "name": "Valor",
+          "description": "Valor a escribir."
+        },
+        "datatype": {
+          "name": "Tipo de datos",
+          "description": "Tipo de datos Modbus (uint16, int16, float, uchar, bool)."
+        },
+        "acknowledge_risk": {
+          "name": "Confirmar riesgo",
+          "description": "Debe establecercerse en `true` para permitir la operación de escritura."
+        }
+      }
+    },
+    "set_external_climate": {
+      "name": "Establecer clima exterior",
+      "description": "Escribe la temperatura exterior de habitación y la humedad opcional en los registros GLT de IDM.",
+      "fields": {
+        "heating_circuit": {
+          "name": "Circuito de calefacción",
+          "description": "Circuito de calefacción destino A-G."
+        },
+        "room_temperature": {
+          "name": "Temperatura de habitación",
+          "description": "Temperatura exterior de habitación en °C (-20…60)."
+        },
+        "humidity": {
+          "name": "Humedad",
+          "description": "Humedad relativa exterior opcional en % (0…100)."
+        }
+      }
+    },
+    "set_external_power": {
+      "name": "Establecer energía exterior",
+      "description": "Escribe medidas de energía y batería exteriores en los registros GLT de IDM.",
+      "fields": {
+        "pv_surplus": {
+          "name": "Excedente FV",
+          "description": "Excedente fotovoltaico actual en kW."
+        },
+        "pv_production": {
+          "name": "Producción FV",
+          "description": "Producción fotovoltaica actual en kW."
+        },
+        "house_consumption": {
+          "name": "Consumo de la vivienda",
+          "description": "Consumo actual de la vivienda en kW."
+        },
+        "battery_discharge": {
+          "name": "Descarga de batería",
+          "description": "Potencia actual de descarga de batería en kW."
+        },
+        "battery_soc": {
+          "name": "Estado de carga de batería",
+          "description": "Estado de carga actual de la batería en % (número entero de 0 a 100)."
+        },
+        "electric_heater_power": {
+          "name": "Potencia de resistencia eléctrica",
+          "description": "Potencia actual de la resistencia eléctrica en kW."
+        }
+      }
+    },
+    "start_dhw_boost": {
+      "name": "Iniciar refuerzo de ACS",
+      "description": "Prioriza temporalmente el agua caliente sanitaria y restaura después el modo y consigna exactos anteriores.",
+      "fields": {
+        "entry_id": {
+          "name": "Entrada de configuración",
+          "description": "Solo necesario cuando hay varias bombas de calor IDM configuradas."
+        },
+        "target_temperature": {
+          "name": "Temperatura objetivo",
+          "description": "Consigna temporal de agua caliente sanitaria en °C (35–65)."
+        },
+        "timeout_minutes": {
+          "name": "Duración máxima",
+          "description": "Duración máxima del refuerzo en minutos antes de la restauración automática (5–240)."
+        }
+      }
+    },
+    "cancel_dhw_boost": {
+      "name": "Cancelar refuerzo de ACS",
+      "description": "Cancela un refuerzo activo y restaura el modo de sistema y la consigna de ACS guardados exactos.",
+      "fields": {
+        "entry_id": {
+          "name": "Entrada de configuración",
+          "description": "Solo necesario cuando hay varias bombas de calor IDM configuradas."
+        }
+      }
+    },
+    "export_knx_group_addresses": {
+      "name": "Exportar direcciones de grupo KNX",
+      "description": "Devuelve la tabla de objetos KNX de IDM para este regulador para poder recrearla en ETS.",
+      "fields": {
+        "knx_base_address": {
+          "name": "Dirección de grupo base",
+          "description": "Dirección base a la que se añaden los números de objeto."
+        },
+        "knx_groups": {
+          "name": "Grupos de objetos",
+          "description": "Limita la exportación a estos grupos del catálogo."
+        }
+      }
+    },
+    "generate_ai_report": {
+      "name": "Generar informe IA experimental",
+      "description": "Solo lectura, activado por separado. Usa el proveedor seleccionado; la nube requiere consentimiento explícito. Hasta 300 segundos en local, 120 segundos en la nube.",
+      "fields": {
+        "entry_id": {
+          "name": "Integración IDM",
+          "description": "La entrada IDM activada explícitamente."
+        },
+        "report_type": {
+          "name": "Tipo de informe",
+          "description": "daily, weekly, health o efficiency."
+        }
+      }
+    },
+    "export_ai_dashboard": {
+      "name": "Exportar panel IA experimental",
+      "description": "Devuelve una configuración completa de panel con tus IDs de entidad actuales.",
+      "fields": {
+        "entry_id": {
+          "name": "Integración IDM",
+          "description": "Entrada de la integración IDM."
+        }
+      }
+    },
+    "snooze_anomaly": {
+      "name": "Silenciar anomalía del asesor",
+      "description": "Suprime un motivo de anomalía del asesor predictivo durante un número de días para que un hallazgo recurrente y comprendido deje de dispararse. Los motivos silenciados quedan fuera de las recomendaciones activas y de la puntuación de salud hasta que venza la ventana.",
+      "fields": {
+        "entry_id": {
+          "name": "Integración IDM",
+          "description": "La entrada de la integración IDM."
+        },
+        "reason": {
+          "name": "Motivo",
+          "description": "Código de motivo estable de la anomalía a suprimir."
+        },
+        "days": {
+          "name": "Días",
+          "description": "Cuántos días suprimir el motivo (1-365)."
+        }
+      }
+    },
+    "unsnooze_anomaly": {
+      "name": "Reactivar anomalía del asesor",
+      "description": "Cancela anticipadamente un silenciamiento de anomalía para que el motivo pueda volver a dispararse.",
+      "fields": {
+        "entry_id": {
+          "name": "Integración IDM",
+          "description": "La entrada de la integración IDM."
+        },
+        "reason": {
+          "name": "Motivo",
+          "description": "Código de motivo estable de la anomalía a reactivar."
+        }
+      }
+    },
+    "set_controller_clock": {
+      "name": "Establecer reloj del regulador",
+      "description": "Establece el reloj del Navigator a la hora indicada (por defecto: ahora) a través de la interfaz web local.",
+      "fields": {
+        "datetime": {
+          "name": "Fecha y hora",
+          "description": "La hora a establecer. Omitir para usar la hora actual de Home Assistant."
+        }
+      }
+    },
+    "generate_dashboard": {
+      "name": "Generar panel de la instalación",
+      "description": "Devuelve un panel Lovelace listo para usar para esta instalación con tus IDs de entidad actuales, como datos estructurados y como YAML. No cambia los paneles existentes."
+    }
+  },
+  "issues": {
+    "solar_module_unused": {
+      "title": "Sistema solar térmico no detectado",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Sistema solar térmico no detectado",
+            "description": "Elige si dejar de leer los registros solares térmicos o mantenerlos y descartar esta sugerencia. Todos los registros solares han informado «no configurado» durante un día completo, así que la instalación muy probablemente no tiene colectores solares térmicos; en ese caso el grupo de dispositivos *Solaranlage* solo contiene entidades permanentemente no disponibles.",
+            "data": {
+              "action": "Acción"
+            }
+          },
+          "disable": {
+            "title": "Dejar de leer los registros solares térmicos",
+            "description": "Los registros solares salen del sondeo y el grupo de dispositivos *Solaranlage* vacío desaparece tras una recarga. Reactivar la opción más tarde restaura las entidades con sus IDs anteriores."
+          },
+          "keep": {
+            "title": "Mantener los registros solares térmicos",
+            "description": "Los registros permanecen en el sondeo y esta sugerencia queda descartada hasta que un valor solar informe realmente."
+          }
+        },
+        "abort": {
+          "entry_not_found": "No se encontró la entrada de configuración de IDM Heatpump."
+        }
+      }
+    },
+    "web_pin_missing": {
+      "title": "PIN web de IDM no configurado",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Resolver el acceso web del IDM Navigator",
+            "description": "Elige si introducir o sustituir ahora el PIN web local del Navigator, o desactivar deliberadamente los datos opcionales del suplemento web.",
+            "data": {
+              "action": "Acción"
+            }
+          },
+          "set_pin": {
+            "title": "Establecer PIN web local del Navigator",
+            "description": "Introduce el código de red local configurado en el Navigator en Ajustes → Ajustes generales → Ajustes de red. No uses credenciales de nube/app ni un código de dos factores. Vacío o `0` desactiva el acceso web local.",
+            "data": {
+              "web_pin": "PIN de red local (web del Navigator)"
+            }
+          },
+          "disable_web": {
+            "title": "Desactivar datos opcionales del suplemento web",
+            "description": "Confirma que esta bomba de calor debe permanecer en modo solo Modbus. Puedes activar los datos del suplemento web más tarde desde el flujo de reconfiguración de la integración."
+          }
+        },
+        "error": {
+          "web_pin_required": "Introduce un PIN o elige el modo solo Modbus.",
+          "invalid_web_pin": "La interfaz web local del Navigator rechazó este PIN.",
+          "web_cannot_connect": "No se pudo leer la interfaz web local del Navigator. Comprueba el host web configurado y el acceso de red, y reintenta."
+        },
+        "abort": {
+          "entry_not_found": "No se encontró la entrada de configuración de IDM Heatpump."
+        }
+      }
+    },
+    "web_supplement_failed": {
+      "title": "Datos del suplemento web de IDM no disponibles",
+      "description": "Home Assistant no pudo leer los datos opcionales del web local del Navigator desde **{host}**. Los datos Modbus siguen funcionando.\n\nComprueba el host web configurado y el acceso a la red local. Activa el registro de depuración si el problema continúa."
+    },
+    "web_authentication_failed": {
+      "title": "PIN web del IDM Navigator rechazado",
+      "description": "La interfaz web local del Navigator en **{host}** rechazó el PIN configurado.\n\nAbre el flujo **Reconfigurar** de la integración e introduce el PIN web local actual, o borra el PIN para usar solo Modbus. El sondeo Modbus continúa sin afectarse."
+    },
+    "web_host_not_found": {
+      "title": "Dirección web del IDM Navigator no encontrada",
+      "description": "Home Assistant no puede resolver la dirección web configurada del Navigator **{host}**.\n\nComprueba errores tipográficos en el host web o configura la integración con la dirección IP de la bomba de calor. Los datos Modbus siguen funcionando."
+    },
+    "web_connection_refused": {
+      "title": "Conexión web del IDM Navigator rechazada",
+      "description": "El dispositivo en **{host}** rechazó la conexión web local.\n\nComprueba que esta es la dirección original de la bomba de calor y que su interfaz web local del Navigator está disponible. Los datos Modbus siguen funcionando."
+    },
+    "web_timeout": {
+      "title": "La interfaz web del IDM Navigator no respondió",
+      "description": "La interfaz web local del Navigator en **{host}** no respondió a tiempo.\n\nComprueba el regulador, la conexión de red, el cortafuegos y los ajustes de VLAN. Los datos Modbus siguen funcionando."
+    },
+    "web_invalid_response": {
+      "title": "Respuesta web del IDM Navigator ilegible",
+      "description": "La interfaz web local del Navigator en **{host}** devolvió datos que la integración no pudo leer.\n\nComprueba que el modelo y firmware detectados del Navigator están soportados y que la integración está actualizada. Los datos Modbus siguen funcionando."
+    },
+    "cannot_connect": {
+      "title": "No se puede conectar a la bomba de calor IDM",
+      "description": "Home Assistant no puede alcanzar la bomba de calor IDM en **{host}**.\n\nComprueba:\n- La conectividad de red con el dispositivo\n- Gestión del edificio (Gebäudeleittechnik) → Modbus TCP está en On (Ein) en el Navigator\n- La dirección IP y el puerto son correctos en los ajustes de la integración\n\nSi el menú falta o está bloqueado, pide a tu instalador o al servicio de iDM que lo activen."
+    },
+    "host_not_found": {
+      "title": "Nombre de host IDM no encontrado",
+      "description": "Home Assistant no puede resolver **{host}**.\n\nComprueba errores tipográficos, verifica el DNS/mDNS local o reconfigura la integración con la dirección IP de la bomba de calor."
+    },
+    "modbus_connection_refused": {
+      "title": "Conexión Modbus TCP de IDM rechazada",
+      "description": "El dispositivo en **{host}** rechazó activamente la conexión TCP.\n\nEn el Navigator, pon *Gestión del edificio (Gebäudeleittechnik) → Modbus TCP* en *On (Ein)* y usa el puerto 502. Si el menú falta o está bloqueado, pide a tu instalador o al servicio de iDM que lo activen. Reinicia el regulador si es necesario y reintenta."
+    },
+    "modbus_timeout": {
+      "title": "Conexión Modbus TCP de IDM expirada",
+      "description": "La conexión Modbus con **{host}** expiró.\n\nComprueba que la dirección pertenece a la bomba de calor, que el regulador está encendido y que ninguna regla de cortafuegos, VLAN o enrutamiento bloquea el puerto TCP 502."
+    },
+    "wrong_slave_id": {
+      "title": "Sin respuesta Modbus de la bomba de calor IDM",
+      "description": "Home Assistant alcanza el endpoint Modbus en **{host}**, pero el regulador no responde como se esperaba.\n\nComprueba:\n- El ID de esclavo/unidad es normalmente 1\n- Gestión del edificio (Gebäudeleittechnik) → Modbus TCP está en On (Ein) en el Navigator\n- El proxy reenvía al dispositivo IDM correcto\n- Ningún otro cliente Modbus bloquea la conexión"
+    },
+    "incompatible_firmware": {
+      "title": "Firmware o función Modbus de IDM no soportados",
+      "description": "La bomba de calor respondió, pero rechazó una función Modbus necesaria para esta integración.\n\nComprueba:\n- El firmware del Navigator soporta el acceso Modbus TCP\n- Las versiones de la integración y de la API están actualizadas\n- El modelo de dispositivo figura como soportado para el conjunto de funciones utilizado"
+    },
+    "no_data_received": {
+      "title": "La conexión IDM no devolvió datos utilizables",
+      "description": "Home Assistant se conectó a **{host}**, pero no recibió valores de registro Modbus utilizables.\n\nComprueba:\n- El ID de esclavo/unidad es normalmente 1\n- El proxy Modbus reenvía a la bomba de calor correcta\n- El modelo Navigator configurado y los circuitos de calefacción coinciden con el dispositivo\n- Ningún otro cliente Modbus bloquea la comunicación"
+    },
+    "scan_interval_too_low": {
+      "title": "El sondeo IDM apenas cabe en el intervalo",
+      "description": "Leer los registros de **{host}** actualmente tarda unos {duration} s del intervalo configurado de {interval} s, y así durante varios sondeos seguidos.\n\nEl regulador de la bomba de calor casi no obtiene tiempo de reposo entre peticiones, lo que típicamente se manifiesta en timeouts — especialmente cuando otro cliente Modbus comparte el regulador.\n\nAyuda:\n- Aumentar el intervalo de sondeo en las opciones de la integración\n- Desactivar entidades que no uses (el sondeo omite sus registros)\n- Comprobar si otro cliente Modbus interroga la bomba de calor al mismo tiempo"
+    },
+    "write_rejected": {
+      "title": "Escritura de registro IDM rechazada",
+      "description": "La bomba de calor no aceptó una escritura en el registro **{register}** en la dirección **{address}**.\n\nDetalle técnico: `{detail}`\n\nComprueba:\n- El registro está liberado para escritura en el Navigator en **Gestión del edificio** (la lista de registros GLT tiene un ajuste de acceso por registro; un registro no liberado allí se rechaza aunque el valor sea válido)\n- La función está activada para este circuito o componente\n- El valor está dentro del rango documentado\n- Ningún otro sistema de gestión del edificio, gestor de energía o inversor escribe el mismo registro"
+    },
+    "knx_not_available": {
+      "title": "Puente KNX inactivo",
+      "description": "El puente KNX está activado para la bomba de calor IDM, pero la integración KNX de Home Assistant no está configurada. Añade la integración KNX (también aporta KNX Secure y la conexión al gateway) y recarga la entrada de IDM Heatpump."
+    },
+    "modbus_degraded_web_active": {
+      "title": "Conexión Modbus de IDM interrumpida — datos web activos",
+      "description": "La conexión Modbus con **{host}** está interrumpida actualmente. Los datos de tu bomba de calor siguen fluyendo por la interfaz web local del Navigator, así que las entidades web continúan actualizándose.\n\nEste mensaje desaparece automáticamente en cuanto la conexión Modbus se recupere — no hace falta ninguna acción. Si persiste, comprueba la conexión de red de la bomba de calor o usa el botón *Recargar conexión* en la página del dispositivo de la integración."
+    },
+    "whats_new_0_21_0": {
+      "title": "Novedades desde 0.20.1: muchas funciones nuevas",
+      "description": "Esto es un aviso, no un error. La actualización añadió muchas funciones nuevas — sobre todo el Asesor Predictivo: explica por qué funciona la bomba de calor, detecta anomalías, puntúa salud y eficiencia, aprende un mapa de COP y un modelo del edificio, y recomienda pasos de curva de calefacción, ventanas de agua caliente a partir de previsión FV o de precios y un plan de 24 horas. Todo es estrictamente de solo lectura, totalmente local y funciona sin ninguna IA — y puede desactivarse en las opciones de la integración. Toca «Saber más» para la visión completa de todo lo que ahora es posible."
+    },
+    "write_connection_failed": {
+      "title": "Fallo de conexión al escribir registro IDM",
+      "description": "No se pudo confirmar la entrega de la escritura del registro **{register}** en la dirección **{address}** porque falló la conexión Modbus. No es un rechazo de acceso al registro por parte del regulador.\n\nDetalle técnico: `{detail}`\n\nComprueba el endpoint y el puerto configurados. Si usas ModBridge u otro proxy, comprueba su listener, ruta ascendente, disponibilidad del servicio y conexión con el Navigator. Para una conexión directa, comprueba la disponibilidad de Modbus TCP del Navigator y la red.\n\nEste aviso se borra tras una escritura exitosa del mismo registro."
+    }
+  },
+  "selector": {
+    "feature_profile": {
+      "options": {
+        "smart": "iDM Smart Energy & Comfort (recomendado)",
+        "vanilla": "Vanilla – solo entidades IDM básicas"
+      }
+    },
+    "model_override": {
+      "options": {
+        "auto": "Automático (recomendado)",
+        "navigator_10": "Navigator 10",
+        "navigator_20": "Navigator 2.0",
+        "navigator_pro": "Navigator Pro",
+        "navigator_17": "Navigator 1.7 (solo lectura + FV)"
+      }
+    },
+    "heating_circuit": {
+      "options": {
+        "a": "Circuito A – Primario",
+        "b": "Circuito B",
+        "c": "Circuito C",
+        "d": "Circuito D",
+        "e": "Circuito E",
+        "f": "Circuito F",
+        "g": "Circuito G"
+      }
+    },
+    "web_pin_missing_action": {
+      "options": {
+        "set_pin": "Establecer PIN ahora",
+        "disable_web": "No usar datos del suplemento web"
+      }
+    },
+    "modbus_failed_action": {
+      "options": {
+        "retry": "Reintentar conexión Modbus",
+        "web_only": "Continuar solo con datos web (limitado)"
+      }
+    },
+    "setup_profile": {
+      "options": {
+        "standard": "Estándar",
+        "advanced": "Avanzado",
+        "expert": "Experto"
+      }
+    },
+    "knx_object_group": {
+      "options": {
+        "system": "Sistema",
+        "heat_pump": "Bomba de calor",
+        "dhw": "Agua caliente",
+        "heating_circuits": "Circuitos de calefacción",
+        "zones": "Módulos de zona",
+        "glt": "Gestión del edificio (GLT)",
+        "energy": "Cantidades de calor y potencia",
+        "solar": "Solar",
+        "isc": "Refrigeración ISC",
+        "cascade": "Cascada",
+        "booster": "Booster",
+        "pv": "FV y batería"
+      }
+    },
+    "external_power_battery_sign": {
+      "options": {
+        "as_is": "Usar signo de la fuente (convención IDM)",
+        "invert": "Invertir signo de la fuente (fuente estilo openWB)"
+      }
+    },
+    "external_power_grid_sign": {
+      "options": {
+        "import": "Positivo = consumo de red (negativo = exportación)",
+        "export": "Positivo = exportación (negativo = consumo de red)"
+      }
+    },
+    "guided_level": {
+      "options": {
+        "standard": "Estándar",
+        "advanced": "Avanzado",
+        "expert": "Experto"
+      }
+    },
+    "guided_features": {
+      "options": {
+        "plant": "Instalación, circuitos y zonas",
+        "profile": "Perfil de entidades",
+        "health": "Monitor de salud",
+        "predictive_advisor": "Asesor predictivo",
+        "energy": "Costes energéticos y carbono",
+        "energy_manager": "Agua caliente FV automática",
+        "comfort": "Programación de confort",
+        "heating_curve": "Consejo de curva de calefacción",
+        "weather": "Consejo meteorológico",
+        "web": "Datos web locales del Navigator",
+        "room_forwarding": "Reenvío de temperatura de habitación",
+        "humidity_forwarding": "Reenvío de humedad",
+        "storage_forwarding": "Reenvío de temperatura del acumulador",
+        "external_power": "Sensores de energía y batería exteriores",
+        "knx": "Puente KNX",
+        "cascade": "Registros de cascada",
+        "solar_thermal": "Registros solares térmicos",
+        "device_hierarchy": "Agrupación de dispositivos",
+        "modbus": "Transporte Modbus",
+        "ai_advisor": "Asesor IA (experimental, solo lectura)"
+      }
+    },
+    "ai_provider": {
+      "options": {
+        "ha_task": "Home Assistant AI Task (recomendado)",
+        "ollama": "Ollama (local)",
+        "zai": "Z.ai (directo)",
+        "openai": "OpenAI (alternativa directa)"
+      }
+    },
+    "solar_unused_action": {
+      "options": {
+        "disable": "Dejar de leer registros solares",
+        "keep": "Mantener los registros solares"
+      }
+    },
+    "connection_mode": {
+      "options": {
+        "auto": "Automático (recomendado)",
+        "modbus_web": "Modbus + suplemento web",
+        "web_only": "Solo web",
+        "modbus_only": "Solo Modbus"
+      }
+    }
+  },
+  "exceptions": {
+    "smart_features_disabled": {
+      "message": "El perfil iDM Smart Energy & Comfort está desactivado para esta bomba de calor. Selecciónalo en las opciones de la integración antes de usar esta acción."
+    },
+    "no_device_configured": {
+      "message": "Actualmente no hay ninguna bomba de calor IDM configurada o cargada."
+    },
+    "invalid_mode": {
+      "message": "Modo de operación no válido: \"{mode}\". Modos válidos: standby, automatik, automatic, abwesend, away, urlaub, holiday, nur warmwasser, hot water only, nur heizung/kuehlung, heating/cooling only."
+    },
+    "acknowledge_risk_required": {
+      "message": "Debes establecercer acknowledge_risk en true para usar el servicio write_register."
+    },
+    "error_acknowledge_unavailable": {
+      "message": "La confirmación de errores no está disponible en el mapa de registros de este modelo de bomba de calor."
+    },
+    "preset_mode_unavailable_while_cooling": {
+      "message": "El circuito de calefacción {circuit} está actualmente en modo refrigeración; el modo preestablecido solo se aplica al calentar. Cambia primero al modo calor."
+    },
+    "write_failed": {
+      "message": "No se pudo escribir el registro {register}. Comprueba el valor y reintenta. Activa el registro de depuración si el problema continúa."
+    },
+    "write_eeprom_blocked": {
+      "message": "El registro {register} se escribió hace demasiado poco. Está almacenado en la EEPROM del regulador, por lo que la integración espacia las escrituras para proteger el hardware. Espera a que pase el intervalo de escritura EEPROM y reintenta. Detalle técnico: {detail}"
+    },
+    "write_rejected_by_device": {
+      "message": "La bomba de calor rechazó la escritura del registro {register}. Comprueba en el Navigator, en Gestión del edificio, si este registro está liberado para escritura (acceso GLT) y si la función está activada para este circuito de calefacción. Detalle técnico: {detail}"
+    },
+    "write_connection_failed": {
+      "message": "No se pudo escribir el registro {register} porque falló la conexión con la bomba de calor. Comprueba la conexión Modbus TCP y reintenta."
+    },
+    "write_read_only": {
+      "message": "El registro {register} es de solo lectura o está actualmente bloqueado por el regulador y no puede cambiarse."
+    },
+    "write_out_of_range": {
+      "message": "El valor solicitado para el registro {register} está fuera del rango permitido. Elige un valor dentro de los límites de la entidad."
+    },
+    "write_not_supported": {
+      "message": "El registro {register} no está soportado por este modelo, firmware o equipamiento instalado de la bomba de calor."
+    },
+    "write_invalid_value": {
+      "message": "El valor solicitado para el registro {register} tiene un formato o tipo de datos no válido."
+    },
+    "entry_not_loaded": {
+      "message": "La entrada de integración IDM seleccionada no está cargada."
+    },
+    "multiple_entries_select_entry": {
+      "message": "Hay varias bombas de calor IDM cargadas. Proporciona entry_id para dirigirte a un dispositivo concreto."
+    },
+    "invalid_datatype": {
+      "message": "Tipo de datos no válido: \"{datatype}\". Valores válidos: uint16, int16, float, uchar, bool."
+    },
+    "write_register_missing_fields": {
+      "message": "El servicio write_register requiere tanto address como value."
+    },
+    "invalid_address": {
+      "message": "Dirección de registro no válida \"{value}\". Proporciona una dirección de registro numérica."
+    },
+    "invalid_value": {
+      "message": "Valor no válido \"{value}\" para el tipo de datos {datatype}."
+    },
+    "invalid_heating_circuit": {
+      "message": "Circuito de calefacción no válido: \"{heating_circuit}\". Valores válidos: A, B, C, D, E, F, G."
+    },
+    "external_climate_temperature_out_of_range": {
+      "message": "La temperatura exterior de habitación {value} °C está fuera del rango permitido -20…60 °C."
+    },
+    "external_climate_humidity_out_of_range": {
+      "message": "La humedad exterior {value} % está fuera del rango permitido 0…100 %."
+    },
+    "dhw_boost_no_entry": {
+      "message": "La entrada de configuración no está disponible."
+    },
+    "dhw_boost_already_active": {
+      "message": "Ya hay un refuerzo de ACS activo. Cáncelalo antes de iniciar uno nuevo."
+    },
+    "dhw_boost_unsupported": {
+      "message": "Los registros necesarios de agua caliente y modo de sistema no están disponibles en esta bomba de calor."
+    },
+    "dhw_boost_no_current_temp": {
+      "message": "La temperatura actual del agua caliente sanitaria no está disponible."
+    },
+    "dhw_boost_no_previous_state": {
+      "message": "El modo de sistema actual o la consigna de ACS no están disponibles."
+    },
+    "dhw_boost_start_failed_rolled_back": {
+      "message": "El refuerzo de ACS no pudo iniciarse; se restauró el estado anterior."
+    },
+    "dhw_boost_start_failed_rollback_incomplete": {
+      "message": "El refuerzo de ACS no pudo iniciarse y el estado anterior no se pudo restaurar por completo. La recuperación reintentará en la próxima actualización del coordinador."
+    },
+    "dhw_boost_invalid_recovery_state": {
+      "message": "El estado de recuperación persistido está incompleto."
+    },
+    "dhw_boost_restore_failed": {
+      "message": "El estado anterior de ACS no se pudo restaurar por completo todavía. La recuperación reintentará en la próxima actualización del coordinador."
+    },
+    "dhw_boost_register_not_writable": {
+      "message": "El registro {register} no es escribible."
+    },
+    "dhw_boost_invalid_target": {
+      "message": "Temperatura objetivo de ACS no válida."
+    },
+    "dhw_boost_target_out_of_range": {
+      "message": "La temperatura objetivo de ACS debe estar entre {minimum} y {maximum} °C."
+    },
+    "dhw_boost_timeout_out_of_range": {
+      "message": "La duración del refuerzo debe estar entre {minimum} y {maximum} minutos."
+    },
+    "external_power_no_values": {
+      "message": "Debe proporcionarse al menos un valor de energía o batería exterior."
+    },
+    "external_power_battery_soc_out_of_range": {
+      "message": "El estado de carga de batería {value} % debe ser un número entero de 0 a 100."
+    },
+    "write_cooldown_active": {
+      "message": "El registro {register} aún no se puede escribir. El tiempo de espera configurado es de {cooldown} segundos; espera otros {remaining} segundos. Un tiempo de 0 desactiva esta protección."
+    },
+    "invalid_ai_endpoint": {
+      "message": "Introduce una URL HTTP(S) local basada en IP sin credenciales, ruta ni consulta, por ejemplo http://192.168.1.20:11434."
+    },
+    "invalid_ai_model": {
+      "message": "Introduce el nombre de un modelo local instalado. Los modelos de nube no están soportados."
+    },
+    "invalid_ai_language": {
+      "message": "Elige de o en."
+    },
+    "ai_disabled": {
+      "message": "Activa primero el asesor IA experimental para esta entrada IDM cargada."
+    },
+    "ai_invalid_report_type": {
+      "message": "Elige daily, weekly, health o efficiency."
+    },
+    "ai_busy": {
+      "message": "Ya se está generando un informe. Espera."
+    },
+    "ai_cooldown": {
+      "message": "Espera al menos 60 segundos entre solicitudes de informe."
+    },
+    "ai_server_error": {
+      "message": "Ollama rechazó la solicitud. Comprueba el servidor local y el modelo instalado."
+    },
+    "ai_invalid_response": {
+      "message": "La respuesta de la IA estuvo vacía, truncada, demasiado grande o no válida. Se conserva el informe anterior."
+    },
+    "ai_local_model_required": {
+      "message": "Se requiere un modelo de completado GGUF instalado localmente; los modelos remotos se rechazan."
+    },
+    "ai_unavailable": {
+      "message": "El proveedor de IA seleccionado no está disponible o superó su tiempo de espera (local 300 segundos, nube 120 segundos)."
+    },
+    "ai_cloud_consent_required": {
+      "message": "Selecciona un proveedor de nube soportado y permite expresamente el envío de datos de operación seleccionados."
+    },
+    "ai_cloud_invalid_limit": {
+      "message": "Establece un número entero de 1 a 24 solicitudes de nube por día UTC."
+    },
+    "ai_cloud_key_required": {
+      "message": "Introduce una clave API válida para el proveedor seleccionado."
+    },
+    "ai_cloud_auth_failed": {
+      "message": "El proveedor rechazó la autenticación o el acceso. Comprueba la clave API y el acceso al modelo."
+    },
+    "ai_cloud_rate_limited": {
+      "message": "El proveedor rechazó la solicitud por cuota o límites de frecuencia. No se reintentó automáticamente."
+    },
+    "ai_cloud_budget_unavailable": {
+      "message": "El presupuesto de solicitudes no se pudo cargar o guardar con seguridad. No se envió ninguna solicitud a la nube."
+    },
+    "ai_cloud_daily_limit_reached": {
+      "message": "Se alcanzó el límite de solicitudes de nube para este día UTC."
+    },
+    "ai_task_entity_required": {
+      "message": "Selecciona una entidad ai_task existente que soporte generación de datos."
+    },
+    "web_clock_requires_web_supplement": {
+      "message": "Establecer el reloj requiere un suplemento web activo (WebSocket Navigator 10 o interfaz web Navigator 2.0)."
+    },
+    "invalid_datetime": {
+      "message": "Valor de fecha/hora no válido: {value}"
+    },
+    "advisor_disabled": {
+      "message": "Activa primero el asesor predictivo para esta entrada IDM cargada."
+    },
+    "advisor_bad_reason": {
+      "message": "Elige un código de motivo de anomalía válido."
+    },
+    "dashboard_no_entities": {
+      "message": "Aún no se encontraron entidades de panel para esta entrada; espera al primer sondeo exitoso."
+    }
+  }
+}

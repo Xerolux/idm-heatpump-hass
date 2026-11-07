@@ -65,7 +65,7 @@ class TestSetupServices:
         await async_setup_services(mock_hass)
         # Core services, two DHW boost actions, the read-only AI action, the
         # two advisor-anomaly snooze actions and the dashboard generator.
-        assert mock_hass.services.async_register.call_count == 14
+        assert mock_hass.services.async_register.call_count == 16
 
     async def test_skips_if_already_registered(self, mock_hass):
         mock_hass.services.has_service = MagicMock(return_value=True)
@@ -80,6 +80,8 @@ class TestServiceLifecycleInvariants:
         await async_setup_services(mock_hass)
         registered = {(c.args[0], c.args[1]) for c in mock_hass.services.async_register.call_args_list}
         assert registered == {
+            (DOMAIN, "send_telemetry"),
+            (DOMAIN, "check_firmware"),
             (DOMAIN, "set_system_mode"),
             (DOMAIN, "acknowledge_errors"),
             (DOMAIN, "write_register"),
@@ -1537,3 +1539,34 @@ class TestSnoozeAnomaly:
         await _handle_unsnooze_anomaly(mock_hass, _ai_call("entry-1", reason="spread_above_baseline"))
 
         assert advisor.is_snoozed("spread_above_baseline") is False
+
+
+@pytest.mark.parametrize("action", ["send_telemetry", "check_firmware"])
+async def test_cloud_action_requires_own_consent(mock_hass, action):
+    from custom_components.idm_heatpump.services import _handle_plant_cloud_action
+
+    coord = _make_coordinator_in_hass(mock_hass)
+    coord.config_entry.runtime_data.telemetry = None
+    coord.config_entry.runtime_data.firmware = None
+    call = MagicMock(service=action, data={"entry_id": "entry-1"})
+    result = await _handle_plant_cloud_action(mock_hass, call)
+    assert result == {"accepted": False, "status": "consent_required"}
+    coord.async_write_register.assert_not_called()
+
+
+async def test_manual_plant_report_and_firmware_response(mock_hass):
+    from custom_components.idm_heatpump.services import _handle_plant_cloud_action
+
+    coord = _make_coordinator_in_hass(mock_hass)
+    runtime = coord.config_entry.runtime_data
+    runtime.telemetry.async_send_now = AsyncMock(return_value=True)
+    runtime.firmware.enabled = True
+    runtime.firmware.async_refresh_firmware = AsyncMock()
+    runtime.firmware.firmware_result = {"status": "matching_observations"}
+    call = MagicMock(service="send_telemetry", data={"entry_id": "entry-1"})
+    assert (await _handle_plant_cloud_action(mock_hass, call))["accepted"] is True
+    call.service = "check_firmware"
+    assert (await _handle_plant_cloud_action(mock_hass, call))["status"] == "matching_observations"
+    runtime.firmware.async_refresh_firmware.assert_awaited_once()
+    coord.config_entry = None
+    assert (await _handle_plant_cloud_action(mock_hass, call))["status"] == "entry_not_loaded"

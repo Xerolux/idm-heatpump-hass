@@ -5,18 +5,32 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
-## v0.26.0-b8 — 2026-11-05
+## v0.26.3 — 2026-11-07
 
-Local test build, not a public release: current stable base plus Modbus network
-discovery, explicitly consented myIDM plant telemetry, restart-safe daily reports
-and private erasure requests. The optional Latest reported firmware sensor matches
-only the same controller, model and firmware series, separating test and stable
-channels. Firmware queries have their own consent and work without telemetry.
-Disabling firmware queries removes the sensor immediately and stops those queries.
+Optional plant telemetry and an independent firmware check are now available. Both remain off by default, with short consent notices linking to full privacy information. Reports survive restarts and uploads are spread across installations. Obsolete technician-code entities are removed on first setup.
 
-The firmware and telemetry consent dialogs now use short plain-language summaries and Xerolux branding, with full operator details in the linked privacy notice.
+## v0.26.2 — 2026-11-06
 
-## v0.26.0-b1 — 2026-11-05
+The integration speaks five more languages: setup, options, services, repairs
+and error texts (419 each) now arrive in Spanish, Italian, Romanian, Czech and
+Polish whenever Home Assistant runs in one of them — entity names fall back to
+English, no settings change. A new installer checklist page hands the heating
+installer a printable PDF-ready page (Modbus TCP, fixed IP, GLT/PV signal,
+web PIN, plant data) with translations in all five languages, the English
+documentation home forwards German browsers once per session, and short
+README summaries cover the five new languages.
+
+## v0.26.1 — 2026-11-06
+
+The technician access-code sensors are removed for safety reasons: the
+integration no longer calculates the time-based Fachmann-Ebene codes, the
+option that created the sensors is gone from the options flow, and the two
+sensor entities disappear on upgrade — no migration is needed and everything
+else is untouched. Access to the installer level remains a matter for the
+heating installer. The controller-clock sensor keeps making clock drift
+visible, and the protocol-analysis notes remain research documentation.
+
+## v0.26.0 — 2026-11-06
 
 The setup assistant can now find the heat pump by itself. Setup starts with a
 choice between manual entry and a network scan: the scan probes every host of
@@ -25,7 +39,10 @@ or read — and lists the responding devices with IP address and, when
 resolvable, reverse-DNS hostname. The picked address pre-fills the connection
 form, where the connection test, web access and Modbus-proxy settings are
 completed as before. The subnet field is pre-filled from Home Assistant's
-network adapter. Rollback is safe; existing entries are untouched.
+network adapter. The high-pressure fault web binary sensor no longer reads
+permanently on: the B10 safety contact is normally closed and now inverts
+like its B5/B15 siblings, so a healthy plant shows no fault (#649). Rollback
+is safe; existing entries are untouched.
 
 ## v0.25.0 — 2026-11-05
 

@@ -120,8 +120,8 @@ async def async_write_translated(
 class IdmCoordinatorEntityBase(CoordinatorEntity[IdmCoordinator]):
     """Common base for coordinator entities that are not register-backed.
 
-    Provides the shared device_info so non-Modbus entities (web sensors,
-    technician-code sensors) stay in sync with the device-info contract
+    Provides the shared device_info so non-Modbus entities (web sensors)
+    stay in sync with the device-info contract
     instead of each re-declaring it.
     """
 

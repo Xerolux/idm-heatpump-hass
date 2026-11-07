@@ -77,7 +77,6 @@ from custom_components.idm_heatpump.const import (
     CONF_STORAGE_TEMP_FORWARDING_ENTITIES,
     CONF_STORAGE_TEMP_FORWARDING_INTERVAL,
     CONF_STORAGE_TEMP_FORWARDING_TOLERANCE,
-    CONF_TECHNICIAN_CODES,
     CONF_WEATHER_ENTITY,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
@@ -916,7 +915,6 @@ class TestAsyncStepOptions:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
                 "advanced_modbus": {CONF_CONNECTION_MODE: CONNECTION_MODE_WEB_ONLY},
             }
         )
@@ -932,7 +930,6 @@ class TestAsyncStepOptions:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
             }
         )
         assert result["type"] == "create_entry"
@@ -960,7 +957,6 @@ class TestAsyncStepOptions:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a", "b"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
                 CONF_WEB_ENABLED: True,
                 CONF_WEB_SCAN_INTERVAL: 30,
                 CONF_ROOM_TEMP_FORWARDING: True,
@@ -1001,7 +997,6 @@ class TestAsyncStepOptions:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
                 CONF_WEB_ENABLED: True,
                 CONF_WEB_SCAN_INTERVAL: 30,
                 CONF_HUMIDITY_FORWARDING: True,
@@ -1035,7 +1030,6 @@ class TestAsyncStepOptions:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
                 CONF_WEB_ENABLED: True,
                 CONF_WEB_SCAN_INTERVAL: 30,
                 CONF_STORAGE_TEMP_FORWARDING: True,
@@ -1068,7 +1062,6 @@ class TestAsyncStepOptions:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
                 CONF_WEB_ENABLED: True,
                 CONF_WEB_SCAN_INTERVAL: 30,
                 CONF_KNX_BRIDGE: True,
@@ -1171,7 +1164,6 @@ class TestAsyncStepOptions:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
                 CONF_WEB_ENABLED: True,
                 CONF_WEB_SCAN_INTERVAL: 30,
                 CONF_ROOM_TEMP_FORWARDING: True,
@@ -1204,7 +1196,6 @@ class TestAsyncStepOptions:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
                 CONF_WEB_ENABLED: True,
                 CONF_WEB_SCAN_INTERVAL: 30,
                 CONF_ROOM_TEMP_FORWARDING: True,
@@ -1246,7 +1237,6 @@ class TestAsyncStepOptions:
                     CONF_HIDE_UNUSED: True,
                     CONF_HEATING_CIRCUITS: ["a"],
                     CONF_ZONE_COUNT: 2,
-                    CONF_TECHNICIAN_CODES: False,
                 }
             )
         assert result["step_id"] == "zones"
@@ -2189,7 +2179,6 @@ class TestOptionsFlow:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
             }
         )
         assert result["type"] == "create_entry"
@@ -2206,7 +2195,6 @@ class TestOptionsFlow:
                     CONF_HIDE_UNUSED: True,
                     CONF_HEATING_CIRCUITS: ["a"],
                     CONF_ZONE_COUNT: 1,
-                    CONF_TECHNICIAN_CODES: False,
                 }
             )
         assert result["step_id"] == "zones"
@@ -2224,7 +2212,6 @@ class TestOptionsFlow:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
                 CONF_KNX_BRIDGE: True,
             }
         )
@@ -2268,7 +2255,6 @@ class TestOptionsFlow:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
                 CONF_KNX_BRIDGE: False,
             }
         )
@@ -2322,7 +2308,6 @@ class TestConfigFlowZoneBoundaries:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
             }
         )
         assert result["type"] == "create_entry"
@@ -2337,7 +2322,6 @@ class TestConfigFlowZoneBoundaries:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a", "b", "c", "d", "e", "f", "g"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
             }
         )
         assert result["type"] == "create_entry"
@@ -2389,7 +2373,6 @@ class TestConfigFlowFullFlow:
                 CONF_HIDE_UNUSED: True,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: False,
             }
         )
         # The advisor defaults to on, so a custom setup offers its optional
@@ -2458,7 +2441,6 @@ class TestConfigFlowFullFlow:
                 CONF_HIDE_UNUSED: False,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 2,
-                CONF_TECHNICIAN_CODES: False,
             }
         )
         assert step2["type"] == "form"
@@ -2510,12 +2492,10 @@ class TestOptionsFlowFull:
                 CONF_HIDE_UNUSED: False,
                 CONF_HEATING_CIRCUITS: ["a"],
                 CONF_ZONE_COUNT: 0,
-                CONF_TECHNICIAN_CODES: True,
             }
         )
         assert result["type"] == "create_entry"
         assert result["data"][CONF_SCAN_INTERVAL] == 30
-        assert result["data"][CONF_TECHNICIAN_CODES] is True
         assert result["data"][CONF_ROOM_TEMP_FORWARDING_ENTITIES] == {}
 
     async def test_options_defaults_loaded_from_entry(self):
@@ -3201,7 +3181,6 @@ async def test_advisor_room_sources_step_stores_the_mapping():
             CONF_HIDE_UNUSED: True,
             CONF_HEATING_CIRCUITS: ["a"],
             CONF_ZONE_COUNT: 0,
-            CONF_TECHNICIAN_CODES: False,
             CONF_WEB_ENABLED: True,
             CONF_WEB_SCAN_INTERVAL: 30,
             CONF_PREDICTIVE_ADVISOR: True,
@@ -3226,7 +3205,6 @@ async def test_advisor_room_sources_step_is_skipped_without_the_advisor():
             CONF_HIDE_UNUSED: True,
             CONF_HEATING_CIRCUITS: ["a"],
             CONF_ZONE_COUNT: 0,
-            CONF_TECHNICIAN_CODES: False,
             CONF_WEB_ENABLED: True,
             CONF_WEB_SCAN_INTERVAL: 30,
             CONF_PREDICTIVE_ADVISOR: False,

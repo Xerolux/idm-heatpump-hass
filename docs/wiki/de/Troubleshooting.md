@@ -49,8 +49,10 @@ Das Zielgerät hat TCP aktiv abgelehnt. Das ist das stärkste verfügbare Anzeic
 
 - Öffne auf dem Navigator/Regler **Gebäudeleittechnik
   (GLT) → Modbus TCP** und stelle es auf **Ein**
-- Fehlt dieses Menü oder ist es gesperrt, melde dich auf der Installateur-/Fachmann-Ebene an oder
-  bitte deinen Heizungsinstallateur bzw. den iDM-Service, es zu aktivieren
+- Dieses Menü liegt auf der Installateur-Ebene des Reglers: **Bitte deinen
+  Heizungsinstallateur bzw. den iDM-Service, Modbus TCP zu aktivieren** — die
+  Integration schaltet es nie frei und stellt keinen Zugangscode bereit.
+  Sobald dein Installateur die Aktivierung bestätigt, gehe unten weiter
 - Verwende den TCP-Port **502**, sofern der Regler oder ein Proxy nicht anders konfiguriert wurde
 - Starte den Navigator/Regler nach dem Aktivieren von Modbus neu, falls die Einstellung nicht sofort wirksam wird
 - Wird ein Proxy verwendet, vergewissere dich, dass er auf dem eingegebenen Host und Port lauscht

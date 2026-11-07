@@ -43,9 +43,19 @@ COVERED_GLOBS = ("*.md", "docs/**/*.md", ".github/**/*.md")
 EXEMPT_FILES = (
     # The German README is the localized counterpart of README.md.
     "README_de.md",
+    # Short localized README summaries introduced with the 0.26.2 language
+    # rollout; each links back to the English source of truth.
+    "README_es.md",
+    "README_it.md",
+    "README_ro.md",
+    "README_cs.md",
+    "README_pl.md",
 )
 
 EXEMPT_PREFIXES = (
+    # Printable installer-checklist translations (0.26.2): deliberate product
+    # feature, one file per language, linked from the English wiki page.
+    "docs/examples/installer-checklist-",
     # Released history.  A changelog entry documents what a published version
     # said at the time; rewriting it would falsify the record.  New entries are
     # covered through CHANGELOG_OPEN_SECTIONS below.
