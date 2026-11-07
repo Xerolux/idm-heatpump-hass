@@ -52,6 +52,7 @@ class ExternalPowerForwardingConfig:
     #: Sign convention of the ``grid_power`` mapping key: "import" means the
     #: source reports grid draw positive, "export" means feed-in positive.
     grid_sign: str = "import"
+    pv_zero_workaround: bool = False
 
 
 def _unit(state: Any) -> str | None:
@@ -192,6 +193,11 @@ class ExternalPowerForwarder:
         value = _power_kw(state.state, _unit(state))
         if value is None:
             return None
+        if name == "pv_production" and value == 0.0 and self._config.pv_zero_workaround:
+            # Some Navigator controllers report 20300 despite successful zero
+            # writes. Substitute only a valid zero production input; derived
+            # balances and surplus still use the original measured source.
+            return 0.01
         if name == "battery_discharge" and self._config.battery_sign == "invert":
             value = -value
         return value

@@ -4,6 +4,10 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.26.6 release decision
+
+The maintainer requested a stable 0.26 patch with a default-off workaround after an authorized Navigator 10 live test: repeated successful zero writes coexisted with message 20300, and a 60-second 0.01 kW production test cleared it without acknowledgement after about 20 seconds. This is evidence for one firmware/plant, not a universal watchdog or firmware diagnosis. Runtime pins and the HA baseline are unchanged. Regression tests cover exact zero, invalid sources, positive production and unmodified household/surplus calculations across setup, options and reconfiguration. The full local suite passed (3463 tests, 98.64% coverage), config flow reached 100%, strict typing passed and 13 genuine HA lifecycle tests passed before the metadata-only release preparation. The patch is a deliberate stable fast-follow; a seven-day unchanged-candidate soak and fresh hardware installation from the published ZIP have not been completed. [Detailed field evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.6.md).
+
 ## 0.26.5 release decision
 
 Regressions cover both firmware prefixes, lookalike rejection and shared firmware-entity placement under Diagnostics. Existing IDs and consent are retained. Transport success alone does not establish a controller model; missing or conflicting evidence must remain unknown.
@@ -491,7 +495,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.26.5` and `idm-heatpump-api` `2.16.0` form the current
+Source-tree integration `0.26.6` and `idm-heatpump-api` `2.16.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

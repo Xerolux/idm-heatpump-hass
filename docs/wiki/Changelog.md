@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.6 — 2026-11-07
+
+Optional [10 W PV zero-power workaround](Configuration#optional-workaround-for-pv-message-20300-at-zero-production) for message 20300 on affected Navigator controllers. Enable it on the external power sensor mapping page during setup, options or reconfiguration. It is off by default: only valid zero production is replaced, positive production resumes live forwarding, and unavailable sources remain skipped. Source sensors, surplus and household balance stay unchanged. [Evidence and limits](Troubleshooting#pv-not-connected-message-20300-at-zero-production).
+
 ## v0.26.5 — 2026-11-07
 
 Installed and observed firmware now share the Diagnostics subdevice with the hierarchy enabled. Controller metadata recognizes both NAV10_ and T_NAV10_ prefixes; a web transport is not a controller-family identification. [Activation and explanation](https://xerolux.github.io/idm-heatpump-hass/docs/telemetry/#firmware-orientation).

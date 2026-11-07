@@ -74,6 +74,7 @@ CONF_EXTERNAL_POWER_BATTERY_SIGN: str = "external_power_battery_sign"
 # Sign convention of the optional bidirectional grid meter source
 # ("grid_power" in the entity mapping): positive = grid import or positive = export.
 CONF_EXTERNAL_POWER_GRID_SIGN: str = "external_power_grid_sign"
+CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND: str = "external_power_pv_zero_workaround"
 # Mapping key of the optional bidirectional grid meter inside the external
 # power entity map. It is a source for derivations, not a GLT register of
 # its own: it feeds pv_surplus (always) and house_consumption (together
@@ -233,6 +234,7 @@ DEFAULT_EXTERNAL_POWER_FORWARDING_ENTITIES: dict[str, str] = {}
 DEFAULT_EXTERNAL_POWER_BATTERY_SIGN: str = "as_is"
 # Most bidirectional meters report grid draw as positive values.
 DEFAULT_EXTERNAL_POWER_GRID_SIGN: str = "import"
+DEFAULT_EXTERNAL_POWER_PV_ZERO_WORKAROUND: bool = False
 DEFAULT_KNX_BRIDGE: bool = False
 # 8/0/0 keeps the whole catalogue inside one free main group on a default
 # ETS three-level project (8/0/1 .. 8/3/231).

@@ -202,6 +202,45 @@ anderen Schreiber. Eine sich wiederholende Änderung bedeutet oft, dass zwei Aut
 Energy-Manager dasselbe GLT-Register beanspruchen; sie ist kein Beweis für einen falschen
 Datentyp.
 
+### PV nicht verbunden: Meldung 20300 bei Nullleistung
+
+Ein gültiger **0-W-Wert** und eine **nicht verfügbare** Quelle sind verschiedene Fälle:
+
+| Beobachtung | Bedeutung und nächster Schritt |
+|---|---|
+| Quelle liefert gültige 0 W; wiederholte Schreibvorgänge gelingen, aber 20300 kommt wieder | Der Regler könnte Nullleistung als fehlende Verbindung bewerten. Prüfe den standardmäßig ausgeschalteten [10-W-Workaround](Configuration#optionaler-workaround-fur-pv-meldung-20300-bei-nullleistung). |
+| Quelle ist nicht verfügbar, unbekannt oder ungültig | Die Weiterleitung überspringt sie. Stelle die Verbindung zur Quelle wieder her; der Workaround erfindet keinen Messwert. Prüfe nach einem HA-Neustart auch die Quellen schlafender Wechselrichter. |
+| Eine Number-Entität zeigt den angeforderten Wert | Das kann eine optimistische HA-Aktualisierung sein und beweist allein weder Zustellung noch dauerhafte Speicherung im Regler. |
+| Im Debug-Protokoll steht wiederholt `Forwarded external power pv_production = 0.0` | Jede Zeile folgt einem erfolgreich abgeschlossenen Schreibaufruf des Koordinators. Notiere die Zeitpunkte; ein unveränderter Quellzeitstempel beweist keinen Stillstand der Auffrischung. |
+| Das Debug-Protokoll meldet eine aktive Schreibsperrzeit | Ein zusätzlicher Versuch wurde übersprungen. Prüfe, ob nachfolgende Vorgänge gelingen; das ist für sich keine Ablehnung des Reglers. |
+| Ein Proxy/Cache oder ein weiterer Schreiber ist beteiligt | Notiere Route, Cache-Einstellungen und alle Schreiber. Ein Cache-Lesewert oder erfolgreicher Proxy-Austausch beweist keine dauerhafte Verarbeitung oder Anzeige im Regler. |
+
+Aktiviere für eine begrenzte Beobachtung **Debug-Protokollierung aktivieren**
+bei der Integration, warte mehrere Weiterleitungszyklen ab und deaktiviere sie
+danach wieder. Vergleiche Quellwerte, erfolgreiche Schreibzeitpunkte und
+Reglermeldungen gleichzeitig. Die nominelle Auffrischung beträgt drei Sekunden,
+die registerbezogene Schreibsperrzeit zwei Sekunden. Buslast, Wiederholungen und
+Quellereignisse beeinflussen die gemessenen Abstände. Daraus folgt keine
+allgemeine Watchdog- oder Gültigkeitsdauer des Reglers.
+
+Am 07.11.2026 blieb bei einem Navigator 10 mit Firmware
+`T_NAV10_20.24-1580-g02a20b66f` Meldung 20300 trotz wiederholt erfolgreicher
+Nullwert-Schreibvorgänge bestehen. Eine Minute lang gesendete **0,01 kW = 10 W**
+ließen sie nach etwa 20 Sekunden ohne Quittierung verschwinden. Einen einzelnen
+manuellen Schreibwert überschrieb die automatische Nullwert-Weiterleitung nach
+etwa drei Sekunden; das war daher kein Dauertest. Nach dem kontrollierten Test
+wurde die echte Quelle wiederhergestellt. Die normale Weiterleitung rundet kW
+auf zwei Nachkommastellen; kleinere Wattwerte eignen sich hier nicht als
+zuverlässig von null verschiedener Ersatzwert.
+
+Der optionale Workaround verändert ausschließlich gültige, exakt null betragende
+**PV-Produktion** bei der Übertragung. Fehlende Werte und Quellsensoren werden
+nicht ersetzt, kein Überschuss erzeugt und die Hausverbrauchsberechnung bleibt
+unverändert. PV-Statistiken des Reglers können die künstlichen 10 W trotzdem
+enthalten. Positive Messwerte werden wieder normal live übertragen. Das klärt
+weder den separaten Batterie-/Anzeigebericht #493 noch die genaue Firmwarelogik
+oder Langzeitstabilität. [Feldnachweise](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.6.md).
+
 ### Bedienelemente oder Aktoren scheinen zu fehlen
 
 Schreibbare Funktionen erscheinen nicht alle als klassische „Aktoren“. Öffne das IDM-Gerät

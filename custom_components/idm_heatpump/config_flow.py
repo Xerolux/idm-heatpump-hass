@@ -97,6 +97,7 @@ from .const import (
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
     CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
     CONF_EXTERNAL_POWER_GRID_SIGN,
+    CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
     CONF_FEATURE_PROFILE,
     CONF_HEALTH_MONITOR,
     CONF_HEATING_CIRCUITS,
@@ -173,6 +174,7 @@ from .const import (
     DEFAULT_EXTERNAL_POWER_FORWARDING,
     DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
     DEFAULT_EXTERNAL_POWER_GRID_SIGN,
+    DEFAULT_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
     DEFAULT_FEATURE_PROFILE,
     DEFAULT_HEALTH_MONITOR,
     DEFAULT_HEATING_CURVE_ASSISTANT,
@@ -604,6 +606,7 @@ def _default_options() -> dict[str, Any]:
         CONF_EXTERNAL_POWER_FORWARDING_INTERVAL: DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
         CONF_EXTERNAL_POWER_BATTERY_SIGN: DEFAULT_EXTERNAL_POWER_BATTERY_SIGN,
         CONF_EXTERNAL_POWER_GRID_SIGN: DEFAULT_EXTERNAL_POWER_GRID_SIGN,
+        CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND: DEFAULT_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
         CONF_KNX_BRIDGE: DEFAULT_KNX_BRIDGE,
         CONF_KNX_BASE_ADDRESS: DEFAULT_KNX_BASE_ADDRESS,
         CONF_KNX_SEND: DEFAULT_KNX_SEND,
@@ -1638,6 +1641,10 @@ def _build_external_power_forwarding_schema(options: dict[str, Any]) -> vol.Sche
         {
             **schema_dict,
             vol.Required(
+                CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
+                default=options.get(CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND, DEFAULT_EXTERNAL_POWER_PV_ZERO_WORKAROUND),
+            ): BooleanSelector(BooleanSelectorConfig()),
+            vol.Required(
                 CONF_EXTERNAL_POWER_BATTERY_SIGN,
                 default=options.get(CONF_EXTERNAL_POWER_BATTERY_SIGN, DEFAULT_EXTERNAL_POWER_BATTERY_SIGN),
             ): SelectSelector(
@@ -2108,6 +2115,9 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
     async def async_step_external_power_forwarding(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             _store_external_power_forwarding_entities(self._options, user_input)
+            self._options[CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND] = bool(
+                user_input.get(CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND, DEFAULT_EXTERNAL_POWER_PV_ZERO_WORKAROUND)
+            )
             self._options[CONF_EXTERNAL_POWER_BATTERY_SIGN] = str(
                 user_input.get(CONF_EXTERNAL_POWER_BATTERY_SIGN, DEFAULT_EXTERNAL_POWER_BATTERY_SIGN)
             )

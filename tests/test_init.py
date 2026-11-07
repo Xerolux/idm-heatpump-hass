@@ -2840,11 +2840,13 @@ class TestOptionalFeatureStartup:
         assert kwargs["value_label"] == "storage temperature"
         forwarders[0].async_run.assert_called_once_with()
 
-    async def test_external_power_forwarding_starts_with_configured_sources(self, mock_hass):
+    @pytest.mark.parametrize("pv_zero_workaround", [False, True])
+    async def test_external_power_forwarding_starts_with_configured_sources(self, mock_hass, pv_zero_workaround):
         from custom_components.idm_heatpump.const import (
             CONF_EXTERNAL_POWER_FORWARDING,
             CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
             CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
+            CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
         )
 
         task = object()
@@ -2857,6 +2859,7 @@ class TestOptionalFeatureStartup:
                     "house_consumption": "sensor.house_power",
                 },
                 CONF_EXTERNAL_POWER_FORWARDING_INTERVAL: 45,
+                CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND: pv_zero_workaround,
             }
         )
         constructed: list[tuple[tuple, dict]] = []
@@ -2881,6 +2884,7 @@ class TestOptionalFeatureStartup:
             "pv_production": "sensor.pv_power",
             "house_consumption": "sensor.house_power",
         }
+        assert config.pv_zero_workaround is pv_zero_workaround
         assert config.interval == 45
         assert config.battery_sign == "as_is"
         forwarders[0].async_run.assert_called_once_with()

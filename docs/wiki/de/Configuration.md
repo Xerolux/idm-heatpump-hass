@@ -142,8 +142,11 @@ Die Kategorie **Externe Leistungsweiterleitung** ordnet bestehende
 Home-Assistant-Sensoren PV-Überschuss, PV-Produktion, Hausverbrauch, Batterie
 Laden/Entladen, Batterie-SOC und Heizstab-Leistung zu. Der
 Weiterleitungsschalter ist standardmäßig aus. Wenn aktiviert, werden gültige
-Werte bei Änderungen der Quelle und periodisch (Standard: 60 Sekunden) in die
-entsprechenden IDM-GLT-Register geschrieben.
+Werte bei Änderungen der Quelle und mit einer nominellen zyklischen
+Auffrischung alle drei Sekunden in die entsprechenden IDM-GLT-Register
+geschrieben, auch bei unveränderten Werten. Diese Auffrischung hat Vorrang vor
+dem einstellbaren Intervall von 30–3600 Sekunden (Standard: 60 Sekunden). Die
+tatsächlichen Abschlusszeiten hängen von Verbindungslast und Schreibsperrzeiten ab.
 
 Leistungssensoren müssen W, kW oder MW liefern; die Weiterleitung rechnet in kW
 um. Der Batterie-SOC muss ein endlicher Prozentsatz von 0 bis 100 sein; Nachkommastellen werden für GLT gerundet. Das
@@ -162,6 +165,35 @@ Seite zur Quellenauswahl nur für den Lesezugriff gibt es noch nicht. Siehe
 zur Vorbereitung des Reglers und zu den Feldzuordnungen.
 Für einen SolarEdge-Wechselrichter mit Batterie und weitere Wechselrichter siehe
 [GLT-Anleitung und Template-Generator](Smart-Energy-and-Comfort#solaredge-mit-batterie-und-mehreren-wechselrichtern-uber-glt).
+
+### Optionaler Workaround für PV-Meldung 20300 bei Nullleistung
+
+Einige Navigator-Regler melden nachts oder bei wenig Licht **20300:
+Photovoltaik nicht verbunden**, obwohl gültige Nullwerte wiederholt erfolgreich
+über GLT geschrieben werden. Bei einem Navigator 10 mit Firmware
+`T_NAV10_20.24-1580-g02a20b66f` verschwand die Meldung im Live-Test ohne
+Quittierung etwa 20 Sekunden nach Übertragung von 0,01 kW statt 0 kW. Das deutet
+auf die Verbindungsbewertung des Reglers bei Nullleistung hin. Die genaue
+Firmwarelogik und Übertragbarkeit auf andere Anlagen sind nicht geklärt;
+nicht jede Meldung 20300 muss diese Ursache haben.
+
+Öffne bei einer betroffenen Anlage **Einstellungen → Geräte & Dienste → IDM
+Heatpump → Konfigurieren** oder **Neu konfigurieren → Funktionen**. Aktiviere
+in den geführten Funktionseinstellungen die externe Leistungsweiterleitung
+und öffne deren Sensorzuordnung. Schalte **PV-Nullleistungs-Workaround (10 W)**
+ein und speichere die restlichen Schritte des Assistenten. Das gleiche Feld
+ist bei der Ersteinrichtung vorhanden. Es ist **standardmäßig ausgeschaltet**.
+
+Nur eine gültige PV-Produktion von exakt 0 wird als **10 W (0,01 kW)** an die
+iDM übertragen. Sobald wieder positive Leistung vorliegt, werden die Live-Werte
+mit der üblichen GLT-Rundung übertragen. Nicht verfügbare, ungültige oder nicht
+zugeordnete Quellen werden nicht ersetzt. PV-Überschuss, Batteriewerte,
+Hausverbrauchsberechnung und der ursprüngliche HA-Quellsensor bleiben
+unverändert; es wird kein künstliches Überschusssignal erzeugt. Die Steuerung
+und ihre daraus abgeleiteten PV-Anzeigen oder Statistiken können allerdings
+eine künstliche Produktion sehen. Verdeck damit keine echten
+Kommunikationsausfälle. Ausschalten stellt die normale Nullwertübertragung
+wieder her; die Controller-Firmware wird nicht verändert.
 
 ### Optionaler PV-Energiemanager
 

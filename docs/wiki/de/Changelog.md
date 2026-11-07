@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.26.6 — 2026-11-07
+
+Optionaler [10-W-PV-Nullleistungs-Workaround](Configuration#optionaler-workaround-fur-pv-meldung-20300-bei-nullleistung) für Meldung 20300 bei betroffenen Navigator-Reglern. Aktivierung in der Sensorzuordnung der externen Leistungsweiterleitung bei Einrichtung, Optionen oder Neukonfiguration. Standardmäßig aus: Nur gültige Nullleistung wird ersetzt, positive Leistung wieder live übertragen und nicht verfügbare Quellen übersprungen. Quellsensoren, Überschuss und Hausverbrauchsberechnung bleiben unverändert. [Nachweise und Grenzen](Troubleshooting#pv-nicht-verbunden-meldung-20300-bei-nullleistung).
+
 ## v0.26.5 — 2026-11-07
 
 Firmware-Vergleich und installierte Version stehen bei aktivierter Gerätehierarchie zusammen unter Diagnose. Die Erkennung berücksichtigt NAV10_ und T_NAV10_, statt den Webzugang als Reglerfamilie zu behandeln. [Aktivierung und Erklärung](https://xerolux.github.io/idm-heatpump-hass/docs/de/telemetry/#firmware-orientierung).

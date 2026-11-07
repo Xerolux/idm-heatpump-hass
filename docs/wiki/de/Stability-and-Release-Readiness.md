@@ -4,6 +4,10 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.26.6
+
+Der Maintainer hat nach einem autorisierten Navigator-10-Live-Test einen stabilen Patch der 0.26-Reihe mit standardmäßig ausgeschaltetem Workaround angefordert: Wiederholt erfolgreiche Nullwert-Schreibvorgänge bestanden gleichzeitig mit Meldung 20300; ein 60-Sekunden-Test mit 0,01 kW Produktion ließ sie nach etwa 20 Sekunden ohne Quittierung verschwinden. Das belegt eine Anlage/Firmware, keine allgemeine Watchdog- oder Firmwarediagnose. Laufzeitabhängigkeiten und HA-Mindestversion bleiben unverändert. Regressionstests prüfen exakte Nullwerte, ungültige Quellen, positive Produktion und unveränderte Hausverbrauchs-/Überschussberechnungen über Einrichtung, Optionen und Neukonfiguration. Vor der reinen Release-Metadatenpflege bestanden lokal 3463 Tests mit 98,64 % Abdeckung, der Config Flow erreichte 100 %, die strenge Typprüfung und 13 echte HA-Lebenszyklustests bestanden. Der stabile Folgepatch wird bewusst ohne siebentägigen unveränderten Dauertest veröffentlicht; eine frische Hardwareinstallation aus dem veröffentlichten ZIP ist nicht durchgeführt. [Detaillierte Feldnachweise](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.6.md).
+
 ## Release-Entscheidung zu 0.26.5
 
 Regressionstests prüfen beide Firmware-Präfixe, falsche Präfixe und die gemeinsame Zuordnung der Firmware-Entitäten zu Diagnose. Bestehende IDs und Zustimmungen bleiben erhalten. Eine Schnittstelle allein beweist kein Reglermodell; widersprüchliche oder fehlende Metadaten müssen als unbestimmt behandelt werden.
@@ -528,7 +532,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.26.5` und `idm-heatpump-api` `2.16.0` bilden das aktuelle exakt
+Integration im Quellstand `0.26.6` und `idm-heatpump-api` `2.16.0` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
