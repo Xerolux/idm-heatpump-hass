@@ -94,7 +94,10 @@ flowmeter row, simply disable the entity — nothing is wrong with the heat pump
 
 ## Deliberately Not Implemented
 
-- **Web connection as the core path:** Modbus operation does not depend on a web
-  login. The optional read-only supplement uses the supported local Navigator
-  HTTP or WebSocket session and can provide a limited web-only fallback.
+- **Web-only does not replace all Modbus capabilities:** Navigator 10/Pro
+  supports selected writes, climate/water-heater cards and KNX data from web
+  snapshots. Power registers for calculated COP, GLT forwarding and one-shot
+  DHW boost still require Modbus. Navigator 2.0 HTTP is primarily a read-only
+  supplement, with a separately supported clock action. See
+  [Protocol capabilities](Protocol-Capabilities).
 - **Global `force_update`:** Not enabled by default. External time-series systems should use recorder/InfluxDB configuration or selected helper sensors to avoid unnecessary Home Assistant database load.

@@ -245,7 +245,9 @@ jobs:
         run: mypy custom_components/idm_heatpump
 
       - name: Check documentation versions against the manifest
-        run: python scripts/check_documentation_versions.py
+        run: |
+          python scripts/check_documentation_versions.py
+          python scripts/check_wiki_coverage.py
 
       - name: Check documentation language
         if: steps.summary.outputs.updated == 'true'

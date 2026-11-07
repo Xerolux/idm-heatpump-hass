@@ -11,7 +11,7 @@ Der detaillierte Modell- und Firmware-Status wird in der [Kompatibilitätsmatrix
 | IDM Navigator 10 | NAV10_20.23 auf der Testhardware beobachtet | bis zu 7 (A–G) | bis zu 10 (6 standardmäßig, 8 konfigurierbar) | Auf einem Maintainer-Testsystem bestätigt; der Firmware-Wert ist ein Nachweis, kein universelles Minimum |
 | IDM Navigator 2.0 | 2.x beobachtet/erwartet | bis zu 7 (A–G) | nicht bestätigt | Erwartet; Navigator-10-exklusive Register werden gefiltert |
 | IDM Navigator Pro | unbekannt | bis zu 7 (A–G) | bis zu 10 (bis zu 8 konfigurierbare Räume) | Erwartet; benötigt einen vollständigen Diagnosebericht |
-| IDM Navigator 1.7 | n1.x-Firmware | statische Sensor-Slots A–G | keine | Nur-Lese-Sensormap aus der offiziellen 1.x-Tabelle; PV-Supplement-Schreibvorgänge, wenn die Firmware sie bereitstellt; benötigt Community-Tests |
+| IDM Navigator 1.0 / 1.7 | n1.x-Firmware | A–G nach installiertem Umfang | eigene 1.x-Familie; nicht mit der 2.0/10-Zonenmap gleichsetzen | Offizielle 1.x-Sensor-/Coilmap und schreibbarer Holding-Block; Warmwasserkarte und Einmalaktionen nach verfügbarer Map. Breitere Firmware-/Hardwarebestätigung bleibt offen. |
 
 ## Voraussetzungen
 
@@ -26,7 +26,6 @@ Der detaillierte Modell- und Firmware-Status wird in der [Kompatibilitätsmatrix
 
 | Gerät | Grund |
 |--------|--------|
-| IDM Navigator 1.0 | Eigene 1.x-Protokollfamilie; nur die 1.7-Map ist implementiert |
 | IDM-Geräte ohne Netzwerkverbindung | Kein Modbus TCP |
 | Andere Wärmepumpenhersteller | Anderes Modbus-Protokoll / anderes Registerlayout |
 

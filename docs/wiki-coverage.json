@@ -1,0 +1,240 @@
+{
+  "features": [
+    {
+      "feature": "Setup, discovery and lifecycle",
+      "sources": [
+        "custom_components/idm_heatpump/__init__.py",
+        "custom_components/idm_heatpump/config_flow.py",
+        "custom_components/idm_heatpump/const.py",
+        "custom_components/idm_heatpump/ha_compat.py",
+        "custom_components/idm_heatpump/network_scan.py",
+        "custom_components/idm_heatpump/strings.json"
+      ],
+      "pages": [
+        "Installation-and-Setup.md",
+        "Configuration.md"
+      ],
+      "reviewed_source_sha256": "0faa631d1b002da229ddc19f399c8ceec2a50765de839b144de326857311fa74"
+    },
+    {
+      "feature": "Model and register semantics",
+      "sources": [
+        "custom_components/idm_heatpump/adapter_descriptions.py",
+        "custom_components/idm_heatpump/adapter_enums.py",
+        "custom_components/idm_heatpump/adapter_glt.py",
+        "custom_components/idm_heatpump/adapter_metadata.py",
+        "custom_components/idm_heatpump/adapter_names.py",
+        "custom_components/idm_heatpump/adapter_registers.py",
+        "custom_components/idm_heatpump/binary_semantics.py",
+        "custom_components/idm_heatpump/controller_stats_reference.py",
+        "custom_components/idm_heatpump/entity_names.py",
+        "custom_components/idm_heatpump/library_adapter.py",
+        "custom_components/idm_heatpump/model_resolution.py",
+        "custom_components/idm_heatpump/registers.py"
+      ],
+      "pages": [
+        "Modbus-Register.md",
+        "Entities.md",
+        "Supported-Devices.md",
+        "Protocol-Capabilities.md"
+      ],
+      "reviewed_source_sha256": "b2f21386377dd2330b14968cca249fd1f6edbaac135d7433e2e555ab6b14589a"
+    },
+    {
+      "feature": "Polling, transport and recovery",
+      "sources": [
+        "custom_components/idm_heatpump/coordinator.py",
+        "custom_components/idm_heatpump/modbus_client.py",
+        "custom_components/idm_heatpump/modbus_shared_transport.py",
+        "custom_components/idm_heatpump/modbus_transport.py",
+        "custom_components/idm_heatpump/polling_plan.py",
+        "custom_components/idm_heatpump/connection_entities.py",
+        "custom_components/idm_heatpump/recovery_watchdog.py"
+      ],
+      "pages": [
+        "Data-Update.md",
+        "Configuration.md",
+        "Troubleshooting.md"
+      ],
+      "reviewed_source_sha256": "009ced54c1f199a1fb0106d3d2a7f0ae4828412a115fc21fed31d42f13e89d3b"
+    },
+    {
+      "feature": "Core entities and device placement",
+      "sources": [
+        "custom_components/idm_heatpump/entity.py",
+        "custom_components/idm_heatpump/binary_sensor.py",
+        "custom_components/idm_heatpump/button.py",
+        "custom_components/idm_heatpump/climate.py",
+        "custom_components/idm_heatpump/device_hierarchy.py",
+        "custom_components/idm_heatpump/number.py",
+        "custom_components/idm_heatpump/select.py",
+        "custom_components/idm_heatpump/sensor.py",
+        "custom_components/idm_heatpump/switch.py",
+        "custom_components/idm_heatpump/water_heater.py",
+        "custom_components/idm_heatpump/differential_circuits.py"
+      ],
+      "pages": [
+        "Entities.md",
+        "Configuration.md"
+      ],
+      "reviewed_source_sha256": "be25e40292d59846b15139e281609c801be517b7f4d55d21fbe17035db66956c"
+    },
+    {
+      "feature": "Local Navigator supplement and controls",
+      "sources": [
+        "custom_components/idm_heatpump/web_data.py",
+        "custom_components/idm_heatpump/web_binary_sensors.py",
+        "custom_components/idm_heatpump/web_climate_entities.py",
+        "custom_components/idm_heatpump/web_control_entities.py",
+        "custom_components/idm_heatpump/web_demand_reason.py",
+        "custom_components/idm_heatpump/web_demand_reason_entities.py",
+        "custom_components/idm_heatpump/web_status_entities.py",
+        "custom_components/idm_heatpump/web_system_entities.py"
+      ],
+      "pages": [
+        "Local-Web-Interface.md",
+        "Navigator-Protocol-Analysis.md",
+        "Protocol-Capabilities.md"
+      ],
+      "reviewed_source_sha256": "946b1febd885a79fabd8df9b588df548261b1e5a1ba346ea6e4e5c094b52c236"
+    },
+    {
+      "feature": "Energy and operating analysis",
+      "sources": [
+        "custom_components/idm_heatpump/calculated_sensors.py",
+        "custom_components/idm_heatpump/energy_statistics.py",
+        "custom_components/idm_heatpump/energy_statistics_entities.py",
+        "custom_components/idm_heatpump/operation_analysis.py",
+        "custom_components/idm_heatpump/operation_entities.py",
+        "custom_components/idm_heatpump/cop_plausibility.py"
+      ],
+      "pages": [
+        "Smart-Energy-and-Comfort.md",
+        "Entities.md"
+      ],
+      "reviewed_source_sha256": "384c1ff3416008962715f915b6b1d340d9a7e4f84004799f2509dc0a6d7b6307"
+    },
+    {
+      "feature": "External climate and power forwarding",
+      "sources": [
+        "custom_components/idm_heatpump/external_power_forwarding.py",
+        "custom_components/idm_heatpump/room_temp_forwarding.py"
+      ],
+      "pages": [
+        "Configuration.md",
+        "Installation-and-Setup.md",
+        "Smart-Energy-and-Comfort.md"
+      ],
+      "reviewed_source_sha256": "772eae1c6721ed87b3862e89d54a3392aa9e00bf4870b244ccd2ff231b5a96ec"
+    },
+    {
+      "feature": "Comfort and hot water automation",
+      "sources": [
+        "custom_components/idm_heatpump/comfort_advisory.py",
+        "custom_components/idm_heatpump/comfort_scheduler.py",
+        "custom_components/idm_heatpump/dhw_boost.py",
+        "custom_components/idm_heatpump/dhw_boost_services.py",
+        "custom_components/idm_heatpump/energy_manager.py"
+      ],
+      "pages": [
+        "Smart-Energy-and-Comfort.md",
+        "Services.md"
+      ],
+      "reviewed_source_sha256": "8e5d2be9f7ba5a16e11228898d5bd5476693319852a137bf5408006b50e28cc2"
+    },
+    {
+      "feature": "Predictive evidence and local Assist",
+      "sources": [
+        "custom_components/idm_heatpump/advisor_analytics.py",
+        "custom_components/idm_heatpump/advisor_engine.py",
+        "custom_components/idm_heatpump/advisor_evidence.py",
+        "custom_components/idm_heatpump/advisor_inputs.py",
+        "custom_components/idm_heatpump/advisor_operation_reason.py",
+        "custom_components/idm_heatpump/assist_agent.py",
+        "custom_components/idm_heatpump/conversation.py",
+        "custom_components/idm_heatpump/predictive_advisor.py",
+        "custom_components/idm_heatpump/predictive_advisor_entities.py"
+      ],
+      "pages": [
+        "Predictive-Advisor.md",
+        "Configuration.md",
+        "Entities.md"
+      ],
+      "reviewed_source_sha256": "d23c65214c45e4e502aef540dcefa570a7871e8da0bf4f72c4532776618c43e3"
+    },
+    {
+      "feature": "Experimental reports and providers",
+      "sources": [
+        "custom_components/idm_heatpump/ai_advisor.py",
+        "custom_components/idm_heatpump/ai_advisor_entities.py",
+        "custom_components/idm_heatpump/ai_cloud.py",
+        "custom_components/idm_heatpump/ai_learning.py"
+      ],
+      "pages": [
+        "Experimental-AI-Adviser.md",
+        "Local-Ollama.md"
+      ],
+      "reviewed_source_sha256": "a6263e3a7f2065c71a2fae8761d61a64662a57a64981d7577ed47d0828d933fd"
+    },
+    {
+      "feature": "Diagnostics, health and repairs",
+      "sources": [
+        "custom_components/idm_heatpump/diagnostics.py",
+        "custom_components/idm_heatpump/error_messages.py",
+        "custom_components/idm_heatpump/health_monitor.py",
+        "custom_components/idm_heatpump/internal_messages.py",
+        "custom_components/idm_heatpump/log_filter.py",
+        "custom_components/idm_heatpump/repairs.py",
+        "custom_components/idm_heatpump/service_report.py",
+        "custom_components/idm_heatpump/versions.py",
+        "custom_components/idm_heatpump/whats_new.py"
+      ],
+      "pages": [
+        "Troubleshooting.md",
+        "Smart-Energy-and-Comfort.md",
+        "Entities.md"
+      ],
+      "reviewed_source_sha256": "077d318e36a0dc2da23dd37acc6bda18f5ee497ff73973d4fac996f67280f21e"
+    },
+    {
+      "feature": "KNX bridge and catalog",
+      "sources": [
+        "custom_components/idm_heatpump/knx_bridge.py",
+        "custom_components/idm_heatpump/knx_catalog.py"
+      ],
+      "pages": [
+        "KNX-Bridge.md",
+        "KNX-Generator.md"
+      ],
+      "reviewed_source_sha256": "49ceec6f56a279855e5ef67e352b431ae2c11099440d43c1151ecc92be33254b"
+    },
+    {
+      "feature": "Consent, plant reports and firmware observations",
+      "sources": [
+        "custom_components/idm_heatpump/firmware_notice.py",
+        "custom_components/idm_heatpump/firmware_observations.py",
+        "custom_components/idm_heatpump/telemetry.py",
+        "custom_components/idm_heatpump/telemetry_entities.py"
+      ],
+      "pages": [
+        "Telemetry.md",
+        "Configuration.md",
+        "Services.md"
+      ],
+      "reviewed_source_sha256": "9947224edd57cb3787fbc80794aea1871071eb358681d7137e2f65177df82584"
+    },
+    {
+      "feature": "Actions and dashboard export",
+      "sources": [
+        "custom_components/idm_heatpump/services.py",
+        "custom_components/idm_heatpump/dashboard_generator.py",
+        "custom_components/idm_heatpump/services.yaml"
+      ],
+      "pages": [
+        "Services.md",
+        "Predictive-Advisor.md"
+      ],
+      "reviewed_source_sha256": "9697c69586df81b45b914232d05fb8ccf3ec5a06775a019daf582340c56e5da9"
+    }
+  ]
+}

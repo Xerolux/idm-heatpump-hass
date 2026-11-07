@@ -62,6 +62,7 @@ jobs:
         run: |
           python -m pip install packaging
           python scripts/check_documentation_versions.py
+          python scripts/check_wiki_coverage.py
 
       - name: Validate tag and detect release type
         id: version

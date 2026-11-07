@@ -401,10 +401,9 @@ Firmware-Updates auf dem Navigator 10 erfolgen dementsprechend über:
    die das Framework als „IDM-Weboberfläche“ bezeichnet. Push-Updates kommen in
    der Regel automatisch über diesen Kanal.
 2. **einen USB-Stick** über das Service-Menü des Regler-Displays
-   (Fachmann-Ebene). Die Integration berechnet die zeitabhängigen Codes der
-   *Fachmann-Ebene* (L1/L2) und bietet sie als optionale Sensoren an. Auf dem
-   Display selbst kannst du dann nach einem Menüpunkt „Update“ / „Software“ /
-   „USB“ suchen.
+   (Fachmann-Ebene), bedient durch den Heizungsinstallateur oder iDM-Service.
+   Die Integration berechnet oder zeigt keine Fachmann-Zugangscodes an.
+   Menübezeichnungen und Update-Verfahren sind firmwareabhängig.
 
 ### Explorationsnotizen für den Support
 

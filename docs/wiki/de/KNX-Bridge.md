@@ -45,29 +45,25 @@ Logikbausteine funktionieren deshalb weiter — nur das Gateway ist weg.
 | | |
 |---|---|
 | **Home-Assistant-KNX-Integration** | Eingerichtet und mit einem Gateway oder Tunnel verbunden |
-| **IDM-Heatpump-Integration** | Läuft über Modbus (ein Web-only-Eintrag hat keine Registerwerte zum Veröffentlichen) |
+| **IDM-Heatpump-Integration** | Läuft über Modbus oder Navigator 10/Pro Web-only mit überbrückten Snapshot-Werten |
 | **Freie KNX-Hauptgruppe** | Der Katalog benötigt 1000 aufeinanderfolgende Gruppenadressen |
 
 ---
 
 ## Wo sich die Bridge in der Oberfläche findet
 
-Die Bridge ist Teil der **Optionen** der Integration und taucht deshalb nur an
-zwei Stellen und nirgendwo sonst auf:
+Die Bridge wird in der geführten Funktionsauswahl eingerichtet: bei der
+Ersteinrichtung, über **Konfigurieren** oder über **Neu konfigurieren →
+Funktionen**. Wähle **KNX-Bridge** und passe Aktivierung, Sende-/Empfangsrechte,
+Basisadresse, Gruppen und Überschreibungen an. Die reine Verbindungsseite
+bearbeitet Host und Zugang, nicht die Bridge-Zuordnung.
 
-| Ablauf | KNX-Bridge |
-|---|---|
-| Ersteinrichtung (Hinzufügen der Integration) | Ja — nach dem Haupt-Optionsschritt |
-| **Konfigurieren** an einem bestehenden Eintrag | Ja — derselbe Schritt, vorbelegt mit den gespeicherten Werten |
-| Menü **Neu konfigurieren** | Nein. Dieses Menü bearbeitet Verbindungseinstellungen (Host, Port, Slave-ID) und führt die Diagnose aus; es fasst die Optionen überhaupt nicht an — genauso wenig wie Raumtemperatur-Weiterleitung und Web-Supplement dort zu finden sind. |
-
-Schaltest du die Bridge ab, bleiben die konfigurierte Basisadresse, die
-Objektgruppen und die Überschreibungen erhalten — das erneute Einschalten
-kostet dich also nicht das ETS-Mapping.
-
-Im **Web-only-Modus** bleibt die Bridge unabhängig von der Einstellung aus:
-Sie liefert Modbus-Registerwerte, die ein Web-only-Eintrag nicht liest. Das
-steht beim Start im Log.
+Ausschalten erhält Basisadresse, Objektgruppen und Überschreibungen. In
+**Web-only** können vorhandene, in den Register-Snapshot übernommene Web-Werte
+veröffentlicht werden. Befehle funktionieren nur für unterstützte
+Navigator-10/Pro-Web-Steuerungen; fehlende Werte werden nicht erfunden.
+Modbus-exklusive Funktionen wie GLT-Eingänge werden dadurch nicht verfügbar.
+Siehe [Protokollfähigkeiten](Protocol-Capabilities).
 
 ## Aktivierung
 

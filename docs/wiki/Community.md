@@ -36,3 +36,7 @@ help improve the [compatibility matrix](Compatibility-Matrix).
 - Move a confirmed, reproducible software defect to an Issue and link both items.
 - Share Lovelace and automation examples with their dependencies and sanitized YAML.
 
+
+Carry confirmed discoveries, their evidence, limitations and open questions
+into the [findings register](Findings-and-Documentation) and the relevant feature
+page. Update the English and German versions together.

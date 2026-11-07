@@ -224,6 +224,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_web_system_entities.py
 │   ├── test_web_control_entities.py
 │   ├── test_web_climate_entities.py
+│   ├── test_wiki_coverage.py         # Source-review fingerprints, bilingual publication and action coverage
 │   ├── test_wiki_changelog.py
 │   └── test_wiki_stability_page.py
 │
@@ -646,3 +647,25 @@ The config flow (defined in `config_flow.py`) has these steps:
 | `AGENTS.md` (this file) | Keep it in sync with the actual codebase |
 | Any wiki page (`docs/wiki/<Page>.md`) | Update the German mirror `docs/wiki/de/<Page>.md` in the same pull request; `tests/test_pages_seo.py` fails when a German page is missing |
 | Any Markdown document | Keep it English (`scripts/check_documentation_language.py`; `docs/wiki/de/` is exempt German) |
+
+
+## Wiki coverage and field findings
+
+- Every behavior change and confirmed field discovery must update its English
+  wiki feature page and the German mirror in the same pull request. Record
+  evidence, scope, limitations and open questions in
+  `docs/wiki/Findings-and-Documentation.md` and its mirror.
+- `docs/wiki-coverage.json` maps every integration source module to published
+  bilingual documentation and the source fingerprint last reviewed. New or
+  changed modules require a documentation review; do not refresh fingerprints
+  without reading the relevant prose against the changed behavior.
+- After that review, run `python scripts/check_wiki_coverage.py --update` and
+  inspect its diff. Run `python scripts/check_wiki_coverage.py` before pushing.
+  CI, dependency validation, release and Pages enforce this check. New actions
+  must appear in both Services pages; new pages must be in both Pages metadata
+  and the client-side navigation. The Pages tests check links and anchors.
+- Home is a current feature overview. Release announcements belong in the
+  changelog; do not accumulate old "New in" or obsolete beta invitations there.
+- Fingerprints and coverage are review gates, not proof of semantic accuracy or
+  complete physical validation. Keep implementation, tests, field observations
+  and inferred behavior distinguishable.

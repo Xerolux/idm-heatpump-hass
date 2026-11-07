@@ -24,8 +24,9 @@ Beiträge zu diesem Projekt sind willkommen!
 
 Das Projekt schreibt auf Englisch: Code, Kommentare, Dokumentation,
 Changelog-Einträge, Commit-Messages und Beschreibungen von Pull Requests.
-Deutsch gehört nur in `README_de.md` und in die `de`-Übersetzungen von Home
-Assistant. Führe `python scripts/check_documentation_language.py` aus, bevor
+Deutsch gehört in `README_de.md`, die `de`-Übersetzungen von Home Assistant
+und die deutsche Wiki-Spiegelung unter `docs/wiki/de/`. Die englischen
+Wiki-Seiten bleiben die maßgebliche Fassung. Führe `python scripts/check_documentation_language.py` aus, bevor
 du einen Pull Request öffnest — `tests/test_documentation_language.py` bringt
 den Build zum Scheitern, wenn deutsche Prosa enthalten ist.
 
@@ -46,3 +47,17 @@ den Build zum Scheitern, wenn deutsche Prosa enthalten ist.
 ## Lizenz
 
 Mit deinem Beitrag stimmst du zu, dass dein Code unter der MIT-Lizenz veröffentlicht wird.
+
+## Dokumentation zusammen mit Code pflegen
+
+Jede neue Funktion, Fehlerkorrektur mit geänderter Bedienung und Felderkenntnis
+gehört auf die passende englische Wiki-Seite und deren deutsche Spiegelung.
+Einrichtung, Standardwerte, Aktionen, Datenschutz und Grenzen mitführen.
+Nachweise und offene Fragen im [Erkenntnisregister](Findings-and-Documentation)
+verlinken. Neue Seiten müssen auch in der Website-Navigation registriert sein.
+
+`python scripts/check_wiki_coverage.py` meldet neue oder geänderte Quellmodule,
+fehlende Sprachfassungen und undokumentierte Aktionen. Erst nach der Prüfung
+beider Sprachen `python scripts/check_wiki_coverage.py --update` ausführen und
+den Diff von `docs/wiki-coverage.json` kontrollieren. Versionsangaben prüft
+zusätzlich `python scripts/check_documentation_versions.py`.

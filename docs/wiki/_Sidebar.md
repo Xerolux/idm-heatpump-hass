@@ -6,8 +6,9 @@
 
 ## Getting Started
 - [Installation & Setup](Installation-and-Setup)
+- [Installer Checklist](Installer-Checklist)
 - [Configuration](Configuration)
-- [Differential circuits (beta)](Configuration#differential-temperature-controlled-circuits)
+- [Differential circuits](Configuration#differential-temperature-controlled-circuits)
 
 ## Entities & Devices
 - [All Entities](Entities)
@@ -22,6 +23,7 @@
 
 ## Automation
 - [iDM Smart Energy & Comfort](Smart-Energy-and-Comfort)
+- [Predictive Advisor](Predictive-Advisor)
 - [Experimental AI Adviser](Experimental-AI-Adviser)
 - [Local Ollama Setup](Local-Ollama)
 - [KNX Bridge](KNX-Bridge)
@@ -30,6 +32,7 @@
 - [Example Automations](Examples)
 
 ## Operation & Maintenance
+- [Findings and documentation](Findings-and-Documentation)
 - [Data Update](Data-Update)
 - [Local Navigator Web Interface](Local-Web-Interface)
 - [Supported Devices](Supported-Devices)

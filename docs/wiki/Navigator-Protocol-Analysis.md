@@ -401,9 +401,9 @@ Firmware updates on the Navigator 10 accordingly happen through:
    framework calls the "IDM web interface". Push updates usually arrive
    automatically through this channel.
 2. **a USB stick** through the controller display's service menu (installer
-   level). The integration calculates the time-dependent *installer level* codes
-   (L1/L2) and offers them as optional sensors. On the display itself one can
-   then look for an "Update" / "Software" / "USB" menu item.
+   level), operated by the heating installer or iDM service. The integration
+   does not calculate or display installer access codes. Menu names and update
+   procedures depend on firmware.
 
 ### Exploration notes for support
 

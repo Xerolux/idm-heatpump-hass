@@ -49,8 +49,8 @@ und veröffentlicht die Ollama-API auf Host-Port 11434.
 4. Öffne die Add-on-**Konfiguration** und stelle ein:
    - **FlashAttention**: `1` — mit dem voreingestellten quantisierten V-Cache
      (`q8_0`) verweigern aktuelle Ollama-Versionen den Modellstart ohne ihn.
-   - **Cloud**: `OLLAMA_NO_CLOUD` aktivieren, damit der Server nach dem
-     Modell-Download niemals ollama.com kontaktieren kann.
+   - **Cloud**: `OLLAMA_NO_CLOUD` aktivieren, um Ollama-Cloud-Funktionen
+     abzuschalten. Das blockiert nicht den gesamten ausgehenden Netzwerkverkehr.
    - Keep-alive `-1` hält das Modell dauerhaft im RAM (schnelle Berichte,
      konstanter höherer RAM-Verbrauch); ein positiver Wert in Sekunden entlädt
      es nach Ruhephasen.
@@ -164,6 +164,7 @@ in deinem Heimnetz.
 Der Berater sendet nur die auf der [Berater-Seite](Experimental-AI-Adviser)
 beschriebenen, allowlisteten Zahlenfakten an den konfigurierten Endpunkt —
 einen Server in deinem Heimnetz. Setze `OLLAMA_NO_CLOUD=1` (Add-on-Option
-**Cloud**), damit der Ollama-Server selbst nach dem Modell-Download nicht ins
-Internet kann. Auf diesem Weg sind keine API-Schlüssel, Konten oder
-Cloud-Dienste beteiligt.
+**Cloud**), um Ollama-Cloud-Funktionen abzuschalten. Das ist keine Netzwerksperre:
+Für eine vollständige ausgehende Isolation sind Netzwerkregeln erforderlich.
+Ein Server oder Proxy könnte sonst Verkehr weiterleiten. Für den lokalen
+Modellpfad sind keine API-Schlüssel oder Cloud-Konten nötig.

@@ -81,11 +81,13 @@ gemeldet hat.
   baut sie beim nächsten Vorgang wieder auf; die Wiederholungs-/Backoff-Strategie der API bleibt
   dabei wirksam. Treten weiterhin Abbrüche auf, prüfe die Stabilität des lokalen Netzwerks oder des WLAN.
 
-Jeder IDM-Konfigurationseintrag besitzt derzeit seinen eigenen direkten tmodbus-Socket. Das
-zentrale, eintragsübergreifende Verbindungs-Sharing von Home Assistant ist nicht verfügbar,
-weshalb die Diagnose `supports_shared_connection: false` meldet. Vermeide es, während der
-Fehlersuche bei Verbindungsabbrüchen einen weiteren Modbus-Client gegen denselben Endpunkt
-laufen zu lassen.
+Die Integration nutzt die gemeinsame Modbus-Verbindung von Home Assistant,
+wenn deren Unit-API verfügbar ist: `source: homeassistant.modbus`,
+`owns_socket: false`, `supports_shared_connection: true`. Falls der Anspruch
+fehlschlägt, zeigen `source: modbus_connection.tmodbus`, `owns_socket: true`
+und `supports_shared_connection: false` den privaten Fallback. Unterscheide
+beide Fälle in der Diagnose, bevor du parallele Clients untersuchst.
+Andere eigenständige Modbus-Clients können den Regler weiterhin zusätzlich belasten.
 
 ### „Keine gültige IDM-Registerantwort“
 
@@ -100,12 +102,15 @@ Netzwerk- oder Firewall-Fehler.
 
 ### Modbus ist an der Wärmepumpe nicht verfügbar
 
-Gib während der Einrichtung den lokalen Web-PIN des Navigators ein. Kann die Webschnittstelle
-authentifiziert werden, bietet der Wiederherstellungsschritt **nur Web-Daten** an. Dieser Modus
-stellt schreibgeschützte Web-Sensoren bereit, aber keine Modbus-Heizkreis-/Zonenregister,
-keine schreibbaren Entitäten, keine Betriebsartensteuerung und keine Störungsquittierung. Die
-volle Funktionalität erfordert weiterhin, dass Modbus TCP vom Installateur oder iDM-Service
-aktiviert wird, falls der lokale Regler die Einstellung nicht anbietet.
+Gib während der Einrichtung die lokale Navigator-Web-PIN ein. Nach erfolgreicher
+Authentifizierung kann `web_only` gewählt werden oder `auto` darauf zurückfallen.
+Navigator 10/Pro bietet Web-Sensoren und unterstützte Betriebsarten-, Warmwasser-
+und Heizkreissteuerungen einschließlich Störungsquittierung und Klima-/
+Warmwasserkarten. Navigator 2.0 HTTP bleibt bis auf die gesonderte Uhrzeitaktion
+auf den lesenden Betrieb beschränkt. Rohe Registerzugriffe, GLT-Weiterleitung
+und einmaliger Warmwasser-Boost benötigen Modbus. Welche Entitäten verfügbar
+sind, hängt auch von den tatsächlich gelieferten Web-Daten ab.
+Siehe [Protokollfähigkeiten](Protocol-Capabilities).
 
 ### „Navigator-Web-PIN abgelehnt“
 
@@ -438,3 +443,13 @@ sich von selbst — es ist nichts zu tun:
 
 Der Diagnose-Button *Verbindung neu laden* auf dem Geräte-Panel der
 Integration bleibt der manuelle Shortcut — gleiche Wirkung, sofort.
+
+## PV-Meldung 20300 trotz gültiger Nullproduktion
+
+Bei manchen Reglern trat „Photovoltaik nicht verbunden“ trotz erfolgreich
+wiederholter Nullwertübertragung auf. Prüfe zuerst Quelle, GLT-Freigabe und
+Weiterleitung. Ein erfolgreich abgeschlossener Schreibaufruf belegt noch
+nicht, wie die Firmware den PV-Verbindungszustand bewertet. Der optionale
+[10-W-Workaround](Configuration#optionaler-workaround-fur-pv-meldung-20300-bei-nullleistung)
+ist standardmäßig aus; er beeinflusst die Regleranzeige und gegebenenfalls
+Statistiken. Er ersetzt keine Reparatur einer unterbrochenen Verbindung.

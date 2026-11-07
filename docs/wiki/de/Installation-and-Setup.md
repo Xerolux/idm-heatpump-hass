@@ -247,9 +247,10 @@ durchsuchbare Liste vorhandener Home-Assistant-Sensor-Entitäten:
 - Leistung Elektro-Heizstab → `electric_heater_power` (76–77)
 - Bidirektionaler Netzleistungszähler → leitet `pv_surplus` (74–75) ab; mit PV-Produktionssensor auch `house_consumption` (82–83)
 
-Leistungssensoren müssen `W` oder `kW` liefern; die Werte werden vor dem Schreiben
-nach kW umgerechnet. Der Batterie-Ladezustand ist eine ganze Prozentzahl von 0 bis
-100; `-1` bedeutet, dass keine Batterie vorhanden ist. Nutzt der Energiemanager die
+Leistungssensoren müssen `W`, `kW` oder `MW` liefern; die Werte werden vor dem
+Schreiben nach kW umgerechnet. Der Batterie-Ladezustand muss ein endlicher
+Prozentsatz von 0 bis 100 sein; Nachkommastellen werden gerundet.
+Ungültiger SOC wird übersprungen und nicht als Ersatzwert weitergeleitet. Nutzt der Energiemanager die
 openWB-Vorzeichenkonvention (negativ bedeutet Entladen), wähle **Quellvorzeichen
 invertieren**. Nicht verfügbare oder ungültige Sensoren werden übersprungen; die
 Integration schreibt niemals null als Ersatz.

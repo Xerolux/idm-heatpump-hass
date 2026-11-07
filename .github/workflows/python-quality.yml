@@ -150,7 +150,9 @@ jobs:
       # itself; see docs/RELEASE_PROCESS.md, "Language".  The test suite fails on
       # this too, but a separate step names the reason in the job list.
       - name: Check documentation versions against the manifest
-        run: python scripts/check_documentation_versions.py
+        run: |
+          python scripts/check_documentation_versions.py
+          python scripts/check_wiki_coverage.py
 
       - name: Check documentation language
         run: python scripts/check_documentation_language.py

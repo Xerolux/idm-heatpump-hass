@@ -2,7 +2,7 @@
 
 ## How is data retrieved?
 
-The integration uses Modbus TCP to read register data directly from the IDM heat pump. All communication is **local** — there is no cloud connection.
+The integration uses Modbus TCP to read register data directly from the IDM heat pump. Plant communication and control are **local**. Separately enabled AI providers, telemetry and firmware queries have their own consent and privacy boundaries; see [AI adviser](Experimental-AI-Adviser) and [Telemetry](Telemetry).
 
 ## Polling Mechanism
 
@@ -21,7 +21,7 @@ The integration uses Home Assistant's **DataUpdateCoordinator**:
 ## Entity-aware polling and Smart consumers
 
 The polling plan keeps registers needed by enabled entities and declared
-background consumers. In 0.17.2-b6, Smart energy statistics retain both power
+background consumers. Smart energy statistics retain both power
 inputs even when their raw sensors are disabled. An active comfort schedule
 also retains its circuit setpoint and releases that demand when stopped.
 Disabling a raw entity therefore does not disable an active automation or the

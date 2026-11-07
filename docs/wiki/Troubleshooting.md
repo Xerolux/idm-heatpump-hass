@@ -79,10 +79,13 @@ operating system reported a network/routing failure.
   reconnects on the next operation; the API retry/backoff policy remains in
   effect. If drops continue, check the stability of the local network or WiFi.
 
-Each IDM config entry currently owns its direct tmodbus socket. Home Assistant
-central cross-entry connection sharing is not available, and diagnostics
-therefore report `supports_shared_connection: false`. Avoid running another
-Modbus client against the same endpoint while diagnosing connection loss.
+The integration uses Home Assistant's shared Modbus connection when its unit
+API is available: `source: homeassistant.modbus`, `owns_socket: false`,
+`supports_shared_connection: true`. If claiming it fails, diagnostics show
+`source: modbus_connection.tmodbus`, `owns_socket: true` and
+`supports_shared_connection: false` for the private fallback. Identify the
+active path before investigating parallel clients. Other independent Modbus
+clients can still add load to the controller.
 
 ### "No valid IDM register response"
 
@@ -422,3 +425,12 @@ no action needed:
 
 The *Reload connection* diagnostic button on the integration's device page
 remains the manual shortcut — same effect, immediately.
+
+## PV message 20300 despite valid zero production
+
+Some controllers reported "PV not connected" despite repeated successful zero
+writes. First check the source, GLT activation and forwarding. A completed
+write does not establish how firmware assesses the PV connection. The optional
+[10 W workaround](Configuration#optional-workaround-for-pv-message-20300-at-zero-production)
+is off by default and can affect controller displays and statistics. It does
+not repair a disconnected transport.

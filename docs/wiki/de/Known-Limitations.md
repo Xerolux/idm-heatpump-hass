@@ -99,10 +99,12 @@ deaktiviert werden — mit der Wärmepumpe ist alles in Ordnung.
 
 ## Bewusst nicht implementiert
 
-- **Web-Verbindung als Kernpfad:** Der Modbus-Betrieb hängt nicht von einem
-  Web-Login ab. Das optionale schreibgeschützte Web-Supplement nutzt die
-  unterstützte lokale Navigator-HTTP- oder WebSocket-Sitzung und kann einen
-  begrenzten Fallback im reinen Web-Betrieb bieten.
+- **Kein vollständiger Modbus-Ersatz durch Web-only:** Navigator 10/Pro
+  unterstützt ausgewählte Schreibaktionen, Klima- und Warmwasserkarten sowie
+  KNX-Daten aus Web-Snapshots. Leistungsregister für berechneten COP,
+  GLT-Weiterleitung und einmaliger Warmwasser-Boost benötigen weiter Modbus.
+  Navigator 2.0 HTTP dient überwiegend als lesendes Supplement; die
+  Uhrzeitaktion ist separat unterstützt. Siehe [Protokollfähigkeiten](Protocol-Capabilities).
 - **Globales `force_update`:** Standardmäßig nicht aktiviert. Externe
   Zeitreihensysteme sollten Recorder-/InfluxDB-Konfiguration oder ausgewählte
   Hilfs-Sensoren verwenden, um unnötige Home-Assistant-Datenbanklast zu

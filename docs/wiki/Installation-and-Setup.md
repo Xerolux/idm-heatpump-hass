@@ -242,7 +242,7 @@ Home Assistant sensor entities:
 - Electric heater power → `electric_heater_power` (76–77)
 - Bidirectional grid meter → derives `pv_surplus` (74–75); with a PV production sensor also `house_consumption` (82–83)
 
-Power sensors must expose `W` or `kW`; values are converted to kW before writing. Battery SOC is a whole percentage from 0 to 100; `-1` means no battery. If the energy manager uses the openWB sign convention (negative means discharge), choose **Invert source sign**. Unavailable or invalid sensors are skipped; the integration never writes zero as a fallback.
+Power sensors must expose `W`, `kW` or `MW`; values are converted to kW before writing. Battery SOC must be a finite percentage from 0 to 100; fractional values are rounded. Invalid SOC is skipped, not forwarded as a replacement value. If the energy manager uses the openWB sign convention (negative means discharge), choose **Invert source sign**. Unavailable or invalid sensors are skipped; the integration never writes zero as a fallback.
 
 A bidirectional grid meter can be selected directly (#519): choose its sign
 convention (**positive = grid import** or **positive = export**), and the

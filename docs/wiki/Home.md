@@ -30,7 +30,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 | **Socket backend** | tmodbus[async-serial]>=0.6.2 |
 | **Device/web library** | idm-heatpump-api[web]==2.16.0 |
 | **License** | MIT |
-| **Languages** | DE, EN |
+| **Languages** | DE, EN; setup and action interfaces also ES, IT, RO, CS, PL |
 | **Entities** | Model- and configuration-dependent sensors, binary sensors, numbers, selects, switches, climate, water heater, and buttons |
 
 ---
@@ -52,37 +52,39 @@ CI, release validation and Pages deployment check current version claims
 against the checked-out manifest. Dependency automation synchronizes those
 claims; published changelogs and release evidence remain unchanged history.
 
-### Available for testing: differential circuits (0.20.1-b1)
+### Current features in the 0.26 series
 
-Circuits configured for differential temperature control in the Navigator can
-now show **storage temperature, reference temperature, their signed difference
-and operating status** in Home Assistant. Ordinary heating controls are hidden
-for those circuits. Enable the manual per-circuit option during setup or
-reconfiguration; the controller's configuration is unchanged.
-
-Try [beta 0.20.1-b1](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.20.1-b1)
-and follow the [configuration guide](Configuration#differential-temperature-controlled-circuits).
-See [entity mapping and limits](Entities#differential-temperature-controlled-heating-circuits)
-before updating dashboards. Confirmation on differential-control hardware is
-still pending; hysteresis and threshold controls are not included.
-
-### New in 0.19.0
-
-0.19.0 makes the **Navigator 1.0/1.7 a first-class citizen** and gives **photovoltaics a face**. Everything stays local; no entity IDs change.
+The current feature overview includes:
 
 | Feature | What you get |
 |---------|--------------|
-| Navigator 1.0/1.7 writable block | System and heating-circuit operating modes, room/flow setpoints, heating curves, limits and bivalence points from the official parameter table |
-| Navigator 1.0/1.7 warm-water card | Water heater entity with the capture-verified freshwater setpoint (FW030 float pair) and the tank temperature |
-| Firmware-honest readings | Readings outside a register's documented range go unavailable instead of showing garbage from pre-2016 firmware |
-| Per-register diagnostics | The diagnostics export lists every register with its read verdict, raw wire words and rejection reason |
-| PV visibility | Derived PV-surplus diagnostic, the Navigator 10's own demand reason from its web interface, and a dedicated *Photovoltaik* device group |
-| Solar thermal opt-out | Plants without collectors can switch the solar module off — polls and the empty device group disappear |
-| Bilingual documentation | German mirrors of all 21 wiki pages at `/docs/de/…`, with the EN/DE switch in the URL |
+| Setup network scan | Find Modbus TCP endpoints in a selected IPv4 subnet and use a discovered address; manual entry remains available |
+| Voluntary plant reports | Separate opt-in for daily plant reports; [Telemetry and privacy](Telemetry) explains data scope, storage and deletion |
+| Independent firmware query | Compare installed firmware with community observations; separately enabled, without automatic installation or guaranteed availability |
+| PV zero-power workaround | Optionally forward valid 0 W as 10 W when the Navigator otherwise reports message 20300; controller PV displays and statistics may be affected |
+| Additional UI languages | Setup, options, actions, repairs and errors in Spanish, Italian, Romanian, Czech and Polish; entity names remain German/English |
+| Installer checklist | [Printable preparation](Installer-Checklist) covering Modbus TCP, networking, GLT/PV and web access |
 
-### New in 0.18.0
+This integration line requires **Home Assistant 2026.11.0 or newer**.
+See the [Changelog](Changelog) for changes between individual releases.
 
-0.18.0 ships two flagship feature sets — the optional **Smart Energy & Comfort** package and the experimental **AI plant adviser** — plus a guided setup that replaces the long options form. Everything stays local by default and every automatic control remains off until explicitly enabled.
+### Differential temperature circuits
+
+For circuits configured accordingly in the Navigator, Home Assistant shows
+storage and reference temperatures, their signed difference and operating
+status. Keep the circuit selected in both the ordinary heating-circuit list
+and the differential-circuit list. Ordinary heating controls are hidden for
+these circuits; the controller configuration is unchanged.
+See [configuration](Configuration#differential-temperature-controlled-circuits)
+and [entity mapping and limits](Entities#differential-temperature-controlled-heating-circuits).
+Confirmation on differential-control hardware is still pending;
+hysteresis and threshold controls are not included.
+
+### Smart Energy, comfort and AI reports
+
+Optional energy analysis, comfort functions and the experimental AI adviser
+extend the local controller integration. Automatic controls remain off until
+explicitly enabled.
 
 <p align="center">
   <img src="../images/smart-energy-comfort-overview.svg" alt="Smart Energy and Comfort overview: energy and costs, health monitor and advice, comfort schedules and PV boost, external power forwarding" width="860">
@@ -125,7 +127,7 @@ privacy and the dashboard.
 - **KNX Bridge** *(optional)*: Serves the IDM KNX communication objects — same object numbers, datapoint types and directions as IDM's ETS example project — through the Home Assistant KNX integration, so the Weinzierl KNX IP BAOS gateway module is no longer needed. See [KNX Bridge](KNX-Bridge).
 - **Room Temperature Forwarding**: Optional forwarding of Home Assistant temperature sensors to IDM external room temperature registers per heating circuit
 - **Readable Diagnostics**: Internal IDM messages are shown with text plus structured code/text attributes
-- **Direct local Modbus runtime**: `modbus-connection` and tmodbus own the per-entry socket; `idm-heatpump-api` keeps the IDM register and safety logic
+- **Direct local Modbus runtime**: `modbus-connection` and tmodbus provide the shared connection or private fallback socket; `idm-heatpump-api` keeps the IDM register and safety logic
 
 ---
 
@@ -140,7 +142,8 @@ privacy and the dashboard.
 | **Switch** | model-dependent | External heating/cooling/DHW demand |
 | **Climate** | per circuit + zone room | Heating/cooling mode + target temperature for heating circuits and zone-module rooms |
 | **Water Heater** | 1 | DHW target temperature with current temperature readback |
-| **Button** | 1 | Acknowledge active errors on the heat pump |
+| **Button** | model- and option-dependent | Acknowledge errors, reload the connection, supported DHW actions and optional AI reports |
+| **Conversation** | local agent | Deterministic Assist answers in German and English |
 
 ---
 
@@ -155,6 +158,11 @@ privacy and the dashboard.
 1. [iDM Smart Energy & Comfort](Smart-Energy-and-Comfort)
 2. [Configuration and source mappings](Configuration)
 3. [Services Reference](Services)
+
+### Findings and evidence
+- [Field findings and documentation maintenance](Findings-and-Documentation)
+- [Predictive Advisor](Predictive-Advisor)
+- [Telemetry and firmware orientation](Telemetry)
 
 ### I have a problem
 1. [Troubleshooting](Troubleshooting)
@@ -179,7 +187,7 @@ privacy and the dashboard.
 - **Transport boundary**: Raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection>=4.12.7` / `tmodbus[async-serial]>=0.6.2` pair; `4.12.7` is the connection-library version, not the IDM integration version
 - **API boundary**: `idm-heatpump-api[web]==2.16.0` provides batching, decoding and write safety. The API owns its own exception hierarchy; the integration uses the tmodbus-backed socket without a pymodbus dependency
 - **Auto-recovery**: API retry/backoff plus reconnect-on-demand in the tmodbus-backed connection
-- **Connection ownership**: Each config entry owns one socket and reports `supports_shared_connection: false`; Home Assistant central cross-entry sharing is not currently available
+- **Connection ownership**: Each entry uses Home Assistant's shared Modbus connection when available (`owns_socket: false`, `supports_shared_connection: true`), with a private socket fallback when the shared claim cannot be acquired
 - **Validation status**: Automated checks and read-only Navigator 10 observations are available; they do not replace candidate-specific clean-install, long-duration and broader model validation. See [Stability & Release Readiness](Stability-and-Release-Readiness).
 - **Navigator 10**: Heat sink sensors, flow rate (Sieb monitoring), groundwater temps, booster A/B
 - **Web supplement**: Setup tests both supported local protocols when needed, stores the successful Navigator family, reuses its session and retries only that same protocol during normal runtime recovery
@@ -202,7 +210,3 @@ privacy and the dashboard.
 
 *This wiki documents the IDM Heatpump integration.*
 *Developed by [Xerolux](https://github.com/Xerolux)*
-
-## Experimental AI adviser (upcoming)
-
-The experimental adviser provides daily/weekly reports and explanations of health and efficiency. It is off by default and has no plant control tools or voice exposure. Ollama is local; v0.17.2-b10 adds separately consented OpenAI and Z.ai reports with bounded requests. See [setup, report actions, data coverage and limitations](Experimental-AI-Adviser).

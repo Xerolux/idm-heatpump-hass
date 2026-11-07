@@ -48,8 +48,8 @@ the Ollama API on host port 11434.
 4. Open the add-on **Configuration** and adjust:
    - **FlashAttention**: `1` — with the default quantized V cache (`q8_0`)
      current Ollama releases refuse to start the model without it.
-   - **Cloud**: enable `OLLAMA_NO_CLOUD` so the server can never contact
-     ollama.com after the model download.
+   - **Cloud**: enable `OLLAMA_NO_CLOUD` to disable Ollama cloud features;
+     this does not block all outbound network traffic.
    - Keep-alive `-1` keeps the model in RAM permanently (fast reports, more
      constant RAM use); a positive value in seconds unloads it after idle.
 5. **Start** the add-on.
@@ -154,6 +154,8 @@ endpoint differs. Everything the model receives stays inside your LAN.
 
 The adviser sends only the allowlisted numeric facts described on the
 [adviser page](Experimental-AI-Adviser) to the configured endpoint — one
-server on your LAN. Set `OLLAMA_NO_CLOUD=1` (add-on option **Cloud**) so the
-Ollama server itself cannot reach the internet after the model download. No
-API keys, accounts or cloud services are involved on this path.
+server on your LAN. Set `OLLAMA_NO_CLOUD=1` (add-on option **Cloud**) to disable
+Ollama cloud features. This is not a network firewall: use network controls if
+you require server-wide outbound isolation. A trusted server or proxy could
+otherwise forward traffic. No API keys or cloud account are needed for the
+local model path.
