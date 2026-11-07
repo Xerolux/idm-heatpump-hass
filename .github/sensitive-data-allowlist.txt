@@ -57,3 +57,7 @@ m12345@idm-energie.at
 *@example.net
 *@attacker.example
 pass@127.0.0.1
+
+# Deliberately misleading URL userinfo in the CodeQL 139 regression fixture;
+# evil.invalid is a reserved non-deliverable domain, not a contact address.
+idmtools.xerolux.de@evil.invalid
