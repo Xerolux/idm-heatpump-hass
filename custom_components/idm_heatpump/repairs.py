@@ -93,7 +93,14 @@ class IdmFirmwareObservedRepairFlow(repairs.RepairsFlow):
             self.hass.config_entries.async_update_entry(entry, data={**entry.data, ACK_KEY: acknowledged})
             ir.async_delete_issue(self.hass, DOMAIN, self._issue_id)
             return self.async_create_entry(title="", data={})
-        return self.async_show_form(step_id="confirm", data_schema=vol.Schema({}))
+        return self.async_show_form(
+            step_id="confirm",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "installed": str(self._issue_data.get("installed") or "unknown"),
+                "observed": version,
+            },
+        )
 
 
 class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):

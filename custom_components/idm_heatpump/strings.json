@@ -3531,14 +3531,16 @@
       "description": "Delivery of the write to register **{register}** at address **{address}** could not be confirmed because the Modbus connection failed. This is not a register-access rejection from the controller.\n\nTechnical detail: `{detail}`\n\nCheck the configured endpoint and port. If using ModBridge or another proxy, check its listener, upstream route, service availability and connection to the Navigator. For a direct connection, check Navigator Modbus TCP availability and the network.\n\nThis warning clears after a successful write to the same register."
     },
     "firmware_observed": {
-      "title": "Newer firmware observed — unconfirmed",
-      "description": "Installed: **{installed}**. Seen in matching community observations: **{observed}**.\n\nThis is orientation, not confirmation of availability or compatibility for your plant. iDM or an authorized installer must verify and perform any update. This integration never installs heat-pump firmware.\n\nAcknowledge seeing this notice. This version will not be announced again for this device, including after restarts. Diagnostic entities remain visible.",
+      "title": "Newer firmware {observed} observed — unconfirmed",
       "fix_flow": {
         "step": {
           "confirm": {
             "title": "Acknowledge seeing this notice",
-            "description": "I have seen the unconfirmed observation. No update will be performed."
+            "description": "Installed: **{installed}**. Seen in matching community observations: **{observed}**.\n\nThis is orientation, not confirmation of availability or compatibility for your plant. iDM or an authorized installer must verify and perform any update. This integration never installs heat-pump firmware.\n\nAcknowledge seeing this notice. This version will not be announced again for this device, including after restarts. Diagnostic entities remain visible."
           }
+        },
+        "abort": {
+          "entry_not_found": "The IDM integration entry was not found."
         }
       }
     },

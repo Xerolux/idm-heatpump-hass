@@ -50,5 +50,10 @@ def ensure_notice(hass: HomeAssistant, entry: Any, result: dict[str, Any]) -> No
         translation_key="firmware_observed",
         translation_placeholders={"installed": str(result.get("installed_firmware") or "unknown"), "observed": latest},
         learn_more_url=LEARN_MORE,
-        data={"entry_id": entry.entry_id, "firmware": latest, "fingerprint": digest},
+        data={
+            "entry_id": entry.entry_id,
+            "firmware": latest,
+            "fingerprint": digest,
+            "installed": str(result.get("installed_firmware") or "unknown"),
+        },
     )

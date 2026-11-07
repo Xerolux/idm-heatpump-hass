@@ -3531,14 +3531,16 @@
       "description": "Die Zustellung des Schreibvorgangs auf Register **{register}** an Adresse **{address}** konnte wegen eines Modbus-Verbindungsfehlers nicht bestätigt werden. Das ist keine Ablehnung der Registerfreigabe durch den Regler.\n\nTechnisches Detail: `{detail}`\n\nPrüfe das konfigurierte Ziel und den Port. Bei ModBridge oder einem anderen Proxy prüfe dessen Listener, Zielroute, Dienstverfügbarkeit und Verbindung zum Navigator. Bei einer direkten Verbindung prüfe die Modbus-TCP-Verfügbarkeit am Navigator und das Netzwerk.\n\nDiese Warnung verschwindet nach einem erfolgreichen Schreibvorgang auf dasselbe Register."
     },
     "firmware_observed": {
-      "title": "Neuere Firmware gesichtet – unbestätigt",
-      "description": "Installiert: **{installed}**. In passenden Community-Beobachtungen gesichtet: **{observed}**.\n\nDas ist eine Orientierung und keine Zusage, dass diese Version für deine Anlage verfügbar oder geeignet ist. iDM oder der autorisierte Fachbetrieb muss das prüfen und ein Update durchführen. Diese Integration installiert keine Wärmepumpen-Firmware.\n\nBestätige den Hinweis als gesehen. Dieselbe Version wird für dieses Gerät auch nach Neustarts nicht erneut gemeldet. Die Diagnose-Entitäten bleiben sichtbar.",
+      "title": "Neuere Firmware {observed} gesichtet – unbestätigt",
       "fix_flow": {
         "step": {
           "confirm": {
             "title": "Gesehen bestätigen",
-            "description": "Ich habe den unverbindlichen Hinweis gesehen. Es wird kein Update ausgeführt."
+            "description": "Installiert: **{installed}**. In passenden Community-Beobachtungen gesichtet: **{observed}**.\n\nDas ist eine Orientierung und keine Zusage, dass diese Version für deine Anlage verfügbar oder geeignet ist. iDM oder der autorisierte Fachbetrieb muss das prüfen und ein Update durchführen. Diese Integration installiert keine Wärmepumpen-Firmware.\n\nBestätige den Hinweis als gesehen. Dieselbe Version wird für dieses Gerät auch nach Neustarts nicht erneut gemeldet. Die Diagnose-Entitäten bleiben sichtbar."
           }
+        },
+        "abort": {
+          "entry_not_found": "Die IDM-Integration wurde nicht gefunden."
         }
       }
     },
