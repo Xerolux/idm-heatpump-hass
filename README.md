@@ -39,6 +39,8 @@
 >
 > New here? Start with the **[Installation & Setup guide][wiki-install]** or explore the **[searchable documentation][wiki]**.
 
+> **Optional personal plant telemetry:** off by default, one explicit consent, unchanged myIDM ID, plant-only scope and twelve-month server retention. Refusing telemetry collects and sends no telemetry. Firmware queries have separate consent and work without telemetry. [Scope, local persistence and erasure](docs/wiki/Telemetry.md).
+
 ## Experimental AI plant adviser (read-only)
 
 Optional and separately enabled — your local plant analyst. By default, daily, weekly, health and efficiency reports are generated directly from measured facts: **no model call, API key or inference cost**. Reports distinguish missing data, observed period energy, coverage, individual health-check states, previous-window comparison and local statistical baselines, and the learning status shows its own progress. The dedicated `iDM KI-Anlagenberater` device, optional schedule (restart-safe), four saved reports, dashboard export and 5–200 MiB storage limit (default 20 MiB) remain available. Model files, Recorder and backups are separate.
@@ -302,7 +304,7 @@ Home Assistant
 
 ## 💝 Support
 
-This integration keeps your heat pump **100 % local** — no cloud, no telemetry, just Modbus and spare time. If it keeps your home warm, consider keeping its developer caffeinated:
+Heat-pump control runs locally. Optional cloud reports, plant telemetry and firmware queries require their own configuration or consent. If it keeps your home warm, consider keeping its developer caffeinated:
 
 [![Sponsor on GitHub](https://img.shields.io/badge/Sponsor%20on%20GitHub-ea4aaa?logo=githubsponsors&logoColor=white&style=for-the-badge)](https://github.com/sponsors/xerolux)
 [![Tip on Ko-fi](https://img.shields.io/badge/Tip%20on-Ko--fi-ff5e5b?logo=ko-fi&logoColor=white&style=for-the-badge)](https://ko-fi.com/xerolux)

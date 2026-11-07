@@ -782,3 +782,43 @@ def test_model_cleanup_skipped_in_web_only_mode() -> None:
     registry = _run_model_cleanup(coordinator, entities)
 
     assert not registry.async_remove.called
+
+
+def test_retired_technician_cleanup_is_scoped_and_runs_once() -> None:
+    from custom_components.idm_heatpump.device_hierarchy import cleanup_removed_technician_entities
+
+    coordinator = _coordinator(enabled=False)
+    coordinator.config_entry.data = {}
+    hass = MagicMock()
+    registry = MagicMock()
+    rows = []
+    for unique_id, platform in (
+        ("entry_technician_level_1", DOMAIN),
+        ("entry_technician_level_2", DOMAIN),
+        ("entry_technician_codes", DOMAIN),
+        ("entry_controller_clock", DOMAIN),
+        ("entry_technician_level_1", "other"),
+        ("other_technician_level_1", DOMAIN),
+    ):
+        row = MagicMock(unique_id=unique_id, platform=platform)
+        row.entity_id = unique_id + platform
+        rows.append(row)
+    with (
+        patch("custom_components.idm_heatpump.device_hierarchy.er.async_get", return_value=registry),
+        patch("custom_components.idm_heatpump.device_hierarchy.er.async_entries_for_config_entry", return_value=rows),
+    ):
+        cleanup_removed_technician_entities(hass, coordinator)
+        assert registry.async_remove.call_count == 3
+        update = hass.config_entries.async_update_entry.call_args.kwargs["data"]
+        coordinator.config_entry.data = update
+        cleanup_removed_technician_entities(hass, coordinator)
+        assert registry.async_remove.call_count == 3
+        assert hass.config_entries.async_update_entry.call_count == 1
+
+
+def test_retired_technician_cleanup_without_entry() -> None:
+    from custom_components.idm_heatpump.device_hierarchy import cleanup_removed_technician_entities
+
+    coordinator = _coordinator(enabled=False)
+    coordinator.config_entry = None
+    cleanup_removed_technician_entities(MagicMock(), coordinator)

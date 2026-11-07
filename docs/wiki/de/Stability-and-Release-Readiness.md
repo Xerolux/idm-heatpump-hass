@@ -4,6 +4,10 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.26.3
+
+0.26.3 ergänzt freiwillige, standardmäßig ausgeschaltete Anlagenmeldungen und eine unabhängig zustimmungspflichtige Firmware-Abfrage. Der vorhandene lokale Betrieb bleibt unabhängig. Neustartfeste Meldungen und verteilte Versandzeiten sind getestet; die einmalige Bereinigung entfernt nur historische Technikercode-IDs derselben Integration. Typprüfung, gezielte Tests und reale HA-Lebenszyklustests bestehen. Der Server verwendet ein unabhängiges Löschjournal in LXC 117. Mehrtägiger Betrieb und eine rechtliche Einzelfallprüfung werden durch diese technischen Prüfungen nicht ersetzt.
+
 ## Release-Entscheidung zu 0.26.2
 
 **0.26.2** ist ein stabiler Feature-Patch mit fünf neuen UI-Sprachen. Home
@@ -516,7 +520,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.26.2` und `idm-heatpump-api` `2.16.0` bilden das aktuelle exakt
+Integration im Quellstand `0.26.3` und `idm-heatpump-api` `2.16.0` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

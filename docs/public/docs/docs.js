@@ -91,6 +91,7 @@ const PAGES = [
   { slug: 'predictive-advisor', file: 'Predictive-Advisor.md', group: 'automation', de: 'Predictive Advisor', en: 'Predictive Advisor' },
   { slug: 'local-ollama', file: 'Local-Ollama.md', group: 'automation', de: 'Lokale Ollama-Einrichtung', en: 'Local Ollama setup' },
   { slug: 'smart-energy-and-comfort', file: 'Smart-Energy-and-Comfort.md', group: 'automation', de: 'Smart Energy & Comfort', en: 'Smart Energy & Comfort' },
+  { slug: 'telemetry', file: 'Telemetry.md', group: 'operation', de: 'Freiwillige Anlagentelemetrie', en: 'Optional plant telemetry' },
   { slug: 'data-update', file: 'Data-Update.md', group: 'operation', de: 'Datenaktualisierung', en: 'Data update' },
   { slug: 'local-web-interface', file: 'Local-Web-Interface.md', group: 'operation', de: 'Lokale Web-Schnittstelle', en: 'Local web interface' },
   { slug: 'known-limitations', file: 'Known-Limitations.md', group: 'operation', de: 'Bekannte Einschränkungen', en: 'Known limitations' },

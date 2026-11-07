@@ -136,6 +136,10 @@ GERMAN_DOCUMENTATION_PAGES: dict[str, dict[str, str]] = {
         "title": "Smart Energy & Comfort",
         "description": "Das optionale iDM-Profil Smart Energy & Comfort für lokale Effizienz, Zyklusanalyse und sichere Warmwasser-Boost-Steuerung wählen.",
     },
+    "telemetry": {
+        "title": "Freiwillige Anlagentelemetrie",
+        "description": "Nutzen, Einwilligung, myIDM-Zuordnung, passende Firmware-Beobachtungen, Aufbewahrung und Löschanfragen verstehen.",
+    },
     "data-update": {
         "title": "Datenaktualisierung",
         "description": "Lokale Modbus-TCP-Abfrage, Update-Intervalle, robuste Lesevorgänge und Koordinator-Verhalten verstehen.",
@@ -283,6 +287,13 @@ DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
         "group": "automation",
         "title": "iDM Smart Energy and Comfort",
         "description": "Choose the optional iDM Smart Energy and Comfort profile for local efficiency, cycle analysis and safe domestic hot-water boost controls.",
+    },
+    {
+        "slug": "telemetry",
+        "file": "Telemetry.md",
+        "group": "operation",
+        "title": "Optional plant telemetry",
+        "description": "Understand consent, myIDM assignment, matching firmware observations, retention and erasure requests.",
     },
     {
         "slug": "data-update",

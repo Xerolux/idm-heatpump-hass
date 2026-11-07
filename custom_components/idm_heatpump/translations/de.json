@@ -55,7 +55,9 @@
         "menu_options": {
           "connection": "Verbindungseinstellungen ändern",
           "features": "Funktionen konfigurieren",
-          "diagnostics": "Aktuelle Verbindung testen"
+          "diagnostics": "Aktuelle Verbindung testen",
+          "telemetry": "Telemetrie",
+          "firmware": "Firmware-Abfrage (freiwillig)"
         },
         "menu_option_descriptions": {
           "connection": "Modbus-Host, Port, Slave-ID, lokale Web-PIN und Proxy-Einstellungen bearbeiten.",
@@ -867,6 +869,21 @@
           "advisor_room_temp_f": "Diesen Sensor statt des hc_f_room_temp-Registers als Raumtemperatur von Heizkreis F in Modellen und Empfehlungen des Beraters verwenden.",
           "advisor_room_temp_g": "Diesen Sensor statt des hc_g_room_temp-Registers als Raumtemperatur von Heizkreis G in Modellen und Empfehlungen des Beraters verwenden."
         }
+      },
+      "telemetry": {
+        "title": "Telemetrie",
+        "description": "**Hilf mit, die IDM-Integration zu verbessern**\n\nDeine Anlagenmeldungen helfen Xerolux, Fehler zu erkennen und mehr IDM-Anlagen zuverlässig zu unterstützen.\n\n**Geteilt werden:**\n- Deine **unveränderte myIDM-ID** zur Zuordnung deiner Anlage.\n- Technische Anlagendaten wie Modell, Firmware, Verbindung und Störungen.\n- Vorhandene Zusammenfassungen zu Starts, Laufzeiten und Energieverbrauch.\n\n**Nur deine IDM-Anlage**, keine Daten anderer HA-Geräte. Die Berichte sind **nicht anonym**.\n\nVersand etwa einmal täglich. Speicherung: **zwölf Monate im aktiven System**; Sicherungskopien können bis zu sechs Monate länger bestehen.\n\n**Freiwillig und jederzeit abschaltbar.** Ausschalten beendet Erfassung und Versand. Lokale Steuerung und die separate Firmware-Abfrage funktionieren auch ohne Telemetrie.\n\n[Datenschutz, Anbieter und Datenlöschung]({privacy_url})",
+        "data": {
+          "telemetry": "Anlagenmeldungen teilen",
+          "telemetry_myidm_id": "myIDM-ID (automatisch erkannt, soweit verfügbar)"
+        }
+      },
+      "firmware": {
+        "title": "Firmware-Abfrage",
+        "description": "**Gibt es eine neuere Firmware für deine Wärmepumpe?**\n\nDer Sensor **„Neueste gemeldete Firmware“** zeigt dir, ob bei vergleichbaren Anlagen eine neuere Version gemeldet wurde.\n\nDafür erhält **Xerolux nur Reglertyp, Anlagenmodell und Firmware-Version** – etwa alle sechs Stunden. Keine myIDM-ID oder Messwerte. Telemetrie ist dafür nicht nötig.\n\nDie Anzeige ist ein Community-Hinweis. Prüfen und installieren kann die Firmware nur IDM oder dein Fachbetrieb.\n\n**Freiwillig und jederzeit abschaltbar.** Ausschalten stoppt die Abfragen und entfernt den Sensor. Die lokale Steuerung läuft weiter.\n\n[Datenschutz, Anbieter und deine Rechte]({privacy_url})",
+        "data": {
+          "firmware_check": "Firmware-Abfrage erlauben"
+        }
       }
     },
     "error": {
@@ -904,7 +921,8 @@
       "ai_cloud_daily_limit_reached": "Das Cloud-Anfragelimit für diesen UTC-Tag wurde erreicht.",
       "ai_task_entity_required": "Eine vorhandene ai_task-Entität zur Datengenerierung auswählen.",
       "invalid_subnet": "Kein gültiges IPv4-Subnetz oder zu groß (maximal /22). Verwende eine Schreibweise wie `192.168.1.0/24`.",
-      "no_candidates": "Kein Gerät mit offenem Modbus-TCP-Port gefunden. Prüfe, ob die Wärmepumpe erreichbar ist und Modbus TCP aktiviert ist, und kontrolliere das Subnetz — oder gib die Adresse manuell ein."
+      "no_candidates": "Kein Gerät mit offenem Modbus-TCP-Port gefunden. Prüfe, ob die Wärmepumpe erreichbar ist und Modbus TCP aktiviert ist, und kontrolliere das Subnetz — oder gib die Adresse manuell ein.",
+      "telemetry_myidm_required": "Bitte die myIDM-ID der IDM-Anlage angeben."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits konfiguriert.",
@@ -2718,6 +2736,9 @@
       "storage_temp": {
         "name": "Speichertemperatur"
       },
+      "telemetry_latest_firmware": {
+        "name": "Neueste gemeldete Firmware"
+      },
       "thermal_power_flow_sensor": {
         "name": "Thermische Leistung (Durchflusssensor)"
       },
@@ -3703,6 +3724,26 @@
     "generate_dashboard": {
       "name": "Anlagen-Dashboard erzeugen",
       "description": "Liefert ein fertig verwendbares Lovelace-Dashboard für diese Anlage mit deinen aktuellen Entity-IDs zurück – als strukturierte Daten und als YAML. Vorhandene Dashboards werden nicht verändert."
+    },
+    "send_telemetry": {
+      "name": "Anlagenbericht jetzt senden",
+      "description": "Sendet mit bestehender Telemetrie-Zustimmung einen Bericht. Mindestens eine Minute Abstand; der nächste tägliche Versand wird neu geplant.",
+      "fields": {
+        "entry_id": {
+          "name": "Integration",
+          "description": "Wähle die IDM-Anlage."
+        }
+      }
+    },
+    "check_firmware": {
+      "name": "Firmware jetzt prüfen",
+      "description": "Fragt mit bestehender Firmware-Zustimmung passende Community-Meldungen ab. Es wird keine Firmware installiert.",
+      "fields": {
+        "entry_id": {
+          "name": "Integration",
+          "description": "Wähle die IDM-Anlage."
+        }
+      }
     }
   }
 }

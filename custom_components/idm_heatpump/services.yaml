@@ -405,3 +405,19 @@ unsnooze_anomaly:
             - "spread_above_baseline"
             - "compressor_starts_above_baseline"
             - "dhw_charge_time_above_baseline"
+
+send_telemetry:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: idm_heatpump
+
+check_firmware:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: idm_heatpump

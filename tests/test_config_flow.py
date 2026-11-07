@@ -1353,7 +1353,7 @@ class TestAsyncStepReconfigure:
             result = await flow.async_step_reconfigure(None)
         assert result["type"] == "menu"
         assert result["step_id"] == "reconfigure"
-        assert result["menu_options"] == ["connection", "features", "diagnostics"]
+        assert result["menu_options"] == ["connection", "features", "diagnostics", "telemetry", "firmware"]
 
     async def test_features_menu_updates_options_and_preserves_connection(self):
         flow = _make_flow()
@@ -3386,3 +3386,87 @@ class TestPlantTopologyDetection:
         assert result["step_id"] == "guided_choose"
         assert flow._options[CONF_HEATING_CIRCUITS] == ["b", "e"]
         assert flow._options[CONF_ZONE_COUNT] == 1
+
+
+class TestTelemetryConsent:
+    async def test_form_is_off_by_default(self):
+        flow = _make_flow()
+        entry = MagicMock(options={})
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "async_show_form") as form,
+        ):
+            await flow.async_step_telemetry()
+        assert form.call_args.kwargs["step_id"] == "telemetry"
+        assert form.call_args.kwargs["description_placeholders"] == {
+            "privacy_url": "https://idmtools.xerolux.de/telemetry.html"
+        }
+        assert _marker_defaults(form.call_args.kwargs["data_schema"])["telemetry"] is False
+
+    async def test_myidm_required_only_when_enabled(self):
+        flow = _make_flow()
+        entry = MagicMock(options={"unrelated": "preserved"})
+        with patch.object(flow, "_get_reconfigure_entry", return_value=entry):
+            result = await flow.async_step_telemetry({"telemetry": True})
+        assert result["errors"] == {"telemetry_myidm_id": "telemetry_myidm_required"}
+
+    @pytest.mark.parametrize("enabled", [False, True])
+    async def test_saves_exact_consent_and_preserves_other_options(self, enabled):
+        flow = _make_flow()
+        entry = MagicMock(options={"unrelated": "preserved"})
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "async_update_and_abort") as save,
+        ):
+            await flow.async_step_telemetry({"telemetry": enabled, "telemetry_myidm_id": "TEST-Serial-123"})
+        options = save.call_args.kwargs["options"]
+        assert options["unrelated"] == "preserved"
+        assert options["telemetry"] is enabled
+        assert options["telemetry_myidm_id"] == ("TEST-Serial-123" if enabled else "")
+        assert bool(options["telemetry_consent_at"]) is enabled
+
+
+async def test_telemetry_detects_myidm_without_requesting_a_serial():
+    flow = _make_flow()
+    entry = MagicMock(options={})
+    entry.runtime_data.coordinator.myidm_id = "TEST-MYIDM-123"
+    with (
+        patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+        patch.object(flow, "async_update_and_abort") as save,
+    ):
+        await flow.async_step_telemetry({"telemetry": True})
+    assert save.call_args.kwargs["options"]["telemetry_myidm_id"] == "TEST-MYIDM-123"
+
+
+async def test_changed_telemetry_notice_never_preselects_new_consent():
+    flow = _make_flow()
+    entry = MagicMock(options={"telemetry": True, "telemetry_policy": "previous-notice"})
+    with (
+        patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+        patch.object(flow, "async_show_form") as form,
+    ):
+        await flow.async_step_telemetry()
+    assert _marker_defaults(form.call_args.kwargs["data_schema"])["telemetry"] is False
+
+
+async def test_firmware_consent_is_separate_and_never_inherited_from_telemetry():
+    flow = _make_flow()
+    entry = MagicMock(options={"telemetry": True, "telemetry_policy": "idm-telemetry-v3"})
+    with (
+        patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+        patch.object(flow, "async_show_form") as form,
+    ):
+        await flow.async_step_firmware()
+    assert _marker_defaults(form.call_args.kwargs["data_schema"])["firmware_check"] is False
+    assert form.call_args.kwargs["description_placeholders"]["privacy_url"].endswith("#firmware")
+    for enabled in (True, False):
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "async_update_and_abort") as save,
+        ):
+            await flow.async_step_firmware({"firmware_check": enabled})
+        options = save.call_args.kwargs["options"]
+        assert options["telemetry"] is True
+        assert options["firmware_check"] is enabled
+        assert bool(options["firmware_consent_at"]) is enabled
+        assert bool(options["firmware_policy"]) is enabled

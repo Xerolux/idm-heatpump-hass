@@ -947,6 +947,12 @@ def _stub_homeassistant() -> None:
         def async_get(self, entity_id):
             return self.entities.get(entity_id)
 
+        def async_get_entity_id(self, domain, platform, unique_id):
+            return next((entry.entity_id for entry in self.entities.values() if entry.unique_id == unique_id), None)
+
+        def async_remove(self, entity_id):
+            self.entities.pop(entity_id, None)
+
         def async_update_entity(self, entity_id, *, new_unique_id):
             entry = self.entities[entity_id]
             entry.unique_id = new_unique_id

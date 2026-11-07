@@ -808,3 +808,42 @@ belegt nicht dessen Bedeutung als Schwellwert. Diese Parameter werden daher
 nicht unter vermuteten Namen angezeigt. Es kommen keine neuen Schreibzugriffe
 hinzu. Die Zuordnung basiert auf dem Navigator-10-Bericht in #429 und muss
 noch an der Anlage des Melders bestätigt werden.
+
+
+## Unabhängige Firmware-Beobachtungen
+
+Unter **Neu konfigurieren → Firmware-Abfrage** aktiviert ein eigener freiwilliger
+Schalter den Sensor **Neueste gemeldete Firmware**. Er ist standardmäßig aus und
+übernimmt keine Telemetrie-Einwilligung. Die Firmware-Abfrage funktioniert ohne
+myIDM-ID und ohne Telemetrie. Telemetrie auszuschalten beendet eine separat
+freigegebene Firmware-Abfrage nicht. Ausschalten der Firmware-Abfrage bricht
+laufende Anfragen ab und entfernt Sensor und Registry-Eintrag sofort. Ohne diese
+Einwilligung gibt es keinen Kontakt zum Firmware-Katalog.
+
+Übertragen werden ausschließlich Navigator-Familie, Regler-/Anlagenmodell und
+installierte Firmware, nach bis zu 30 Minuten zufälliger Startverzögerung, danach alle sechs
+Stunden zuzüglich bis zu 30 Minuten zufälliger Verzögerung. Keine myIDM-ID,
+Betriebszähler, Temperaturen, Zugangsdaten oder fremden HA-Daten. Es gibt keine
+dauerhafte Firmware-Warteschlange; die Integration hält nur das aktuelle Ergebnis.
+HA kann Sensorzustände gemäß deiner Recorder-/Backup-Konfiguration speichern. Der
+Server verarbeitet die Abfrage vorübergehend und speichert keinen Anlagenbericht.
+Die Verbindungs-IP ist technisch sichtbar; kurzlebige Ratenkennungen verfallen
+nach spätestens zwei Stunden beim nächsten stündlichen Bereinigungslauf. Beide
+Funktionen verlinken vor ihrem Zustimmungsschalter deutlich auf die vollständigen
+Datenschutzhinweise.
+
+Der Katalog verwendet nur freigegebene Community-Telemetrie, keine alten
+Diagnose-ZIPs. Navigator/Regler, bekanntes Anlagenmodell, Firmware-Präfix/Kanal und
+Hauptreihe müssen passen. Fehlende Anlagenmodelle werden nur mit anderen Meldungen
+ohne Typangabe innerhalb derselben bekannten Regler-/Firmware-Reihe verglichen.
+Test- und stabile Kanäle bleiben getrennt; Buildnummern werden numerisch verglichen.
+Unbekannte Zuordnung oder fehlende Meldungen liefern keine Versionsempfehlung.
+
+Das ist keine offizielle IDM-Verfügbarkeit, Installationsberechtigung oder
+Kompatibilitätsfreigabe. Eignungsprüfung und Installation bleiben bei IDM/Fachbetrieb.
+Telemetrie hilft beim Aufbau des Katalogs, ist aber keine Voraussetzung für seine
+Abfrage. Telemetrie verwendet weiterhin Hinweisfassung v3, die unabhängige
+Firmware-Einwilligung `idm-firmware-v1`. Deren Zeitpunkt und Fassung werden nur
+lokal gespeichert und nicht bei der Firmware-Abfrage übertragen.
+
+[Datenschutz und Übertragung](Telemetry).

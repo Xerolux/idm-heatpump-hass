@@ -84,6 +84,7 @@ from .predictive_advisor_entities import (
     runtime_predictive_advisor,
 )
 from .registers import entity_order_group, sort_entity_descriptions
+from .telemetry_entities import IdmTelemetryFirmwareSensor, firmware_sensor_entities
 from .versions import RuntimeVersions, async_runtime_versions
 from .web_binary_sensors import WEB_BINARY_VALUE_KEYS
 from .web_demand_reason_entities import IdmWebDemandReasonSensor, web_demand_reason_sensor_entities
@@ -510,6 +511,7 @@ async def async_setup_entry(
         | IdmAdvisorStatusSensor
         | IdmAdvisorRecommendationSensor
         | AdvisorProducerEntity
+        | IdmTelemetryFirmwareSensor
     ] = []
     if entry.options.get(CONF_AI_ADVISOR, False) is True:
         await async_ensure_analysis(hass, entry, coordinator)
@@ -575,6 +577,7 @@ async def async_setup_entry(
         entities += web_system_sensor_entities(coordinator)
     entities.append(IdmApiVersionSensor(coordinator, versions))
     entities += connection_sensor_entities(coordinator)
+    entities += firmware_sensor_entities(hass, entry, coordinator)
     if entry.options.get(CONF_COMMUNICATION_DIAGNOSTICS, False):
         entities += _communication_diagnostic_entities(coordinator)
     if entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART and entry.options.get(

@@ -575,6 +575,21 @@ def cleanup_stale_hierarchy_devices(hass: HomeAssistant, coordinator: IdmCoordin
             surviving_children[parent_device_id] -= 1
 
 
+def cleanup_removed_technician_entities(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
+    """Remove retired code sensors once per entry, preserving unrelated entities."""
+    entry = coordinator.config_entry
+    marker = "technician_entities_removed_0263"
+    if entry is None or entry.data.get(marker) is True:
+        return
+    registry = er.async_get(hass)
+    obsolete = {f"{entry.entry_id}_{key}" for key in ("technician_codes", "technician_level_1", "technician_level_2")}
+    for entity in list(er.async_entries_for_config_entry(registry, entry.entry_id)):
+        if entity.platform == DOMAIN and entity.unique_id in obsolete:
+            registry.async_remove(entity.entity_id)
+    # Persist only after successful removal, so an interrupted migration retries.
+    hass.config_entries.async_update_entry(entry, data={**entry.data, marker: True})
+
+
 def cleanup_disabled_feature_entities(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
     """Remove entities of switched-off optional features after an entry reload.
 

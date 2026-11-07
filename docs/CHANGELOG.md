@@ -13,6 +13,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.3] - 2026-11-07
+
+### ⚠️ Upgrade notes
+
+- **Telemetry remains off unless explicitly enabled**: one consent covers only the connected IDM plant. Enabling requires the myIDM ID of the IDM plant, which is transmitted unchanged. Refusing collects and sends nothing. Existing integration operation stays local and independent of telemetry availability.
+
+### ✨ New
+
+- **Explicit transmission tests**: the Send plant report now and Check firmware now actions use the existing independent consent settings. Refusal sends nothing. Manual reports retain persisted outbox deduplication and a one-minute cooldown, then reserve the next randomized daily slot; firmware checks never install software or send operating counters.
+
+- **Spread cloud requests across installations**: first telemetry reports are randomized across 24–48 hours, subsequent attempts across 24–25 hours, and overdue reconnects across up to one hour. Slots survive reloads and are reserved before I/O. Firmware startup checks wait up to 30 minutes, with jitter on subsequent six-hour intervals. No immediate retries or bulk backlog upload is introduced.
+
+- **Readable consent before activation**: short mobile-friendly summaries explain benefits, shared data, storage and withdrawal in plain language. Both dialogs identify the project as Xerolux and link directly to the full privacy notice with the operator's legal name and contact. Explicit opt-in stays off by default; existing consent, data scope and reporting schedules remain unchanged.
+
+- **Independent firmware consent**: firmware comparison now has its own optional switch, off by default, and works without telemetry or a myIDM ID. Queries contain only controller/model/software metadata. Telemetry consent never enables them automatically. Turning firmware queries off cancels requests and removes the sensor. Sharing operating reports is no longer a prerequisite for viewing matching community firmware observations.
+
+- **Optional plant telemetry**: daily reports describe controller compatibility, connection failures, observed alarm transitions and available operating aggregates. Personal reports use private encrypted storage with twelve-month expiry. The IDM Tools website accepts erasure requests for verification by the operator. No unrelated Home Assistant data, remote commands or automatic diagnostic captures are included.
+
+### 🐛 Bugfixes
+
+- **Remove retired technician entities once**: the first setup of each integration entry removes only its obsolete technician-code registry IDs. Other sensors, renamed entities and other integrations stay untouched. A persisted marker prevents repeated migration; if removal is interrupted, the next setup retries. Installer access remains the responsibility of the heating installer.
+
 ## [0.26.2] - 2026-11-06
 
 The integration speaks five more languages: setup, options, services, repairs and error texts now arrive in Spanish, Italian, Romanian, Czech and Polish whenever Home Assistant runs in one of them.

@@ -315,3 +315,168 @@ async def test_external_power_source_can_be_cleared_with_real_ha_selectors() -> 
     assert "external_power_forwarding_battery_soc" not in submitted
     _store_external_power_forwarding_entities(options, submitted)
     assert options[CONF_EXTERNAL_POWER_FORWARDING_ENTITIES] == {"pv_production": "sensor.pv"}
+
+
+async def test_telemetry_reload_preserves_aggregates_and_refusal_erases_them(
+    smoke_hass, patched_client, smoke_entry
+) -> None:
+    """Exercise real HA Store and lifecycle; never contact an external endpoint."""
+    from datetime import UTC, datetime
+    from pathlib import Path
+    from unittest.mock import patch
+
+    from custom_components.idm_heatpump.telemetry import TELEMETRY_POLICY
+
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession") as session:
+        await smoke_hass.config_entries.async_add(smoke_entry)
+        await smoke_hass.async_block_till_done()
+        assert smoke_entry.runtime_data.telemetry is None
+        smoke_hass.config_entries.async_update_entry(
+            smoke_entry,
+            options={
+                "telemetry": True,
+                "telemetry_myidm_id": "TEST-Smoke-123",
+                "telemetry_consent_at": datetime.now(UTC).isoformat(),
+                "telemetry_policy": TELEMETRY_POLICY,
+                "firmware_check": True,
+                "firmware_policy": "idm-firmware-v1",
+                "firmware_consent_at": datetime.now(UTC).isoformat(),
+            },
+        )
+        await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+        telemetry = smoke_entry.runtime_data.telemetry
+        assert telemetry is not None
+        firmware_entities = [
+            e
+            for e in er.async_entries_for_config_entry(er.async_get(smoke_hass), smoke_entry.entry_id)
+            if e.unique_id.endswith("_telemetry_latest_firmware")
+        ]
+        assert len(firmware_entities) == 1
+        firmware_entity_id = firmware_entities[0].entity_id
+        smoke_entry.runtime_data.firmware.firmware_result = {
+            "status": "no_matching_observations",
+            "latest_firmware": None,
+        }
+        for listener in tuple(smoke_entry.runtime_data.firmware._firmware_listeners):
+            listener()
+        await smoke_hass.async_block_till_done()
+        firmware_state = smoke_hass.states.get(firmware_entity_id)
+        assert firmware_state is not None and firmware_state.state == "unknown"
+        assert firmware_state.attributes["status"] == "no_matching_observations"
+        telemetry._pending["modbus_polls"] = 7
+        await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+        restored = smoke_entry.runtime_data.telemetry
+        assert restored is not None and restored is not telemetry
+        assert restored.payload()["counters"]["modbus_polls"] >= 7
+        path = Path(smoke_hass.config.path(".storage", "idm_heatpump.telemetry." + smoke_entry.entry_id))
+        assert path.exists()
+        smoke_hass.config_entries.async_update_entry(smoke_entry, options={"telemetry": False})
+        await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+        assert smoke_entry.runtime_data.telemetry is None
+        assert er.async_get(smoke_hass).async_get(firmware_entity_id) is None
+        assert smoke_hass.states.get(firmware_entity_id) is None
+        assert not path.exists()
+        session.assert_not_called()  # Even opted-in startup queries are spread over time.
+        assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+    pending = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
+    assert not pending
+
+
+async def test_firmware_only_works_without_identity_or_telemetry_store(smoke_hass, patched_client, smoke_entry) -> None:
+    """Exercise both independent consent boundaries in a genuine HA lifecycle."""
+    from datetime import UTC, datetime
+    from pathlib import Path
+    from unittest.mock import patch
+
+    options = {
+        "firmware_check": True,
+        "firmware_policy": "idm-firmware-v1",
+        "firmware_consent_at": datetime.now(UTC).isoformat(),
+        "telemetry": False,
+    }
+    with (
+        patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession") as firmware_session,
+        patch("custom_components.idm_heatpump.telemetry.async_get_clientsession") as analytics_session,
+    ):
+        await smoke_hass.config_entries.async_add(smoke_entry)
+        await smoke_hass.async_block_till_done()
+        smoke_hass.config_entries.async_update_entry(smoke_entry, options=options)
+        await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+        assert smoke_entry.runtime_data.telemetry is None
+        assert smoke_entry.runtime_data.firmware is not None
+        firmware_session.assert_not_called()
+        await smoke_entry.runtime_data.firmware.async_refresh_firmware()
+        assert set(firmware_session.return_value.post.call_args.kwargs["json"]) == {
+            "navigator",
+            "navigator_model",
+            "heatpump_model",
+            "firmware",
+        }
+        analytics_session.assert_not_called()
+        store = Path(smoke_hass.config.path(".storage", "idm_heatpump.telemetry." + smoke_entry.entry_id))
+        assert not store.exists()
+        entities = [
+            e
+            for e in er.async_entries_for_config_entry(er.async_get(smoke_hass), smoke_entry.entry_id)
+            if e.unique_id.endswith("_telemetry_latest_firmware")
+        ]
+        assert len(entities) == 1
+        entity_id = entities[0].entity_id
+        options.update(
+            {
+                "firmware_check": False,
+                "telemetry": True,
+                "telemetry_myidm_id": "TEST-INDEPENDENT",
+                "telemetry_policy": "idm-telemetry-v3",
+                "telemetry_consent_at": datetime.now(UTC).isoformat(),
+            }
+        )
+        count = firmware_session.call_count
+        smoke_hass.config_entries.async_update_entry(smoke_entry, options=dict(options))
+        await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+        assert smoke_entry.runtime_data.firmware is None
+        assert smoke_entry.runtime_data.telemetry is not None
+        assert er.async_get(smoke_hass).async_get(entity_id) is None
+        assert smoke_hass.states.get(entity_id) is None
+        assert firmware_session.call_count == count
+        assert store.exists()
+        analytics_session.assert_not_called()
+        assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+
+
+async def test_retired_technician_registry_cleanup_once(smoke_hass, patched_client, smoke_entry) -> None:
+    """Remove historical unique IDs in a real registry, including renamed sensors."""
+    from types import SimpleNamespace
+
+    from custom_components.idm_heatpump.device_hierarchy import cleanup_removed_technician_entities
+
+    await smoke_hass.config_entries.async_add(smoke_entry)
+    await smoke_hass.async_block_till_done()
+    smoke_hass.config_entries.async_update_entry(
+        smoke_entry, data={k: v for k, v in smoke_entry.data.items() if k != "technician_entities_removed_0263"}
+    )
+    registry = er.async_get(smoke_hass)
+    old = registry.async_get_or_create(
+        "sensor",
+        "idm_heatpump",
+        f"{smoke_entry.entry_id}_technician_level_1",
+        config_entry=smoke_entry,
+        suggested_object_id="renamed_old_installer",
+    )
+    keep = registry.async_get_or_create(
+        "sensor", "idm_heatpump", f"{smoke_entry.entry_id}_controller_clock", config_entry=smoke_entry
+    )
+    coordinator = SimpleNamespace(config_entry=smoke_entry)
+    cleanup_removed_technician_entities(smoke_hass, coordinator)
+    assert registry.async_get(old.entity_id) is None
+    assert registry.async_get(keep.entity_id) is not None
+    assert smoke_entry.data["technician_entities_removed_0263"] is True
+    cleanup_removed_technician_entities(smoke_hass, coordinator)
+    assert registry.async_get(keep.entity_id) is not None

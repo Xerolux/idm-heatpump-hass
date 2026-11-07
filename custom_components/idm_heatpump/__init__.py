@@ -177,6 +177,7 @@ from .coordinator import IdmCoordinator
 from .device_hierarchy import (
     cleanup_deconfigured_heating_circuit_entities,
     cleanup_disabled_feature_entities,
+    cleanup_removed_technician_entities,
     cleanup_stale_hierarchy_devices,
     cleanup_stale_model_entities,
     cleanup_stale_web_sensor_entities,
@@ -193,6 +194,7 @@ from .error_messages import (
     scoped_issue_id,
 )
 from .external_power_forwarding import ExternalPowerForwarder, ExternalPowerForwardingConfig
+from .firmware_observations import FirmwareObservations
 from .internal_messages import warm_error_code_database
 from .knx_bridge import KnxBridge, KnxBridgeConfig
 from .knx_catalog import OBJECT_GROUPS, InvalidGroupAddressError
@@ -226,6 +228,7 @@ from .room_temp_forwarding import (
     RoomTempForwardingConfig,
     register_for_storage_temp_key,
 )
+from .telemetry import Telemetry
 from .versions import async_runtime_versions
 from .web_data import (
     IdmWebAuthenticationFailed,
@@ -280,6 +283,8 @@ class IdmHeatpumpData:
     humidity_forwarding_task: asyncio.Task[None] | None = None
     storage_temp_forwarding_task: asyncio.Task[None] | None = None
     external_power_forwarding_task: asyncio.Task[None] | None = None
+    firmware: FirmwareObservations | None = None
+    telemetry: Telemetry | None = None
     energy_manager: EnergyManager | None = None
     ai_advisor: AiAdvisor | None = None
     energy_statistics: EnergyStatistics | None = None
@@ -450,6 +455,19 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     return True
 
 
+async def _async_start_entry_telemetry(entry: IdmConfigEntry) -> None:
+    """Keep optional telemetry failure independent of either local transport mode."""
+    if entry.runtime_data.firmware is not None and not await entry.runtime_data.firmware.async_start():
+        entry.runtime_data.firmware = None
+    if entry.runtime_data.telemetry is not None:
+        try:
+            if not await entry.runtime_data.telemetry.async_start():
+                entry.runtime_data.telemetry = None
+        except OSError:
+            _LOGGER.warning("IDM telemetry storage unavailable; local plant integration remains active")
+            entry.runtime_data.telemetry = None
+
+
 async def _async_setup_web_only_entry(
     hass: HomeAssistant,
     entry: IdmConfigEntry,
@@ -601,18 +619,30 @@ async def _async_setup_web_only_entry(
         loaded_platforms=platforms_to_load,
     )
 
+    from .const import CONF_FIRMWARE_CHECK, CONF_TELEMETRY
+
+    if entry.options.get(CONF_FIRMWARE_CHECK) is True:
+        entry.runtime_data.firmware = FirmwareObservations(hass, entry, coordinator)
+
+    if entry.options.get(CONF_TELEMETRY) is True:
+        integration = await async_get_integration(hass, DOMAIN)
+        entry.runtime_data.telemetry = Telemetry(hass, entry, coordinator, str(integration.manifest.get("version", "")))
+
     try:
         # Same lazy database as the Modbus path: warm it off the loop before any
         # sensor entity writes its first state.
         await hass.async_add_executor_job(warm_error_code_database)
         precreate_main_device(hass, coordinator)
         await hass.config_entries.async_forward_entry_setups(entry, list(platforms_to_load))
+        cleanup_removed_technician_entities(hass, coordinator)
         cleanup_disabled_feature_entities(hass, coordinator)
         cleanup_stale_model_entities(hass, coordinator)
         cleanup_deconfigured_heating_circuit_entities(hass, coordinator)
         shorten_legacy_differential_entity_ids(hass, coordinator)
         cleanup_stale_web_sensor_entities(hass, coordinator)
         cleanup_stale_hierarchy_devices(hass, coordinator)
+
+        await _async_start_entry_telemetry(entry)
 
         if bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE)):
             # The bridge serves register-named values from the web register
@@ -1164,9 +1194,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
             loaded_platforms=platforms,
         )
 
+        from .const import CONF_FIRMWARE_CHECK, CONF_TELEMETRY
+
+        if entry.options.get(CONF_FIRMWARE_CHECK) is True:
+            entry.runtime_data.firmware = FirmwareObservations(hass, entry, coordinator)
+
+        if entry.options.get(CONF_TELEMETRY) is True:
+            entry.runtime_data.telemetry = Telemetry(hass, entry, coordinator, versions.integration)
+
         await coordinator.async_config_entry_first_refresh()
         precreate_main_device(hass, coordinator)
         await hass.config_entries.async_forward_entry_setups(entry, platforms)
+        cleanup_removed_technician_entities(hass, coordinator)
         cleanup_disabled_feature_entities(hass, coordinator)
         cleanup_stale_model_entities(hass, coordinator)
         cleanup_deconfigured_heating_circuit_entities(hass, coordinator)
@@ -1177,6 +1216,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
         # Activate entity-aware polling after platforms have created registry
         # entries. Idempotent — subsequent calls from operation_entities.py are no-ops.
         ensure_entity_aware_polling(coordinator)
+
+        await _async_start_entry_telemetry(entry)
 
         if advisor_engine is not None:
             entry.runtime_data.advisor_forecast_task = _create_entry_background_task(
@@ -1392,6 +1433,17 @@ async def _async_teardown_partial_setup(hass: HomeAssistant, entry: IdmConfigEnt
         except Exception:
             _LOGGER.debug("Error stopping the KNX bridge while unwinding setup", exc_info=True)
 
+    firmware = getattr(runtime, "firmware", None)
+    if isinstance(firmware, FirmwareObservations):
+        await firmware.async_stop()
+
+    telemetry = getattr(runtime, "telemetry", None)
+    if isinstance(telemetry, Telemetry):
+        try:
+            await telemetry.async_stop()
+        except OSError:
+            _LOGGER.warning("IDM telemetry storage could not be updated during unload")
+
     await _async_cancel_entry_tasks(runtime)
 
     coordinator = getattr(runtime, "coordinator", None)
@@ -1450,6 +1502,16 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None
     # Raises a translated ConfigEntryError instead of reporting a bare False,
     # so a platform that refuses to unload fails the entry loudly (2026.11).
     await hass.config_entries.async_unload_platforms_or_raise(entry, list(platforms))
+    firmware = getattr(entry.runtime_data, "firmware", None)
+    if isinstance(firmware, FirmwareObservations):
+        await firmware.async_stop()
+
+    telemetry = getattr(entry.runtime_data, "telemetry", None)
+    if isinstance(telemetry, Telemetry):
+        try:
+            await telemetry.async_stop()
+        except OSError:
+            _LOGGER.warning("IDM telemetry storage could not be updated during unload")
     history = getattr(entry.runtime_data.coordinator, "analysis_history", None)
     if isinstance(history, AnalysisHistory):
         try:

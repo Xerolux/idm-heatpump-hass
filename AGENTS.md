@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.26.2` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
+- **Current Version**: `0.26.3` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.11.0 (the 2026.8.1–2026.10 line stays on integration 0.24.x)
@@ -55,6 +55,10 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── modbus_client.py              # API client adapter routing raw I/O through the local transport
 │   ├── modbus_transport.py           # Backend-neutral contract + modbus-connection/tmodbus implementation
 │   ├── modbus_shared_transport.py    # Claims Home Assistant's shared Modbus connection, private-socket fallback
+│   ├── telemetry_entities.py        # Opt-in matching firmware sensor, removed on withdrawal
+│   ├── firmware_observations.py     # Independent opt-in firmware metadata queries without myIDM or operating data
+│   ├── telemetry.py                 # Explicit plant-only consent, persisted aggregates and daily IDM Tools reports
+
 │   ├── network_scan.py               # Config-flow subnet scan for Modbus TCP endpoints (port probe + reverse DNS)
 │   ├── versions.py                   # Runtime dependency versions for logs, sensors, and diagnostics
 │   ├── ha_compat.py                  # Version-tolerant imports across the supported HA range (vol/probatio, moved enums)
@@ -204,6 +208,10 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_sensitive_data.py
 │   ├── test_services.py
 │   ├── test_translation_parity.py
+│   ├── test_firmware_observations.py
+│   ├── test_telemetry_entities.py
+│   ├── test_cloud_load_spreading.py
+│   ├── test_telemetry.py
 │   ├── test_versions.py
 │   ├── test_web_binary_sensors.py
 │   ├── test_web_capture_script.py      # Contract of the user-facing web capture tool
@@ -592,7 +600,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 | PV surplus operation | `calculated_sensors.py`, `web_demand_reason.py`, `web_demand_reason_entities.py` | Derived diagnostic binary sensor (issue #353): `on` when surplus is signalled (`pv_surplus` ≥ 0.05 kW or SG-Ready *Supergreen*) **and** the heat pump draws power (`power_consumption_hp` ≥ 0.05 kW, fallback `hp_operating_mode` ≠ Off). Base profile; only created when both source halves exist. OR-shaped source registers must stay listed in `polling_plan.py`. Navigator 10 web supplement additionally exposes the controller's own demand reason (`web_demand_reason`, `web_demand_reason_pv`) from the WebSocket `home/detail` frame |
 | Smart Energy & Comfort | `energy_statistics.py`, `health_monitor.py`, `comfort_advisory.py`, `comfort_scheduler.py`, `energy_manager.py`, `external_power_forwarding.py` | Opt-in Smart-profile package: persistent energy/COP/CO₂ totals, read-only health checks, comfort advice and scheduling, fail-closed PV-surplus DHW boost (needs exclusive-controller confirmation), optional forwarding of HA PV/house/battery sensors to GLT registers |
 | Predictive advisor | `predictive_advisor.py`, `predictive_advisor_entities.py`, `advisor_analytics.py`, `advisor_engine.py`, `advisor_operation_reason.py` | Strictly read-only recommendation layer (`docs/dev/predictive-advisor-roadmap.md`): lifecycle/history/confidence/capabilities/data-quality, anomaly detection vs. own baselines, health and efficiency scores, COP map, building model, heating-curve recommendations, PV/price hot-water windows and the 24 h plan, `idm_advisor_recommendation` events. Smart profile; PV forecast sensor optionable (`advisor_pv_forecast_entity`). The advisor never writes to the heat pump |
-| AI plant adviser | `ai_advisor.py`, `ai_advisor_entities.py`, `ai_learning.py`, `ai_cloud.py` | Experimental, read-only, off by default. Deterministic measured-data reports; optional free-form explanations via local Ollama, an HA AI Task entity or explicitly consented cloud requests — the only authorized cloud exception (fixed endpoints, masked keys, numeric allowlist, persisted daily reservations) |
+| AI plant adviser | `ai_advisor.py`, `ai_advisor_entities.py`, `ai_learning.py`, `ai_cloud.py` | Experimental, read-only, off by default. Deterministic measured-data reports; optional free-form explanations via local Ollama, an HA AI Task entity or explicitly consented cloud requests with fixed endpoints, masked keys, numeric allowlist and persisted daily reservations |
 
 ---
 
@@ -608,7 +616,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 ## Important Constraints
 
 - **Do not push to `master` or `main`** — all development happens on feature branches.
-- **Plant control stays local.** The explicitly authorized experimental AI provider module is the only cloud exception: fixed HTTPS endpoints, explicit consent, redacted credentials, numerical allowlist and persisted request limits. Do not add other cloud calls or model tools.
+- **Plant control stays local.** Authorized outbound exceptions are the experimental AI provider and explicitly consented IDM plant telemetry. Telemetry is off by default, uses the fixed IDM Tools HTTPS endpoint, sends the unchanged controller-provided or explicitly entered myIDM ID plus its documented plant-only schema, and never reads unrelated HA data. A refusal means no telemetry collection, queue or network contact. Changes to the telemetry scope require a new notice revision and renewed consent. Never add remote plant controls or model tools.
 - **Do not skip type hints** — mypy strict mode will fail CI.
 - **Do not hardcode register addresses** in platform files — reference `const.py` or `registers.py`.
 - **Do not bypass the transports** (`ModbusConnectionTransport` / `SharedModbusUnitTransport`) with a second direct socket path. The shared provider is the only cross-entry path and only it may report `supports_shared_connection=True`; the private tmodbus socket remains the fallback and the probe path.

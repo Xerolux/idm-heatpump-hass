@@ -55,7 +55,9 @@
         "menu_options": {
           "connection": "Change connection settings",
           "features": "Configure features",
-          "diagnostics": "Test current connection"
+          "diagnostics": "Test current connection",
+          "telemetry": "Telemetry",
+          "firmware": "Firmware query (voluntary)"
         },
         "menu_option_descriptions": {
           "connection": "Edit Modbus host, port, slave ID, local web PIN, and proxy settings.",
@@ -867,6 +869,21 @@
           "advisor_room_temp_f": "Use this sensor as circuit F's room temperature for advisor models and recommendations instead of the hc_f_room_temp register.",
           "advisor_room_temp_g": "Use this sensor as circuit G's room temperature for advisor models and recommendations instead of the hc_g_room_temp register."
         }
+      },
+      "telemetry": {
+        "title": "Telemetry",
+        "description": "**Help improve the IDM integration**\n\nYour plant reports help Xerolux identify faults and reliably support more IDM plants.\n\n**What is shared:**\n- Your **unchanged myIDM ID** to associate reports with your plant.\n- Technical plant data such as model, firmware, connection and faults.\n- Existing summaries of starts, operating times and energy use.\n\n**Only your IDM plant**, with no data from other HA devices. Reports are **not anonymous**.\n\nReports are sent roughly daily. Storage: **twelve months in the active system**; backup copies may remain for up to six additional months.\n\n**Optional and easy to turn off.** Disabling stops collection and transfer. Local control and the separate firmware query work without telemetry.\n\n[Privacy, operator and erasure requests]({privacy_url})",
+        "data": {
+          "telemetry": "Share plant reports",
+          "telemetry_myidm_id": "myIDM ID (automatically detected when available)"
+        }
+      },
+      "firmware": {
+        "title": "Firmware query",
+        "description": "**Is there newer firmware for your heat pump?**\n\nThe **Latest reported firmware** sensor shows whether a newer version has been reported by comparable plants.\n\nFor this, **Xerolux receives only controller type, plant model and firmware version**, roughly every six hours. No myIDM ID or measurements. Telemetry is not required.\n\nThis is a community observation. Only IDM or your installer can assess and install firmware.\n\n**Optional and easy to turn off.** Disabling stops queries and removes the sensor. Local control keeps working.\n\n[Privacy, operator and your rights]({privacy_url})",
+        "data": {
+          "firmware_check": "Allow firmware queries"
+        }
       }
     },
     "error": {
@@ -904,7 +921,8 @@
       "ai_cloud_daily_limit_reached": "The cloud request limit for this UTC day has been reached.",
       "ai_task_entity_required": "Select an existing ai_task entity that supports data generation.",
       "invalid_subnet": "Not a valid IPv4 subnet, or too large (at most /22). Use a notation like `192.168.1.0/24`.",
-      "no_candidates": "No device with an open Modbus TCP port was found. Check that the heat pump is reachable and Modbus TCP is enabled, verify the subnet — or enter the address manually."
+      "no_candidates": "No device with an open Modbus TCP port was found. Check that the heat pump is reachable and Modbus TCP is enabled, verify the subnet — or enter the address manually.",
+      "telemetry_myidm_required": "Enter the myIDM ID of the IDM plant."
     },
     "abort": {
       "already_configured": "This heat pump is already configured.",
@@ -2718,6 +2736,9 @@
       "storage_temp": {
         "name": "Heat storage temperature"
       },
+      "telemetry_latest_firmware": {
+        "name": "Latest reported firmware"
+      },
       "thermal_power_flow_sensor": {
         "name": "Thermal power (flow sensor)"
       },
@@ -3703,6 +3724,26 @@
     "generate_dashboard": {
       "name": "Generate plant dashboard",
       "description": "Return a ready-to-use Lovelace dashboard for this plant using your current entity IDs, as structured data and as YAML. Does not change existing dashboards."
+    },
+    "send_telemetry": {
+      "name": "Send plant report now",
+      "description": "Send one report with existing telemetry consent. A one-minute cooldown applies; the next daily slot is rescheduled.",
+      "fields": {
+        "entry_id": {
+          "name": "Integration",
+          "description": "Select the IDM plant."
+        }
+      }
+    },
+    "check_firmware": {
+      "name": "Check firmware now",
+      "description": "Query matching community observations with existing firmware consent. No firmware is installed.",
+      "fields": {
+        "entry_id": {
+          "name": "Integration",
+          "description": "Select the IDM plant."
+        }
+      }
     }
   }
 }

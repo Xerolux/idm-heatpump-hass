@@ -1,0 +1,179 @@
+# Consent presentation review — 5 November 2026
+
+Private build `0.26.0-b5` makes the telemetry summary readable, highlights the full
+privacy notice immediately before the explicit consent switch and translates
+both consistently. Opening the notice is not a consent action. Default refusal,
+withdrawal, data scope, purposes, notice v3 and daily report timing are unchanged.
+The notice and erasure form remain available without enabling telemetry.
+
+## Unresolved production questions
+
+This change is not a declaration of legal compliance. Public release remains
+subject to checking hosting/processor agreements, provider backups and actual
+rights-request handling, as recorded in the private deployment evidence.
+
+The required product behavior gives access to the firmware comparison only when
+all telemetry is enabled. The [EDPB consent guidance](https://www.edpb.europa.eu/sme/be-compliant/process-personal-data-lawfully_en)
+requires free choice, easy withdrawal without negative consequences and consent
+for each processing purpose. Firmware matching uses controller/model/software
+metadata; operating counters and an unchanged myIDM ID are not technically
+necessary to perform that query. Therefore, linking access to the query to the
+complete telemetry dataset raises a conditionality/granularity question that
+wording alone cannot resolve.
+
+Retaining this requirement is not evidence that it is legally acceptable. Before
+public release, obtain a qualified assessment of the concrete arrangement or
+approve a design that separates the firmware service from unrelated analytics.
+Do not silently broaden consent or describe the current arrangement as certified.
+
+## Implemented resolution
+
+The operator explicitly approved separating the firmware service from telemetry.
+Private build `0.26.0-b6` implements independent consent, off by default, with no
+inherited consent. The firmware query uses only controller/model/software metadata,
+without a myIDM ID, counters or a local report store. Its consent time/revision is
+local only. Telemetry is no longer a condition of the firmware service. The
+conditionality concern described above records the superseded design. Hosting,
+processor agreements and provider backups still require operator verification.
+
+## Verification of the separated design
+
+- Full unit run: 3,434 passed and two skipped; the sole failure was the module
+  map not yet listing the new firmware module/test. After updating AGENTS.md,
+  the release-contract check and all targeted privacy/firmware checks passed.
+  Total coverage was 98.64%; the separate config-flow gate passed at 100%.
+- Strict mypy (86 modules), Ruff and the sensitive-data/language checks passed.
+- The twelve genuine HA smoke cases passed across the lifecycle suite and the
+  corrected firmware-only case. Firmware-only setup has no telemetry store or
+  identity requirement; telemetry-only setup has no firmware contact or sensor.
+- Backend suite: 64 tests and 22 subtests passed; backend query schema remains
+  unchanged and rejects additional identity/operating fields.
+- Live HA b6 initially retained telemetry but removed the old firmware sensor
+  because no independent firmware consent existed. Explicit firmware on/off/on
+  created, removed and recreated the sensor while telemetry stayed enabled.
+  Both German/English forms provide the full notice link. No daily report or
+  actuator command was forced. Final private-test settings enable both purposes
+  independently, as authorized by the operator.
+- DE/EN public privacy pages explain independent firmware consent, minimal
+  metadata, transient server queries and possible local Recorder/backup retention.
+  Their legal-notice footer remains present. No public git push or release.
+
+
+## Hosting clarification from the operator
+
+The operator subsequently confirmed that both server and backups are at netcup
+in Nuremberg, Germany. Location is no longer an unanswered operator question;
+this statement has not been independently verified. Processor agreements and
+actual backup retention/erasure are still separate operational checks.
+
+
+## Six-month full-image backup clarification
+
+The operator confirmed six-month retention of netcup full-server snapshots.
+Read-only host inspection found the private data directory on the root filesystem.
+Consequently, a full root-disk image includes that directory; deleting active
+rows does not erase prior image copies. Approximately eighteen months from
+original receipt is possible when a last image is taken just before twelve-month
+active expiry and retained another six months. Individual verified erasures may
+also reappear after a restore, because the current app has no independent erasure
+journal outside the restored disk.
+
+This is an unresolved general-release condition, not a finding that six-month
+snapshots are automatically unlawful or that an extra six months has been
+consented to. Existing snapshots, twelve-month live expiry, HA options and report
+schedules were not changed. A complete backup/restore erasure solution needs an
+architecture or operational decision before implementation. The public draft
+notice now distinguishes active expiry from existing image copies.
+
+Source: [BayLfD, deletion of backup copies](https://www.datenschutz-bayern.de/tbs/tb30/k12.html#12.5).
+
+
+## Implemented date-based startup/restore gate
+
+The normal entry point already purged expired rows before starting workers.
+The HTTP server constructor now also runs retention cleanup before socket binding,
+so alternate callers cannot serve restored expired rows. Cleanup failure prevents
+binding. A real temporary SQLite snapshot-copy test proves that expired telemetry,
+expired erasure requests and old rates are removed while a fresh report survives.
+A failure-injection test proves the socket remains unopened. The backend suite
+passes 70 tests and 22 subtests; the change is deployed with rollback backups.
+
+This does not recover individual erasures newer than a restored snapshot. A
+current, independent erasure journal and reconciliation gate are still not
+configured. No provider snapshots or retention settings were changed. The public
+notice distinguishes this implemented date gate from the remaining erasure-log
+requirement. No Home Assistant update or real plant report was forced.
+
+
+## Independent journal deployed on Proxmox
+
+At the operator's explicit request, the independent erasure journal now runs on
+his Proxmox host filesystem, outside netcup snapshots and guest VM backups.
+A dedicated unprivileged account and hardened loopback-only service hold only
+random report/request IDs and deletion/expiry timestamps, never raw myIDM IDs,
+email addresses or measurements. An outbound SSH reverse tunnel uses a separate
+restricted non-login netcup account, a verified pinned SSH host key and no new
+home-router/public HTTP port. An IPv4 path was selected because the Proxmox host
+could not route the server's IPv6 address; no global network configuration changed.
+
+The netcup service requires a successful authenticated, nonce-bound journal read
+before binding HTTP. Journal identity is pinned to reject silent recreation.
+Verified deletion commits externally before local deletion/confirmation. Replays
+of erased report IDs are discarded. Missing durability yields HTTP 503 and keeps
+the pending request; failed startup reconciliation keeps the listener closed.
+Technical tombstones expire after six calendar months plus one day, covering the
+operator's stated six-month image retention with a small operational margin.
+
+The backend suite passed 79 tests and 22 subtests. An isolated synthetic SQLite
+restore on netcup used the real Proxmox connection and removed a young individually
+erased report/request while retaining another synthetic report. It also proved
+replay rejection and startup refusal for a mismatched journal identity. The live
+production database was not restored or used for this experiment. Normal ingest,
+deduplication, firmware comparison and owner verification also passed. Minimal
+synthetic tombstones remain only as technical test evidence until normal expiry.
+
+The journal and tunnel start automatically. No Proxmox host/guest or HA restart,
+heating command, git push or release was performed for this change. The service's
+own restart preserved the journal identity and entries. Database permissions and
+loopback-only binding were checked. Operational keys are restricted on the two
+hosts and are absent from repository source and documentation.
+
+Important limits: restore images predating this protection only with the service
+blocked, then deploy the current modules/config before opening access. Software
+inside an old full image cannot enforce code absent from that image. Do not roll
+back the independent Proxmox journal together with netcup; recover its latest
+state after a host disaster. Provider snapshot contents are not rewritten by this
+mechanism. Backup-purpose justification, actual six-month snapshot removal and
+the netcup processing agreement remain operator responsibilities.
+
+
+## Corrected deployment boundary: isolated unprivileged container
+
+The operator objected to the initial direct installation on the Proxmox host.
+That was an implementation mistake, not a requirement of the journal design.
+The journal and tunnel now run only inside dedicated unprivileged LXC 117
+`idm-erasure-journal`: one CPU, 512 MiB RAM, 4 GiB guest root disk, protection and
+automatic startup enabled. No host bind mount, nesting or privileged container
+mode was used. SSH and the template's unused mail server are disabled/masked in
+the guest; only the journal's guest-loopback TCP listener remains.
+
+During cutover, the backend was paused, both old host services stopped and the
+journal copied through SQLite's backup mechanism. Identity, all four existing
+technical entries and their logical digest were preserved. Newly generated HMAC
+and SSH keys live in the guest; cloud authorization/key files were rotated. The
+old host units, application/config/state directories, private keys and dedicated
+user/group were removed after successful replacement verification. No journal
+listener, service, key or user remains on the hypervisor. Normal Proxmox container
+configuration/storage is of course still managed by the hypervisor.
+
+Live verification over the guest's tunnel restored a synthetic old database:
+previously erased data/request contacts stayed deleted, an unrelated synthetic
+report remained, report replay was discarded and a wrong journal identity blocked
+startup. Two further technical test tombstones were added by this verification.
+The Proxmox host and unrelated guests were not restarted, and HA control/settings
+were untouched. The retired direct-host installer is blocked from reuse; scoped
+server deployment instructions explicitly prohibit direct hypervisor deployment.
+
+The journal container itself must not be restored to an obsolete history together
+with netcup. It is independent of netcup snapshots, not automatically independent
+of its own guest backup or rollback. Recover the latest erasure history first.

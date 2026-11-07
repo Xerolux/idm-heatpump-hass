@@ -125,6 +125,14 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     if hass.services.has_service(DOMAIN, "set_system_mode"):
         return
 
+    for action in ("send_telemetry", "check_firmware"):
+        hass.services.async_register(
+            DOMAIN,
+            action,
+            partial(_handle_plant_cloud_action, hass),
+            schema=vol.Schema({vol.Required("entry_id"): cv.string}),
+            supports_response=SupportsResponse.OPTIONAL,
+        )
     hass.services.async_register(
         DOMAIN,
         "set_system_mode",
@@ -897,3 +905,21 @@ async def _handle_export_ai_dashboard(hass: HomeAssistant, call: ServiceCall) ->
         if metric := entity(key):
             cards.append({"type": "history-graph", "entities": [metric], "hours_to_show": 168})
     return {"dashboard": {"title": "iDM AI", "views": [{"title": "AI adviser", "path": "ai", "cards": cards}]}}
+
+
+async def _handle_plant_cloud_action(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
+    """Run an explicitly requested plant-only submission after its own consent."""
+    coordinator = await _get_coordinator(hass, call)
+    entry = coordinator.config_entry
+    if entry is None:
+        return {"accepted": False, "status": "entry_not_loaded"}
+    runtime = entry.runtime_data
+    if call.service == "send_telemetry":
+        if runtime.telemetry is None:
+            return {"accepted": False, "status": "consent_required"}
+        accepted = await runtime.telemetry.async_send_now()
+        return {"accepted": accepted, "status": "accepted" if accepted else "not_sent"}
+    if runtime.firmware is None or not runtime.firmware.enabled:
+        return {"accepted": False, "status": "consent_required"}
+    await runtime.firmware.async_refresh_firmware()
+    return {"status": str(runtime.firmware.firmware_result.get("status", "unavailable"))}

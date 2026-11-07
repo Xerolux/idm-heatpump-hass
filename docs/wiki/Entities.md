@@ -964,3 +964,39 @@ registers. In particular, the reported 60 °C at `hc_d_setpoint_flow_constant`
 parameters are deliberately not exposed under guessed names and no new
 writes are added. This mapping is based on the Navigator 10 report in #429;
 it still needs confirmation on the reporter's hardware.
+
+
+## Independent firmware observations
+
+Under **Reconfigure → Firmware query**, a separate explicit switch enables
+**Latest reported firmware**. It is off by default and never inherits consent
+from telemetry. Firmware-only operation works without a myIDM ID or telemetry.
+Disabling telemetry does not disable separately authorized firmware queries.
+Disabling firmware queries cancels the request and removes the sensor and its
+registry entry immediately. Without firmware consent there is no catalog contact.
+
+The query sends only Navigator family, controller/plant model and installed
+firmware, after a random startup delay of up to 30 minutes, then every six hours
+plus up to 30 minutes of random delay. It sends no myIDM ID, operating counters,
+temperatures, credentials or other HA data. There is no persistent firmware queue;
+the integration keeps only the current result. HA may retain sensor states
+according to the local Recorder/backup configuration. The server uses metadata transiently and does not
+save a plant report. The connection IP is technically visible; short-lived rate
+identifiers expire within two hours at the next hourly cleanup. Both features
+have a prominent link to the full privacy notice before their consent switch.
+
+The catalog uses community telemetry observations only, never old diagnostic
+ZIPs. Matching requires the same Navigator/controller and known plant model,
+firmware prefix/channel and major line. Missing plant types match only other
+missing-type reports in that same known controller/software series. Test and
+stable channels remain separate. Ordering includes numeric build numbers.
+Unknown metadata or absent observations produce no version recommendation.
+
+This is not official IDM availability, installation permission or compatibility
+approval. Only IDM/your installer can assess and install firmware. Sharing
+telemetry helps build the catalog, but is not required to use firmware queries.
+Telemetry notice v3 remains unchanged; independent firmware consent uses
+`idm-firmware-v1`. The locally recorded consent time/revision is not sent in
+firmware queries. Only telemetry uploads carry their own identity and consent.
+
+[Privacy and delivery details](Telemetry).

@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.3 — 2026-11-07
+
+Optional plant telemetry and an independent firmware check are now available. Both remain off by default, with short consent notices linking to full privacy information. Reports survive restarts and uploads are spread across installations. Obsolete technician-code entities are removed on first setup.
+
 ## v0.26.2 — 2026-11-06
 
 The integration speaks five more languages: setup, options, services, repairs
