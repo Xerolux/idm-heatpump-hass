@@ -585,6 +585,10 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "assist_agent": ("Assistant", "Assistent"),
     },
     "binary_sensor": {
+        "firmware_update_observed": (
+            "Newer firmware observed (unconfirmed)",
+            "Neuere Firmware gesichtet (unbestätigt)",
+        ),
         "analysis_last_cycle_short": ("Last compressor cycle too short", "Letzter Verdichtertakt zu kurz"),
         "advisor_optimization_available": ("Advisor optimization available", "Advisor-Optimierung verfügbar"),
         "advisor_anomaly_detected": ("Advisor anomaly detected", "Advisor-Anomalie erkannt"),

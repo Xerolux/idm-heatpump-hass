@@ -16,6 +16,7 @@ from homeassistant.helpers.event import async_track_time_interval
 
 from .const import CONF_FIRMWARE_CHECK, CONF_FIRMWARE_CONSENT_AT, CONF_FIRMWARE_POLICY
 from .coordinator import IdmCoordinator, navigator_family
+from .firmware_notice import clear_notices, ensure_notice
 from .telemetry import _firmware_series, _label, _number
 
 FIRMWARE_URL = "https://idmtools.xerolux.de/api/telemetry/firmware"
@@ -69,6 +70,7 @@ class FirmwareObservations:
             await self.async_refresh_firmware()
 
     def stop(self) -> None:
+        clear_notices(self._hass, self._entry.entry_id)
         self._stopped = True
         self.firmware_result.clear()
         self._firmware_listeners.clear()
@@ -156,6 +158,7 @@ class FirmwareObservations:
                 "observations": _number(result.get("observations")),
                 "last_checked": datetime.fromtimestamp(self._last_firmware_check, UTC).isoformat(),
             }
+            ensure_notice(self._hass, self._entry, self.firmware_result)
         except (aiohttp.ClientError, TimeoutError, OSError, ValueError):
             _LOGGER.debug("IDM firmware observations unavailable; local plant operation is unaffected")
         finally:

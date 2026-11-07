@@ -360,3 +360,53 @@ async def test_manual_send_uses_frozen_outbox_and_replans_daily_slot():
         session.return_value.post.assert_called_once()
     assert telemetry._outbox is None
     assert 86400 <= telemetry._next_attempt - telemetry._last_attempt <= 90000
+
+
+async def test_restart_does_not_backfill_newer_analysis_without_elapsed_time():
+    clock = [1000.0]
+    with patch("custom_components.idm_heatpump.telemetry.time.monotonic", side_effect=lambda: clock[0]):
+        first, _, coordinator = make_telemetry()
+        clock[0] += 600
+        coordinator.operation_analysis.mode_durations["heating"] += 600
+        saved = first._serialize()
+        assert saved["counters"]["heating_seconds"] == 600
+        restored, _, newer = make_telemetry()
+        # The independent operating analysis was persisted ten minutes later.
+        newer.operation_analysis.mode_durations["heating"] = 1300
+        restored._store.async_load.return_value = saved
+        with patch("custom_components.idm_heatpump.telemetry.async_track_time_interval"):
+            await restored.async_start()
+        assert restored.payload()["counters"]["heating_seconds"] == 600
+        clock[0] += 60
+        newer.operation_analysis.mode_durations["heating"] += 60
+        assert restored.payload()["counters"]["heating_seconds"] == 660
+        assert restored.payload()["observed_hours"] == round(660 / 3600, 2)
+
+
+async def test_legacy_duration_window_is_omitted_until_success_without_changing_outbox():
+    telemetry, entry, _ = make_telemetry()
+    frozen = {**telemetry.payload(), "report_id": "a" * 32}
+    frozen["counters"]["heating_seconds"] = 9000
+    telemetry._store.async_load.return_value = {
+        "consent_at": entry.options[CONF_TELEMETRY_CONSENT_AT],
+        "observed_seconds": 3600,
+        "counters": {"heating_seconds": 9000, "modbus_polls": 90},
+        "outbox": frozen,
+    }
+    with patch("custom_components.idm_heatpump.telemetry.async_track_time_interval"):
+        await telemetry.async_start()
+    assert telemetry._outbox == frozen
+    assert "heating_seconds" not in telemetry.payload()["counters"]
+    assert telemetry.payload()["counters"]["modbus_polls"] == 90
+    assert telemetry._serialize()["duration_ready"] is False
+    telemetry._last_attempt = time.time() - 90
+    response = MagicMock(status=201)
+    context = MagicMock()
+    context.__aenter__ = AsyncMock(return_value=response)
+    context.__aexit__ = AsyncMock(return_value=None)
+    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession") as session:
+        session.return_value.post.return_value = context
+        assert await telemetry.async_send_now()
+        assert session.return_value.post.call_args.kwargs["json"] == frozen
+    assert telemetry._duration_ready is True
+    assert telemetry.payload()["counters"]["heating_seconds"] == 0

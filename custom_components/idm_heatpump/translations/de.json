@@ -880,7 +880,7 @@
       },
       "firmware": {
         "title": "Firmware-Abfrage",
-        "description": "**Gibt es eine neuere Firmware für deine Wärmepumpe?**\n\nDer Sensor **„Neueste gemeldete Firmware“** zeigt dir, ob bei vergleichbaren Anlagen eine neuere Version gemeldet wurde.\n\nDafür erhält **Xerolux nur Reglertyp, Anlagenmodell und Firmware-Version** – etwa alle sechs Stunden. Keine myIDM-ID oder Messwerte. Telemetrie ist dafür nicht nötig.\n\nDie Anzeige ist ein Community-Hinweis. Prüfen und installieren kann die Firmware nur IDM oder dein Fachbetrieb.\n\n**Freiwillig und jederzeit abschaltbar.** Ausschalten stoppt die Abfragen und entfernt den Sensor. Die lokale Steuerung läuft weiter.\n\n[Datenschutz, Anbieter und deine Rechte]({privacy_url})",
+        "description": "**Gibt es eine neuere Firmware für deine Wärmepumpe?**\n\nDer Sensor **„Neueste gemeldete Firmware“** zeigt dir, ob bei vergleichbaren Anlagen eine neuere Version gemeldet wurde.\n\nDafür erhält **Xerolux nur Reglertyp, Anlagenmodell und Firmware-Version** – etwa alle sechs Stunden. Keine myIDM-ID oder Messwerte. Telemetrie ist dafür nicht nötig.\n\nDie Anzeige ist ein Community-Hinweis. Prüfen und installieren kann die Firmware nur IDM oder dein Fachbetrieb.\n\n**Freiwillig und jederzeit abschaltbar.** Ausschalten stoppt die Abfragen und entfernt den Sensor. Die lokale Steuerung läuft weiter.\n\n[Datenschutz, Anbieter und deine Rechte]({privacy_url})\n\nUnter Diagnose erscheint zusätzlich „Neuere Firmware gesichtet (unbestätigt)“. Neuere passende Sichtungen lassen sich als Reparatur-Hinweis einmalig als gesehen bestätigen. Das installiert kein Update.",
         "data": {
           "firmware_check": "Firmware-Abfrage erlauben"
         }
@@ -1722,6 +1722,9 @@
       },
       "fault_heat_source_circuit": {
         "name": "Störung Wärmequellenkreis"
+      },
+      "firmware_update_observed": {
+        "name": "Neuere Firmware gesichtet (unbestätigt)"
       },
       "health_communication": {
         "name": "Kommunikationsproblem"
@@ -3526,6 +3529,22 @@
     "write_connection_failed": {
       "title": "IDM-Verbindung beim Registerschreiben fehlgeschlagen",
       "description": "Die Zustellung des Schreibvorgangs auf Register **{register}** an Adresse **{address}** konnte wegen eines Modbus-Verbindungsfehlers nicht bestätigt werden. Das ist keine Ablehnung der Registerfreigabe durch den Regler.\n\nTechnisches Detail: `{detail}`\n\nPrüfe das konfigurierte Ziel und den Port. Bei ModBridge oder einem anderen Proxy prüfe dessen Listener, Zielroute, Dienstverfügbarkeit und Verbindung zum Navigator. Bei einer direkten Verbindung prüfe die Modbus-TCP-Verfügbarkeit am Navigator und das Netzwerk.\n\nDiese Warnung verschwindet nach einem erfolgreichen Schreibvorgang auf dasselbe Register."
+    },
+    "firmware_observed": {
+      "title": "Neuere Firmware gesichtet – unbestätigt",
+      "description": "Installiert: **{installed}**. In passenden Community-Beobachtungen gesichtet: **{observed}**.\n\nDas ist eine Orientierung und keine Zusage, dass diese Version für deine Anlage verfügbar oder geeignet ist. iDM oder der autorisierte Fachbetrieb muss das prüfen und ein Update durchführen. Diese Integration installiert keine Wärmepumpen-Firmware.\n\nBestätige den Hinweis als gesehen. Dieselbe Version wird für dieses Gerät auch nach Neustarts nicht erneut gemeldet. Die Diagnose-Entitäten bleiben sichtbar.",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Gesehen bestätigen",
+            "description": "Ich habe den unverbindlichen Hinweis gesehen. Es wird kein Update ausgeführt."
+          }
+        }
+      }
+    },
+    "whats_new_0_26_4": {
+      "title": "Neu: Firmware-Orientierung für deine IDM-Anlage",
+      "description": "Mit freiwillig geteilten Berichten helfen wir einander, passende Firmware-Stände zu erkennen. Unter **Neu konfigurieren → Firmware-Abfrage (freiwillig)** kannst du den Vergleich separat aktivieren. Danach findest du unter Diagnose **Neueste gemeldete Firmware** und **Neuere Firmware gesichtet (unbestätigt)**. Eine neuere passende Sichtung kann zusätzlich einen bestätigbaren Hinweis auslösen.\n\nKeine Zusage von Verfügbarkeit oder Kompatibilität; Updates nur durch iDM beziehungsweise den autorisierten Fachbetrieb. Telemetrie und Firmware-Abgleich bleiben getrennt und standardmäßig aus.\n\n[Aktivierung und Erklärung](https://xerolux.github.io/idm-heatpump-hass/docs/de/telemetry/#firmware-orientierung)"
     }
   },
   "services": {

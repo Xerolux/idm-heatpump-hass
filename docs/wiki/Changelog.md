@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.4 — 2026-11-07
+
+Telemetry resumes counters and elapsed time at matching checkpoints after reloads. The private server adds source coverage, short-window and operating-duration consistency gates with weighted denominators. Legacy duration windows are omitted once without resetting operating history or changing frozen retries, consent or schedules.
+
 ## v0.26.3 — 2026-11-07
 
 Optional plant telemetry and an independent firmware check are now available. Both remain off by default, with short consent notices linking to full privacy information. Reports survive restarts and uploads are spread across installations. Obsolete technician-code entities are removed on first setup.

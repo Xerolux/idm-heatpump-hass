@@ -163,3 +163,17 @@ Der Container selbst darf nicht gemeinsam mit netcup auf einen veralteten Stand
 zurückgesetzt werden.
 
 Manueller Test: `idm_heatpump.send_telemetry` sendet mit bestehender Zustimmung einen Anlagenbericht (mindestens eine Minute Abstand) und plant den nächsten täglichen Versand neu. `idm_heatpump.check_firmware` fragt mit eigener Zustimmung den Firmware-Vergleich ab. Beide Aktionen verwenden `entry_id` und ändern keine Heizungsparameter.
+
+## Automatische Qualitätsprüfung
+
+Die private IDM-Tools-Auswertung unterscheidet Berichte von verschiedenen angegebenen myIDM-IDs. Sie zeigt Quellenabdeckung, Beobachtungsstunden, zusammengehörige Abfrage-/Fehlerzähler, Energiezuwächse und Qualitätsmerkmale je Versions-/Regelungs-/Firmware-Gruppe. Zeitfenster unter einer Stunde bleiben sichtbar, werden aber bei Energie- und Betriebszeitvergleichen ausgeschlossen. Betriebszeiten oberhalb der gerundeten Beobachtungsdauer werden markiert und nicht für Betriebsanteile verwendet oder nachträglich verändert. Null gemeldete Ereignisse beweisen keine vollständige Quellenabdeckung.
+
+Nach einem Neuladen werden gespeicherte Zähler und Beobachtungszeit gemeinsam mit aktuellen Quellen-Ausgangswerten fortgesetzt. Neuere Analyse-Speicherstände werden ohne passende Zeit nicht nachgetragen. Bei älteren Speicherständen entfallen Betriebszeiten einmalig bis zur Bestätigung des offenen Berichtsfensters; eingefrorene Wiederholungen bleiben unverändert. Betriebsverlauf in Home Assistant, Zustimmung, Versandplan und Übertragungsformat bleiben erhalten.
+
+## Firmware-Orientierung
+
+Unter **Einstellungen → Geräte & Dienste → IDM Heatpump → Neu konfigurieren → Firmware-Abfrage (freiwillig)** die separate Zustimmung aktivieren. Unter Diagnose am IDM-Gerät erscheinen **Neueste gemeldete Firmware** (Versionsnummer) und **Neuere Firmware gesichtet (unbestätigt)** (Ja/Nein; ohne passende Daten nicht verfügbar). Die Attribute zeigen installierte und gesichtete Version sowie den Zeitpunkt des Vergleichs. Unter **Entwicklerwerkzeuge → Aktionen → IDM Heatpump: Firmware jetzt prüfen** kann die Abfrage mit vorhandener Zustimmung manuell erfolgen.
+
+Eine neuere passende Sichtung löst zusätzlich einen Hinweis unter **Einstellungen → System → Reparaturen** aus. Mit **Gesehen bestätigen** wird genau diese Version für das Gerät dauerhaft quittiert, auch über Neustarts hinweg. Erst eine andere neuere Version kann erneut gemeldet werden. Das bestätigt nur das Lesen des Hinweises und führt kein Update aus.
+
+Community-Meldungen sind keine Zusage, dass die Version für deine Wärmepumpe verfügbar oder geeignet ist. iDM oder der autorisierte Fachbetrieb muss das prüfen und ein Update durchführen. Nutzer können mit freiwillig geteilten Berichten die Vergleichsbasis verbessern; die Firmware-Abfrage ist dennoch unabhängig von Telemetrie einschaltbar. Beide Zustimmungen bleiben freiwillig und standardmäßig aus.

@@ -148,3 +148,17 @@ private keys. New keys reside in the guest. Do not roll the journal container
 itself back to an obsolete history together with netcup.
 
 For a manual test, `idm_heatpump.send_telemetry` submits one report with existing consent, a one-minute cooldown and a newly reserved daily slot. `idm_heatpump.check_firmware` queries observations with its independent consent. Both actions take `entry_id` and never change plant settings.
+
+## Automatic quality screening
+
+The private IDM Tools summary separates report counts from distinct declared myIDM IDs. It shows per-counter availability, observation hours, matched poll/failure counters, paired energy increments and cohort quality flags. Windows shorter than one hour remain visible but are excluded from energy and operating-time comparisons. Operating durations exceeding the rounded observation window are flagged and excluded from operating shares, rather than normalized or overwritten. A zero event count does not prove complete source coverage.
+
+After a reload, telemetry resumes saved counters and elapsed time together at current source baselines. Independent newer analysis checkpoints are not backfilled without matching time. An upgrade from older checkpoints omits operating durations until the pending window is acknowledged; frozen retry reports remain byte-for-byte unchanged. This does not reset Home Assistant operating history or change consent, reporting schedules or the transmitted schema.
+
+## Firmware orientation
+
+Under **Settings → Devices & services → IDM Heatpump → Reconfigure → Firmware query (optional)**, enable the separate consent. The IDM device Diagnostics section then shows **Latest reported firmware** (version number) and **Newer firmware observed (unconfirmed)** (on/off; unavailable without matching data). Attributes include installed/observed versions and the comparison time. Use **Developer tools → Actions → IDM Heatpump: Check firmware now** to request a manual comparison with existing consent.
+
+A newer matching observation also raises a notice under **Settings → System → Repairs**. **Acknowledge seeing this notice** remembers that exact version for this device, including across restarts. Only a different newer version can trigger another notice. Acknowledging never performs an update.
+
+Community reports do not establish availability or compatibility for a particular plant. iDM or an authorized installer must verify and perform updates. Voluntarily sharing reports improves the community comparison basis; firmware queries remain independently available without telemetry. Both consent settings remain optional and off by default.

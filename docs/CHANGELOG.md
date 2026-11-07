@@ -13,6 +13,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.4] - 2026-11-07
+
+### ⚠️ Upgrade notes
+
+- **One transitional telemetry window omits operating durations**: upgrading an older local checkpoint preserves communication and energy counters, consent, schedule and frozen retries. Operating durations resume after that window is acknowledged, because old checkpoints may combine mismatched time boundaries. Existing Home Assistant operating-history and energy stores are preserved. The update requires Home Assistant 2026.11.0 or newer.
+
+### 🐛 Bugfixes
+
+- **Keep telemetry counters aligned with observation time after reloads**: independent analysis stores can be newer than the telemetry checkpoint. Restoring their extra increments previously added operating time without its observation duration. Resume the saved counter/time pair at current source baselines instead. Regression coverage exercises mismatched checkpoints, subsequent increments, migration and unchanged frozen retries.
+
+### ✨ New
+
+- **Newer firmware spotted? Get a clear, unconfirmed orientation**: enable the independent [firmware query](https://xerolux.github.io/idm-heatpump-hass/docs/telemetry/#firmware-orientation) to see installed and community-observed versions under Diagnostics. A newer matching observation also raises a Repairs notice; acknowledge it once per device/version, including across restarts. Community sharing improves matching. Availability is not guaranteed: only iDM or an authorized installer can verify and perform updates.
+
+
+- **Automatic private telemetry quality screening**: the IDM Tools backend flags short windows, operating durations exceeding observed time, missing sources/model metadata and inconsistent denominators. Overall and version/controller/firmware cohorts show field coverage and matched communication, energy and operating-time denominators. Short windows and invalid operating durations stay visible but do not produce misleading daily operating shares; original reports remain unchanged.
+
 ## [0.26.3] - 2026-11-07
 
 ### ⚠️ Upgrade notes

@@ -880,7 +880,7 @@
       },
       "firmware": {
         "title": "Firmware query",
-        "description": "**Is there newer firmware for your heat pump?**\n\nThe **Latest reported firmware** sensor shows whether a newer version has been reported by comparable plants.\n\nFor this, **Xerolux receives only controller type, plant model and firmware version**, roughly every six hours. No myIDM ID or measurements. Telemetry is not required.\n\nThis is a community observation. Only IDM or your installer can assess and install firmware.\n\n**Optional and easy to turn off.** Disabling stops queries and removes the sensor. Local control keeps working.\n\n[Privacy, operator and your rights]({privacy_url})",
+        "description": "**Is there newer firmware for your heat pump?**\n\nThe **Latest reported firmware** sensor shows whether a newer version has been reported by comparable plants.\n\nFor this, **Xerolux receives only controller type, plant model and firmware version**, roughly every six hours. No myIDM ID or measurements. Telemetry is not required.\n\nThis is a community observation. Only IDM or your installer can assess and install firmware.\n\n**Optional and easy to turn off.** Disabling stops queries and removes the sensor. Local control keeps working.\n\n[Privacy, operator and your rights]({privacy_url})\n\nDiagnostics also shows Newer firmware observed (unconfirmed). A newer matching observation can be acknowledged once in Repairs. This never installs an update.",
         "data": {
           "firmware_check": "Allow firmware queries"
         }
@@ -1722,6 +1722,9 @@
       },
       "fault_heat_source_circuit": {
         "name": "Heat source circuit fault"
+      },
+      "firmware_update_observed": {
+        "name": "Newer firmware observed (unconfirmed)"
       },
       "health_communication": {
         "name": "Communication problem"
@@ -3526,6 +3529,22 @@
     "write_connection_failed": {
       "title": "IDM register write connection failed",
       "description": "Delivery of the write to register **{register}** at address **{address}** could not be confirmed because the Modbus connection failed. This is not a register-access rejection from the controller.\n\nTechnical detail: `{detail}`\n\nCheck the configured endpoint and port. If using ModBridge or another proxy, check its listener, upstream route, service availability and connection to the Navigator. For a direct connection, check Navigator Modbus TCP availability and the network.\n\nThis warning clears after a successful write to the same register."
+    },
+    "firmware_observed": {
+      "title": "Newer firmware observed — unconfirmed",
+      "description": "Installed: **{installed}**. Seen in matching community observations: **{observed}**.\n\nThis is orientation, not confirmation of availability or compatibility for your plant. iDM or an authorized installer must verify and perform any update. This integration never installs heat-pump firmware.\n\nAcknowledge seeing this notice. This version will not be announced again for this device, including after restarts. Diagnostic entities remain visible.",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Acknowledge seeing this notice",
+            "description": "I have seen the unconfirmed observation. No update will be performed."
+          }
+        }
+      }
+    },
+    "whats_new_0_26_4": {
+      "title": "New: firmware orientation for your IDM plant",
+      "description": "Voluntarily shared plant reports help the community observe matching firmware versions. Enable the independent comparison under **Reconfigure → Firmware query (optional)**. The Diagnostics section then shows **Latest reported firmware** and **Newer firmware observed (unconfirmed)**. A newer matching observation can also raise an acknowledgement notice.\n\nAvailability and compatibility are not guaranteed; updates require iDM or an authorized installer. Telemetry and firmware comparison remain separate and off by default.\n\n[Activation and explanation](https://xerolux.github.io/idm-heatpump-hass/docs/telemetry/#firmware-orientation)"
     }
   },
   "services": {

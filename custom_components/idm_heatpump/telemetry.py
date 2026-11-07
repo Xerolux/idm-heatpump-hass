@@ -37,6 +37,7 @@ TELEMETRY_URL = "https://idmtools.xerolux.de/api/telemetry"
 TELEMETRY_PRIVACY_URL = "https://idmtools.xerolux.de/telemetry.html"
 TELEMETRY_POLICY = "idm-telemetry-v3"
 _INTERVAL = 86400
+_DURATIONS = {f"{mode}_seconds" for mode in ("heating", "cooling", "dhw", "defrost")}
 
 
 def valid_myidm(value: object) -> bool:
@@ -88,6 +89,7 @@ class Telemetry:
         self._next_attempt = 0.0
         self._started = time.monotonic()
         self._elapsed = 0.0
+        self._duration_ready = True
         self._pending: dict[str, float] = {}
         self._outbox: dict[str, Any] | None = None
         self._outbox_elapsed = 0.0
@@ -166,6 +168,8 @@ class Telemetry:
         }
         for key, value in self._pending.items():
             counters.setdefault(key, value)
+        if not self._duration_ready:
+            counters = {key: value for key, value in counters.items() if key not in _DURATIONS}
         counters["web_outages"] = self._web_outages
         info = coordinator.model_info
         capabilities = {key: bool(getattr(info, f"has_{key}", False)) for key in ("solar", "pv", "cascade", "isc")}
@@ -205,16 +209,11 @@ class Telemetry:
             self._last_attempt = min(previous, now) if previous is not None else now
             self._pending = self._numeric_mapping(stored.get("counters"))
             self._elapsed = _number(stored.get("observed_seconds")) or 0.0
-            saved_totals = self._numeric_mapping(stored.get("totals"))
-            for key, value in saved_totals.items():
-                # API polling totals restart at zero; plant analysis/energy
-                # counters are themselves persistent and continue across boots.
-                if (
-                    key not in ("modbus_polls", "modbus_failures")
-                    and key in self._baseline
-                    and value <= self._baseline[key]
-                ):
-                    self._baseline[key] = value
+            # Independent analysis stores may be newer than this checkpoint.
+            # Backfilling their extra increments without matching elapsed time
+            # makes runtime exceed the observation window after reloads.
+            # Resume the saved counters and elapsed pair at current baselines.
+            self._duration_ready = stored.get("timebase") == 2 and stored.get("duration_ready") is True
             saved_errors = stored.get("error_transitions", {})
             if isinstance(saved_errors, dict):
                 self._errors = {
@@ -299,6 +298,8 @@ class Telemetry:
             "counters": self.payload()["counters"],
             "totals": self._totals(),
             "observed_seconds": self._elapsed + time.monotonic() - self._started,
+            "timebase": 2,
+            "duration_ready": self._duration_ready,
             "error_transitions": dict(self._errors),
             "last_error": self._last_error,
             "outbox": self._outbox,
@@ -399,6 +400,7 @@ class Telemetry:
                 self._elapsed = max(0, self._elapsed + time.monotonic() - self._started - self._outbox_elapsed)
                 self._started = time.monotonic()
                 self._baseline = self._totals()
+                self._duration_ready = True
                 self._outbox = None
                 self._outbox_elapsed = 0
                 await self._store.async_save(self._serialize())
