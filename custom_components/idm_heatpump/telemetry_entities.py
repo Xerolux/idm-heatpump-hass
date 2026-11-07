@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorEntityDescription
 from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
@@ -133,6 +133,7 @@ class IdmFirmwareObservedBinarySensor(_IdmFirmwareEntityBase, BinarySensorEntity
 
     def __init__(self, coordinator: IdmCoordinator) -> None:
         super().__init__(coordinator, BINARY_KEY)
+        self.entity_description = BinarySensorEntityDescription(key=BINARY_KEY, translation_key=BINARY_KEY)
 
     @property
     def available(self) -> bool:

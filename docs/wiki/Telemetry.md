@@ -162,3 +162,5 @@ Under **Settings → Devices & services → IDM Heatpump → Reconfigure → Fir
 A newer matching observation also raises a notice under **Settings → System → Repairs**. **Acknowledge seeing this notice** remembers that exact version for this device, including across restarts. Only a different newer version can trigger another notice. Acknowledging never performs an update.
 
 Community reports do not establish availability or compatibility for a particular plant. iDM or an authorized installer must verify and perform updates. Voluntarily sharing reports improves the community comparison basis; firmware queries remain independently available without telemetry. Both consent settings remain optional and off by default.
+
+With the optional device hierarchy enabled, both firmware-comparison entities are on the **Diagnostics** subdevice beside the installed software version. Moving them preserves their entity IDs. Without the hierarchy, they remain diagnostic entities on the main device.

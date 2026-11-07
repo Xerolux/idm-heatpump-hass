@@ -13,6 +13,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.5] - 2026-11-07
+
+### ⚠️ Upgrade notes
+
+- **Firmware comparisons move into the logical Diagnostics device** when the optional device hierarchy is enabled, next to the installed software version. Their unique IDs and entity history are preserved. Without the hierarchy they remain diagnostic entities on the main device. Existing firmware consent, acknowledgement history and report schedules remain unchanged.
+
+### 🐛 Bugfixes
+
+- **Recognize both Navigator 10 firmware prefixes**: the controller-family signal now accepts `NAV10_` and `T_NAV10_` while rejecting lookalike prefixes such as `NAV100_`. An HTTP-compatible web endpoint alone is not a Navigator 2.0 identification. Explicit model overrides retain their existing precedence; no Modbus addresses or controller settings are changed.
+
+- **Keep installed and observed firmware together**: the latest reported version and the unconfirmed newer-version indicator now resolve to the Diagnostics subdevice instead of being split between that device and the main plant. [Activation and explanation](https://xerolux.github.io/idm-heatpump-hass/docs/telemetry/#firmware-orientation) remain linked; community observations still do not establish plant-specific availability or authorize an installation.
+
 ## [0.26.4] - 2026-11-07
 
 ### ⚠️ Upgrade notes

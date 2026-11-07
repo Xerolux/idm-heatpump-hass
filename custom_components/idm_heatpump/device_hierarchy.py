@@ -113,6 +113,8 @@ _DIAGNOSTIC_KEYS = frozenset(
         "modbus_poll_duration",
         "navigator_version",
         "software_version",
+        "telemetry_latest_firmware",
+        "firmware_update_observed",
     }
 )
 
