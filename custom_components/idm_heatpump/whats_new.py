@@ -68,6 +68,7 @@ def ensure_whats_new_issue(hass: HomeAssistant) -> None:
         is_persistent=True,
         severity=ir.IssueSeverity.WARNING,
         translation_key=WHATS_NEW_ISSUE_ID,
+        translation_placeholders={"activation_url": WHATS_NEW_LEARN_MORE_URL},
         learn_more_url=WHATS_NEW_LEARN_MORE_URL,
     )
     _LOGGER.debug("IDM what's-new notice ensured (%s)", WHATS_NEW_ISSUE_ID)

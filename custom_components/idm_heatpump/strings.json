@@ -3544,7 +3544,7 @@
     },
     "whats_new_0_26_4": {
       "title": "New: firmware orientation for your IDM plant",
-      "description": "Voluntarily shared plant reports help the community observe matching firmware versions. Enable the independent comparison under **Reconfigure → Firmware query (optional)**. The Diagnostics section then shows **Latest reported firmware** and **Newer firmware observed (unconfirmed)**. A newer matching observation can also raise an acknowledgement notice.\n\nAvailability and compatibility are not guaranteed; updates require iDM or an authorized installer. Telemetry and firmware comparison remain separate and off by default.\n\n[Activation and explanation](https://xerolux.github.io/idm-heatpump-hass/docs/telemetry/#firmware-orientation)"
+      "description": "Voluntarily shared plant reports help the community observe matching firmware versions. Enable the independent comparison under **Reconfigure → Firmware query (optional)**. The Diagnostics section then shows **Latest reported firmware** and **Newer firmware observed (unconfirmed)**. A newer matching observation can also raise an acknowledgement notice.\n\nAvailability and compatibility are not guaranteed; updates require iDM or an authorized installer. Telemetry and firmware comparison remain separate and off by default.\n\n[Activation and explanation]({activation_url})"
     }
   },
   "services": {

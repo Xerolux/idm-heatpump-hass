@@ -3544,7 +3544,7 @@
     },
     "whats_new_0_26_4": {
       "title": "Neu: Firmware-Orientierung für deine IDM-Anlage",
-      "description": "Mit freiwillig geteilten Berichten helfen wir einander, passende Firmware-Stände zu erkennen. Unter **Neu konfigurieren → Firmware-Abfrage (freiwillig)** kannst du den Vergleich separat aktivieren. Danach findest du unter Diagnose **Neueste gemeldete Firmware** und **Neuere Firmware gesichtet (unbestätigt)**. Eine neuere passende Sichtung kann zusätzlich einen bestätigbaren Hinweis auslösen.\n\nKeine Zusage von Verfügbarkeit oder Kompatibilität; Updates nur durch iDM beziehungsweise den autorisierten Fachbetrieb. Telemetrie und Firmware-Abgleich bleiben getrennt und standardmäßig aus.\n\n[Aktivierung und Erklärung](https://xerolux.github.io/idm-heatpump-hass/docs/de/telemetry/#firmware-orientierung)"
+      "description": "Mit freiwillig geteilten Berichten helfen wir einander, passende Firmware-Stände zu erkennen. Unter **Neu konfigurieren → Firmware-Abfrage (freiwillig)** kannst du den Vergleich separat aktivieren. Danach findest du unter Diagnose **Neueste gemeldete Firmware** und **Neuere Firmware gesichtet (unbestätigt)**. Eine neuere passende Sichtung kann zusätzlich einen bestätigbaren Hinweis auslösen.\n\nKeine Zusage von Verfügbarkeit oder Kompatibilität; Updates nur durch iDM beziehungsweise den autorisierten Fachbetrieb. Telemetrie und Firmware-Abgleich bleiben getrennt und standardmäßig aus.\n\n[Aktivierung und Erklärung]({activation_url})"
     }
   },
   "services": {
