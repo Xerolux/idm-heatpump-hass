@@ -3,15 +3,40 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 import textwrap
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MARKER = "> **Help improve IDM Heatpump: share a diagnostic capture.**"
+
+
+def _has_capture_link(markdown: str) -> bool:
+    """Check actual Markdown targets, including scheme, authority and path."""
+    expected = urlsplit("https://idmtools.xerolux.de/")
+    targets = re.findall(r"\]\((https?://[^)\s]+)\)", markdown)
+    return any(urlsplit(target) == expected for target in targets)
+
+
+@pytest.mark.parametrize(
+    "target",
+    [
+        "https://evil.invalid/?next=https://idmtools.xerolux.de/",
+        "https://idmtools.xerolux.de@evil.invalid/",
+        "https://idmtools.xerolux.de.evil.invalid/",
+        "http://idmtools.xerolux.de/",
+        "https://idmtools.xerolux.de/other",
+    ],
+)
+def test_capture_link_rejects_misleading_targets(target: str) -> None:
+    assert not _has_capture_link(f"[https://idmtools.xerolux.de/]({target})")
+    assert not _has_capture_link("Plain text: https://idmtools.xerolux.de/")
+    assert _has_capture_link("[Share a capture](https://idmtools.xerolux.de/)")
 
 
 @pytest.mark.parametrize("mode", ["changelog", "curated", "already_present"])
@@ -40,7 +65,7 @@ def test_release_generator_keeps_one_data_request(tmp_path: Path, mode: str) -> 
     result = (tmp_path / "temp_release_notes.md").read_text(encoding="utf-8")
     assert result.count(MARKER) == 1
     assert result.index(MARKER) < result.index("### ⚠️ Upgrade notes")
-    assert "https://idmtools.xerolux.de/" in result
+    assert _has_capture_link(result)
     assert "voluntary" in result and "only to" in result
     assert "90 days" in " ".join(result.replace(">", "").split())
     assert "complete anonymity is not guaranteed" in result
