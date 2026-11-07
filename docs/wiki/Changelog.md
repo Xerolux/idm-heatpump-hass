@@ -7,6 +7,8 @@ This page only summarizes recent milestones.
 
 ## v0.26.4 — 2026-11-07
 
+**New: firmware orientation with acknowledgement.** The diagnostic Newer firmware observed (unconfirmed) entity shows matching community observations. A newer version also creates a Repairs notice that can be acknowledged once per device/version. [Activation and explanation](https://xerolux.github.io/idm-heatpump-hass/docs/telemetry/#firmware-orientation). Availability and compatibility are unconfirmed; only iDM or an authorized installer verifies and performs a firmware update.
+
 Telemetry resumes counters and elapsed time at matching checkpoints after reloads. The private server adds source coverage, short-window and operating-duration consistency gates with weighted denominators. Legacy duration windows are omitted once without resetting operating history or changing frozen retries, consent or schedules.
 
 ## v0.26.3 — 2026-11-07
