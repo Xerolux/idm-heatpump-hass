@@ -454,6 +454,7 @@ async def test_firmware_only_works_without_identity_or_telemetry_store(smoke_has
 async def test_retired_technician_registry_cleanup_once(smoke_hass, patched_client, smoke_entry) -> None:
     """Remove historical unique IDs in a real registry, including renamed sensors."""
     from types import SimpleNamespace
+
     from custom_components.idm_heatpump.device_hierarchy import cleanup_removed_technician_entities
 
     await smoke_hass.config_entries.async_add(smoke_entry)
