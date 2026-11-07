@@ -459,7 +459,9 @@ async def test_retired_technician_registry_cleanup_once(smoke_hass, patched_clie
 
     await smoke_hass.config_entries.async_add(smoke_entry)
     await smoke_hass.async_block_till_done()
-    smoke_hass.config_entries.async_update_entry(smoke_entry, data={k: v for k, v in smoke_entry.data.items() if k != "technician_entities_removed_0263"})
+    smoke_hass.config_entries.async_update_entry(
+        smoke_entry, data={k: v for k, v in smoke_entry.data.items() if k != "technician_entities_removed_0263"}
+    )
     registry = er.async_get(smoke_hass)
     old = registry.async_get_or_create(
         "sensor",
@@ -478,4 +480,3 @@ async def test_retired_technician_registry_cleanup_once(smoke_hass, patched_clie
     assert smoke_entry.data["technician_entities_removed_0263"] is True
     cleanup_removed_technician_entities(smoke_hass, coordinator)
     assert registry.async_get(keep.entity_id) is not None
-
