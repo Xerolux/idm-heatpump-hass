@@ -7,6 +7,8 @@ Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
 ## v0.26.4 — 2026-11-07
 
+**Neu: Firmware-Orientierung mit bestätigbarem Hinweis.** Die Diagnose-Entität „Neuere Firmware gesichtet (unbestätigt)“ zeigt passende Community-Sichtungen. Eine neuere Version erzeugt zusätzlich einen Reparatur-Hinweis, der einmalig als gesehen bestätigt werden kann. [Aktivierung und Erklärung](https://xerolux.github.io/idm-heatpump-hass/docs/de/telemetry/#firmware-orientierung). Keine Zusage der Verfügbarkeit oder Kompatibilität: Nur iDM beziehungsweise der autorisierte Fachbetrieb prüft und installiert ein Firmware-Update.
+
 Die Telemetrie setzt Zähler und Beobachtungszeit nach dem Neuladen mit passenden Speicherständen fort. Die private Serverauswertung prüft Quellenabdeckung, kurze Zeitfenster und widersprüchliche Betriebszeiten und verwendet passende Nenner. Alte Betriebszeitfenster entfallen einmalig; Betriebsverlauf, eingefrorene Wiederholungen, Zustimmung und Versandplan bleiben erhalten.
 
 ## v0.26.3 — 2026-11-07
