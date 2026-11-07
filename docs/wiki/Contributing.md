@@ -23,8 +23,9 @@ We welcome contributions to this project!
 ## Language
 
 The project writes in English: code, comments, documentation, changelog entries,
-commit messages and pull request descriptions. German belongs only in
-`README_de.md` and in the Home Assistant `de` translations. Run
+commit messages and pull request descriptions. German belongs in
+`README_de.md`, the Home Assistant `de` translations and the German wiki mirror
+under `docs/wiki/de/`. English wiki pages remain the source of truth. Run
 `python scripts/check_documentation_language.py` before opening a pull request —
 `tests/test_documentation_language.py` fails the build on German prose.
 
@@ -45,3 +46,17 @@ commit messages and pull request descriptions. German belongs only in
 ## License
 
 By contributing, you agree that your code will be published under the MIT License.
+
+## Keep documentation with the code
+
+Every new feature, behavior-changing fix and field discovery belongs on the
+relevant English wiki page and its German mirror. Include setup, defaults,
+actions, privacy and limitations. Link evidence and open questions in the
+[findings register](Findings-and-Documentation). Register new pages in the
+website navigation as well.
+
+`python scripts/check_wiki_coverage.py` reports new or changed source modules,
+missing language mirrors and undocumented actions. Only after reviewing both
+languages, run `python scripts/check_wiki_coverage.py --update` and inspect
+`docs/wiki-coverage.json`. Also run
+`python scripts/check_documentation_versions.py` for version claims.

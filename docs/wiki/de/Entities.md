@@ -283,7 +283,7 @@ ausgewertet (live verifiziert auf Firmware jsonVersion 11, September 2026):
 
 #### Verbindungsstatus
 
-Zwei diagnostische Entitäten machen die tatsächliche Verbindung auf dem
+Diagnostische Entitäten machen die tatsächliche Verbindung auf dem
 Dashboard sichtbar — sie existieren in jedem Verbindungsmodus, ein Fallback
 fällt so sofort ins Auge:
 
@@ -847,3 +847,11 @@ Firmware-Einwilligung `idm-firmware-v1`. Deren Zeitpunkt und Fassung werden nur
 lokal gespeichert und nicht bei der Firmware-Abfrage übertragen.
 
 [Datenschutz und Übertragung](Telemetry).
+
+Bei aktivierter Gerätehierarchie liegen **Zuletzt gemeldete Firmware** und der
+Indikator für eine unbestätigte neuere Version im logischen Gerät **Diagnose**
+neben der installierten Softwareversion. Ohne Hierarchie bleiben es
+Diagnose-Entitäten am Anlagengerät. Unique-IDs und Entitätshistorie bleiben
+erhalten. Eine passende neuere Beobachtung kann einen Reparaturhinweis auslösen;
+die Bestätigung wird je Gerät/Version gespeichert.
+Siehe [Aktivierung und Einordnung](Telemetry#firmware-orientierung).

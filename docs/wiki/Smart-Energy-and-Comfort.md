@@ -425,6 +425,10 @@ The downloaded diagnostics include the installed integration,
 versions. See [Troubleshooting](Troubleshooting#smart-features-and-beta-upgrades)
 if entities or source readings are missing.
 
-## Experimental AI adviser (upcoming)
+## Experimental AI adviser
 
-The experimental adviser provides daily/weekly reports and explanations of health and efficiency. It is off by default and has no plant control tools or voice exposure. Ollama is local; v0.17.2-b10 adds separately consented OpenAI and Z.ai reports with bounded requests. See [setup, report actions, data coverage and limitations](Experimental-AI-Adviser).
+The optional, read-only adviser creates daily and weekly reports, plant checks
+and efficiency reviews. Local measured-data reports without model calls are the
+default. Free-form explanations through Ollama, an HA AI Task entity or a
+separately consented cloud provider can be enabled additionally. Reports never
+control the plant. See [setup, actions, data coverage and limits](Experimental-AI-Adviser).

@@ -44,28 +44,25 @@ controllers and logic blocks keep working — the gateway is just gone.
 | | |
 |---|---|
 | **Home Assistant KNX integration** | Set up and connected to a gateway or tunnel |
-| **IDM Heatpump integration** | Running over Modbus (a web-only entry has no register values to publish) |
+| **IDM Heatpump integration** | Running over Modbus or Navigator 10/Pro web-only with bridged snapshot values |
 | **Free KNX main group** | The catalogue needs 1000 consecutive group addresses |
 
 ---
 
 ## Where it lives in the UI
 
-The bridge is part of the integration's **options**, so it appears in two
-places and nowhere else:
+Configure the bridge through guided feature selection: during initial setup,
+through **Configure**, or through **Reconfigure → Features**. Select **KNX
+bridge** to edit activation, send/receive permissions, base address, groups and
+overrides. The separate connection page edits host and access settings, not
+the bridge mapping.
 
-| Flow | KNX bridge |
-|---|---|
-| Initial setup (adding the integration) | Yes — after the main options step |
-| **Configure** on an existing entry | Yes — same step, prefilled with what is stored |
-| **Reconfigure** menu | No. That menu edits connection settings (host, port, slave ID) and runs diagnostics; it does not touch options at all, the same way room temperature forwarding and the web supplement are not there either. |
-
-Switching the bridge off keeps the configured base address, object groups and
-overrides, so turning it back on does not cost you the ETS mapping.
-
-In **web-only mode** the bridge stays off regardless of the setting: it serves
-Modbus register values, which a web-only entry does not read. The log says so
-at startup.
+Turning the bridge off preserves its base address, groups and overrides.
+In **web-only**, available web values bridged into the register snapshot can
+be published. Commands work only for supported Navigator 10/Pro web controls;
+missing values are not invented. Modbus-only functions such as GLT inputs do
+not become available through this bridge.
+See [Protocol capabilities](Protocol-Capabilities).
 
 ## Enabling it
 

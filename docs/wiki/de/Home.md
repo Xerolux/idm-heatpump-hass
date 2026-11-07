@@ -30,7 +30,7 @@ Die **IDM-Heatpump-Home-Assistant-Integration** verbindet [Home Assistant](https
 | **Socket-Backend** | tmodbus[async-serial]>=0.6.2 |
 | **Geräte-/Web-Bibliothek** | idm-heatpump-api[web]==2.16.0 |
 | **Lizenz** | MIT |
-| **Sprachen** | DE, EN |
+| **Sprachen** | DE, EN; Einrichtung und Aktionsoberflächen zusätzlich ES, IT, RO, CS, PL |
 | **Entitäten** | Modell- und konfigurationsabhängige Sensoren, Binärsensoren, Zahl-Entitäten, Auswahl-Entitäten, Schalter-Entitäten, Klima-Entitäten, Warmwasserbereiter und Buttons |
 
 ---
@@ -53,37 +53,39 @@ CI, Release-Prüfung und Pages-Veröffentlichung gleichen aktuelle Angaben mit
 dem ausgecheckten Manifest ab. Die Bibliotheksautomatik synchronisiert sie;
 veröffentlichte Changelogs und Release-Nachweise bleiben historische Dokumente.
 
-### Zum Testen verfügbar: Differenzregelung (0.20.1-b1)
+### Aktuell in der 0.26-Reihe
 
-Im Navigator differenztemperaturgeregelte Kreise können jetzt
-**Speichertemperatur, Referenztemperatur, ihre vorzeichenbehaftete Differenz und
-den Betriebsstatus** in Home Assistant anzeigen. Normale Heizungsregler werden
-für diese Kreise ausgeblendet. Aktiviere die manuelle Auswahl je Kreis bei der
-Einrichtung oder Neukonfiguration; die Reglerkonfiguration bleibt unverändert.
-
-Teste [Beta 0.20.1-b1](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.20.1-b1)
-mit der [Konfigurationsanleitung](Configuration#differenztemperaturgeregelte-heizkreise).
-Beachte die [Entitätszuordnung und Grenzen](Entities#differenztemperaturgeregelte-heizkreise)
-vor Dashboard-Anpassungen. Die Bestätigung auf Hardware mit Differenzregelung
-steht noch aus; Hysterese- und Schwellenregler sind nicht enthalten.
-
-### Neu in 0.19.0
-
-0.19.0 macht den **Navigator 1.0/1.7 zum vollwertigen Familienmitglied** und gibt der **Photovoltaik ein Gesicht**. Alles bleibt lokal; keine Entity-ID ändert sich.
+Die aktuelle Funktionsübersicht umfasst:
 
 | Funktion | Was du bekommst |
 |---------|-----------------|
-| Schreibbarer Block für Navigator 1.0/1.7 | System- und Heizkreis-Betriebsarten, Raum-/Vorlaufsollwerte, Heizkurven, Grenzen und Bivalenzpunkte aus der offiziellen Parametertabelle |
-| Warmwasser-Karte für Navigator 1.0/1.7 | Warmwasserbereiter-Entität mit dem capture-verifizierten Frischwasser-Sollwert (FW030-Float-Paar) und der Speichertemperatur |
-| Firmware-ehrliche Messwerte | Messwerte außerhalb des dokumentierten Registerbereichs werden nicht mehr angezeigt, sondern melden die Entität nicht verfügbar |
-| Diagnose je Register | Der Diagnoseexport listet jedes Register mit Leseurteil, Rohwörtern und Ablehnungsgrund |
-| PV-Sichtbarkeit | Abgeleitete PV-Überschuss-Diagnose, der Anforderungsgrund des Navigator 10 aus seinem Web-Interface und eine eigene *Photovoltaik*-Gerätegruppe |
-| Solar-Abschaltung | Anlagen ohne Kollektoren können das Solarmodul abschalten — Abfragen und leere Gerätegruppe verschwinden |
-| Zweisprachige Dokumentation | Deutsche Spiegel aller 21 Wiki-Seiten unter `/docs/de/…`, der EN/DE-Wechsel liegt in der URL |
+| Netzwerksuche bei der Einrichtung | Modbus-TCP-Endpunkte im gewählten IPv4-Subnetz suchen und die gefundene Adresse übernehmen; manuelle Eingabe bleibt möglich |
+| Freiwillige Anlagenberichte | Separates Opt-in für tägliche Anlagenberichte; Datenumfang, Speicherung und Löschung erklärt [Telemetrie und Datenschutz](Telemetry) |
+| Unabhängige Firmware-Abfrage | Installierte und von der Community beobachtete Firmware vergleichen; separat aktivierbar, ohne automatische Installation oder Verfügbarkeitsgarantie |
+| PV-Nullwert-Workaround | Optional gültige 0 W als 10 W weiterleiten, wenn der Navigator sonst Meldung 20300 ausgibt; kann die PV-Anzeige und Statistik des Reglers beeinflussen |
+| Weitere UI-Sprachen | Einrichtung, Optionen, Aktionen, Reparaturen und Fehlertexte zusätzlich auf Spanisch, Italienisch, Rumänisch, Tschechisch und Polnisch; Entitätsnamen bleiben Deutsch/Englisch |
+| Installateur-Checkliste | [Druckbare Vorbereitung](Installer-Checklist) für Modbus TCP, Netzwerk, GLT/PV und Web-Zugang |
 
-### Neu in 0.18.0
+Ab dieser Integrationslinie ist **Home Assistant 2026.11.0 oder neuer** erforderlich.
+Details und Änderungen zwischen einzelnen Versionen stehen im [Changelog](Changelog).
 
-0.18.0 liefert zwei Funktionspakete im Fokus — das optionale **Smart Energy & Comfort**-Paket und den experimentellen **KI-Anlagenberater** — plus eine geführte Einrichtung, die das lange Optionsformular ersetzt. Alles bleibt standardmäßig lokal, und jede automatische Steuerung bleibt aus, bis sie ausdrücklich aktiviert wird.
+### Differenztemperaturgeregelte Kreise
+
+Für im Navigator entsprechend konfigurierte Kreise zeigt Home Assistant
+Speicher- und Referenztemperatur, die vorzeichenbehaftete Differenz und den
+Betriebsstatus. Wähle den Kreis sowohl in der normalen Heizkreisliste als auch
+in der Differenzregelung aus. Normale Heizungsregler werden für diese Kreise
+ausgeblendet; die Reglerkonfiguration wird nicht verändert.
+Siehe [Konfiguration](Configuration#differenztemperaturgeregelte-heizkreise)
+und [Entitätszuordnung und Grenzen](Entities#differenztemperaturgeregelte-heizkreise).
+Die Bestätigung auf Hardware mit Differenzregelung steht noch aus;
+Hysterese- und Schwellenregler sind nicht enthalten.
+
+### Smart Energy, Komfort und KI-Berichte
+
+Optionale Energieauswertung, Komfortfunktionen und der experimentelle
+KI-Berater ergänzen die lokale Anlagenintegration. Automatische Steuerungen
+bleiben bis zur ausdrücklichen Aktivierung ausgeschaltet.
 
 <p align="center">
   <img src="../images/smart-energy-comfort-overview.svg" alt="Smart-Energy-&-Comfort-Übersicht: Energie und Kosten, Health Monitor und Empfehlungen, Komfortzeitpläne und PV-Boost, externe Leistungsweiterleitung" width="860">
@@ -126,7 +128,7 @@ Datenschutz und das Dashboard.
 - **KNX-Bridge** *(optional)*: Bedient die IDM-KNX-Kommunikationsobjekte — mit denselben Objektnummern, Datenpunkttypen und Richtungen wie IDMs ETS-Beispielprojekt — über die Home-Assistant-KNX-Integration, sodass das Weinzierl-KNX-IP-BAOS-Gateway-Modul nicht mehr benötigt wird. Siehe [KNX-Bridge](KNX-Bridge).
 - **Raumtemperatur-Weiterleitung**: Optionales Weiterleiten von Home-Assistant-Temperatursensoren in die externen IDM-Raumtemperatur-Register je Heizkreis
 - **Lesbare Diagnose**: Interne IDM-Meldungen erscheinen mit Text plus strukturierten Code-/Text-Attributen
-- **Direkte lokale Modbus-Runtime**: `modbus-connection` und tmodbus besitzen den Socket je Konfigurationseintrag; `idm-heatpump-api` behält die IDM-Register- und Sicherheitslogik
+- **Direkte lokale Modbus-Runtime**: `modbus-connection` und tmodbus stellen die gemeinsame Verbindung oder den eigenen Fallback-Socket bereit; `idm-heatpump-api` behält die IDM-Register- und Sicherheitslogik
 
 ---
 
@@ -141,7 +143,8 @@ Datenschutz und das Dashboard.
 | **Schalter-Entität** | modellabhängig | Externe Heiz-/Kühl-/Warmwasser-Anforderung |
 | **Klima-Entität** | je Kreis + Zonenraum | Heiz-/Kühlmodus + Zieltemperatur für Heizkreise und Zonenmodul-Räume |
 | **Warmwasserbereiter** | 1 | Warmwasser-Zieltemperatur mit Rücklesen der aktuellen Temperatur |
-| **Button** | 1 | Aktive Fehler an der Wärmepumpe quittieren |
+| **Button** | abhängig von Modell und Optionen | Fehler quittieren, Verbindung neu laden, unterstützte Warmwasseraktionen und optionale KI-Berichte |
+| **Conversation** | lokaler Agent | Deterministische Assist-Antworten auf Deutsch und Englisch |
 
 ---
 
@@ -156,6 +159,11 @@ Datenschutz und das Dashboard.
 1. [iDM Smart Energy & Comfort](Smart-Energy-and-Comfort)
 2. [Konfiguration und Quellen-Zuordnung](Configuration)
 3. [Aktions-Referenz](Services)
+
+### Erkenntnisse und Nachweise
+- [Felderkenntnisse und Dokumentationspflege](Findings-and-Documentation)
+- [Predictive Advisor](Predictive-Advisor)
+- [Telemetrie und Firmware-Orientierung](Telemetry)
 
 ### Ich habe ein Problem
 1. [Fehlerbehebung](Troubleshooting)
@@ -177,10 +185,10 @@ Datenschutz und das Dashboard.
 - **Sichtbare Runtime-Versionen**: Die Versionen der Integration, von `idm-heatpump-api`, `modbus-connection` und `tmodbus` stehen in einem Diagnose-Sensor, in Diagnose-Exporten und in den Startprotokollen zur Verfügung
 - **Datentypen**: FLOAT, UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM-Schutz**: Sensible Register werden verfolgt und geschützt
-- **Transportgrenze**: Rohe FC03/FC04-Lese- und FC16-Schreibvorgänge nutzen das exakte Paar `modbus-connection>=4.12.7` / `tmodbus[async-serial]>=0.6.2`; `4.12.2` ist die Version der Verbindungsbibliothek, nicht die Version der IDM-Integration
+- **Transportgrenze**: Rohe FC03/FC04-Lese- und FC16-Schreibvorgänge nutzen das exakte Paar `modbus-connection>=4.12.7` / `tmodbus[async-serial]>=0.6.2`; `4.12.7` ist die Version der Verbindungsbibliothek, nicht die Version der IDM-Integration
 - **API-Grenze**: `idm-heatpump-api[web]==2.16.0` stellt Batching, Dekodierung und Schreibsicherheit bereit. Die API besitzt ihre eigene Exception-Hierarchie; die Integration nutzt den tmodbus-gestützten Socket ohne pymodbus-Abhängigkeit
 - **Automatische Wiederherstellung**: API-Retry/Backoff plus Wiederverbindung nach Bedarf in der tmodbus-gestützten Verbindung
-- **Verbindungsbesitz**: Jeder Konfigurationseintrag besitzt einen Socket und meldet `supports_shared_connection: false`; das zentrale Teilen über Konfigurationseinträge in Home Assistant gibt es derzeit nicht
+- **Verbindungsbesitz**: Jeder Eintrag nutzt nach Möglichkeit die gemeinsame Modbus-Verbindung von Home Assistant (`owns_socket: false`, `supports_shared_connection: true`); wenn diese nicht beansprucht werden kann, wird ein eigener Socket verwendet
 - **Validierungsstatus**: Automatisierte Checks und Nur-Lese-Beobachtungen am Navigator 10 liegen vor; sie ersetzen keine kandidatenspezifische Clean-Install-, Langzeit- und breitere Modellvalidierung. Siehe [Stabilität & Release-Bereitschaft](Stability-and-Release-Readiness).
 - **Navigator 10**: Wärmesenken-Sensoren, Durchfluss (Sieb-Monitoring), Grundwassertemperaturen, Booster A/B
 - **Web-Supplement**: Das Setup prüft bei Bedarf beide unterstützten lokalen Protokolle, speichert die erfolgreiche Navigator-Familie, verwendet ihre Session wieder und wiederholt während der normalen Laufzeit-Wiederherstellung nur genau dieses Protokoll
@@ -203,7 +211,3 @@ Datenschutz und das Dashboard.
 
 *Dieses Wiki dokumentiert die IDM-Heatpump-Integration.*
 *Entwickelt von [Xerolux](https://github.com/Xerolux)*
-
-## Experimenteller KI-Berater (kommend)
-
-Der experimentelle Berater liefert tägliche/wöchentliche Berichte sowie Erklärungen zu Gesundheit und Effizienz. Er ist standardmäßig aus und hat weder Werkzeuge zur Anlagensteuerung noch eine Sprach-Exposition. Ollama läuft lokal; v0.17.2-b10 ergänzt separat eingewilligte OpenAI- und Z.ai-Berichte mit begrenzten Anfragen. Siehe [Einrichtung, Berichts-Aktionen, Datenabdeckung und Grenzen](Experimental-AI-Adviser).

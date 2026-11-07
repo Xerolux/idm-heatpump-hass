@@ -76,6 +76,14 @@ GERMAN_DOCUMENTATION_GROUPS = {
 # German mirror of the documentation: one entry per DOCUMENTATION_PAGES slug.
 # The German markdown must exist at docs/wiki/de/<file> for the page to build.
 GERMAN_DOCUMENTATION_PAGES: dict[str, dict[str, str]] = {
+    "protocol-capabilities": {
+        "title": "Protokollfähigkeiten",
+        "description": "Lese- und Schreibfunktionen nach Navigator-Familie und Verbindungspfad: Modbus, HTTP und WebSocket.",
+    },
+    "findings-and-documentation": {
+        "title": "Erkenntnisse & Dokumentation",
+        "description": "Felderkenntnisse, Nachweise, offene Fragen und die Pflege der englischen und deutschen Dokumentation.",
+    },
     "home": {
         "title": "Übersicht",
         "description": "Offizielle Dokumentation von IDM Heatpump, der lokalen Modbus-TCP-Integration für IDM-Navigator-Wärmepumpen in Home Assistant.",
@@ -122,7 +130,7 @@ GERMAN_DOCUMENTATION_PAGES: dict[str, dict[str, str]] = {
     },
     "experimental-ai-adviser": {
         "title": "KI-Anlagenberater (experimentell)",
-        "description": "Optionale schreibgeschützte Ollama-Berichte mit expliziter Aktivierung, lokalen Daten und sichtbaren Abdeckungsgrenzen einrichten.",
+        "description": "Lokale Messdatenberichte und optionale Modellerklärungen mit expliziter Aktivierung, Datenschutzgrenzen und sichtbarer Datenabdeckung einrichten.",
     },
     "predictive-advisor": {
         "title": "Predictive Advisor",
@@ -265,7 +273,7 @@ DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
         "file": "Experimental-AI-Adviser.md",
         "group": "automation",
         "title": "Experimental Local AI Adviser",
-        "description": "Set up optional read-only Ollama reports with explicit activation, local data and visible coverage limits.",
+        "description": "Set up local measured-data reports and optional model explanations with explicit activation, privacy boundaries and visible coverage limits.",
     },
     {
         "slug": "predictive-advisor",
@@ -296,6 +304,20 @@ DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
         "description": "Understand consent, myIDM assignment, matching firmware observations, retention and erasure requests.",
     },
     {
+        "slug": "protocol-capabilities",
+        "file": "Protocol-Capabilities.md",
+        "group": "operation",
+        "title": "Protocol Capabilities",
+        "description": "Read and write capabilities by Navigator family and connection path: Modbus, HTTP and WebSocket.",
+    },
+    {
+        "slug": "findings-and-documentation",
+        "file": "Findings-and-Documentation.md",
+        "group": "operation",
+        "title": "Findings and Documentation",
+        "description": "Field discoveries, evidence, open questions and the process for keeping bilingual documentation current.",
+    },
+    {
         "slug": "data-update",
         "file": "Data-Update.md",
         "group": "operation",
@@ -307,7 +329,7 @@ DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
         "file": "Local-Web-Interface.md",
         "group": "operation",
         "title": "Local Navigator Web Interface",
-        "description": "Use the optional local, read-only IDM Navigator web supplement for additional metadata and diagnostics without cloud access.",
+        "description": "Use the local Navigator web supplement for additional data and supported Navigator 10/Pro controls, including web-only operation.",
     },
     {
         "slug": "known-limitations",

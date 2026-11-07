@@ -379,7 +379,7 @@ Three further read-only WebSocket controllers are evaluated on every web poll
 
 #### Connection state
 
-Two diagnostic entities make the effective connection visible on the
+Diagnostic entities make the effective connection visible on the
 dashboard — they exist in every connection mode, so a fallback is visible
 at a glance:
 
@@ -393,7 +393,11 @@ at a glance:
   the log at INFO level (`IDM connection state changed: …`), so support
   cases can answer "since when does the web path not answer" without
   log spam.
-- **Letzte Web-Aktualisierung (Web)** (`web_last_success`): when the local
+- **Reload connection** (`connection_reload`, diagnostic button): reloads
+  this integration entry, restarting setup and connection validation without
+  waiting for Home Assistant's setup-retry backoff. This does not reboot the
+  heat pump. The connection must succeed before an outage is resolved.
+- **Last web update (Web)** (`web_last_success`): when the local
   web interface last answered successfully — the web counterpart of the
   Modbus *last success* diagnostic, always available when a web PIN is
   configured.
@@ -1000,3 +1004,11 @@ Telemetry notice v3 remains unchanged; independent firmware consent uses
 firmware queries. Only telemetry uploads carry their own identity and consent.
 
 [Privacy and delivery details](Telemetry).
+
+With device hierarchy enabled, **Latest reported firmware** and the unconfirmed
+newer-version indicator belong to the logical **Diagnostics** device alongside
+the installed software version. Without hierarchy they remain diagnostic
+entities on the plant device. Existing unique IDs and entity history are
+preserved. A newer matching observation can create a Repairs notice;
+acknowledgement is persisted per device/version. See
+[activation and interpretation](Telemetry#firmware-orientation).

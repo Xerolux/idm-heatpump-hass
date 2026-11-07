@@ -272,7 +272,7 @@ Use native IDM energy sensors when your device exposes them with stable values. 
 sensor:
   - platform: integration
     source: sensor.idm_heatpump_current_heating_power
-    name: Daily energy heating
+    name: Calculated heating energy
     unit_prefix: k
     round: 2
 ```
@@ -332,15 +332,13 @@ automation:
 
 ---
 
-## Acknowledge errors (manually via button helper)
+## Acknowledge errors manually
+
+Use the generated acknowledge button or, after checking the fault cause, run
+the action against your actual IDM device:
 
 ```yaml
-# button-helper in configuration.yaml
-button:
-  - platform: template
-    buttons:
-      idm_acknowledge_errors:
-        friendly_name: "Acknowledge IDM faults"
-        press:
-          service: idm_heatpump.acknowledge_errors
+action: idm_heatpump.acknowledge_errors
+target:
+  device_id: YOUR_IDM_DEVICE_ID
 ```

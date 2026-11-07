@@ -38,11 +38,11 @@ Modbus` (die Weboberfläche wird nie kontaktiert). Siehe
 
 | Steuerung / Schnittstelle | Status | Begründung |
 |---|---|---|
-| Navigator 2.0 · 10 · Pro | ✅ Voll unterstützt | Registerkarte über Modbus TCP plus die Web-Pfade dieser Seite — die Kombination deckt die gesamte Fähigkeiten-Matrix unten ab. |
-| Navigator 1.0 · 1.7 | ✅ Voll unterstützt *(nur Modbus)* | Offizielle Coil-Karte und RW-Holding-Block über Modbus TCP. Diese Steuerungen haben keine eigene Weboberfläche; die Web-Ergänzung bleibt für sie aus. |
+| Navigator 2.0 · 10 · Pro | ✅ Implementiert; Hardware-Nachweise variieren | Registerkarte über Modbus TCP plus die Web-Pfade dieser Seite — die Kombination deckt die gesamte Fähigkeiten-Matrix unten ab. |
+| Navigator 1.0 · 1.7 | ✅ Implementiert *(nur Modbus; Modell-/Firmware-Nachweise variieren)* | Offizielle Coil-Karte und RW-Holding-Block über Modbus TCP. Diese Steuerungen haben keine eigene Weboberfläche; die Web-Ergänzung bleibt für sie aus. |
 | Navigator 1.7 mit nachgerüstetem 2.0-Webmodul | ⚠️ Verbindet sich; Werte hängen vom Modul ab | Ein Webmodul der 2.0-Generation beantwortet den nav20-Client auch an einer 1.7 (#577): Login gelingt, aber die Datenseiten können Labels tragen, die der Parser nicht abbildet — die meisten `_web`-Entitäten bleiben dann nicht verfügbar, während Modbus unbeeinflusst läuft. |
 | Multitalent / Multitalent.002 (ältere Terra- und EVR-Baureihen) | ❌ Nicht unterstützt | Diese Steuerungen stellen kein Modbus TCP bereit. Sie sprechen ein proprietäres serielles Protokoll auf RS422, erreichbar nur über einen Ethernet→RS422-Konverter, der an den 4-Pin-Anschluss des Steuerungsdisplays verdrahtet wird. Eine Unterstützung hieße, einen kompletten zweiten Protokollstapel gegen Feld-Hardware zu implementieren und zu validieren — nichts der unten validierten Modbus- und Web-Pipelines würde übertragbar sein. Funktionierende Referenz: der ioBroker-Adapter [`zloe/ioBroker.idm-multitalent_002`](https://github.com/zloe/ioBroker.idm-multitalent_002), mit Zustimmung von IDM veröffentlicht; er läuft neben Home Assistant. |
-| myIDM-Cloud-Portal | ❌ Bewusst nicht genutzt | Die Integration ist per Design 100 % lokal; die Cloud ist IDMs eigener Kanal und eine Abhängigkeit, die dieses Projekt nicht eingeht. Verifizierte Referenzbefunde für künftige Forschung: [Navigator-Protokollanalyse](Navigator-Protocol-Analysis#myidm-cloud-api-reference). |
+| myIDM-Cloud-Portal | ❌ Bewusst nicht genutzt | Die Integration ist per Design 100 % lokal; die Cloud ist IDMs eigener Kanal und eine Abhängigkeit, die dieses Projekt nicht eingeht. Verifizierte Referenzbefunde für künftige Forschung: [Navigator-Protokollanalyse](Navigator-Protocol-Analysis). |
 | BACnet IP (UDP 47808) | ❌ Nicht unterstützt | Der Navigator bietet BACnet IP als alternativen Gebäudeleittechnik-Pfad für PV-/GLT-Werte. Diese Integration spricht für alles Modbus TCP auf Port 502 und liefert keinen BACnet-Stapel; eine BACnet-Installation sollte eine dedizierte BACnet-Integration oder ein Gateway nutzen. |
 | KNX | ↗ Überbrückt, hier nie implementiert | Die 654 IDM-Kommunikationsobjekte werden über die `knx`-Integration von Home Assistant bedient (`knx.send` / `knx.event_register`). Tunneling, Routing und KNX Secure gehören zu dieser Integration — ein eigener KNX-Stapel hier ist ausdrücklich außer Scope. |
 
@@ -112,7 +112,9 @@ Pfad nicht vorhanden. Firmware-abhängige Zellen sagen das.
 | Bestätigung | Rücklesen über den Register-Poll | `<Controller>Save`-Erfolgsnotiz zwingend; Ablehnung wirft Fehler |
 | Transient-Zero-Schutz | Lebens-Zähler | Lebens-Zähler (derselbe Snapshot) |
 
-Schreibvorgänge werden auf keinem Pfad als freie Payload gesendet. Alles in
-der Matrix mit **W** durchlief diese Validierung auf echter Hardware, bevor
-es ausgeliefert wurde; Zellen mit *(noch nicht gemappt)* existieren im
-Protokoll, haben die Validierungslatte aber noch nicht genommen.
+Schreibvorgänge verwenden definierte, validierte Operationen. **W** bezeichnet
+einen implementierten Schreibpfad, nicht die vollständige Hardwarebestätigung
+aller Modelle und Firmwarestände. Automatische Tests, Protokollmitschnitte,
+Modbus-Bestätigungen und physische Ergebnisse sind unterschiedliche Nachweise.
+Der jeweilige Stand steht in der [Kompatibilitätsmatrix](Compatibility-Matrix).
+Zellen mit *(noch nicht gemappt)* sind keine unterstützten Entitätsfunktionen.

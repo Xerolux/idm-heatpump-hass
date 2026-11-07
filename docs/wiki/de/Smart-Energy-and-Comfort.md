@@ -473,11 +473,11 @@ Versionen der installierten Integration, von `idm-heatpump-api`,
 [Fehlerbehebung](Troubleshooting#smart-funktionen-und-beta-upgrades), falls
 Entitäten oder Quellmesswerte fehlen.
 
-## Experimenteller KI-Anlagenberater (geplant)
+## Experimenteller KI-Anlagenberater
 
-Der experimentelle Berater liefert tägliche/wöchentliche Berichte und
-Erklärungen zu Gesundheit und Effizienz. Er ist standardmäßig aus und
-enthält weder Werkzeuge zur Anlagensteuerung noch eine Freigabe für
-Sprachassistenten. Ollama läuft lokal; v0.17.2-b10 ergänzt einzeln zu
-bestätigende OpenAI- und Z.ai-Berichte mit begrenzten Anfragen. Siehe
-[Einrichtung, Berichts-Aktionen, Datenabdeckung und Einschränkungen](Experimental-AI-Adviser).
+Der optionale, nur lesende Berater erstellt tägliche und wöchentliche Berichte
+sowie Anlagen- und Effizienzprüfungen. Standardmäßig entstehen lokale
+Messdatenberichte ohne Modellaufruf. Freiformulierte Erklärungen über Ollama,
+eine HA-AI-Task-Entität oder einen separat bestätigten Cloud-Anbieter sind
+zusätzlich aktivierbar. Kein Bericht steuert die Anlage.
+Siehe [Einrichtung, Aktionen, Datenabdeckung und Grenzen](Experimental-AI-Adviser).

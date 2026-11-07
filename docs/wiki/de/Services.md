@@ -444,7 +444,7 @@ automation:
 automation:
   - alias: "Heat pump holiday mode"
     trigger:
-      - platform: input_boolean
+      - platform: state
         entity_id: input_boolean.holiday
         to: "on"
     action:
@@ -472,6 +472,111 @@ automation:
           device_id: abc123def456
 ```
 
-## Experimenteller KI-Anlagenberater (geplant)
+## generate_ai_report
 
-Der experimentelle Berater liefert tägliche und wöchentliche Berichte sowie Erklärungen zur Anlagengesundheit und Effizienz. Er ist standardmäßig deaktiviert und bringt weder Werkzeuge zur Anlagensteuerung noch eine Sprachassistent-Anbindung mit. Ollama läuft lokal; v0.17.2-b10 ergänzt OpenAI- und Z.ai-Berichte mit separater Zustimmung und begrenzten Anfragekontingenten. Siehe [Einrichtung, Berichts-Aktionen, Datenabdeckung und Einschränkungen](Experimental-AI-Adviser).
+**Aktion:** `idm_heatpump.generate_ai_report`
+
+Benötigt einen ausdrücklich aktivierten KI-Berater am geladenen Eintrag.
+Ohne freiformulierte Erklärungen entsteht ein lokaler Messdatenbericht ohne
+Modellaufruf. Andernfalls gelten Anbieterwahl, Einwilligung, Zeitlimit und
+Anfragebudget. Anlageneinstellungen werden nie geschrieben. Die Antwort enthält
+Bericht, Zeitstempel und Eingabefakten. Gleichzeitige Anfragen und Anfragen
+innerhalb der Sperrzeit von 60 Sekunden werden abgelehnt.
+Siehe [KI-Berater](Experimental-AI-Adviser).
+
+| Feld | Pflicht | Beschreibung |
+|------|---------|--------------|
+| `entry_id` | ja | Geladener IDM-Eintrag mit aktiviertem KI-Berater |
+| `report_type` | nein | `daily` (Standard), `weekly`, `health` oder `efficiency` |
+
+```yaml
+action: idm_heatpump.generate_ai_report
+data:
+  entry_id: YOUR_ENTRY_ID
+  report_type: daily
+response_variable: plant_report
+```
+
+## export_ai_dashboard
+
+**Aktion:** `idm_heatpump.export_ai_dashboard`
+
+Benötigt `entry_id`, einen aktivierten KI-Berater und dessen registrierten
+Berichtssensor. Liefert strukturierte Lovelace-Daten unter `dashboard` mit den
+aktuellen Registry-IDs einschließlich umbenannter Entitäten. Übernimm die
+Konfiguration in dein Dashboard; bestehende Dashboards werden nicht verändert.
+
+## snooze_anomaly
+
+**Aktion:** `idm_heatpump.snooze_anomaly`
+
+Benötigt einen aktiven Predictive Advisor. Nimmt einen Auffälligkeitsgrund
+vorübergehend aus Empfehlungen und Health-Score heraus. Behebt keine Störung,
+unterdrückt keine Regleralarme und verändert keine Anlageneinstellung.
+Siehe [Predictive Advisor](Predictive-Advisor).
+
+| Feld | Pflicht | Beschreibung |
+|------|---------|--------------|
+| `entry_id` | ja | Geladener IDM-Eintrag mit Predictive Advisor |
+| `reason` | ja | Einer der unten aufgeführten Codes |
+| `days` | nein | 1–365 Tage, Standard 7 |
+
+Unterstützte Gründe: `heat_circle_flow_below_baseline`, `spread_above_baseline`,
+`compressor_starts_above_baseline`, `dhw_charge_time_above_baseline`.
+
+```yaml
+action: idm_heatpump.snooze_anomaly
+data:
+  entry_id: YOUR_ENTRY_ID
+  reason: compressor_starts_above_baseline
+  days: 7
+```
+
+## unsnooze_anomaly
+
+**Aktion:** `idm_heatpump.unsnooze_anomaly`
+
+Benötigt `entry_id` und `reason` aus der obigen Liste. Beendet die Pause für
+diesen Grund vorzeitig, damit er wieder ausgewertet wird. Ein aktiver
+Predictive Advisor ist erforderlich.
+
+## send_telemetry
+
+**Aktion:** `idm_heatpump.send_telemetry`
+
+Benötigt `entry_id` und die bestehende Einwilligung zu Anlagen-Telemetrie.
+Ohne Zustimmung lautet die Antwort `accepted: false`, `status: consent_required`,
+ohne Übertragung. Bei aktivem Sammler bleiben die gespeicherte Report-ID gegen
+Doppelübertragung und eine Minute Sperrzeit erhalten. Ein manueller Bericht
+reserviert den nächsten zufällig verteilten Tagestermin. Die Antwort enthält
+`accepted` und `status` (`accepted` oder `not_sent`); den tatsächlichen
+Servereingang bei einer Lieferprüfung gesondert kontrollieren.
+Siehe [Datenumfang und Widerruf](Telemetry).
+
+```yaml
+action: idm_heatpump.send_telemetry
+data:
+  entry_id: YOUR_ENTRY_ID
+response_variable: submission
+```
+
+## check_firmware
+
+**Aktion:** `idm_heatpump.check_firmware`
+
+Benötigt `entry_id` und die separate Einwilligung zur Firmware-Abfrage.
+Funktioniert ohne Telemetrie und ohne myIDM-ID. Ohne Zustimmung wird
+`status: consent_required` ohne Kataloganfrage zurückgegeben. Mit Zustimmung
+wird die Beobachtung aktualisiert und deren `status` zurückgegeben. Ein Treffer
+ist eine unbestätigte Community-Beobachtung, kein offizielles Update-Angebot.
+Die Aktion installiert keine Firmware.
+Siehe [Firmware-Orientierung](Telemetry#firmware-orientierung).
+
+## Experimenteller KI-Anlagenberater
+
+Der optionale, nur lesende Berater erstellt tägliche und wöchentliche Berichte
+sowie Anlagen- und Effizienzprüfungen. Standardmäßig entstehen lokale
+Messdatenberichte ohne Modellaufruf. Freiformulierte Erklärungen über Ollama,
+eine HA-AI-Task-Entität oder einen separat bestätigten Cloud-Anbieter sind
+zusätzlich aktivierbar. Kein Bericht steuert die Anlage.
+Siehe [Einrichtung, Aktionen, Datenabdeckung und Grenzen](Experimental-AI-Adviser).

@@ -39,3 +39,7 @@ Register. Diese Berichte helfen, die
 - Teile Lovelace- und Automation-Beispiele mit ihren Abhängigkeiten und
   bereinigtem YAML.
 
+
+Bestätigte neue Erkenntnisse mit Nachweis, Grenzen und offenen Fragen in das
+[Erkenntnisregister](Findings-and-Documentation) und die passende Funktionsseite
+übernehmen. Englische und deutsche Fassung zusammen aktualisieren.

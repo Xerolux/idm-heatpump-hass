@@ -366,6 +366,100 @@ objects:
     unit: "°C"
 ```
 
+## generate_ai_report
+
+**Action:** `idm_heatpump.generate_ai_report`
+
+Requires an explicitly enabled AI adviser on the loaded entry. With free-form
+explanations off, generates a local measured-data report without a model call.
+Otherwise uses the configured provider and its consent, timeout and request
+budget. It never writes plant settings. The response contains the report,
+timestamp and input facts. Concurrent requests and requests within the
+sixty-second cooldown are rejected. See [AI adviser](Experimental-AI-Adviser).
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `entry_id` | yes | Loaded IDM entry with the AI adviser enabled |
+| `report_type` | no | `daily` (default), `weekly`, `health` or `efficiency` |
+
+```yaml
+action: idm_heatpump.generate_ai_report
+data:
+  entry_id: YOUR_ENTRY_ID
+  report_type: daily
+response_variable: plant_report
+```
+
+## export_ai_dashboard
+
+**Action:** `idm_heatpump.export_ai_dashboard`
+
+Requires `entry_id`, an enabled AI adviser and its registered report sensor.
+Returns structured Lovelace data under `dashboard`, using current registry IDs
+including renamed entities. Copy the returned configuration into your own
+dashboard. Existing dashboards are never changed.
+
+## snooze_anomaly
+
+**Action:** `idm_heatpump.snooze_anomaly`
+
+Requires an active Predictive Advisor. Temporarily excludes one anomaly reason
+from recommendations and the health score; it does not repair a fault, silence
+controller alarms or change plant settings. See [Predictive Advisor](Predictive-Advisor).
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `entry_id` | yes | Loaded IDM entry with Predictive Advisor |
+| `reason` | yes | One of the reason codes below |
+| `days` | no | 1–365 days, default 7 |
+
+Supported reasons: `heat_circle_flow_below_baseline`, `spread_above_baseline`,
+`compressor_starts_above_baseline`, `dhw_charge_time_above_baseline`.
+
+```yaml
+action: idm_heatpump.snooze_anomaly
+data:
+  entry_id: YOUR_ENTRY_ID
+  reason: compressor_starts_above_baseline
+  days: 7
+```
+
+## unsnooze_anomaly
+
+**Action:** `idm_heatpump.unsnooze_anomaly`
+
+Requires `entry_id` and `reason` from the list above. Cancels that reason's
+snooze early so it can be evaluated again. Requires an active Predictive Advisor.
+
+## send_telemetry
+
+**Action:** `idm_heatpump.send_telemetry`
+
+Requires `entry_id` and existing plant-telemetry consent. Refusal returns
+`accepted: false`, `status: consent_required` without sending. An enabled
+collector retains persisted report-ID deduplication and a one-minute cooldown;
+a manual report reserves the next randomized daily slot. The response reports
+`accepted` and `status` (`accepted` or `not_sent`); inspect server receipt
+separately when verifying delivery. See [data scope and withdrawal](Telemetry).
+
+```yaml
+action: idm_heatpump.send_telemetry
+data:
+  entry_id: YOUR_ENTRY_ID
+response_variable: submission
+```
+
+## check_firmware
+
+**Action:** `idm_heatpump.check_firmware`
+
+Requires `entry_id` and separate firmware-query consent. It works without
+telemetry or a myIDM ID. Without consent, returns `status: consent_required`
+without a catalog request. With consent, refreshes the observation result and
+returns its `status`. A match is an unconfirmed community observation, never
+an official update offer; this action does not install firmware.
+See [firmware orientation](Telemetry#firmware-orientation).
+
 ## Automation Examples (Writing Values)
 
 The following examples show how to write values through automations.
@@ -429,7 +523,7 @@ automation:
 automation:
   - alias: "Heat pump holiday mode"
     trigger:
-      - platform: input_boolean
+      - platform: state
         entity_id: input_boolean.holiday
         to: "on"
     action:
@@ -457,6 +551,10 @@ automation:
           device_id: abc123def456
 ```
 
-## Experimental AI adviser (upcoming)
+## Experimental AI adviser
 
-The experimental adviser provides daily/weekly reports and explanations of health and efficiency. It is off by default and has no plant control tools or voice exposure. Ollama is local; v0.17.2-b10 adds separately consented OpenAI and Z.ai reports with bounded requests. See [setup, report actions, data coverage and limitations](Experimental-AI-Adviser).
+The optional, read-only adviser creates daily and weekly reports, plant checks
+and efficiency reviews. Local measured-data reports without model calls are the
+default. Free-form explanations through Ollama, an HA AI Task entity or a
+separately consented cloud provider can be enabled additionally. Reports never
+control the plant. See [setup, actions, data coverage and limits](Experimental-AI-Adviser).

@@ -15,11 +15,10 @@ möchtest. Modbus bleibt der Basispfad und funktioniert ohne PIN. Wenn du einen
 PIN angibst, kann der Einrichtungsfluss zusätzlich einen eingeschränkten
 Fallback im reinen Web-Betrieb anbieten, wenn Modbus nicht verfügbar ist.
 
-Der direkte Modbus-Socket gehört ausschließlich dieser Integration und
-verwendet `modbus-connection` mit dem tmodbus-Backend. Jeder
-Konfigurationseintrag besitzt eine eigene Verbindung; ein zentrales,
-eintragsübergreifendes Teilen der Verbindung durch Home Assistant ist derzeit
-nicht verfügbar.
+Der lokale Modbus-Transport verwendet `modbus-connection` mit tmodbus.
+Einträge nutzen die gemeinsame Verbindung von Home Assistant, wenn deren
+Unit-API verfügbar ist. Ein fehlgeschlagener Anspruch fällt auf einen eigenen
+Socket zurück. Siehe [Verbindungsdiagnose](#versionspaarung-von-integration-und-api).
 
 ## Optionen
 
@@ -50,7 +49,7 @@ Komfortzeitplan verlangen.
 
 ### Differenztemperaturgeregelte Heizkreise
 
-Zum Testen ab Beta 0.20.1-b1 verfügbar.
+In der aktuellen stabilen Integration verfügbar; die unten beschriebenen Hardware-Grenzen gelten weiterhin.
 
 Wenn das Heizsystem eines Kreises im Navigator bereits auf
 **Differenztemperaturgeregelt** steht, kann Home Assistant Speicher- und
@@ -647,7 +646,7 @@ Dieses Projekt hat zwei unabhängig versionierte Pakete:
 
 | Paket | Aktuell getestete Version | Wann eine neue Version nötig wird |
 |---------|------------------------|-----------------------------|
-| Benutzerdefinierte Home-Assistant-Integration | `0.17.0-beta.2` (vorherige stabile Version: `0.16.2`) | Änderungen an Integrationscode, Konfigurationsfluss, Diagnose, Entitäten oder der mitgelieferten Nutzerdokumentation |
+| Benutzerdefinierte Home-Assistant-Integration | Aktueller Quellstand: siehe [Übersicht](Home) | Änderungen an Integrationscode, Konfigurationsfluss, Diagnose, Entitäten oder der mitgelieferten Nutzerdokumentation |
 | Verbindungsbibliothek | `modbus-connection>=4.12.7` | Änderungen am Transportvertrag, am Verbindungslebenszyklus oder an der Fehlersemantik |
 | Direktes Socket-Backend | `tmodbus[async-serial]>=0.6.2` | Änderungen an der Leitungs-/Backend-Implementierung |
 | Python-Register-/Web-Bibliothek | `idm-heatpump-api[web]==2.16.0` | Änderungen an Registerschema, Kodierung/Dekodierung, Batching, Modellerkennung, Schreibsicherheit oder der wiederverwendbaren Web-Client-Implementierung |
@@ -657,7 +656,7 @@ Das Manifest listet die getestete Laufzeit in dieser Reihenfolge:
 und `idm-heatpump-api[web]==2.16.0`. Die ersten beiden Pakete besitzen den
 direkten Socket. `idm-heatpump-api` bleibt für die IDM-spezifische
 Gerätelogik verantwortlich und besitzt ihre eigene Ausnahmehierarchie; die
-Integration installiert kein pymodbus mehr. `4.12.2` ist die Version von
+Integration installiert kein pymodbus mehr. `4.12.7` ist die Version von
 `modbus-connection`, keine Version der IDM-Integration. Der Transport wurde
 erstmals mit der IDM-Integrations-Beta `0.11.0-beta.1` ausgeliefert.
 
@@ -697,6 +696,16 @@ Jede Antwort wird lokal aus dem aktuellen Coordinator-Snapshot per
 deterministischem Keyword-Routing erzeugt. Keine Anfrage verlässt die
 Instanz, kein Sprachmodell ist beteiligt.
 
+### Gemeinsame Evidenz in Assist
+
+Zusätzlich beantwortet der lokale Agent Fragen wie „Was hat sich geändert?“,
+„Ist der Verbrauch gestiegen?“, „Wie hat sich das Takten entwickelt?“,
+„Welche Nachweise fehlen?“ oder „Hat die Änderung geholfen?“ anhand derselben
+begrenzten Historie wie Berichte und Predictive Advisor. Fehlende oder nicht
+vergleichbare Daten werden benannt. Beobachtete Zusammenhänge sind kein
+Nachweis für Ursache oder Einsparung.
+Siehe [Evidenz und Optimierungsbeobachtung](Predictive-Advisor).
+
 ## Debug-Protokollierung
 
 Aktiviere erweiterte Protokollierung für die Fehlerbehebung:
@@ -716,6 +725,11 @@ Bestimmte Register sind **EEPROM-sensitiv** (insgesamt 88). Diese Register werde
 
 Die Register 1696 und 1698 (GLT-Temperaturanforderungen) müssen zyklisch alle 10 Minuten geschrieben werden, um aktiv zu bleiben. Die Schalter-Entitäten für GLT-Anforderungen erledigen das automatisch.
 
-## Experimenteller KI-Anlagenberater (geplant)
+## Experimenteller KI-Anlagenberater
 
-Der experimentelle Berater liefert tägliche/wöchentliche Berichte und Erklärungen zu Gesundheit und Effizienz. Er ist standardmäßig aus und enthält weder Werkzeuge zur Anlagensteuerung noch eine Freigabe für Sprachassistenten. Ollama läuft lokal; v0.17.2-b10 ergänzt einzeln zu bestätigende OpenAI- und Z.ai-Berichte mit begrenzten Anfragen. Siehe [Einrichtung, Berichts-Aktionen, Datenabdeckung und Einschränkungen](Experimental-AI-Adviser).
+Der optionale, nur lesende Berater erstellt tägliche und wöchentliche Berichte
+sowie Anlagen- und Effizienzprüfungen. Standardmäßig entstehen lokale
+Messdatenberichte ohne Modellaufruf. Freiformulierte Erklärungen über Ollama,
+eine HA-AI-Task-Entität oder einen separat bestätigten Cloud-Anbieter sind
+zusätzlich aktivierbar. Kein Bericht steuert die Anlage.
+Siehe [Einrichtung, Aktionen, Datenabdeckung und Grenzen](Experimental-AI-Adviser).

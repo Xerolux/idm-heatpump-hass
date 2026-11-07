@@ -2,7 +2,7 @@
 
 ## Wie werden die Daten abgerufen?
 
-Die Integration nutzt Modbus TCP, um Registerdaten direkt von der IDM-Wärmepumpe zu lesen. Die gesamte Kommunikation läuft **lokal** — es gibt keine Cloud-Verbindung.
+Die Integration nutzt Modbus TCP, um Registerdaten direkt von der IDM-Wärmepumpe zu lesen. Anlagenkommunikation und Steuerung laufen **lokal**. Separat aktivierte KI-Anbieter, Telemetrie und Firmware-Abfragen haben eigene Einwilligungs- und Datenschutzgrenzen; siehe [KI-Berater](Experimental-AI-Adviser) und [Telemetrie](Telemetry).
 
 ## Abfrage-Mechanismus
 
@@ -17,7 +17,7 @@ Die Integration verwendet den **DataUpdateCoordinator** von Home Assistant:
 
 ## Entitätsbewusste Abfrage und Smart-Verbraucher
 
-Der Abfrageplan behält die Register, die aktivierte Entitäten und deklarierte Hintergrund-Verbraucher benötigen. Seit 0.17.2-b6 halten die Smart-Energiestatistiken beide Leistungseingänge vor, selbst wenn ihre rohen Sensoren deaktiviert sind. Ein aktiver Komfort-Zeitplan behält ebenfalls seinen Heizkreis-Sollwert und gibt diese Anforderung beim Beenden wieder frei. Eine rohe Entität zu deaktivieren deaktiviert daher weder eine aktive Automation noch den Energiezähler; schalte stattdessen die entsprechende Funktion aus.
+Der Abfrageplan behält die Register, die aktivierte Entitäten und deklarierte Hintergrund-Verbraucher benötigen. Die Smart-Energiestatistiken halten beide Leistungseingänge vor, selbst wenn ihre rohen Sensoren deaktiviert sind. Ein aktiver Komfort-Zeitplan behält ebenfalls seinen Heizkreis-Sollwert und gibt diese Anforderung beim Beenden wieder frei. Eine rohe Entität zu deaktivieren deaktiviert daher weder eine aktive Automation noch den Energiezähler; schalte stattdessen die entsprechende Funktion aus.
 
 ## Konfiguriertes Intervall
 

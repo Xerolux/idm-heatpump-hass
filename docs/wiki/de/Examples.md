@@ -276,7 +276,7 @@ zu integrieren, statt einen Leistungssensor wie einen nativen Energiezähler zu 
 sensor:
   - platform: integration
     source: sensor.idm_heatpump_current_heating_power
-    name: Daily energy heating
+    name: Calculated heating energy
     unit_prefix: k
     round: 2
 ```
@@ -340,15 +340,13 @@ automation:
 
 ---
 
-## Fehler quittieren (manuell per Button-Helfer)
+## Fehler manuell quittieren
+
+Nutze den erzeugten Quittierbutton oder führe nach der Ursachenprüfung die
+Aktion mit deinem tatsächlichen IDM-Gerät aus:
 
 ```yaml
-# button-helper in configuration.yaml
-button:
-  - platform: template
-    buttons:
-      idm_acknowledge_errors:
-        friendly_name: "Acknowledge IDM faults"
-        press:
-          service: idm_heatpump.acknowledge_errors
+action: idm_heatpump.acknowledge_errors
+target:
+  device_id: YOUR_IDM_DEVICE_ID
 ```

@@ -14,10 +14,10 @@ Leave the web PIN empty if you want Modbus-only operation. Modbus remains the
 baseline path and works without a PIN. Providing a PIN also enables the setup
 flow to offer a limited web-only fallback when Modbus is unavailable.
 
-The direct Modbus socket is local to this integration and uses
-`modbus-connection` with the tmodbus backend. Each config entry owns its own
-connection; Home Assistant central cross-entry sharing is not currently
-available.
+The local Modbus transport uses `modbus-connection` with the tmodbus backend.
+Entries use Home Assistant's shared connection when its unit API is available;
+a failed shared claim falls back to a private socket. See
+[connection diagnostics](#integration-and-api-release-pairing).
 
 ## Options
 
@@ -44,7 +44,7 @@ automatic DHW manager and comfort schedule.
 
 ### Differential-temperature controlled circuits
 
-Available for testing in beta 0.20.1-b1.
+Available in the current stable integration; hardware-specific limits below still apply.
 
 For a circuit whose heating system is already set to **Differential temperature
 control** in the Navigator, Home Assistant can display storage and reference
@@ -584,7 +584,7 @@ This project has two independently versioned packages:
 
 | Package | Current tested version | When it needs a new version |
 |---------|------------------------|-----------------------------|
-| Home Assistant custom integration | `0.17.0-beta.2` (previous stable: `0.16.2`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
+| Home Assistant custom integration | See the current source-tree version on [Home](Home) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
 | Connection library | `modbus-connection>=4.12.7` | Transport contract, connection lifecycle or error semantics change |
 | Direct socket backend | `tmodbus[async-serial]>=0.6.2` | Wire/backend implementation changes |
 | Python register/web library | `idm-heatpump-api[web]==2.16.0` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
@@ -631,6 +631,14 @@ Every answer is composed locally from the current coordinator snapshot by
 deterministic keyword routing. No utterance leaves the instance and no
 language model is involved.
 
+### Shared evidence in Assist
+
+The local agent also answers questions such as "What changed?", "Did consumption
+increase?", "How did cycling develop?", "Which evidence is missing?" and "Did the
+change help?" using the bounded history shared by reports and Predictive Advisor.
+It identifies missing or incomparable data. Observed associations do not prove
+causality or savings. See [shared evidence and optimization review](Predictive-Advisor#shared-evidence-and-optimization-review).
+
 ## Debug Logging
 
 Enable extended logging for troubleshooting:
@@ -650,6 +658,10 @@ Certain registers are **EEPROM-sensitive** (88 total). These registers are store
 
 Registers 1696 and 1698 (BMS temperature requests) must be written cyclically every 10 minutes to remain active. The switch entities for BMS requests handle this automatically.
 
-## Experimental AI adviser (upcoming)
+## Experimental AI adviser
 
-The experimental adviser provides daily/weekly reports and explanations of health and efficiency. It is off by default and has no plant control tools or voice exposure. Ollama is local; v0.17.2-b10 adds separately consented OpenAI and Z.ai reports with bounded requests. See [setup, report actions, data coverage and limitations](Experimental-AI-Adviser).
+The optional, read-only adviser creates daily and weekly reports, plant checks
+and efficiency reviews. Local measured-data reports without model calls are the
+default. Free-form explanations through Ollama, an HA AI Task entity or a
+separately consented cloud provider can be enabled additionally. Reports never
+control the plant. See [setup, actions, data coverage and limits](Experimental-AI-Adviser).
