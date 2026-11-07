@@ -4,6 +4,10 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.26.3 release decision
+
+0.26.3 adds optional, default-off plant reports and an independently consented firmware query. Local operation remains independent. Persisted reports, randomized schedules and narrowly scoped historical technician-ID cleanup are covered by tests. Strict typing, targeted unit tests and genuine Home Assistant lifecycle tests pass. The server uses an independent erasure journal inside unprivileged LXC 117. These technical checks do not establish multi-day reliability or replace legal review of the operator notice.
+
 ## 0.26.2 release decision
 
 **0.26.2** is a stable feature patch adding five UI languages. Home Assistant

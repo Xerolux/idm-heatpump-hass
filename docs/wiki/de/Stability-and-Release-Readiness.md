@@ -4,6 +4,10 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.26.3
+
+0.26.3 ergänzt freiwillige, standardmäßig ausgeschaltete Anlagenmeldungen und eine unabhängig zustimmungspflichtige Firmware-Abfrage. Der vorhandene lokale Betrieb bleibt unabhängig. Neustartfeste Meldungen und verteilte Versandzeiten sind getestet; die einmalige Bereinigung entfernt nur historische Technikercode-IDs derselben Integration. Typprüfung, gezielte Tests und reale HA-Lebenszyklustests bestehen. Der Server verwendet ein unabhängiges Löschjournal in LXC 117. Mehrtägiger Betrieb und eine rechtliche Einzelfallprüfung werden durch diese technischen Prüfungen nicht ersetzt.
+
 ## Release-Entscheidung zu 0.26.2
 
 **0.26.2** ist ein stabiler Feature-Patch mit fünf neuen UI-Sprachen. Home
