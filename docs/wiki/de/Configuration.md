@@ -142,8 +142,11 @@ Die Kategorie **Externe Leistungsweiterleitung** ordnet bestehende
 Home-Assistant-Sensoren PV-Überschuss, PV-Produktion, Hausverbrauch, Batterie
 Laden/Entladen, Batterie-SOC und Heizstab-Leistung zu. Der
 Weiterleitungsschalter ist standardmäßig aus. Wenn aktiviert, werden gültige
-Werte bei Änderungen der Quelle und periodisch (Standard: 60 Sekunden) in die
-entsprechenden IDM-GLT-Register geschrieben.
+Werte bei Änderungen der Quelle und mit einer nominellen zyklischen
+Auffrischung alle drei Sekunden in die entsprechenden IDM-GLT-Register
+geschrieben, auch bei unveränderten Werten. Diese Auffrischung hat Vorrang vor
+dem einstellbaren Intervall von 30–3600 Sekunden (Standard: 60 Sekunden). Die
+tatsächlichen Abschlusszeiten hängen von Verbindungslast und Schreibsperrzeiten ab.
 
 Leistungssensoren müssen W, kW oder MW liefern; die Weiterleitung rechnet in kW
 um. Der Batterie-SOC muss ein endlicher Prozentsatz von 0 bis 100 sein; Nachkommastellen werden für GLT gerundet. Das

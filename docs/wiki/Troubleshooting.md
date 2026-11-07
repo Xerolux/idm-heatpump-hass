@@ -194,6 +194,43 @@ If a writable value alternates between two values, first disable every other
 writer. A repeating change often means two automations or energy managers own
 the same GLT register; it is not evidence that the datatype is wrong.
 
+### PV not connected: message 20300 at zero production
+
+A valid **0 W** reading and an **unavailable** source are different cases:
+
+| Observation | Meaning and next step |
+|---|---|
+| Source reports valid 0 W; repeated writes succeed, but 20300 recurs | The controller may assess zero production as disconnected. Consider the default-off [10 W workaround](Configuration#optional-workaround-for-pv-message-20300-at-zero-production). |
+| Source is unavailable, unknown or invalid | Forwarding skips it. Restore the inverter/source connection; the workaround does not invent a measurement. Recheck sources after an HA restart, including sleeping inverters. |
+| A number entity shows the requested value | This can be an optimistic HA update; it alone does not prove delivery or continuous controller retention. |
+| Debug log records `Forwarded external power pv_production = 0.0` repeatedly | Each line follows a successfully completed coordinator write. Record timestamps; an unchanged source timestamp is not proof that refresh stopped. |
+| Debug log reports an active write cooldown | An extra attempt was skipped. Check that subsequent writes succeed; this is not itself a controller rejection. |
+| A proxy/cache or another writer is involved | Record the route, cache settings and all writers. A cached read or successful proxy exchange does not prove the controller's continuously processed display. |
+
+For a bounded observation, use **Enable debug logging** on the integration,
+wait across several forwarding cycles, then disable it again. Compare source,
+write-result timestamps and controller messages at the same time. The nominal
+refresh is three seconds, with a two-second per-register cooldown; bus load,
+retries and source events can change observed spacing. These intervals do not
+establish a universal controller watchdog/TTL.
+
+On 2026-11-07, a Navigator 10 with firmware
+`T_NAV10_20.24-1580-g02a20b66f` retained message 20300 despite repeated successful
+zero writes. Sending **0.01 kW = 10 W** for one minute cleared the message after
+about 20 seconds without acknowledgement. A single manual write was overwritten
+by automatic zero forwarding within about three seconds, so it was not a
+sustained test. The controlled test restored the true source afterward.
+The normal forwarder rounds kW to two decimals; smaller watt values are not a
+reliable nonzero workaround on this path.
+
+The optional workaround changes only valid, exactly zero **PV production** on
+transmission. It does not replace missing readings, alter the source sensor,
+create PV surplus, or change derived household consumption. Controller-side
+PV statistics can still include the artificial 10 W. Positive readings resume
+normal live forwarding. This finding does not resolve the separate #493
+battery/display-retention report, establish the exact firmware algorithm or
+prove long-term reliability. [Field evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.6.md).
+
 ### Controls or actuators appear to be missing
 
 Writable functions are not all shown as traditional "actuators". Open the IDM

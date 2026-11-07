@@ -131,7 +131,10 @@ The **External power forwarding** category maps existing Home Assistant sensors
 to PV surplus, PV production, house consumption, battery charge/discharge,
 battery SOC and electric-heater power. The forwarding switch is off by default.
 When enabled, valid values are written to the corresponding IDM GLT registers
-on source changes and periodically (default: 60 seconds).
+on source changes and with a nominal three-second cyclic refresh, including
+unchanged values. This refresh takes precedence over the configurable
+30–3600-second interval (default: 60 seconds); actual completion times depend
+on connection load and write cooldowns.
 
 Power sensors must report W, kW or MW; forwarding converts to kW. Battery SOC
 must be a finite percentage from 0 to 100; fractional values are rounded for GLT. The battery sign can be kept or

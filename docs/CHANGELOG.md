@@ -13,7 +13,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.26.6] - 2026-11-07
+
+An optional 10 W workaround keeps affected Navigator controllers from reporting a disconnected PV system at valid zero production. Normal forwarding remains unchanged unless you enable it.
 
 ### ⚠️ Upgrade notes
 
