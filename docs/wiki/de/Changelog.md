@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.26.5 — 2026-11-07
+
+Firmware-Vergleich und installierte Version stehen bei aktivierter Gerätehierarchie zusammen unter Diagnose. Die Erkennung berücksichtigt NAV10_ und T_NAV10_, statt den Webzugang als Reglerfamilie zu behandeln. [Aktivierung und Erklärung](https://xerolux.github.io/idm-heatpump-hass/docs/de/telemetry/#firmware-orientierung).
+
 ## v0.26.4 — 2026-11-07
 
 **Neu: Firmware-Orientierung mit bestätigbarem Hinweis.** Die Diagnose-Entität „Neuere Firmware gesichtet (unbestätigt)“ zeigt passende Community-Sichtungen. Eine neuere Version erzeugt zusätzlich einen Reparatur-Hinweis, der einmalig als gesehen bestätigt werden kann. [Aktivierung und Erklärung](https://xerolux.github.io/idm-heatpump-hass/docs/de/telemetry/#firmware-orientierung). Keine Zusage der Verfügbarkeit oder Kompatibilität: Nur iDM beziehungsweise der autorisierte Fachbetrieb prüft und installiert ein Firmware-Update.

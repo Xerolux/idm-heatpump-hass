@@ -4,6 +4,10 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.26.5 release decision
+
+Regressions cover both firmware prefixes, lookalike rejection and shared firmware-entity placement under Diagnostics. Existing IDs and consent are retained. Transport success alone does not establish a controller model; missing or conflicting evidence must remain unknown.
+
 ## 0.26.4 release decision
 
 The mismatched-checkpoint regression reproduces an independent analysis store advancing without matching telemetry elapsed time. The fix resumes a coherent saved counter/time pair, preserves immutable retries and omits legacy duration windows once. Strict typing, the client regressions and genuine Home Assistant lifecycle tests pass; CI covers the full release gate. Server quality rules use synthetic fixtures, retain originals and distinguish per-metric source coverage. This does not establish fleet-wide performance or prove the exact history of an older aggregate.
@@ -487,7 +491,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.26.4` and `idm-heatpump-api` `2.16.0` form the current
+Source-tree integration `0.26.5` and `idm-heatpump-api` `2.16.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

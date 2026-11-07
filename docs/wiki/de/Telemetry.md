@@ -177,3 +177,5 @@ Unter **Einstellungen → Geräte & Dienste → IDM Heatpump → Neu konfigurier
 Eine neuere passende Sichtung löst zusätzlich einen Hinweis unter **Einstellungen → System → Reparaturen** aus. Mit **Gesehen bestätigen** wird genau diese Version für das Gerät dauerhaft quittiert, auch über Neustarts hinweg. Erst eine andere neuere Version kann erneut gemeldet werden. Das bestätigt nur das Lesen des Hinweises und führt kein Update aus.
 
 Community-Meldungen sind keine Zusage, dass die Version für deine Wärmepumpe verfügbar oder geeignet ist. iDM oder der autorisierte Fachbetrieb muss das prüfen und ein Update durchführen. Nutzer können mit freiwillig geteilten Berichten die Vergleichsbasis verbessern; die Firmware-Abfrage ist dennoch unabhängig von Telemetrie einschaltbar. Beide Zustimmungen bleiben freiwillig und standardmäßig aus.
+
+Bei aktivierter Gerätehierarchie findest du beide Firmware-Vergleichs-Entitäten am Untergerät **Diagnose**, direkt bei der installierten Softwareversion. Die Entity-IDs bleiben beim Verschieben erhalten. Ohne Gerätehierarchie liegen sie im Diagnosebereich des Hauptgeräts.

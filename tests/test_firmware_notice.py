@@ -5,6 +5,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import pytest
 from test_firmware_observations import make_firmware
 
 from custom_components.idm_heatpump import _entry_reload_fingerprint
@@ -93,3 +94,29 @@ def test_notice_cleanup_and_fingerprint_do_not_affect_other_entries():
     before = _entry_reload_fingerprint(entry)
     entry.data[ACK_KEY] = ["a"]
     assert _entry_reload_fingerprint(entry) == before
+
+
+@pytest.mark.parametrize("version", ["NAV10_20.99-test", "T_NAV10_20.99-test", " t_nav10_20.99-test "])
+def test_controller_firmware_prefixes_are_not_confused_with_http_protocol(version):
+    from custom_components.idm_heatpump.web_data import _firmware_indicates_nav10
+
+    assert _firmware_indicates_nav10(version)
+
+
+@pytest.mark.parametrize("version", [None, "", "NAV100_20.99", "T_NAV100_20.99", "T_NAV20_20.99", "prefix_NAV10_20.99"])
+def test_unrelated_prefixes_do_not_identify_navigator10(version):
+    from custom_components.idm_heatpump.web_data import _firmware_indicates_nav10
+
+    assert not _firmware_indicates_nav10(version)
+
+
+def test_firmware_comparison_entities_share_the_diagnostics_subdevice():
+    from custom_components.idm_heatpump.device_hierarchy import resolve_device_scope
+    from custom_components.idm_heatpump.telemetry_entities import IdmFirmwareObservedBinarySensor
+
+    _firmware, entry, coordinator = make_firmware()
+    coordinator.config_entry = entry
+    sensor = IdmFirmwareObservedBinarySensor(coordinator)
+    assert sensor.entity_description.key == "firmware_update_observed"
+    for key in ("software_version", "telemetry_latest_firmware", "firmware_update_observed"):
+        assert resolve_device_scope(key).kind == "diagnostics"
