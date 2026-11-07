@@ -37,6 +37,7 @@ from .predictive_advisor_entities import (
     runtime_predictive_advisor,
 )
 from .registers import sort_entity_descriptions
+from .telemetry_entities import IdmFirmwareObservedBinarySensor, firmware_binary_sensor_entities
 from .web_binary_sensors import IdmWebBinarySensor, web_binary_sensor_entities
 from .web_demand_reason_entities import IdmWebDemandReasonPvBinarySensor, web_demand_reason_binary_entities
 from .web_system_entities import WebSystemBinaryEntity, web_system_binary_entities
@@ -60,6 +61,7 @@ async def async_setup_entry(
         | WebSystemBinaryEntity
         | IdmAdvisorOptimizationBinarySensor
         | IdmAdvisorAnomalyBinarySensor
+        | IdmFirmwareObservedBinarySensor
     ] = [
         IdmBinarySensor(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.binary_sensor_descriptions)
@@ -92,6 +94,7 @@ async def async_setup_entry(
         entities += web_binary_sensor_entities(coordinator)
         entities += web_demand_reason_binary_entities(coordinator)
         entities += web_system_binary_entities(coordinator)
+    entities.extend(firmware_binary_sensor_entities(hass, entry, coordinator))
     async_add_entities(entities)
 
 

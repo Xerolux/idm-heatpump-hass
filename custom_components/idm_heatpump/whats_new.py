@@ -41,15 +41,15 @@ _PRE_EXISTING_AFTER: Final = timedelta(hours=1)
 #: Bump to the next version (and move the old id into _SUPERSEDED_IDS) when
 #: a future release again warrants a notice. The id encodes the version so
 #: Home Assistant tracks each notice's dismissal separately.
-WHATS_NEW_ISSUE_ID: str = "whats_new_0_21_0"
-WHATS_NEW_LEARN_MORE_URL: str = "https://xerolux.github.io/idm-heatpump-hass/docs/predictive-advisor/"
+WHATS_NEW_ISSUE_ID: str = "whats_new_0_26_4"
+WHATS_NEW_LEARN_MORE_URL: str = "https://xerolux.github.io/idm-heatpump-hass/docs/telemetry/#firmware-orientation"
 
 #: entry.data key holding the integration version this entry last ran with.
 #: Must stay listed in ``_DETECTION_ONLY_DATA_KEYS`` so stamping it never
 #: triggers the reload fingerprint.
 LAST_RUN_VERSION_DATA_KEY: str = "last_run_version"
 
-_SUPERSEDED_IDS: tuple[str, ...] = ()
+_SUPERSEDED_IDS: tuple[str, ...] = ("whats_new_0_21_0",)
 
 
 def ensure_whats_new_issue(hass: HomeAssistant) -> None:
@@ -68,6 +68,7 @@ def ensure_whats_new_issue(hass: HomeAssistant) -> None:
         is_persistent=True,
         severity=ir.IssueSeverity.WARNING,
         translation_key=WHATS_NEW_ISSUE_ID,
+        translation_placeholders={"activation_url": WHATS_NEW_LEARN_MORE_URL},
         learn_more_url=WHATS_NEW_LEARN_MORE_URL,
     )
     _LOGGER.debug("IDM what's-new notice ensured (%s)", WHATS_NEW_ISSUE_ID)

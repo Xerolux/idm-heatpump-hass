@@ -176,15 +176,15 @@ async def test_setup_skips_notice_on_same_or_fresh_version(mock_hass: Any) -> No
         ensure.assert_not_called()  # stamping may run, the notice never fires
 
 
-async def test_setup_skips_advisor_and_notice_when_disabled(mock_hass: Any) -> None:
-    """predictive_advisor=False creates no advisor runtime and no notice."""
+async def test_setup_notice_is_independent_of_advisor(mock_hass: Any) -> None:
+    """Firmware release orientation also reaches users without the advisor."""
     entry = _make_entry(
         options={"feature_profile": "smart", "predictive_advisor": False},
         data={"host": "h", "port": 502, "slave_id": 1, "last_run_version": "0.20.1"},
     )
     ensure = MagicMock()
     assert await _setup_with_patches(mock_hass, entry, ensure) is None
-    ensure.assert_not_called()
+    ensure.assert_called_once()
     assert entry.runtime_data.predictive_advisor is None
     assert entry.runtime_data.advisor_engine is None
 

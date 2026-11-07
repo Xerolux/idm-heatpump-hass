@@ -194,6 +194,7 @@ from .error_messages import (
     scoped_issue_id,
 )
 from .external_power_forwarding import ExternalPowerForwarder, ExternalPowerForwardingConfig
+from .firmware_notice import ACK_KEY as FIRMWARE_ACK_DATA_KEY
 from .firmware_observations import FirmwareObservations
 from .internal_messages import warm_error_code_database
 from .knx_bridge import KnxBridge, KnxBridgeConfig
@@ -268,6 +269,7 @@ _DETECTION_ONLY_DATA_KEYS = frozenset(
         CONF_DETECTED_WEB_VARIANT,
         # The what's-new stamp: bookkeeping, not a setting.
         LAST_RUN_VERSION_DATA_KEY,
+        FIRMWARE_ACK_DATA_KEY,
     }
 )
 
@@ -756,6 +758,7 @@ async def _async_optional_platforms(hass: HomeAssistant) -> tuple[Platform, ...]
 
 async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
     integration = await async_get_integration(hass, DOMAIN)
+    await async_note_release(hass, entry, str(integration.manifest.get("version") or "") or None)
     versions = await async_runtime_versions(integration.manifest.get("version"))
     _LOGGER.info(
         "Setting up %s v%s (idm-heatpump-api v%s, modbus-connection v%s, tmodbus v%s)",
@@ -1102,11 +1105,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
             # removes it completely, entities included. The one-time
             # what's-new notice points upgrade users at the feature.
             if bool(entry.options.get(CONF_PREDICTIVE_ADVISOR, DEFAULT_PREDICTIVE_ADVISOR)):
-                # One-time-per-update notice: fires only when the entry last
-                # ran a different integration version (never fresh installs,
-                # never again on restarts).
-                integration = await async_get_integration(hass, DOMAIN)
-                await async_note_release(hass, entry, str(integration.manifest.get("version") or "") or None)
                 predictive_advisor = PredictiveAdvisor(coordinator)
                 await async_ensure_analysis(hass, entry, coordinator)
                 await predictive_advisor.async_load()

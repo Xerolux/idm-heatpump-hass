@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.26.4 — 2026-11-07
+
+Die Telemetrie setzt Zähler und Beobachtungszeit nach dem Neuladen mit passenden Speicherständen fort. Die private Serverauswertung prüft Quellenabdeckung, kurze Zeitfenster und widersprüchliche Betriebszeiten und verwendet passende Nenner. Alte Betriebszeitfenster entfallen einmalig; Betriebsverlauf, eingefrorene Wiederholungen, Zustimmung und Versandplan bleiben erhalten.
+
 ## v0.26.3 — 2026-11-07
 
 Freiwillige Anlagenmeldungen und eine getrennte Firmware-Abfrage sind jetzt verfügbar. Beide bleiben standardmäßig aus; kurze Hinweise verlinken den vollständigen Datenschutztext. Meldungen bleiben nach Neustarts erhalten und werden zeitlich verteilt versendet. Verwaiste Technikercode-Entitäten werden beim ersten Start bereinigt.

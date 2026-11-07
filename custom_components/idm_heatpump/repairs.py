@@ -30,6 +30,7 @@ from .const import (
     DOMAIN,
 )
 from .error_messages import scoped_issue_id
+from .firmware_notice import ACK_KEY, fingerprint
 from .ha_compat import vol
 from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
 
@@ -56,9 +57,50 @@ async def async_create_fix_flow(
     data: dict[str, Any] | None,
 ) -> repairs.RepairsFlow:
     """Create a repair flow for a fixable issue."""
+    if issue_id.startswith("firmware_observed_"):
+        return IdmFirmwareObservedRepairFlow(hass, issue_id, data or {})
     if issue_id.startswith(_ISSUE_SOLAR_MODULE_UNUSED):
         return IdmSolarUnusedRepairFlow(hass, data or {})
     return IdmWebPinMissingRepairFlow(hass, data or {})
+
+
+class IdmFirmwareObservedRepairFlow(repairs.RepairsFlow):
+    """Acknowledge seeing a version without installing or contacting a device."""
+
+    def __init__(self, hass: HomeAssistant, issue_id: str, data: dict[str, Any]) -> None:
+        self.hass = hass
+        self._issue_id = issue_id
+        self._issue_data = data
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
+        return await self.async_step_confirm(user_input)
+
+    async def async_step_confirm(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
+        entry = self.hass.config_entries.async_get_entry(self._issue_data.get("entry_id", ""))
+        if entry is None:
+            return self.async_abort(reason="entry_not_found")
+        version = self._issue_data.get("firmware")
+        if not isinstance(version, str) or self._issue_data.get("fingerprint") != fingerprint(version):
+            return self.async_abort(reason="entry_not_found")
+        if self._issue_id != f"firmware_observed_{entry.entry_id}_{fingerprint(version)[:16]}":
+            return self.async_abort(reason="entry_not_found")
+        if user_input is not None:
+            previous = entry.data.get(ACK_KEY, [])
+            acknowledged = [value for value in previous if isinstance(value, str)] if isinstance(previous, list) else []
+            digest = fingerprint(version)
+            if digest not in acknowledged:
+                acknowledged.append(digest)
+            self.hass.config_entries.async_update_entry(entry, data={**entry.data, ACK_KEY: acknowledged})
+            ir.async_delete_issue(self.hass, DOMAIN, self._issue_id)
+            return self.async_create_entry(title="", data={})
+        return self.async_show_form(
+            step_id="confirm",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "installed": str(self._issue_data.get("installed") or "unknown"),
+                "observed": version,
+            },
+        )
 
 
 class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
