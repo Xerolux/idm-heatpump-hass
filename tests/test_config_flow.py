@@ -46,6 +46,7 @@ from custom_components.idm_heatpump.const import (
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
     CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
     CONF_EXTERNAL_POWER_GRID_SIGN,
+    CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
     CONF_FEATURE_PROFILE,
     CONF_HEALTH_MONITOR,
     CONF_HEATING_CIRCUITS,
@@ -3470,3 +3471,29 @@ async def test_firmware_consent_is_separate_and_never_inherited_from_telemetry()
         assert options["firmware_check"] is enabled
         assert bool(options["firmware_consent_at"]) is enabled
         assert bool(options["firmware_policy"]) is enabled
+
+
+@pytest.mark.parametrize("kind", ["setup", "options", "reconfigure"])
+@pytest.mark.parametrize("enabled", [False, True])
+async def test_pv_zero_workaround_is_saved_by_all_feature_flows(kind: str, enabled: bool) -> None:
+    flow = IdmHeatpumpOptionsFlow() if kind == "options" else _make_flow()
+    flow.hass = MagicMock()
+    flow._options = {CONF_EXTERNAL_POWER_FORWARDING: True}
+    if kind == "options":
+        flow.config_entry = MagicMock()
+    if kind == "reconfigure":
+        flow._reconfigure_entry = _make_entry("existing", "192.0.2.1")
+    with patch.object(flow, "_async_continue_optional_steps", new=AsyncMock(return_value={"type": "done"})):
+        form = await flow.async_step_external_power_forwarding()
+        assert form["step_id"] == "external_power_forwarding"
+        markers = {marker.schema: marker for marker in _build_external_power_forwarding_schema(flow._options).schema}
+        assert markers[CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND].default() is False
+        await flow.async_step_external_power_forwarding(
+            {
+                "external_power_forwarding_pv_production": "sensor.pv",
+                CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND: enabled,
+            }
+        )
+    assert flow._options[CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND] is enabled
+    markers = {marker.schema: marker for marker in _build_external_power_forwarding_schema(flow._options).schema}
+    assert markers[CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND].default() is enabled

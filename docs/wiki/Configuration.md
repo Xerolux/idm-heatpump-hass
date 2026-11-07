@@ -149,6 +149,32 @@ for controller preparation and field mappings.
 For a battery-connected SolarEdge inverter with additional inverters, see the
 [GLT recipe and template generator](Smart-Energy-and-Comfort#solaredge-battery-and-multiple-inverters-over-glt).
 
+### Optional workaround for PV message 20300 at zero production
+
+Some Navigator controllers report **20300: PV not connected** at night or in low light even while valid zero-production
+values are repeatedly written successfully over GLT. On one Navigator 10 with
+firmware `T_NAV10_20.24-1580-g02a20b66f`, a live test cleared the message without
+acknowledgement about 20 seconds after sending 0.01 kW instead of 0 kW. This
+points to the controller's zero-production connection assessment; the exact
+firmware logic and applicability to other plants have not been established.
+It is not evidence that every occurrence of 20300 has this cause.
+
+For an affected plant, open **Settings → Devices & services → IDM Heatpump →
+Configure**, or **Reconfigure → Features**. In the guided feature settings,
+enable external power forwarding and open its sensor mapping page. Enable
+**PV zero-power workaround (10 W)** and save the remaining wizard steps.
+The same checkbox is available during initial setup. It is **off by default**.
+
+Only an exactly zero, valid PV-production source is transmitted as **10 W
+(0.01 kW)**. As soon as the source is positive, forwarding uses its live value
+again with the usual GLT rounding. Unavailable, invalid or unmapped sources
+are not replaced. PV surplus, battery values, household balance calculations
+and the original HA source sensor are unchanged; the fake 10 W do not create
+a fake surplus signal. The controller and its PV-derived displays/statistics
+can nevertheless see artificial production while the workaround is active.
+Do not use this to hide a real communication failure. Disable the checkbox to
+restore ordinary zero forwarding; no controller firmware modification is made.
+
 ### Optional PV energy manager
 
 The **automatic PV surplus DHW charging** option is off by default. It only

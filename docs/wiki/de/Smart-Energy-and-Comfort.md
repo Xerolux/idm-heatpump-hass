@@ -268,6 +268,10 @@ tarifgesteuerte Schreibzugriffe auf die Wärmepumpe sind nicht aktiviert.
 
 ## SolarEdge mit Batterie und mehreren Wechselrichtern über GLT
 
+Meldet der Navigator bei gültiger Nullleistung **20300: Photovoltaik nicht verbunden**,
+siehe den optionalen [10-W-Nullleistungs-Workaround](Configuration#optionaler-workaround-fur-pv-meldung-20300-bei-nullleistung).
+Er ist standardmäßig aus und ersetzt keine nicht verfügbaren Quellen.
+
 Diese Anleitung gilt, wenn HA mehrere SolarEdge-Wechselrichter und die Batterie
 liest und der Navigator die Energiedaten der Anlage über GLT erhalten soll.
 Die [aktuell von IDM verlinkte SolarEdge-Anleitung](https://www.idm-energie.at/wp-content/uploads/2021/04/SolarEdge-DE.pdf)

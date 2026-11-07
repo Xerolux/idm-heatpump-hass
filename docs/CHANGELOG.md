@@ -13,6 +13,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### ⚠️ Upgrade notes
+
+- **PV zero-power workaround is opt-in**: existing forwarding stays unchanged. Affected users can enable the 10 W workaround on the external power sensor mapping page during setup, configuration or reconfiguration. Disable it to restore ordinary zero forwarding. Controller PV displays and statistics may include artificial production while it is enabled.
+
+### 🐛 Bugfixes
+
+- **Offer a workaround for PV message 20300 at zero production**: optionally send valid zero PV production as 0.01 kW. Positive live readings resume normally; invalid sources remain skipped. PV surplus, source sensors and derived household balances retain measured values. A Navigator 10 live test cleared the warning without acknowledgement; the controller's exact firmware logic remains unconfirmed.
+
 ## [0.26.5] - 2026-11-07
 
 ### ⚠️ Upgrade notes

@@ -66,6 +66,7 @@ from .const import (
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
     CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
     CONF_EXTERNAL_POWER_GRID_SIGN,
+    CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
     CONF_FEATURE_PROFILE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
@@ -133,6 +134,7 @@ from .const import (
     DEFAULT_EXTERNAL_POWER_FORWARDING,
     DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
     DEFAULT_EXTERNAL_POWER_GRID_SIGN,
+    DEFAULT_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
     DEFAULT_FEATURE_PROFILE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_HUMIDITY_FORWARDING,
@@ -1312,6 +1314,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
                         interval=external_power_forwarding_interval,
                         battery_sign=external_power_battery_sign,
                         grid_sign=external_power_grid_sign,
+                        pv_zero_workaround=bool(
+                            entry.options.get(
+                                CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND, DEFAULT_EXTERNAL_POWER_PV_ZERO_WORKAROUND
+                            )
+                        ),
                     ),
                 )
                 entry.runtime_data.external_power_forwarding_task = _create_entry_background_task(

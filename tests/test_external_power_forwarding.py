@@ -21,6 +21,7 @@ def _forwarder(
     *,
     battery_sign: str = "as_is",
     grid_sign: str = "import",
+    pv_zero_workaround: bool = False,
 ) -> tuple[module.ExternalPowerForwarder, MagicMock]:
     hass = MagicMock()
     hass.states.get.side_effect = states.get
@@ -37,7 +38,7 @@ def _forwarder(
         module.ExternalPowerForwarder(
             hass,
             coordinator,
-            module.ExternalPowerForwardingConfig(entities, 30, battery_sign, grid_sign),
+            module.ExternalPowerForwardingConfig(entities, 30, battery_sign, grid_sign, pv_zero_workaround),
         ),
         coordinator,
     )
@@ -50,6 +51,55 @@ def _forwarder(
 def test_power_conversion(value: object, unit: str | None, expected: float | None) -> None:
     forwarder, _ = _forwarder({}, {})
     assert forwarder._value("pv_production", _state(value, unit)) == expected
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+@pytest.mark.parametrize(
+    ("value", "unit", "expected"),
+    [
+        (0, "W", 0.0),
+        (0, "kW", 0.0),
+        (0, "MW", 0.0),
+        (1500, "W", 1.5),
+        (1, "W", 0.001),
+        (-1, "W", -0.001),
+        ("unavailable", "W", None),
+        ("unknown", "W", None),
+        ("nan", "W", None),
+        (0, "kWh", None),
+    ],
+)
+async def test_pv_zero_workaround_only_replaces_valid_exact_zero(
+    enabled: bool, value: object, unit: str, expected: float | None
+) -> None:
+    forwarder, coordinator = _forwarder(
+        {"sensor.pv": _state(value, unit)}, {"pv_production": "sensor.pv"}, pv_zero_workaround=enabled
+    )
+    assert forwarder._value("pv_production", _state(value, unit)) == (0.01 if enabled and expected == 0.0 else expected)
+    await forwarder.async_forward()
+    if expected is None:
+        coordinator.async_write_register.assert_not_awaited()
+    else:
+        assert coordinator.async_write_register.await_args.args[1] == (
+            0.01 if enabled and expected == 0.0 else round(expected, 2)
+        )
+
+
+async def test_pv_zero_workaround_preserves_sources_surplus_and_derived_balance() -> None:
+    states = {"sensor.pv": _state(0, "W"), "sensor.grid": _state(1000, "W")}
+    forwarder, coordinator = _forwarder(
+        states, {"pv_production": "sensor.pv", "grid_power": "sensor.grid"}, pv_zero_workaround=True
+    )
+    await forwarder.async_forward()
+    written = {call.args[0].name: call.args[1] for call in coordinator.async_write_register.await_args_list}
+    assert written == {"pv_production": 0.01, "pv_surplus": -1.0, "house_consumption": 1.0}
+    assert states["sensor.pv"].state == 0
+    assert forwarder._value("pv_surplus", _state(0)) == 0
+    states["sensor.pv"] = _state(2500, "W")
+    coordinator.async_write_register.reset_mock()
+    await forwarder.async_forward()
+    written = {call.args[0].name: call.args[1] for call in coordinator.async_write_register.await_args_list}
+    assert written == {"pv_production": 2.5, "pv_surplus": -1.0, "house_consumption": 3.5}
 
 
 def test_soc_and_battery_sign_are_validated() -> None:
