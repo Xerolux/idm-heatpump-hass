@@ -759,6 +759,6 @@ außer der Besitzer hat einen bestimmten Schreibzugriff ausdrücklich autorisier
 
 - Einen Opt-in-Dienst für geschwärzte Protokoll-Mitschnitte ausgewählter Register ergänzen, damit Nutzer Batch-/Einzel-Nachweise ohne eigene Skripte sammeln können.
 - Anonymisierte Kompatibilitätsberichte nach Navigator-Modell und Firmware dauerhaft speichern, einschließlich Fähigkeits-Sentinels.
-- Abfrage-Timing und Anfragezahlen in die Diagnose aufnehmen, um langsame Controller und überkonfigurierte Zonen-Setups sichtbar zu machen.
+- Vorhandene Abfragedauer-/Zählerdiagnosen bei Bedarf um Zahlen einzelner Anfragen erweitern; diese Anfragezahlen werden derzeit nicht ausgegeben.
 - Adaptive Hinweise zum Abfrageintervall erwägen, wenn eine konfigurierte Abfrage ihr Intervall nicht zuverlässig einhält.
-- Die Climate-Entität weiter zurückstellen, bis die Semantik von IDM-Heizkreis/Raum/Kühlung dargestellt werden kann, ohne wichtige Controller-Zustände zu verbergen.
+- Die vorhandenen Climate-Entitäten für Heizkreis-, Raum- und Kühlsemantik auf weiteren Anlagen prüfen; die Plattform ist bereits implementiert.

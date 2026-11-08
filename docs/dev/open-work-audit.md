@@ -1,118 +1,64 @@
 # Open Work Audit
 
-Last updated: 2026-10-20
+Last reviewed: 2026-11-08
 
-This audit separates work that can be finished locally from items that cannot be
-completed safely without real-system data or without a central Home Assistant
-shared-connection contract. The local tmodbus adapter is wired up in production;
+This audit separates work that can be finished locally from items that require
+real-system data and coordinated hardware validation. The local tmodbus adapter is wired up in production;
 the goal remains to never declare an estimate, or a transport property that has
 not been validated on hardware, as finished.
 
-## Next actions
+## Current next actions
 
-Concrete, owner-assigned steps for the blocked items below — added 2026-10-12
-after the 0.21.0 stable cut. Every entry names who acts and what unblocks it;
-"community" means a public call in Discussions using the existing field
-diagnostics template, "maintainer" means Basti's own plant or decision.
+1. **GLT entity lifecycle (#493):** supported external-power readback sensors
+   must survive an unset startup reading. The current change retains them,
+   with live sentinel availability; the existing Number remains writable and
+   has an explicit `_set` polling dependency. Unit regressions and a genuine
+   Home Assistant off/on/off reload test cover recovery and stable entity IDs.
+   Controller-side display flicker is still unresolved; no reset/default write
+   or faster refresh is justified by this entity correction.
+2. **Navigator 1.7/nav20 (#577):** login success is not parsed-value coverage.
+   Inspect an attributable private response capture, reproduce the missing rows
+   against the pinned API, then add a minimal sanitized/synthetic fixture and
+   parser correction. Do not infer controller identity from HTTP transport or
+   guess packed-byte decoding from 256/257/512 alone. On 2026-11-08 two
+   issue-referenced private captures passed archive-ledger verification and were
+   replayed against the pinned API 2.16.1. The HTTP JSON capture produces three
+   circuit flow temperatures; absent power/pressure/room readings are not
+   inferred. The WebSocket capture's status/home-detail/home-overview responses
+   parse, while its HTTP data paths are 404s. An issue note does not establish
+   controller identity or that either is the originally reported 1.7 module.
+   No new parser defect or universal resolution is established. Next evidence:
+   current integration diagnostics from the reporter, compared with the exact
+   capture/module, including parsed available keys and API version.
+3. **Field confirmation:** #668 has a released correction in 0.26.7 and #596
+   in 0.23.2; both await confirmation on the reporting plant. #594 remains the
+   collection entry point, not an independent software defect.
+4. **Read-only evidence:** verify shared-link ownership and reconnect behavior,
+   Navigator 2.0/Pro binary semantics, cascade flow deviation, maximum-plant
+   response times, and COP during DHW/defrost. Record model, firmware, sources,
+   window and gaps. Controlled disconnects need coordination with the owner.
+5. **Automatic writes:** validate the existing DHW/comfort behavior only with
+   separately authorized bounded tests and verified restoration. Tariff control,
+   PV/battery optimization and occupancy/per-room schedules remain proposals.
+   Failure prediction requires labelled fault histories before implementation.
 
-- **Marketplace mention in the 0.23.0 stable release notes** *(maintainer)* —
-  HACS ships as the built-in **Marketplace** from Home Assistant 2026.11 (same
-  catalog, same `hacs.json`, automatic migration; the installation docs were
-  reworked accordingly in October 2026). When cutting 0.23.0 stable, mention
-  in the release notes and the what's-new notice that users on 2026.11
-  install and update through Settings → Marketplace without a GitHub account.
-- **Advisor field feedback** *(maintainer — reference-plant pass done
-  2026-10-17, community feedback ongoing in
-  [discussion #540](https://github.com/Xerolux/idm-heatpump-hass/discussions/540))*
-  — the reference plant (AERO ALM 6-15, Navigator 10, 0.23.0-b3) passed the
-  plausibility pass at 10.4 observation days / phase *recommending* /
-  confidence 0.84: the heating-curve recommendations (HC A 0.30 → 0.32 at
-  −1.2 K mean room deviation, HC D 0.50 → 0.48 at +1.1 K) match the room
-  temperatures, the controller's curve registers and the controller's own
-  demand display; data quality reports 100 % usable samples across 680k.
-  The long-term model entities (efficiency score, thermal inertia, building
-  heat loss, 24 h plan) staying *unavailable* is expected lifecycle gating,
-  not a fault. The pass produced four follow-ups, now tracked as issues:
-  coordinator-wide 12 s unavailability after every GLT forwarding pass
-  (#537), operation-reason label language mixing (#538), the no-TWT fake
-  flow rate passing the advisor's data-quality gate (#539), and the daily
-  re-issued heating-curve recommendations accumulating as parallel "new"
-  entries instead of superseding each other (polish, no issue yet — collect
-  reactions in #540 first).
-- **Web value when Modbus reports not-present** *(shipped 0.23.0-b5, discussion
-  #516)* — when an existing register reads the documented not-present fill
-  (FLOAT −1.0 pattern / decoded UCHAR 0.0, e.g. `heat_sink_flow_rate` without
-  a TWT), the web supplement's live value (the controller's own flowmeter)
-  serves the entity instead of the spurious zero. The not-present detection
-  stays strict; overlaps with #539 on the advisor side (also shipped, b4).
-- **COP verification for DHW and defrost** *(community + maintainer)* —
-  post the field-data call (which entities, which observation window, what to
-  export); on the maintainer's plant, log one DHW charge and one defrost cycle
-  and reconcile the COP sensor against `power_consumption_hp` and
-  `thermal_power_flow_sensor` by hand.
-- **Flow setpoint identification → flow-deviation sensor** *(resolved
-  2026-10-20 by the read-only probe)* — the per-circuit deviation sensors
-  shipped with 0.23.0-b2 (`calculated_hc_{a..g}_flow_deviation`: actual flow
-  minus the circuit's calculated setpoint, suppressed while the circuit
-  requests nothing). The remaining heat-pump-level question was answered from
-  24 h of recorded reference-plant history covering heating, compressor
-  standby, demand-idle and two DHW charges:
-  - No register exists for a heat-pump-level flow setpoint. The full
-    Navigator 10 map (169 registers, reference configuration) offers only the
-    per-circuit `hc_*_setpoint_flow_temp`, the configurable
-    `hc_*_setpoint_flow_constant`/`_cooling`, and `dhw_setpoint`.
-  - During a DHW charge (mode bitflag 4) the heat-pump flow rises to
-    charging temperature (observed 60–62 °C) while the circuit setpoints
-    stay at their heating-curve values (HK A ≈ 44.7 °C) — an unsuppressed
-    heat-pump-level deviation would show a ~+16 K "overshoot" that is really
-    the DHW charge. Circuit-level sensors stay honest: the redirecting
-    circuit drifts to −3.7…−6.6 K while the mixer circuit stays ≈ 0.
-  - While rooms are under setpoint the curve setpoints persist through
-    compressor standby (HK A 44.3–47.6 °C, HK D 25.1–29.5 °C over 24 h); the
-    0.0 "no request" state did not occur once in that window, so the mode
-    gate — not a setpoint gate — keeps the heat-pump-level sensor honest.
+## Completed or superseded planning items
 
-  The heat-pump-level sensor therefore derives its requested level as the
-  highest active circuit setpoint (0.0 no-request values excluded, unused
-  registers excluded by the sentinel filter) and publishes only in pure
-  heating mode: `calculated_hp_flow_deviation`. DHW, cooling, defrost,
-  standby and combined bitflags are suppressed. Residual field question:
-  cascade plants still need a report (the sensor reads the lead heat-pump
-  registers there).
-- **Heat-sink flow-rate correction** *(resolved 2026-10-18 by field evidence,
-  idm-heatpump-api 2.14.4)* — the official doc's UCHAR typing of 1072 was
-  wrong: a direct HA modbus `float32` read with word swap returned plausible
-  L/min on a plant with a live flow signal (discussion #516, aivatco), and
-  the no-TWT fill `[0, 49024]` is exactly the word-swapped FLOAT −1.0 pattern
-  (MandaLambda). The register is re-typed as word-swapped FLOAT32 in the API;
-  the UCHAR decode's one-byte read caused the jumping too-high values. A full
-  1068-1077 TWT-plant readout is no longer needed for the typing decision.
-- **Binary register verification on Navigator 2.0/Pro** *(community)* —
-  ask for reporters on those families to run the read-only verification
-  template; needed before any model-wide runtime claims.
-- **Real-hardware load test of the maximum plant** *(community)* — find a
-  plant with many circuits/zones (or a cascade) willing to run the full
-  configuration for a day while logging response times and batch behaviour.
-- **Authorized write validation (DHW/comfort)** *(maintainer decision, then
-  protocol)* — decide whether and when bounded write tests may run on the
-  maintainer's plant; if yes, define the protocol first (bounded steps,
-  verified rollback, before/after diagnostics).
-- **Failure prediction** *(waiting on data)* — collect labelled fault
-  histories before designing anything; format for the data call once enough
-  reporters exist. No code before data.
-- **Tariff-based control / PV-battery optimization** *(maintainer decision)* —
-  a product decision on automatic writes (controller ownership, fail-closed
-  behaviour, equipment constraints) must precede any design; a short options
-  paper is the next step once wanted.
-- **Occupancy/geofencing/per-room schedules** *(waiting on demand)* — pick up
-  when users ask for it with their own sensors and consent.
-- **Home Assistant shared-connection contract** *(provider implemented
-  2026-10-28; field validation open)* — the contract shipped with HA 2026.10
-  (`modbus.async_get_unit`) and `modbus_shared_transport.py` claims it; see the
-  section below. Remaining: read-only hardware validation of the shared link.
-- **`via_device_id` fallback removal** *(scheduled by HA releases)* — revisit
-  when the declared minimum HA reaches 2026.9; custom integrations keep the
-  fallback until Core 2027.8, so there is no deadline pressure.
+- The shared Modbus provider is implemented; hardware coverage remains open.
+- Circuit and pure-heating heat-pump flow-deviation sensors are implemented.
+- Child devices are adopted and the supported minimum is Home Assistant 2026.11;
+  the old 2026.8 compatibility milestone is historical.
+- The Predictive Advisor's nine producer phases are implemented. Daily reissues
+  supersede recommendations by topic; that old UX item is no longer open.
+- Diagnostics already include last poll duration, counters, active/known
+  register counts and per-register outcomes. Request-level timing/counts and
+  adaptive scan guidance remain possible improvements, not existing metrics.
+- Climate entities already exist; deferring the whole platform is obsolete.
+- #493's three-second refresh and manual Number/polling corrections already
+  shipped. The new sensor-startup correction does not prove the display fixed.
+
+The older evidence sections below are historical, scoped observations. Their
+original versions and dates do not override the current action list above.
 
 ## Done locally
 
@@ -272,8 +218,8 @@ system is available:
 
 - COP verification for domestic hot water, defrost cycles and different
   Navigator firmware levels.
-- Unambiguous identification of the flow setpoint the heat pump actually
-  requests.
+- Validate the implemented pure-heating flow-deviation derivation on cascade
+  and Navigator 2.0/Pro plants; no dedicated heat-pump setpoint register is known.
 - ~~Publish the flow-temperature-deviation sensor (`actual flow − requested flow`)
   only after the delineation from the heating curve, mixer setpoint, maximum
   flow temperature and heating-circuit setpoint is documented~~ — shipped:
@@ -374,3 +320,114 @@ An item may only move from "blocked" to "done" when at least one of these holds:
    adapter that already exists.
 3. A test or generator proves reproducibly that the documentation matches the
    code.
+
+## Historical October action list
+
+The following snapshot preserves the original measurements and reasoning.
+Its tasks and version claims are superseded by the current action list above.
+
+### October snapshot
+
+Concrete, owner-assigned steps for the blocked items below — added 2026-10-12
+after the 0.21.0 stable cut. Every entry names who acts and what unblocks it;
+"community" means a public call in Discussions using the existing field
+diagnostics template, "maintainer" means Basti's own plant or decision.
+
+- **Marketplace mention in the 0.23.0 stable release notes** *(maintainer)* —
+  HACS ships as the built-in **Marketplace** from Home Assistant 2026.11 (same
+  catalog, same `hacs.json`, automatic migration; the installation docs were
+  reworked accordingly in October 2026). When cutting 0.23.0 stable, mention
+  in the release notes and the what's-new notice that users on 2026.11
+  install and update through Settings → Marketplace without a GitHub account.
+- **Advisor field feedback** *(maintainer — reference-plant pass done
+  2026-10-17, community feedback ongoing in
+  [discussion #540](https://github.com/Xerolux/idm-heatpump-hass/discussions/540))*
+  — the reference plant (AERO ALM 6-15, Navigator 10, 0.23.0-b3) passed the
+  plausibility pass at 10.4 observation days / phase *recommending* /
+  confidence 0.84: the heating-curve recommendations (HC A 0.30 → 0.32 at
+  −1.2 K mean room deviation, HC D 0.50 → 0.48 at +1.1 K) match the room
+  temperatures, the controller's curve registers and the controller's own
+  demand display; data quality reports 100 % usable samples across 680k.
+  The long-term model entities (efficiency score, thermal inertia, building
+  heat loss, 24 h plan) staying *unavailable* is expected lifecycle gating,
+  not a fault. The pass produced four follow-ups, now tracked as issues:
+  coordinator-wide 12 s unavailability after every GLT forwarding pass
+  (#537), operation-reason label language mixing (#538), the no-TWT fake
+  flow rate passing the advisor's data-quality gate (#539), and the daily
+  re-issued heating-curve recommendations accumulating as parallel "new"
+  entries instead of superseding each other (polish, no issue yet — collect
+  reactions in #540 first).
+- **Web value when Modbus reports not-present** *(shipped 0.23.0-b5, discussion
+  #516)* — when an existing register reads the documented not-present fill
+  (FLOAT −1.0 pattern / decoded UCHAR 0.0, e.g. `heat_sink_flow_rate` without
+  a TWT), the web supplement's live value (the controller's own flowmeter)
+  serves the entity instead of the spurious zero. The not-present detection
+  stays strict; overlaps with #539 on the advisor side (also shipped, b4).
+- **COP verification for DHW and defrost** *(community + maintainer)* —
+  post the field-data call (which entities, which observation window, what to
+  export); on the maintainer's plant, log one DHW charge and one defrost cycle
+  and reconcile the COP sensor against `power_consumption_hp` and
+  `thermal_power_flow_sensor` by hand.
+- **Flow setpoint identification → flow-deviation sensor** *(resolved
+  2026-10-20 by the read-only probe)* — the per-circuit deviation sensors
+  shipped with 0.23.0-b2 (`calculated_hc_{a..g}_flow_deviation`: actual flow
+  minus the circuit's calculated setpoint, suppressed while the circuit
+  requests nothing). The remaining heat-pump-level question was answered from
+  24 h of recorded reference-plant history covering heating, compressor
+  standby, demand-idle and two DHW charges:
+  - No register exists for a heat-pump-level flow setpoint. The full
+    Navigator 10 map (169 registers, reference configuration) offers only the
+    per-circuit `hc_*_setpoint_flow_temp`, the configurable
+    `hc_*_setpoint_flow_constant`/`_cooling`, and `dhw_setpoint`.
+  - During a DHW charge (mode bitflag 4) the heat-pump flow rises to
+    charging temperature (observed 60–62 °C) while the circuit setpoints
+    stay at their heating-curve values (HK A ≈ 44.7 °C) — an unsuppressed
+    heat-pump-level deviation would show a ~+16 K "overshoot" that is really
+    the DHW charge. Circuit-level sensors stay honest: the redirecting
+    circuit drifts to −3.7…−6.6 K while the mixer circuit stays ≈ 0.
+  - While rooms are under setpoint the curve setpoints persist through
+    compressor standby (HK A 44.3–47.6 °C, HK D 25.1–29.5 °C over 24 h); the
+    0.0 "no request" state did not occur once in that window, so the mode
+    gate — not a setpoint gate — keeps the heat-pump-level sensor honest.
+
+  The heat-pump-level sensor therefore derives its requested level as the
+  highest active circuit setpoint (0.0 no-request values excluded, unused
+  registers excluded by the sentinel filter) and publishes only in pure
+  heating mode: `calculated_hp_flow_deviation`. DHW, cooling, defrost,
+  standby and combined bitflags are suppressed. Residual field question:
+  cascade plants still need a report (the sensor reads the lead heat-pump
+  registers there).
+- **Heat-sink flow-rate correction** *(resolved 2026-10-18 by field evidence,
+  idm-heatpump-api 2.14.4)* — the official doc's UCHAR typing of 1072 was
+  wrong: a direct HA modbus `float32` read with word swap returned plausible
+  L/min on a plant with a live flow signal (discussion #516, aivatco), and
+  the no-TWT fill `[0, 49024]` is exactly the word-swapped FLOAT −1.0 pattern
+  (MandaLambda). The register is re-typed as word-swapped FLOAT32 in the API;
+  the UCHAR decode's one-byte read caused the jumping too-high values. A full
+  1068-1077 TWT-plant readout is no longer needed for the typing decision.
+- **Binary register verification on Navigator 2.0/Pro** *(community)* —
+  ask for reporters on those families to run the read-only verification
+  template; needed before any model-wide runtime claims.
+- **Real-hardware load test of the maximum plant** *(community)* — find a
+  plant with many circuits/zones (or a cascade) willing to run the full
+  configuration for a day while logging response times and batch behaviour.
+- **Authorized write validation (DHW/comfort)** *(maintainer decision, then
+  protocol)* — decide whether and when bounded write tests may run on the
+  maintainer's plant; if yes, define the protocol first (bounded steps,
+  verified rollback, before/after diagnostics).
+- **Failure prediction** *(waiting on data)* — collect labelled fault
+  histories before designing anything; format for the data call once enough
+  reporters exist. No code before data.
+- **Tariff-based control / PV-battery optimization** *(maintainer decision)* —
+  a product decision on automatic writes (controller ownership, fail-closed
+  behaviour, equipment constraints) must precede any design; a short options
+  paper is the next step once wanted.
+- **Occupancy/geofencing/per-room schedules** *(waiting on demand)* — pick up
+  when users ask for it with their own sensors and consent.
+- **Home Assistant shared-connection contract** *(provider implemented
+  2026-10-28; field validation open)* — the contract shipped with HA 2026.10
+  (`modbus.async_get_unit`) and `modbus_shared_transport.py` claims it; see the
+  section below. Remaining: read-only hardware validation of the shared link.
+- **`via_device_id` fallback removal** *(scheduled by HA releases)* — revisit
+  when the declared minimum HA reaches 2026.9; custom integrations keep the
+  fallback until Core 2027.8, so there is no deadline pressure.

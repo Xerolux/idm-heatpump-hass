@@ -453,3 +453,37 @@ nicht, wie die Firmware den PV-Verbindungszustand bewertet. Der optionale
 [10-W-Workaround](Configuration#optionaler-workaround-fur-pv-meldung-20300-bei-nullleistung)
 ist standardmäßig aus; er beeinflusst die Regleranzeige und gegebenenfalls
 Statistiken. Er ersetzt keine Reparatur einer unterbrochenen Verbindung.
+
+### GLT-Verfügbarkeit untersuchen (#493)
+
+Bei einem unterstützten externen Leistungseingang vier Diagnosefälle trennen:
+`unused_sentinel` bedeutet einen nicht gesetzten Reglerwert; `not_polled`
+bedeutet ein vom Abfrageplan ausgeschlossenes Register; `unsupported` eine
+abgelehnte Adresse; `no_data` einen geplanten Lesezugriff ohne nutzbaren Wert.
+Diese Ursachen sind keine einheitliche Störung der Weiterleitung.
+
+Den betreffenden Lesesensor und für manuelle Bedienung die Number mit dem
+Zusatz `(Vorgabe)` aktivieren. Deren `_set`-ID hält den Rücklesewert auch ohne
+Weiterleitung im Abfrageplan. Integrations-/API-Version, Weiterleitungsoption,
+Registerstatus und Entitätsverfügbarkeit vor/nach einem Neuladen festhalten.
+Ein unterstützter Sensor bleibt nun auch bei nicht gesetztem Startwert angelegt
+und erholt sich bei späterem gültigem Rücklesewert. Bei nicht gesetzten Werten
+bleibt er nicht verfügbar; die Number bleibt mit unbekanntem Zustand bedienbar.
+
+Bei flackernder Regleranzeige Debug-Zeitpunkte der Weiterleitung mit echten
+Rücklesewerten und der zeitgleichen Anzeige vergleichen. Erfolgreiche
+Schreibzugriffe und optimistische HA-Zustände beweisen keine Aufbewahrungsdauer.
+Keine Eingänge zu Diagnosezwecken auf null oder Sentinel setzen und das
+Aktualisierungsintervall nicht ohne Nachweis ändern.
+
+### Offene rein lesende Feldprüfungen
+
+Diagnosen enthalten bereits `last_poll_duration_seconds`, Abfrage-/Fehlerzähler,
+aktive/bekannte Register und Registerergebnisse. Diese über ein benanntes
+Zeitfenster erfassen, bevor ein kürzeres Intervall vorgeschlagen wird. Das sind
+Abfragemetriken, keine Zahlen physischer Modbus-Anfragen. Beim gemeinsamen
+Transport tatsächlichen Verbindungsbesitz und weitere Teilnehmer festhalten;
+geplante Unterbrechungen mit dem Besitzer abstimmen. Für Warmwasser-/Abtau-COP
+gleichzeitige elektrische und thermische Quellen, Betriebsart, Datenlücken und
+Firmware dokumentieren. Zum Sammeln normaler Betriebsdaten muss kein Zyklus
+und keine Anlageneinstellung erzwungen werden.

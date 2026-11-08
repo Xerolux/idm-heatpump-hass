@@ -480,3 +480,57 @@ async def test_retired_technician_registry_cleanup_once(smoke_hass, patched_clie
     assert smoke_entry.data["technician_entities_removed_0263"] is True
     cleanup_removed_technician_entities(smoke_hass, coordinator)
     assert registry.async_get(keep.entity_id) is not None
+
+
+async def test_external_power_entities_survive_forwarding_reload(
+    smoke_hass, patched_client, smoke_entry, fake_client
+) -> None:
+    """Unset GLT startup must not strand the sensor; manual Number stays polled."""
+    values = {"battery_soc": -1}
+    fake_client.read_batch.side_effect = lambda registers: {
+        register.name: values.get(register.name, 20.0) for register in registers
+    }
+    await smoke_hass.config_entries.async_add(smoke_entry)
+    await smoke_hass.async_block_till_done()
+    registry = er.async_get(smoke_hass)
+    prefix = smoke_entry.entry_id + "_"
+
+    def glt_entries():
+        return {
+            e.unique_id.removeprefix(prefix): e
+            for e in er.async_entries_for_config_entry(registry, smoke_entry.entry_id)
+            if e.unique_id in {prefix + "battery_soc", prefix + "battery_soc_set"}
+        }
+
+    entries = glt_entries()
+    assert set(entries) == {"battery_soc", "battery_soc_set"}
+    for entity in entries.values():
+        registry.async_update_entity(entity.entity_id, disabled_by=None)
+    ids = {key: entity.entity_id for key, entity in entries.items()}
+    smoke_hass.states.async_set("sensor.test_battery", "73", {"unit_of_measurement": "%"})
+    for enabled in (False, True, False):
+        smoke_hass.config_entries.async_update_entry(
+            smoke_entry,
+            options={
+                "hide_unused": True,
+                "external_power_forwarding": enabled,
+                "external_power_forwarding_entities": {"battery_soc": "sensor.test_battery"},
+            },
+        )
+        await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+        await smoke_hass.async_block_till_done()
+        assert smoke_entry.state is ConfigEntryState.LOADED
+        assert {key: entity.entity_id for key, entity in glt_entries().items()} == ids
+        coord = smoke_entry.runtime_data.coordinator
+        # Apply the real plan immediately rather than waiting for the debounce.
+        await coord.entity_aware_polling_manager._async_apply_plan(request_refresh=False)
+        assert "battery_soc" in {reg.name for reg in coord.active_registers}
+        values["battery_soc"] = 73
+        await coord.async_refresh()
+        assert smoke_hass.states.get(ids["battery_soc"]).state == "73"
+        values["battery_soc"] = -1
+        await coord.async_refresh()
+        assert smoke_hass.states.get(ids["battery_soc"]).state == "unavailable"
+        assert smoke_hass.states.get(ids["battery_soc_set"]).state == "unknown"
+    assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
+    await smoke_hass.async_block_till_done()

@@ -1,6 +1,9 @@
 # IDM Heatpump Feature Roadmap
 
-Last updated: 2026-08-18
+Last reviewed: 2026-11-08
+
+Current actions and issue status: [Open Work Audit](open-work-audit.md).
+The completed phases below are historical milestones; they are not a new backlog.
 
 This document collects the next safe and worthwhile work packages for
 `idm-heatpump-hass`. The focus is local functionality, comprehensible behavior,
@@ -68,7 +71,8 @@ bounded and recoverable.
   - cyclic and event-based updates.
 - [x] Documented PV/building-management examples with an ownership note and
   write protection recommendations.
-- [ ] PV/smart grid assistant only after an additional safety review:
+- [x] The optional PV-surplus DHW energy manager is implemented. Broader
+  tariff/PV/battery control remains a separate proposal requiring:
   - unambiguous register ownership,
   - minimum runtimes,
   - hysteresis,
@@ -89,10 +93,8 @@ bounded and recoverable.
 
 ### Phase 3 – architecture and the future of Modbus in Home Assistant
 
-The local adapter is implemented and the direct socket uses tmodbus. Home
-Assistant's central contract for cross-entry sharing, by contrast, is still not
-stably available to custom integrations. These two levels must not be confused
-in planning or in diagnostics.
+The shared Home Assistant provider and private tmodbus fallback are implemented.
+Remaining transport work concerns hardware validation, not a missing provider.
 
 - [x] The current integration stays encapsulated behind `idm-heatpump-api` and
   the central coordinator.
@@ -152,10 +154,9 @@ in planning or in diagnostics.
   because it is separate hardware wired to the controller, and because a child
   device can't be the parent of another child device — the rooms below it need a
   real device as their parent.
-- [x] Keep 2026.8 working while doing so. `device_hierarchy.child_devices_supported()`
+- [x] Historical milestone: keep 2026.8 working during the initial adoption. `device_hierarchy.child_devices_supported()`
   probes the API and falls back to the previous `via_device_id` links, so the
-  declared minimum stays 2026.8.1 rather than jumping to a Home Assistant
-  release that is not out yet. The fallback is not a dead end: Home Assistant
+  minimum at that time stayed 2026.8.1. The current minimum is 2026.11.0. The fallback is not a dead end: Home Assistant
   converts a device whose identifiers already exist into a child device and
   keeps its device ID, so the switch costs no entity, area or automation. This
   was verified end to end against a real 2026.9 device registry, upgrading from
@@ -194,10 +195,10 @@ that circuit. Sentinel values (`0.0` while idle, `-1.0` for a heating circuit
 that is not configured) run through the central `is_register_unused` filter, and
 the sensor then reports `unavailable`.
 
-At **heat pump level** the point stays open: a sensor for
-`actual flow minus requested flow` first needs an unambiguous register for the
-flow setpoint the heat pump actually requests. Heating curve, mixer and maximum
-values must not be mixed up.
+At **heat pump level**, `calculated_hp_flow_deviation` is implemented using
+the highest active circuit setpoint, and only in pure heating mode. There is
+no known dedicated heat-pump flow-setpoint register. Cascade and additional
+controller-family field confirmation remain open.
 
 ### Binary register semantics
 
@@ -207,12 +208,7 @@ sentinel or firmware-dependent special values.
 
 ## Next concrete TODOs
 
-1. Collect real diagnostics exports for the flow deviation and the binary
-   registers through the field diagnostics template.
-2. Repeat the read-only tmodbus smoke test on Navigator 2.0/Pro hardware and
-   validate intentional connection loss/reconnect on a controlled system.
-3. Maintain the existing Modbus issue for the open central Home Assistant shared
-   connection and for a migration-safe provider implementation.
-4. Drop the `via_device_id` fallback in `device_hierarchy.py` once the declared
-   minimum reaches Home Assistant 2026.9. Custom integrations keep `via_device_id`
-   until Core 2027.8, so there is no deadline pressure.
+See the prioritized [current action list](open-work-audit.md#current-next-actions).
+The next software investigation is GLT entity recovery (#493), followed by
+capture-backed Navigator 1.7/nav20 parser work (#577). Shared-link, binary,
+COP and maximum-plant hardware validation remain separate evidence tasks.

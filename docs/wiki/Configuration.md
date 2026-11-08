@@ -388,6 +388,13 @@ Important behavior:
   Home Assistant if you want to inspect the exact GLT value written by
   forwarding.
 
+External-power GLT sensors are created even when their first supported readback
+is an unset sentinel. They report unavailable until a valid readback arrives,
+then recover without a reload. The writable Number remains available with an
+unknown value while unset. This does not depend on automatic forwarding being
+enabled. Absent or unsupported registers remain filtered. Disabling forwarding
+stops writes; it does not reset the controller input or guarantee its retention.
+
 ### KNX Bridge
 
 The KNX bridge is optional and disabled by default. When enabled, the
