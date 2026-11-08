@@ -10,7 +10,15 @@ All traffic to the heat pump is forced through three read-only proxies:
 |---|---|---|
 | `modbus-proxy` (TCP 5020) | Modbus FC01–04 (reads) | every write FC (05/06/0F/10/16/17/…) |
 | `web-proxy` HTTP (TCP 80) | `GET`, `HEAD`, and `POST` only on `/`, `/index.php`, `/login.php` (Navigator 2.0 login) | all other methods/paths |
-| `web-proxy` Nav10 WS (TCP 61220) | Nav10 read commands `setting/detail`, `statistic/detail`, `notification/overview` | every other WS frame (potential write) |
+| `web-proxy` Nav10 WS (TCP 61220) | the pinned API's read frames (`setting/detail`, `statistic/detail`, `notification/overview`, `home/detail`, `home/overview`, `status/overview`, `system`, `system.freshwater`, `system.heatpump.performance`, `system.heatingcircuit/detail` per circuit, `weather`, `ion`, `energyflow`) | every other WS frame — in particular any `save` command, the protocol's only write verb |
+
+The WS allowlist mirrors the read requests of the **pinned** API client
+(`idm_heatpump/web.py`); when the API adds read frames, extend the allowlist
+in the same change or the proxy will silently drop them (that is how the
+2026-11-08 session found `home/detail` and `system.heatingcircuit/detail`
+missing). Unknown commands stay blocked by default; proxy logging falls back
+to stdout when the log directory is unwritable, so enforcement never depends
+on file logging.
 
 Every request/frame is logged to `logs/<proxy>/`; blocked writes are additionally
 logged to `*_blocked_writes.jsonl` and counted in the health endpoints. The
@@ -28,17 +36,21 @@ docker/live-readonly-test/
 ├── homeassistant/            # HA image (pinned to the manifest minimum) with local API wheel pre-installed
 │   ├── Dockerfile            # also pre-installs the validated transport pair (modbus-connection/tmodbus)
 │   ├── wheels/               # local idm-heatpump-api wheel (gitignored)
-│   └── config/               # bind-mounted HA config; .storage/ preseeded by build.ps1
+│   └── config/               # bind-mounted HA config; .storage/ preseeded by build.ps1/build.sh
 ├── api-tester/               # isolated API + HA probes (local API wheel baked in)
 │   ├── run_api_tests.py      # Modbus/Nav10-WS/single-vs-batch/sentinel/write-block
 │   └── ha_probe.py           # onboarding, entity export, #171 reload, stability
-├── scripts/                  # build.ps1, start/stop/clean.ps1, run_probe.ps1
+├── scripts/                  # build/start/stop/clean + run_probe, each as .ps1 (Windows) and .sh (Linux/macOS)
 ├── logs/                     # proxy + HA logs (gitignored)
 ├── results/                  # JSON reports + tokens (gitignored)
 └── release/                  # release ZIP + wheel + sha256 + evidence (gitignored)
 ```
 
 ## Quick start
+
+Windows (PowerShell) — or the same commands as `./scripts/*.sh` on Linux/macOS
+(the `.sh` scripts are counterparts with identical behaviour; `build.sh` finds
+the API repository next to this repository or through `IDM_API_REPO=...`):
 
 ```powershell
 # 1) Configure secrets (never committed)
@@ -100,15 +112,29 @@ single Modbus FC06 to the outdoor-temperature register (with the value just read
 so it is a no-op even hypothetically) and a Nav10 `setting/save` frame, purely to
 prove the proxies block them. These are the only blocked writes in the logs.
 
+## Shared-connection validation setup
+
+`homeassistant/config/configuration.yaml` optionally configures the **core
+`modbus` integration as a second holder** on the same read-only endpoint (one
+holding-register sensor). With the IDM integration's shared claim
+(`modbus.async_get_unit`) that exercises reference counting and link sharing
+across holders; restart `modbus-proxy` mid-poll to observe both holders recover
+without an availability window. This is the bench used for the 2026-11-08
+shared-connection field validation (see `docs/release-evidence/`).
+
 ## Reproducibility
 
-`build.ps1` records `results/build_provenance.json` with the exact local API
-wheel sha256 and the seeded config-entry id. The integration is mounted
-read-only from `custom_components/idm_heatpump`, so container rebuilds are not
-needed for integration-code changes; only `build.ps1` must re-run when the
-`idm-heatpump-api` source changes (to rebuild the wheel). The Home Assistant
-image is pinned to the integration's minimum supported version — move the pin
-in the same change that raises the manifest minimum.
+`build.ps1`/`build.sh` records `results/build_provenance.json` with the exact
+local API wheel sha256 and the seeded config-entry id. The integration is
+mounted read-only from `custom_components/idm_heatpump`, so container rebuilds
+are not needed for integration-code changes; only the build script must re-run
+when the `idm-heatpump-api` source changes (to rebuild the wheel). The Home
+Assistant image is pinned to the integration's minimum supported version — move
+the pin in the same change that raises the manifest minimum.
+
+The weekly **Docker Bench Build** workflow rebuilds all four images from the
+manifest-pinned API source without any hardware attached, so the bench cannot
+silently rot between field validations.
 
 ## Version notes
 

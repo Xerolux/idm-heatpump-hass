@@ -36,10 +36,27 @@ from aiohttp import web, WSMsgType
 
 LOG = logging.getLogger("nav10-ws-ro-proxy")
 
+# The pinned idm-heatpump-api's Navigator 10 client sends exactly these read
+# frames (idm_heatpump/web.py: setting/statistic/notification core reads plus
+# the SPA-style system/home/status/weather/energyflow reads). Everything else
+# — in particular any ``save`` command, the only write verb the protocol
+# uses — is blocked and logged as a write attempt.
 ALLOWED_CLIENT_COMMANDS = {
     ("setting", "detail"),
     ("statistic", "detail"),
     ("notification", "overview"),
+    ("home", "detail"),
+    ("home", "overview"),
+    ("status", "overview"),
+    ("system", "overview"),
+    ("system.freshwater", "overview"),
+    ("system.heatpump.performance", "detail"),
+    # One detail frame per configured heating circuit (web_data.py reads it
+    # read-only for the web climate values; the write path is setting/save).
+    ("system.heatingcircuit", "detail"),
+    ("weather", "detail"),
+    ("ion", "overview"),
+    ("energyflow", "overview"),
 }
 
 
@@ -70,8 +87,16 @@ class State:
 
 
 def _append(path: Path, line: str) -> None:
-    with path.open("a", encoding="utf-8") as fh:
-        fh.write(line + "\n")
+    """Append one JSONL record; never raise (read-only enforcement first).
+
+    An unwritable log directory must not take the proxy down — fall back to
+    stdout so the frame record stays visible in `docker logs`.
+    """
+    try:
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+    except OSError:
+        print(f"[log-fallback {path.name}] {line}", flush=True)
 
 
 def _is_allowed_read(payload: Any) -> bool:

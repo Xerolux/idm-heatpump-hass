@@ -121,20 +121,42 @@ async def _onboard(session: aiohttp.ClientSession) -> str:
 
 
 async def _login_existing(session: aiohttp.ClientSession) -> str:
-    """When onboarding was already completed, get a fresh token via password grant."""
+    """Log in an onboarded user via the auth code flow.
+
+    Home Assistant removed the ``grant_type=password`` token grant; the
+    supported browser-less path is a login flow with ``redirect_uri`` which
+    resolves to an auth code, exchanged like the onboarding code.
+    """
     async with session.post(
-        f"{HA_URL}/auth/token",
-        data={
-            "grant_type": "password",
-            "username": HA_USER,
-            "password": HA_PASS,
-            "client_id": CLIENT_ID,
-        },
+        f"{HA_URL}/auth/login_flow",
+        json={"client_id": CLIENT_ID, "handler": ["homeassistant", None], "redirect_uri": CLIENT_ID},
         timeout=aiohttp.ClientTimeout(total=15),
     ) as r:
         body = await r.text()
         if r.status != 200:
-            raise RuntimeError(f"password login failed {r.status}: {body}")
+            raise RuntimeError(f"login_flow failed {r.status}: {body}")
+        flow_id = json.loads(body).get("flow_id")
+    async with session.post(
+        f"{HA_URL}/auth/login_flow/{flow_id}",
+        json={"client_id": CLIENT_ID, "username": HA_USER, "password": HA_PASS},
+        timeout=aiohttp.ClientTimeout(total=15),
+    ) as r:
+        body = await r.text()
+        if r.status != 200:
+            raise RuntimeError(f"login_flow step failed {r.status}: {body}")
+        # create_entry carries the auth code in `result` (the credentials
+        # object is replaced by the stored code server-side).
+        auth_code = json.loads(body).get("result")
+    if not auth_code or not isinstance(auth_code, str):
+        raise RuntimeError(f"no auth code in login flow response: {body}")
+    async with session.post(
+        f"{HA_URL}/auth/token",
+        data={"grant_type": "authorization_code", "code": auth_code, "client_id": CLIENT_ID},
+        timeout=aiohttp.ClientTimeout(total=15),
+    ) as r:
+        body = await r.text()
+        if r.status != 200:
+            raise RuntimeError(f"token exchange failed {r.status}: {body}")
         return json.loads(body)["access_token"]
 
 
