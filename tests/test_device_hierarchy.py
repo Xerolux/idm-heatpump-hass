@@ -83,6 +83,9 @@ def test_unknown_entity_remains_on_main_device() -> None:
         ("energy_cop_total", "analytics"),
         ("idm_api_version", "diagnostics"),
         ("modbus_consecutive_failures", "diagnostics"),
+        ("telemetry_report_status", "telemetry"),
+        ("telemetry_latest_firmware", "telemetry"),
+        ("firmware_update_observed", "telemetry"),
     ],
 )
 def test_nonregister_feature_entity_uses_its_subdevice(key: str, device_suffix: str) -> None:
@@ -107,6 +110,62 @@ def test_feature_devices_are_precreated_from_read_only_options() -> None:
         (DOMAIN, "entry_module_comfort"),
         (DOMAIN, "entry_module_diagnostics"),
     }
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        {},
+        {"telemetry": True},
+        {"telemetry": True, "telemetry_policy": "idm-telemetry-v3"},
+        {"telemetry": True, "telemetry_policy": "old", "telemetry_consent_at": "yes"},
+        {"firmware_check": True},
+        {"firmware_check": True, "firmware_policy": "idm-firmware-v1"},
+        {"firmware_check": True, "firmware_policy": "old", "firmware_consent_at": "yes"},
+    ],
+)
+def test_telemetry_subdevice_is_seeded_only_with_complete_cloud_consents(options) -> None:
+    from custom_components.idm_heatpump.device_hierarchy import expected_subdevice_identifiers
+
+    coordinator = _coordinator()
+    coordinator.active_registers = []
+    coordinator.web_supplement = None
+    coordinator.config_entry.options = MappingProxyType(options)
+
+    assert (DOMAIN, "entry_module_telemetry") not in expected_subdevice_identifiers(coordinator)
+
+
+def test_telemetry_subdevice_is_precreated_with_both_consents() -> None:
+    from custom_components.idm_heatpump.device_hierarchy import expected_subdevice_identifiers
+
+    coordinator = _coordinator()
+    coordinator.active_registers = []
+    coordinator.web_supplement = None
+    coordinator.config_entry.options = MappingProxyType(
+        {
+            "telemetry": True,
+            "telemetry_policy": "idm-telemetry-v3",
+            "telemetry_consent_at": "2026-11-08T10:00:00+00:00",
+            "firmware_check": True,
+            "firmware_policy": "idm-firmware-v1",
+            "firmware_consent_at": "2026-11-08T10:00:00+00:00",
+        }
+    )
+
+    identifiers = expected_subdevice_identifiers(coordinator)
+    assert (DOMAIN, "entry_module_telemetry") in identifiers
+    assert (DOMAIN, "entry_module_diagnostics") in identifiers
+
+
+def test_telemetry_subdevice_is_a_child_device_with_its_own_name() -> None:
+    from custom_components.idm_heatpump.device_hierarchy import _subdevice_labels
+
+    info = build_subdevice_info(_coordinator(), "telemetry_report_status")
+    assert info is not None
+    assert info["identifiers"] == {(DOMAIN, "entry_module_telemetry")}
+    name, model = _subdevice_labels(_coordinator(), resolve_device_scope("telemetry_report_status"))
+    assert name == "Telemetrie"
+    assert model == "Telemetry"
 
 
 @pytest.mark.parametrize(

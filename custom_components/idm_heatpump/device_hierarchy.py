@@ -16,10 +16,16 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from .const import (
     CONF_AI_ADVISOR,
     CONF_FEATURE_PROFILE,
+    CONF_FIRMWARE_CHECK,
+    CONF_FIRMWARE_CONSENT_AT,
+    CONF_FIRMWARE_POLICY,
     CONF_HEALTH_MONITOR,
     CONF_HEATING_CIRCUITS,
     CONF_HEATING_CURVE_ASSISTANT,
     CONF_PREDICTIVE_ADVISOR,
+    CONF_TELEMETRY,
+    CONF_TELEMETRY_CONSENT_AT,
+    CONF_TELEMETRY_POLICY,
     CONF_WEATHER_ENTITY,
     CONF_WEATHER_PREHEAT,
     DEFAULT_FEATURE_PROFILE,
@@ -49,6 +55,7 @@ DeviceScopeKind = Literal[
     "domestic_hot_water",
     "pv",
     "diagnostics",
+    "telemetry",
     "analytics",
     "health",
     "comfort",
@@ -113,6 +120,14 @@ _DIAGNOSTIC_KEYS = frozenset(
         "modbus_poll_duration",
         "navigator_version",
         "software_version",
+    }
+)
+# The cloud-consent entities share one dedicated subdevice: plant reports and
+# the firmware observations grown from them are one feature family, separate
+# from the controller's own diagnostic registers (installed software version
+# stays in Diagnostics).
+_TELEMETRY_KEYS = frozenset(
+    {
         "telemetry_latest_firmware",
         "firmware_update_observed",
         "telemetry_report_status",
@@ -140,6 +155,7 @@ _MODULE_DEVICE_METADATA: dict[DeviceScopeKind, tuple[str, str, str]] = {
     "domestic_hot_water": ("domestic_hot_water", "Warmwasser", "Warmwasserbereitung"),
     "pv": ("pv", "Photovoltaik", "PV & Energie"),
     "diagnostics": ("diagnostics", "Diagnose", "Diagnose"),
+    "telemetry": ("telemetry", "Telemetrie", "Telemetry"),
     "analytics": ("analytics", "iDM Analytics", "Energieanalyse"),
     "health": ("health", "iDM Health Monitor", "Gesundheitsüberwachung"),
     "ai": ("ai", "iDM KI-Anlagenberater", "Experimental AI adviser"),
@@ -163,6 +179,7 @@ _CHILD_DEVICE_KINDS: frozenset[DeviceScopeKind] = frozenset(
         "domestic_hot_water",
         "pv",
         "diagnostics",
+        "telemetry",
         "analytics",
         "health",
         "comfort",
@@ -226,6 +243,8 @@ def resolve_device_scope(entity_key: str) -> DeviceScope | None:
         return DeviceScope("comfort", "comfort")
     if key in _DHW_KEYS or key.startswith(_DHW_PREFIXES):
         return DeviceScope("domestic_hot_water", "domestic_hot_water")
+    if key in _TELEMETRY_KEYS:
+        return DeviceScope("telemetry", "telemetry")
     if key in _DIAGNOSTIC_KEYS:
         return DeviceScope("diagnostics", "diagnostics")
     if key in _AUXILIARY_HEAT_KEYS or key.startswith(_AUXILIARY_HEAT_PREFIXES):
@@ -459,6 +478,25 @@ def expected_subdevices(coordinator: IdmCoordinator) -> dict[tuple[str, str], Su
             entity_keys.add("heating_curve_advice")
     if isinstance(options, Mapping) and options.get(CONF_AI_ADVISOR) is True:
         entity_keys.add("ai_report")
+    # The cloud-consent entities are platform-gated, not register-gated: seed
+    # their Telemetry subdevice with the exact gates their platforms use, so
+    # the device exists for their entities and cleanup keeps it in step.
+    if isinstance(options, Mapping):
+        from .firmware_observations import FIRMWARE_POLICY
+        from .telemetry import TELEMETRY_POLICY
+
+        if (
+            options.get(CONF_FIRMWARE_CHECK) is True
+            and options.get(CONF_FIRMWARE_POLICY) == FIRMWARE_POLICY
+            and options.get(CONF_FIRMWARE_CONSENT_AT)
+        ):
+            entity_keys.update({"telemetry_latest_firmware", "firmware_update_observed"})
+        if (
+            options.get(CONF_TELEMETRY) is True
+            and options.get(CONF_TELEMETRY_POLICY) == TELEMETRY_POLICY
+            and options.get(CONF_TELEMETRY_CONSENT_AT)
+        ):
+            entity_keys.add("telemetry_report_status")
     entity_keys.add("error_acknowledge")
     # Seed the PV subdevice exactly when one of its entities can exist: the
     # derived Modbus diagnostic needs a surplus signal plus a consumption

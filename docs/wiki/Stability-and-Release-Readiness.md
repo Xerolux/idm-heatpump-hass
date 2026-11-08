@@ -4,6 +4,15 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.26.10 release decision
+
+The Telemetry subdevice is a placement-only change: scope resolution, consent
+gated seeding and stale-device cleanup are unit-tested, entity IDs and history
+are preserved by construction (only the device assignment changes), and the
+real-HA smoke tests pass against Home Assistant 2026.11.0. No live plant with
+the hierarchy enabled was re-checked after the move. The tested dependency
+pair stays at API 2.16.1 and the existing transport floors.
+
 ## 0.26.9 release decision
 
 Telemetry delivery transparency is unit- and contract-tested, not field-proven:
@@ -519,7 +528,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.26.9` and `idm-heatpump-api` `2.16.1` form the current
+Source-tree integration `0.26.10` and `idm-heatpump-api` `2.16.1` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

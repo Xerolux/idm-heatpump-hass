@@ -110,7 +110,7 @@ def test_unrelated_prefixes_do_not_identify_navigator10(version):
     assert not _firmware_indicates_nav10(version)
 
 
-def test_firmware_comparison_entities_share_the_diagnostics_subdevice():
+def test_cloud_comparison_entities_share_the_telemetry_subdevice():
     from custom_components.idm_heatpump.device_hierarchy import resolve_device_scope
     from custom_components.idm_heatpump.telemetry_entities import IdmFirmwareObservedBinarySensor
 
@@ -118,5 +118,8 @@ def test_firmware_comparison_entities_share_the_diagnostics_subdevice():
     coordinator.config_entry = entry
     sensor = IdmFirmwareObservedBinarySensor(coordinator)
     assert sensor.entity_description.key == "firmware_update_observed"
-    for key in ("software_version", "telemetry_latest_firmware", "firmware_update_observed"):
-        assert resolve_device_scope(key).kind == "diagnostics"
+    # The installed controller software stays a controller diagnostic; the
+    # consent-gated community entities form their own Telemetry subdevice.
+    assert resolve_device_scope("software_version").kind == "diagnostics"
+    for key in ("telemetry_latest_firmware", "firmware_update_observed", "telemetry_report_status"):
+        assert resolve_device_scope(key).kind == "telemetry"
