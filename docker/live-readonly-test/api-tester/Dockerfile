@@ -1,20 +1,24 @@
 # API tester: imports the EXACT local idm-heatpump-api code under test.
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
-ARG API_WHEEL=idm_heatpump_api-0.9.1-py3-none-any.whl
+ARG API_WHEEL
 
-# Build deps for any wheel that needs them, then install the local API wheel
-# (with [web] extra => aiohttp; pymodbus is a hard dep). The wheel is copied
-# into the build context by scripts/build.ps1.
-COPY wheels/${API_WHEEL:-idm_heatpump_api-0.9.1-py3-none-any.whl} /tmp/${API_WHEEL:-idm_heatpump_api-0.9.1-py3-none-any.whl}
-RUN pip install --no-cache-dir "/tmp/${API_WHEEL:-idm_heatpump_api-0.9.1-py3-none-any.whl}[web]" \
-    && rm -f "/tmp/${API_WHEEL:-idm_heatpump_api-0.9.1-py3-none-any.whl}" \
-    && python -c "import idm_heatpump; import aiohttp; import pymodbus; print('api+web ready')"
+# The local API wheel with both extras the isolated probes need:
+#   [web]      — aiohttp for the Navigator web clients,
+#   [pymodbus] — the API's optional built-in Modbus transport, used by the
+#                isolated probes when no custom transport is injected. This is
+#                NOT the integration's runtime path (HA injects
+#                modbus-connection/tmodbus); it only serves this test container.
+# The wheel is copied into the build context by scripts/build.ps1.
+COPY wheels/${API_WHEEL} /tmp/${API_WHEEL}
+RUN pip install --no-cache-dir "/tmp/${API_WHEEL}[web,pymodbus]" \
+    && rm -f /tmp/${API_WHEEL} \
+    && python -c "import idm_heatpump, aiohttp, pymodbus; print('api+web+probe-transport ready')"
 
 COPY run_api_tests.py /app/run_api_tests.py
 COPY ha_probe.py /app/ha_probe.py

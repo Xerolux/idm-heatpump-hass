@@ -15,7 +15,8 @@ if (-not (Test-Path (Join-Path $Root ".env"))) {
 }
 
 if (-not $NoBuild) {
-    if (-not (Test-Path (Join-Path $Root "homeassistant\wheels\idm_heatpump_api-0.9.1-py3-none-any.whl"))) {
+    $anyWheel = Get-ChildItem (Join-Path $Root "homeassistant\wheels") -Filter "idm_heatpump_api-*.whl" -ErrorAction SilentlyContinue
+    if (-not $anyWheel) {
         Write-Host "Wheels missing. Running build.ps1 first..." -ForegroundColor Yellow
         & (Join-Path $ScriptDir "build.ps1")
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -25,8 +25,8 @@ docker/live-readonly-test/
 ├── proxies/
 │   ├── modbus-readonly/      # asyncio Modbus RO proxy (pure stdlib)
 │   └── web-readonly/         # aiohttp HTTP RO proxy + Nav10 WS RO proxy (supervisor)
-├── homeassistant/            # HA image with local API wheel pre-installed
-│   ├── Dockerfile            # also force-installs pymodbus>=3.12.1,<4.0
+├── homeassistant/            # HA image (pinned to the manifest minimum) with local API wheel pre-installed
+│   ├── Dockerfile            # also pre-installs the validated transport pair (modbus-connection/tmodbus)
 │   ├── wheels/               # local idm-heatpump-api wheel (gitignored)
 │   └── config/               # bind-mounted HA config; .storage/ preseeded by build.ps1
 ├── api-tester/               # isolated API + HA probes (local API wheel baked in)
@@ -78,10 +78,10 @@ type .\logs\web-proxy\ws_blocked_writes.jsonl
 
 | Container | Image | Purpose | Connects to |
 |---|---|---|---|
-| `idm-modbus-ro` | built (python:3.13-slim) | RO Modbus proxy | `192.0.2.10:502` |
-| `idm-web-ro` | built (python:3.13-slim) | RO HTTP + Nav10 WS proxy | `192.0.2.10:80` + `:61220` |
-| `idm-ha-test` | built (home-assistant:stable + local API + pymodbus) | HA + local integration | `modbus-proxy:5020`, `web-proxy:80/61220` |
-| `idm-api-tester` | built (python:3.13-slim + local API) | on-demand probes | proxies + HA |
+| `idm-modbus-ro` | built (python:3.14-slim) | RO Modbus proxy | `192.0.2.10:502` |
+| `idm-web-ro` | built (python:3.14-slim) | RO HTTP + Nav10 WS proxy | `192.0.2.10:80` + `:61220` |
+| `idm-ha-test` | built (home-assistant:2026.11.0 + local API + transport pair) | HA + local integration | `modbus-proxy:5020`, `web-proxy:80/61220` |
+| `idm-api-tester` | built (python:3.14-slim + local API) | on-demand probes | proxies + HA |
 
 Healthchecks: modbus-proxy TCP 5021 JSON stats; web-proxy `GET /__health`;
 Nav10 WS `GET /__wshealth`; HA `GET /api/`.
@@ -106,4 +106,15 @@ prove the proxies block them. These are the only blocked writes in the logs.
 wheel sha256 and the seeded config-entry id. The integration is mounted
 read-only from `custom_components/idm_heatpump`, so container rebuilds are not
 needed for integration-code changes; only `build.ps1` must re-run when the
-`idm-heatpump-api` source changes (to rebuild the wheel).
+`idm-heatpump-api` source changes (to rebuild the wheel). The Home Assistant
+image is pinned to the integration's minimum supported version — move the pin
+in the same change that raises the manifest minimum.
+
+## Version notes
+
+The integration's Modbus runtime is the `modbus-connection`/`tmodbus` pair
+installed into the HA image so its manifest requirements resolve without a
+PyPI fetch; pymodbus is gone from the integration since API 2.0. The isolated
+api-tester additionally installs the API's optional built-in pymodbus
+transport (`[pymodbus]` extra) for its standalone probes — that path never
+runs inside Home Assistant.
