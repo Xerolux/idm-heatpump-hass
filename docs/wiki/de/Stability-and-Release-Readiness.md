@@ -12,7 +12,7 @@ unit-getestet, Entity-IDs und Historie bleiben konstruktionsgemäß erhalten (nu
 die Gerätezuordnung ändert sich), und die echten HA-Tests bestehen gegen
 Home Assistant 2026.11.0. Eine Live-Anlage mit aktivierter Hierarchie wurde
 nach dem Umzug nicht erneut geprüft. Das getestete Abhängigkeitspaar bleibt
-API 2.16.1 mit den bestehenden Transport-Floors.
+API 2.16.1 mit den bestehenden Transport-Floors. [Detailnachweis](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.10.md)
 
 ## Release-Entscheidung zu 0.26.9
 
@@ -24,7 +24,7 @@ keine echte Übertragung an IDM Tools durchgeführt. Übertragenes Schema,
 Einwilligungsfassung `idm-telemetry-v3`, Zeitpläne und Löschprozess bleiben
 unverändert. Das getestete Abhängigkeitspaar bleibt API 2.16.1 mit den
 bestehenden Transport-Floors; die echten HA-Lebenszyklustests bestehen gegen
-Home Assistant 2026.11.0.
+Home Assistant 2026.11.0. [Detailnachweis](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.9.md)
 
 ## Release-Entscheidung zu 0.26.8
 
@@ -34,7 +34,7 @@ HA-Regressionstest prüft stabile Entitäts-IDs, Rücklese-Polling der Number un
 Erholung beim Neuladen mit Weiterleitung aus/ein/aus. Das Flackern am Regler
 bleibt offen. API 2.16.1 und die Transport-Mindestversionen bleiben gleich.
 Zwei geprüfte private Captures zu #577 belegen keinen neuen Parserfehler und
-keine gesicherte Zuordnung zum ursprünglich gemeldeten Modul.
+keine gesicherte Zuordnung zum ursprünglich gemeldeten Modul. [Detailnachweis](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.8.md)
 
 ## Release-Entscheidung zu 0.26.7
 

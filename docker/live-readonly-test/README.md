@@ -28,17 +28,21 @@ docker/live-readonly-test/
 ├── homeassistant/            # HA image (pinned to the manifest minimum) with local API wheel pre-installed
 │   ├── Dockerfile            # also pre-installs the validated transport pair (modbus-connection/tmodbus)
 │   ├── wheels/               # local idm-heatpump-api wheel (gitignored)
-│   └── config/               # bind-mounted HA config; .storage/ preseeded by build.ps1
+│   └── config/               # bind-mounted HA config; .storage/ preseeded by build.ps1/build.sh
 ├── api-tester/               # isolated API + HA probes (local API wheel baked in)
 │   ├── run_api_tests.py      # Modbus/Nav10-WS/single-vs-batch/sentinel/write-block
 │   └── ha_probe.py           # onboarding, entity export, #171 reload, stability
-├── scripts/                  # build.ps1, start/stop/clean.ps1, run_probe.ps1
+├── scripts/                  # build/start/stop/clean + run_probe, each as .ps1 (Windows) and .sh (Linux/macOS)
 ├── logs/                     # proxy + HA logs (gitignored)
 ├── results/                  # JSON reports + tokens (gitignored)
 └── release/                  # release ZIP + wheel + sha256 + evidence (gitignored)
 ```
 
 ## Quick start
+
+Windows (PowerShell) — or the same commands as `./scripts/*.sh` on Linux/macOS
+(the `.sh` scripts are counterparts with identical behaviour; `build.sh` finds
+the API repository next to this repository or through `IDM_API_REPO=...`):
 
 ```powershell
 # 1) Configure secrets (never committed)
@@ -102,13 +106,17 @@ prove the proxies block them. These are the only blocked writes in the logs.
 
 ## Reproducibility
 
-`build.ps1` records `results/build_provenance.json` with the exact local API
-wheel sha256 and the seeded config-entry id. The integration is mounted
-read-only from `custom_components/idm_heatpump`, so container rebuilds are not
-needed for integration-code changes; only `build.ps1` must re-run when the
-`idm-heatpump-api` source changes (to rebuild the wheel). The Home Assistant
-image is pinned to the integration's minimum supported version — move the pin
-in the same change that raises the manifest minimum.
+`build.ps1`/`build.sh` records `results/build_provenance.json` with the exact
+local API wheel sha256 and the seeded config-entry id. The integration is
+mounted read-only from `custom_components/idm_heatpump`, so container rebuilds
+are not needed for integration-code changes; only the build script must re-run
+when the `idm-heatpump-api` source changes (to rebuild the wheel). The Home
+Assistant image is pinned to the integration's minimum supported version — move
+the pin in the same change that raises the manifest minimum.
+
+The weekly **Docker Bench Build** workflow rebuilds all four images from the
+manifest-pinned API source without any hardware attached, so the bench cannot
+silently rot between field validations.
 
 ## Version notes
 

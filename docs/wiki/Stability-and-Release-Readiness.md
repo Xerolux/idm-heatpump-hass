@@ -11,7 +11,7 @@ gated seeding and stale-device cleanup are unit-tested, entity IDs and history
 are preserved by construction (only the device assignment changes), and the
 real-HA smoke tests pass against Home Assistant 2026.11.0. No live plant with
 the hierarchy enabled was re-checked after the move. The tested dependency
-pair stays at API 2.16.1 and the existing transport floors.
+pair stays at API 2.16.1 and the existing transport floors. [Detailed evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.10.md)
 
 ## 0.26.9 release decision
 
@@ -22,7 +22,7 @@ endpoints, and no real submission to IDM Tools was performed during development.
 The transmitted schema, consent policy `idm-telemetry-v3`, schedules and the
 erasure process are unchanged. The tested dependency pair stays at API 2.16.1
 and the existing transport floors; real-HA lifecycle smoke tests pass against
-Home Assistant 2026.11.0.
+Home Assistant 2026.11.0. [Detailed evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.9.md)
 
 ## 0.26.8 release decision
 
@@ -31,7 +31,7 @@ sentinels still control availability. The real-HA regression preserves entity
 IDs, Number readback polling and recovery through forwarding off/on/off reloads.
 Controller display flicker remains open. The tested dependency pair stays at
 API 2.16.1 and the existing transport floors. Two verified private captures
-were replayed for #577 without proving a new parser defect or attribution.
+were replayed for #577 without proving a new parser defect or attribution. [Detailed evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.8.md)
 
 ## 0.26.7 release decision
 
