@@ -33,8 +33,30 @@ Der erste Termin liegt zufällig 24 bis 48 Stunden nach Zustimmung; weitere
 Versuche liegen 24 bis 25 Stunden auseinander. Eine lokale Minutenprüfung löst
 fällige Termine aus. Der nächste Termin bleibt neustartfest erhalten.
 Versand nur per HTTPS an den festen IDM-Tools-Endpunkt, mit 15 Sekunden Zeitlimit
-und ohne Weiterleitungen. Fehlgeschlagene Berichte bleiben bis zum nächsten
-Tagestermin erhalten; die Berichtskennung verhindert doppelte Zählung.
+und ohne Weiterleitungen. Netzwerkfehler, Drosselung und Serverfehler bewahren
+den eingefrorenen Bericht bis zum nächsten Tagestermin; eine dauerhafte
+Ablehnung (HTTP 4xx außer 429) verwirft ihn, damit der nächste Termin einen
+frischen Bericht erstellt. Die Berichtskennung verhindert doppelte Zählung und
+bleibt auch erhalten, wenn ein Upgrade das Schema ändert und der Bericht neu
+zusammengesetzt wird.
+
+## Zustellstatus, Fehler und Reparatur
+
+Mit aktiver Telemetrie-Einwilligung zeigt der Bereich **Diagnose** den lokalen
+Sensor **Telemetrie-Berichtsstatus**. Er meldet `not_sent`, `accepted`,
+`rejected` oder `unavailable`; Attribute sind der letzte und nächste Termin,
+die Zahl aufeinanderfolgender Fehlversuche, ob ein Bericht aussteht und die
+Hinweisfassung der Einwilligung. Der Sensor ist rein lokal: Seine Angaben
+werden nie übertragen, und bei Widerruf verschwindet er samt Registry-Eintrag.
+
+Fehlgeschlagene tägliche Versuche zählen als fortlaufende Serie. Nach sieben
+nacheinander nicht zugestellten Tagesberichten erscheint ein Hinweis unter
+**Einstellungen → System → Repairs**, dass Telemetrie nicht ankommt; der
+lokale Wärmepumpenbetrieb ist unberührt. Der Hinweis verschwindet von selbst,
+sobald ein Bericht angenommen wird, und das Widerrufen der Einwilligung
+entfernt ihn sofort. Ein gemeinsamer Timer für Telemetrie und
+Firmware-Beobachtung treibt die Minutenprüfungen: Bei beiden aktiven
+Einwilligungen wacht Home Assistant pro Minute einmal auf statt zweimal.
 
 Ausschalten stoppt die Sammlung, bricht laufende Aufgaben ab und löscht die lokale
 Sammlung. Bereits empfangene Daten können nicht zurückgeholt werden. Erneutes

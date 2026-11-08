@@ -115,6 +115,7 @@ _DIAGNOSTIC_KEYS = frozenset(
         "software_version",
         "telemetry_latest_firmware",
         "firmware_update_observed",
+        "telemetry_report_status",
     }
 )
 

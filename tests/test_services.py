@@ -1559,6 +1559,7 @@ async def test_manual_plant_report_and_firmware_response(mock_hass):
 
     coord = _make_coordinator_in_hass(mock_hass)
     runtime = coord.config_entry.runtime_data
+    runtime.telemetry.manual_cooldown = 0.0
     runtime.telemetry.async_send_now = AsyncMock(return_value=True)
     runtime.firmware.enabled = True
     runtime.firmware.async_refresh_firmware = AsyncMock()
@@ -1570,3 +1571,18 @@ async def test_manual_plant_report_and_firmware_response(mock_hass):
     runtime.firmware.async_refresh_firmware.assert_awaited_once()
     coord.config_entry = None
     assert (await _handle_plant_cloud_action(mock_hass, call))["status"] == "entry_not_loaded"
+
+
+async def test_manual_plant_report_within_cooldown_raises_instead_of_failing_silently(mock_hass):
+    from custom_components.idm_heatpump.services import _handle_plant_cloud_action
+
+    coord = _make_coordinator_in_hass(mock_hass)
+    runtime = coord.config_entry.runtime_data
+    runtime.telemetry.manual_cooldown = 42.0
+    runtime.telemetry.async_send_now = AsyncMock(return_value=True)
+    call = MagicMock(service="send_telemetry", data={"entry_id": "entry-1"})
+    with pytest.raises(ServiceValidationError) as exc_info:
+        await _handle_plant_cloud_action(mock_hass, call)
+    assert exc_info.value.translation_key == "telemetry_cooldown_active"
+    assert exc_info.value.translation_placeholders["seconds"] == "43"
+    runtime.telemetry.async_send_now.assert_not_awaited()

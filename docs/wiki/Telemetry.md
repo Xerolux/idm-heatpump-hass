@@ -30,8 +30,31 @@ The first attempt is randomly 24–48 hours after consent. Further attempts are
 before network I/O and checked once a minute without network traffic. After
 downtime, overdue reports receive up to one hour of random recovery delay.
 There are no immediate retries or backlog bursts. HTTPS uses only the fixed
-IDM Tools endpoint, a 15-second timeout and no redirects. Failed reports remain
-for the next daily slot; the server deduplicates the persisted report ID.
+IDM Tools endpoint, a 15-second timeout and no redirects. Network errors,
+throttling and server-side faults keep the frozen report for the next daily
+slot; a permanent client-error rejection (HTTP 4xx except 429) discards it so
+the next slot composes a fresh one. The server deduplicates the persisted
+report ID, which also survives a report recomposed after an integration
+upgrade changed the schema.
+
+## Delivery status, failures and repair
+
+With telemetry consent active, the **Diagnostics** area shows the local
+**Telemetry report status** sensor. It states `not_sent`, `accepted`,
+`rejected` or `unavailable`, with attributes for the last and next attempt
+time, the consecutive failed attempts, whether a report is pending and the
+consent policy revision. The sensor is local-only: its information is never
+part of the transmitted data, and it disappears with its registry entry when
+consent is withdrawn.
+
+Failed daily attempts accumulate into a persisted streak. After seven
+consecutive undelivered daily reports, a repair notice under
+**Settings → System → Repairs** points out that telemetry is not being
+delivered; local heat-pump operation is unaffected. The notice clears itself
+as soon as a report is accepted, and withdrawing consent removes it
+immediately. One timer shared by telemetry and firmware observations drives
+the per-minute checks, so enabling both consents wakes Home Assistant once
+per minute instead of twice.
 
 Disabling stops observations, cancels an in-flight task and deletes the local
 collection. Bytes already received cannot be recalled. Re-enabling starts fresh;

@@ -13,6 +13,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.9] - 2026-11-08
+
+Optional telemetry becomes verifiable: a local diagnostic sensor shows whether consented plant reports actually arrive, permanent server rejections stop retrying forever, and a full week of failed deliveries raises a repair notice.
+
+### ⚠️ Upgrade notes
+
+- **A new local *Telemetry report status* sensor appears with active telemetry consent**: it reports `not_sent`/`accepted`/`rejected`/`unavailable` with attempt times and a failure streak, never transmits anything itself, and disappears when consent is withdrawn. Existing entity IDs, consent, schedules and frozen reports stay untouched; rollback is safe.
+- **A manual report inside the one-minute cooldown now raises a validation error** stating the remaining seconds instead of silently answering `not_sent`. The daily slot, report-ID deduplication and every other `send_telemetry` behavior are unchanged.
+
+### ✨ New
+
+- **Show telemetry delivery health locally**: the *Telemetry report status* diagnostic sensor — on the Diagnostics subdevice when the device hierarchy is enabled — exposes the last outcome, last and next attempt times, the failed-attempt streak and a pending-report flag. After seven consecutive undelivered daily reports a repair notice appears that clears itself once a report is accepted.
+- **Distinguish permanent rejections from transient faults**: HTTP 4xx responses except 429 now discard the frozen report, so the next daily slot composes a fresh one, while throttling, server faults and network errors keep the frozen report for its persisted retry slot as before.
+
+### 🐛 Bugfixes
+
+- **Keep the report ID stable across schema changes**: an upgrade that altered the payload schema used to discard a frozen report and generate a new ID, so a report the server had already stored could be counted twice. The ID is now persisted and reused for the recomposed report.
+- **Tolerate partially written options**: composing the daily payload no longer assumes the consent timestamp key exists, so a hand-edited or partial options dictionary can no longer break the delayed persistence callback.
+
+### 💼 Maintenance
+
+- **Share one per-minute timer**: telemetry and firmware observations now fan out from a single scheduler, halving per-minute wake-ups when both consents are active, with per-observer exception isolation. Wiki pages, translations and the module map were updated alongside.
+
 ## [0.26.8] - 2026-11-08
 
 ### ⚠️ Upgrade notes

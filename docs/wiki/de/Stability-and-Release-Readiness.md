@@ -4,6 +4,18 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.26.9
+
+Die Transparenz der Telemetrie-Zustellung ist unit- und vertragstestgeprüft, nicht
+im Feld belegt: Status-Sensor, Repairs-Schwelle, 4xx/429-Trennung,
+Berichtskennung-Stabilität, Sperrzeit-Fehler und gemeinsamer Timer sind in der
+lokalen Suite gegen gestubbte Endpunkte abgedeckt; während der Entwicklung wurde
+keine echte Übertragung an IDM Tools durchgeführt. Übertragenes Schema,
+Einwilligungsfassung `idm-telemetry-v3`, Zeitpläne und Löschprozess bleiben
+unverändert. Das getestete Abhängigkeitspaar bleibt API 2.16.1 mit den
+bestehenden Transport-Floors; die echten HA-Lebenszyklustests bestehen gegen
+Home Assistant 2026.11.0.
+
 ## Release-Entscheidung zu 0.26.8
 
 Der beim Start ausgelassene GLT-Lesesensor ist reproduziert und korrigiert;
@@ -546,7 +558,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.26.8` und `idm-heatpump-api` `2.16.1` bilden das aktuelle exakt
+Integration im Quellstand `0.26.9` und `idm-heatpump-api` `2.16.1` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

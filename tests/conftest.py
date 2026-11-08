@@ -730,6 +730,7 @@ def _stub_homeassistant() -> None:
             self.coordinator = coordinator
             self._attr_unique_id = None
             self._attr_device_info = None
+            self._on_remove_callbacks: list[Any] = []
 
         def __class_getitem__(cls, item):
             return cls
@@ -740,6 +741,10 @@ def _stub_homeassistant() -> None:
 
         async def async_added_to_hass(self) -> None:
             pass
+
+        def async_on_remove(self, callback) -> None:
+            """Collect removal callbacks like the real Home Assistant base."""
+            self._on_remove_callbacks.append(callback)
 
         def _handle_coordinator_update(self) -> None:
             """Refresh the entity state, as the real Home Assistant base does."""

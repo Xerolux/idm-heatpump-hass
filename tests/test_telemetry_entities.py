@@ -7,9 +7,21 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from test_firmware_observations import make_firmware
 
-from custom_components.idm_heatpump.const import CONF_FIRMWARE_CHECK, CONF_FIRMWARE_POLICY
+from custom_components.idm_heatpump.const import (
+    CONF_FIRMWARE_CHECK,
+    CONF_FIRMWARE_POLICY,
+    CONF_TELEMETRY,
+    CONF_TELEMETRY_CONSENT_AT,
+    CONF_TELEMETRY_POLICY,
+)
 from custom_components.idm_heatpump.firmware_observations import FIRMWARE_POLICY
-from custom_components.idm_heatpump.telemetry_entities import IdmTelemetryFirmwareSensor, firmware_sensor_entities
+from custom_components.idm_heatpump.telemetry import TELEMETRY_POLICY
+from custom_components.idm_heatpump.telemetry_entities import (
+    IdmTelemetryFirmwareSensor,
+    IdmTelemetryStatusSensor,
+    firmware_sensor_entities,
+    telemetry_status_sensor_entities,
+)
 
 
 def test_sensor_is_absent_and_only_its_old_registry_entry_is_removed_without_consent():
@@ -79,3 +91,63 @@ def test_valid_catalog_without_matching_reports_is_unknown_with_explanation():
     assert sensor.available
     assert sensor.native_value is None
     assert sensor.extra_state_attributes["status"] == "no_matching_observations"
+
+
+def _make_status_setup():
+    from test_telemetry import make_telemetry
+
+    telemetry, entry, coordinator = make_telemetry()
+    coordinator.config_entry = entry
+    entry.runtime_data = SimpleNamespace(telemetry=telemetry)
+    entry.options[CONF_TELEMETRY_POLICY] = TELEMETRY_POLICY
+    entry.options[CONF_TELEMETRY_CONSENT_AT] = "2026-11-05T10:00:00+00:00"
+    return telemetry, entry, coordinator
+
+
+def test_status_sensor_is_absent_without_telemetry_consent():
+    entry = MagicMock(entry_id="test-entry", options={"firmware_check": True})
+    registry = MagicMock()
+    registry.async_get_entity_id.return_value = "sensor.idm_telemetry_report_status"
+    with patch("custom_components.idm_heatpump.telemetry_entities.er.async_get", return_value=registry):
+        assert telemetry_status_sensor_entities(MagicMock(), entry, MagicMock()) == []
+    registry.async_remove.assert_called_once_with("sensor.idm_telemetry_report_status")
+
+
+def test_status_sensor_follows_local_delivery_without_telemetry_contact():
+    telemetry, entry, coordinator = _make_status_setup()
+    sensors = telemetry_status_sensor_entities(MagicMock(), entry, coordinator)
+    assert len(sensors) == 1
+    sensor = sensors[0]
+    assert sensor.available
+    assert sensor.native_value == "not_sent"
+    telemetry._record_result("accepted")
+    assert sensor.native_value == "accepted"
+    attributes = sensor.extra_state_attributes
+    assert attributes["failed_attempts"] == 0
+    assert attributes["pending_report"] is False
+    assert "not part of the transmitted data" in attributes["availability_note"]
+    entry.runtime_data.telemetry = None
+    assert not sensor.available
+    assert sensor.extra_state_attributes == {"status": "not_ready"}
+
+
+async def test_disabling_telemetry_removes_the_status_entity_immediately():
+    _, entry, coordinator = _make_status_setup()
+    sensor = IdmTelemetryStatusSensor(coordinator)
+    sensor.entity_id = "sensor.idm_telemetry_report_status"
+    registry = MagicMock(entities={sensor.entity_id: MagicMock()})
+    entry.options[CONF_TELEMETRY] = False
+    with patch("custom_components.idm_heatpump.telemetry_entities.er.async_get", return_value=registry):
+        await sensor._async_options_updated(MagicMock(), entry)
+    registry.async_remove.assert_called_once_with(sensor.entity_id)
+
+
+async def test_status_sensor_subscribes_to_delivery_changes():
+    telemetry, _, coordinator = _make_status_setup()
+    sensor = IdmTelemetryStatusSensor(coordinator)
+    sensor.async_write_ha_state = MagicMock()
+    sensor.hass = MagicMock()
+    await sensor.async_added_to_hass()
+    telemetry._record_result("rejected")
+    sensor.async_write_ha_state.assert_called_once()
+    assert sensor.native_value == "rejected"

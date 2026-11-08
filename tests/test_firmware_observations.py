@@ -123,7 +123,7 @@ async def test_firmware_refusal_has_no_timer_storage_or_contact(options):
     client, entry, _ = make_firmware()
     entry.options = options
     with (
-        patch("custom_components.idm_heatpump.firmware_observations.async_track_time_interval") as timer,
+        patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval") as timer,
         patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession") as session,
     ):
         assert await client.async_start() is False
@@ -136,7 +136,7 @@ async def test_firmware_refusal_has_no_timer_storage_or_contact(options):
 async def test_firmware_has_independent_lifecycle_and_six_hour_timer():
     client, entry, _ = make_firmware()
     client.async_refresh_firmware = AsyncMock()
-    with patch("custom_components.idm_heatpump.firmware_observations.async_track_time_interval") as timer:
+    with patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval") as timer:
         assert await client.async_start()
         assert timer.call_args.args[2].total_seconds() == 60
     client.async_refresh_firmware.assert_not_awaited()

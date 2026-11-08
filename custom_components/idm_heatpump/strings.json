@@ -2746,6 +2746,9 @@
       "telemetry_latest_firmware": {
         "name": "Latest reported firmware"
       },
+      "telemetry_report_status": {
+        "name": "Telemetry report status"
+      },
       "thermal_power_flow_sensor": {
         "name": "Thermal power (flow sensor)"
       },
@@ -3397,6 +3400,9 @@
     },
     "dashboard_no_entities": {
       "message": "No dashboard entities were found for this entry yet; wait for the first successful poll."
+    },
+    "telemetry_cooldown_active": {
+      "message": "A plant report was just submitted. Please wait {seconds} seconds before sending another."
     }
   },
   "issues": {
@@ -3551,6 +3557,10 @@
     "whats_new_0_26_4": {
       "title": "New: firmware orientation for your IDM plant",
       "description": "Voluntarily shared plant reports help the community observe matching firmware versions. Enable the independent comparison under **Reconfigure → Firmware query (optional)**. The Diagnostics section then shows **Latest reported firmware** and **Newer firmware observed (unconfirmed)**. A newer matching observation can also raise an acknowledgement notice.\n\nAvailability and compatibility are not guaranteed; updates require iDM or an authorized installer. Telemetry and firmware comparison remain separate and off by default.\n\n[Activation and explanation]({activation_url})"
+    },
+    "telemetry_failing": {
+      "title": "Telemetry reports are not being delivered",
+      "description": "{failed_attempts} consecutive daily telemetry reports could not be delivered to IDM Tools. Local heat-pump operation is unaffected. Check your internet connection; the integration retries automatically in its next daily slot and this notice clears itself once a report is accepted."
     }
   },
   "services": {

@@ -2746,6 +2746,9 @@
       "telemetry_latest_firmware": {
         "name": "Neueste gemeldete Firmware"
       },
+      "telemetry_report_status": {
+        "name": "Telemetrie-Berichtsstatus"
+      },
       "thermal_power_flow_sensor": {
         "name": "Thermische Leistung (Durchflusssensor)"
       },
@@ -3397,6 +3400,9 @@
     },
     "dashboard_no_entities": {
       "message": "Für diesen Eintrag wurden noch keine Dashboard-Entities gefunden; warte auf die erste erfolgreiche Abfrage."
+    },
+    "telemetry_cooldown_active": {
+      "message": "Ein Anlagenbericht wurde gerade gesendet. Bitte warte {seconds} Sekunden vor dem nächsten Bericht."
     }
   },
   "issues": {
@@ -3551,6 +3557,10 @@
     "whats_new_0_26_4": {
       "title": "Neu: Firmware-Orientierung für deine IDM-Anlage",
       "description": "Mit freiwillig geteilten Berichten helfen wir einander, passende Firmware-Stände zu erkennen. Unter **Neu konfigurieren → Firmware-Abfrage (freiwillig)** kannst du den Vergleich separat aktivieren. Danach findest du unter Diagnose **Neueste gemeldete Firmware** und **Neuere Firmware gesichtet (unbestätigt)**. Eine neuere passende Sichtung kann zusätzlich einen bestätigbaren Hinweis auslösen.\n\nKeine Zusage von Verfügbarkeit oder Kompatibilität; Updates nur durch iDM beziehungsweise den autorisierten Fachbetrieb. Telemetrie und Firmware-Abgleich bleiben getrennt und standardmäßig aus.\n\n[Aktivierung und Erklärung]({activation_url})"
+    },
+    "telemetry_failing": {
+      "title": "Telemetrieberichte werden nicht zugestellt",
+      "description": "{failed_attempts} aufeinanderfolgende tägliche Telemetrieberichte konnten nicht an IDM Tools zugestellt werden. Der lokale Wärmepumpenbetrieb ist nicht betroffen. Prüfe die Internetverbindung; die Integration versucht es automatisch im nächsten täglichen Zeitfenster erneut, und dieser Hinweis verschwindet, sobald ein Bericht angenommen wurde."
     }
   },
   "services": {

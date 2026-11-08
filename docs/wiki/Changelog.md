@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.9 — 2026-11-08
+
+Consented plant telemetry becomes verifiable: the local *Telemetry report status* diagnostic sensor shows the last delivery outcome, attempt times and the failure streak, and seven undelivered daily reports raise a self-clearing repair notice. Permanent 4xx rejections drop the frozen report instead of retrying it forever, the report ID survives schema changes, a manual send inside the cooldown raises a clear validation error, and both cloud consents now share one per-minute timer. [Delivery status and failure handling](Telemetry#delivery-status-failures-and-repair).
+
 ## v0.26.8 — 2026-11-08
 
 Supported external-power GLT sensors remain registered when startup reads an unset value and recover automatically once the controller returns a valid reading. The manual Number remains writable and polled independently of forwarding. Stable entity IDs and off/on/off reload behavior are regression-tested. Controller-side battery display flicker (#493) remains unresolved. Open-work planning and [diagnostic guidance](Troubleshooting#glt-availability-investigation-493) are refreshed; capture replay establishes no new #577 parser defect.

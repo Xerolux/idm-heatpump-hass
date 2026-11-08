@@ -169,6 +169,9 @@
       },
       "telemetry_latest_firmware": {
         "default": "mdi:chip"
+      },
+      "telemetry_report_status": {
+        "default": "mdi:cloud-upload-outline"
       }
     },
     "binary_sensor": {
