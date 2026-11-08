@@ -711,6 +711,6 @@ explicitly authorized a specific write.
 
 - Add an opt-in redacted protocol capture service for selected registers so users can gather batch/individual evidence without custom scripts.
 - Persist anonymized compatibility reports by Navigator model and firmware, including capability sentinels.
-- Add poll timing/request counts to diagnostics to expose slow controllers and over-configured zone setups.
+- Extend existing poll-duration/counter diagnostics with request-level counts if field evidence needs them; those counts are not currently exposed.
 - Consider adaptive scan guidance when a configured poll cannot reliably finish within its interval.
-- Keep a climate entity deferred until IDM circuit/room/cooling semantics can be represented without hiding important controller state.
+- Extend field validation of the existing climate entities across circuit, room and cooling semantics; the platform itself is implemented.

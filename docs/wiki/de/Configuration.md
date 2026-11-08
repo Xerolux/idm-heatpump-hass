@@ -427,6 +427,15 @@ der PV-Erzeugung — in die IDM-GLT-Leistungsregister (`pv_surplus`,
   Home Assistant zu prüfen, aktiviere die entsprechende `number`-Entität mit
   dem Zusatz *(Vorgabe)*.
 
+GLT-Sensoren für externe Leistung werden auch angelegt, wenn ihr erster
+unterstützter Rücklesewert „nicht gesetzt“ meldet. Sie bleiben bis zu einem
+gültigen Rücklesewert nicht verfügbar und erholen sich dann ohne Neuladen.
+Die beschreibbare Number bleibt bei einem nicht gesetzten Wert mit unbekanntem
+Zustand bedienbar. Dies gilt unabhängig von der automatischen Weiterleitung.
+Fehlende oder nicht unterstützte Register bleiben ausgefiltert. Das Abschalten
+der Weiterleitung beendet Schreibzugriffe; es setzt den Reglereingang nicht
+zurück und garantiert keine Aufbewahrungsdauer.
+
 ### KNX-Bridge
 
 Die KNX-Bridge ist optional und standardmäßig deaktiviert. Wenn aktiviert,

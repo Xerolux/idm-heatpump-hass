@@ -1844,26 +1844,26 @@ class TestConfiguredHeatingCircuitEntities:
     def test_non_circuit_registers_keep_the_unchanged_filter(self):
         from custom_components.idm_heatpump.entity import should_add_entity
 
-        coord = _make_coordinator(data={"pv_surplus": UNUSED_VALUE}, hide_unused=True)
+        coord = _make_coordinator(data={"unrelated_input": UNUSED_VALUE}, hide_unused=True)
         coord.config_entry.options = {"heating_circuits": ["a", "d"]}
         coord.active_registers = []
 
-        assert should_add_entity(coord, _make_register("pv_surplus")) is False
+        assert should_add_entity(coord, _make_register("unrelated_input")) is False
 
 
 class TestDualExposedGlt:
-    """#172/GLT-04: a dual-exposed GLT register keeps its writable Number while its read-only Sensor stays hidden under a sentinel."""
+    """GLT entities survive unset startup readings and recover without reload."""
 
-    async def test_number_present_and_sensor_hidden_under_same_sentinel(self):
+    async def test_number_and_sensor_created_under_same_sentinel(self):
         from custom_components.idm_heatpump.entity import should_add_entity
         from custom_components.idm_heatpump.number import async_setup_entry as number_setup
 
         coord = _make_coordinator(data={"pv_surplus": UNUSED_VALUE}, hide_unused=True)
         assert coord.is_register_unused("pv_surplus", UNUSED_VALUE) is True
 
-        # Sensor side (read-only): the unchanged default filter must hide the sentinel.
+        # Keep the sensor so later valid controller readings can recover it.
         sensor_reg = _make_register("pv_surplus", writable=False)
-        assert should_add_entity(coord, sensor_reg) is False
+        assert should_add_entity(coord, sensor_reg) is True
 
         # Number side (writable "Vorgabe"): still created and gets the dual-exposed "_set" suffix.
         coord.number_descriptions = [
@@ -1876,6 +1876,37 @@ class TestDualExposedGlt:
         await number_setup(MagicMock(), entry, async_add)
         assert len(added) == 1
         assert added[0]._attr_unique_id.endswith("pv_surplus_set")
+
+    @pytest.mark.parametrize("forwarding", [False, True])
+    def test_battery_sensor_recovers_after_unset_startup(self, forwarding):
+        from custom_components.idm_heatpump.entity import should_add_entity
+        from custom_components.idm_heatpump.sensor import IdmSensor
+
+        coord = _make_coordinator(data={"battery_soc": -1}, hide_unused=True)
+        coord.config_entry.options = {"external_power_forwarding": forwarding}
+        reg = _make_register("battery_soc", writable=True, datatype=DataType.INT16)
+        assert should_add_entity(coord, reg)
+        sensor = IdmSensor(coord, reg, _make_desc("battery_soc"))
+        unique_id = sensor._attr_unique_id
+        assert not sensor.available
+        coord.data = {"battery_soc": 73}
+        coord.unused_registers = set()
+        assert sensor.available
+        assert sensor.native_value == 73
+        coord.data = {"battery_soc": -1}
+        coord.unused_registers = {"battery_soc"}
+        assert not sensor.available
+        assert sensor._attr_unique_id == unique_id
+
+    @pytest.mark.parametrize(
+        "data,unsupported", [({"outdoor_temp": 10}, set()), ({"battery_soc": -1}, {"battery_soc"})]
+    )
+    def test_absent_or_unsupported_glt_sensor_stays_filtered(self, data, unsupported):
+        from custom_components.idm_heatpump.entity import should_add_entity
+
+        coord = _make_coordinator(data=data, hide_unused=True)
+        coord.unsupported_registers = unsupported
+        assert not should_add_entity(coord, _make_register("battery_soc"))
 
 
 # ---------------------------------------------------------------------------

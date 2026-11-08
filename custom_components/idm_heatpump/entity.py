@@ -17,6 +17,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from idm_heatpump import RegisterDef
 
+from .adapter_glt import is_external_power_measurement
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info, is_configured_heating_circuit_register
@@ -73,6 +74,11 @@ def should_add_entity(
     if as_writable_control and getattr(register, "writable", False):
         # Unsupported (Illegal Data Address) registers are never exposed, even
         # as writable controls; a present, supported writable target stays.
+        return register.name not in getattr(coordinator, "unsupported_registers", ())
+    if is_external_power_measurement(register.name):
+        # Volatile GLT inputs can be unset while forwarding is off or before
+        # its first write. Keep the read-only entity across reloads so a later
+        # valid readback can recover it; availability still follows each poll.
         return register.name not in getattr(coordinator, "unsupported_registers", ())
     if is_configured_heating_circuit_register(coordinator, register.name):
         return register.name not in getattr(coordinator, "unsupported_registers", ())

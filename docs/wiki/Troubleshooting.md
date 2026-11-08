@@ -434,3 +434,35 @@ write does not establish how firmware assesses the PV connection. The optional
 [10 W workaround](Configuration#optional-workaround-for-pv-message-20300-at-zero-production)
 is off by default and can affect controller displays and statistics. It does
 not repair a disconnected transport.
+
+### GLT availability investigation (#493)
+
+For a supported external-power input, distinguish four cases in diagnostics:
+`unused_sentinel` means the controller reports an unset value; `not_polled`
+means the poll plan excludes the register; `unsupported` means the controller
+rejected its address; `no_data` means a planned read returned no usable value.
+These are different causes and must not all be called a forwarding failure.
+
+Enable the relevant read-only Sensor and, for manual control, its Number with
+the `(setpoint)` suffix. The Number's `_set` unique ID explicitly keeps its
+readback polled even with forwarding off. Record the integration/API versions,
+forwarding setting, status and entity availability before/after an options
+reload. A supported sensor starting at an unset sentinel now stays registered
+and can recover when a later readback is valid. It remains unavailable during
+unset samples; the Number remains writable with unknown state.
+
+For controller display flicker, compare debug forwarding timestamps with actual
+readbacks and the display at the same times. Successful writes and optimistic
+HA states do not prove controller retention. Do not reset inputs to zero or
+sentinels for diagnosis, and do not change the refresh cadence without evidence.
+
+### Read-only field validation queue
+
+Diagnostics already expose `last_poll_duration_seconds`, total polls/failures,
+active/known registers and register outcomes. Capture these over a stated
+observation window before proposing a shorter interval. They are poll metrics,
+not physical Modbus request counts. For shared-link tests record actual
+transport ownership and other holders; coordinate any deliberate disconnect
+with the owner. For DHW/defrost COP record simultaneous electrical and thermal
+sources, operating mode, coverage gaps and firmware. No cycle or plant setting
+needs to be forced merely to collect normal-operation evidence.

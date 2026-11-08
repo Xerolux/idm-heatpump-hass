@@ -13,6 +13,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### ⚠️ Upgrade notes
+
+- **GLT readback entities recover without reloading**: supported external-power inputs now keep their read-only sensor when the first reading is unset. The sensor stays unavailable until a valid controller reading arrives. Existing entity IDs and manual Number controls are preserved. This does not confirm a fix for controller-side battery display flicker reported in #493; rollback is safe.
+
+### 🐛 Bugfixes
+
+- **Keep external-power readback sensors across unset startup values** (#493): disabling forwarding can leave a supported GLT input unset on the next setup. Previously the sensor was omitted for that entire entry lifetime, so later valid readings could not recover it. Sensors now remain registered while availability follows the live readback; absent and unsupported registers remain filtered.
+
 ## [0.26.7] - 2026-11-08
 
 Temperature inputs whose sensor is not wired no longer trigger the implausible-value health check: the controller's uninitialized-memory readings (about -327 °C) now count as *sensor not present* everywhere they surface.
