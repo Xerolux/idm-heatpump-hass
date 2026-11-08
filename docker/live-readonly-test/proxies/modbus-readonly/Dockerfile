@@ -1,6 +1,6 @@
 # Read-only Modbus TCP proxy. Pure Python stdlib (asyncio), no dependencies,
 # so the function-code filter cannot be bypassed by a library upgrade.
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 LABEL org.opencontainers.image.title="idm-modbus-readonly-proxy"
 LABEL org.opencontainers.image.description="Read-only Modbus TCP proxy (FC01-04 only) for IDM live testing"

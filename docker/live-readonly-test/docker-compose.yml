@@ -76,7 +76,7 @@ services:
     build:
       context: ./homeassistant
       args:
-        API_WHEEL: ${API_WHEEL:-idm_heatpump_api-0.9.1-py3-none-any.whl}
+        API_WHEEL: ${API_WHEEL:-idm_heatpump_api-2.16.1-py3-none-any.whl}
     container_name: idm-ha-test
     depends_on:
       modbus-proxy:
@@ -112,7 +112,7 @@ services:
     build:
       context: ./api-tester
       args:
-        API_WHEEL: ${API_WHEEL:-idm_heatpump_api-0.9.1-py3-none-any.whl}
+        API_WHEEL: ${API_WHEEL:-idm_heatpump_api-2.16.1-py3-none-any.whl}
     container_name: idm-api-tester
     depends_on:
       modbus-proxy:

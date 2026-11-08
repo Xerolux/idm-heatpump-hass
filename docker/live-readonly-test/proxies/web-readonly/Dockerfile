@@ -1,5 +1,5 @@
 # Read-only HTTP reverse proxy for the IDM Navigator 2.0 web interface.
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 LABEL org.opencontainers.image.title="idm-web-readonly-proxy"
 LABEL org.opencontainers.image.description="Read-only HTTP reverse proxy (GET/HEAD + login POST only) for IDM live testing"
