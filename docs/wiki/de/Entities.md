@@ -183,7 +183,7 @@ Die Integration bemerkt es auch von selbst: Wenn jedes Solarregister einen ganze
 | Entität | Beschreibung |
 |--------|-------------|
 | `hc_{x}_flow_temp` | Vorlauftemperatur |
-| `hc_{x}_room_temp` | Raumtemperatur |
+| `hc_{x}_room_temp` | Raumtemperatur; nicht verfügbar, wenn kein Raumfühler angeschlossen ist (siehe [Erkenntnisse](Findings-and-Documentation)) |
 | `hc_{x}_setpoint_flow_temp` | Aktueller Vorlauf-Sollwert |
 | `hc_{x}_active_mode` | Aktiver Betriebsmodus |
 

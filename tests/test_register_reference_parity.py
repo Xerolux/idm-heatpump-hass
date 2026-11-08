@@ -3,7 +3,7 @@
 ``scripts/generate_modbus_register_reference.py`` regenerates both the English
 wiki page (``docs/wiki/Modbus-Register.md``) and its German mirror
 (``docs/wiki/de/Modbus-Register.md``) from the pinned ``idm-heatpump-api``
-package, including pre-release pins such as ``2.16.0b2``. These tests enforce
+package, including pre-release pins such as ``2.16.1b2``. These tests enforce
 that both committed catalogs match the generator output and remain row-for-row
 equivalent after normalizing the German column vocabulary.
 """
@@ -88,8 +88,8 @@ def test_committed_register_references_match_generator_output() -> None:
 
 
 def test_generator_still_rejects_a_runtime_that_differs_from_the_manifest_pin(monkeypatch) -> None:
-    monkeypatch.setattr(generator, "_pinned_api_version", lambda: "2.16.0b2")
-    monkeypatch.setattr(generator, "distribution_version", lambda name: "2.16.0b3")
+    monkeypatch.setattr(generator, "_pinned_api_version", lambda: "2.16.1b2")
+    monkeypatch.setattr(generator, "distribution_version", lambda name: "2.16.1b3")
     with pytest.raises(RuntimeError, match="does not match pinned"):
         generator._build_reference()
 
@@ -97,10 +97,10 @@ def test_generator_still_rejects_a_runtime_that_differs_from_the_manifest_pin(mo
 @pytest.mark.parametrize(
     ("requirement_name", "expected"),
     [
-        ("idm-heatpump-api[web]", "2.16.0"),
-        ("idm-heatpump-api[web]", "2.16.0a1"),
-        ("idm-heatpump-api[web]", "2.16.0b3"),
-        ("idm-heatpump-api", "2.16.0rc3"),
+        ("idm-heatpump-api[web]", "2.16.1"),
+        ("idm-heatpump-api[web]", "2.16.1a1"),
+        ("idm-heatpump-api[web]", "2.16.1b3"),
+        ("idm-heatpump-api", "2.16.1rc3"),
     ],
 )
 def test_pinned_api_version_accepts_stable_and_prerelease_pins(
@@ -117,7 +117,7 @@ def test_pinned_api_version_accepts_stable_and_prerelease_pins(
 
 def test_pinned_api_version_rejects_unpinned_requirement(tmp_path: Path) -> None:
     manifest = tmp_path / "manifest.json"
-    manifest.write_text(json.dumps({"requirements": ["idm-heatpump-api[web]>=2.16.0"]}), encoding="utf-8")
+    manifest.write_text(json.dumps({"requirements": ["idm-heatpump-api[web]>=2.16.1"]}), encoding="utf-8")
 
     with pytest.raises(RuntimeError, match="must be pinned exactly"):
         generator._pinned_api_version(manifest)

@@ -19,6 +19,7 @@ from .calculated_sensors import _cop
 from .coordinator import IdmCoordinator
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
 from .ha_compat import BinarySensorDeviceClass
+from .temperature_plausibility import is_uninitialized_temperature
 
 
 @dataclass(frozen=True)
@@ -80,7 +81,14 @@ def _implausible_sensor(coordinator: IdmCoordinator, _analysis: Any) -> bool | N
             number = float(value)
         except (TypeError, ValueError):
             continue
-        if math.isfinite(number) and number not in (-1.0, 0.0, 6553.5, 65535.0):
+        # Uninitialized memory from an input without a wired sensor (about
+        # -327 °C, #668) means "sensor not present", not an implausible
+        # reading — the same rule the advisor has applied since #507.
+        if (
+            math.isfinite(number)
+            and number not in (-1.0, 0.0, 6553.5, 65535.0)
+            and not is_uninitialized_temperature(number)
+        ):
             numeric.append(number)
     return any(value < -50.0 or value > 130.0 for value in numeric)
 

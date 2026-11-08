@@ -888,6 +888,20 @@ class TestClimateSharedBehaviour:
 
         assert climate.native_current_temperature is None
 
+    def test_current_temperature_none_when_sensor_reports_uninitialized_memory(self):
+        """An unwired sensor answers with memory garbage, not a measurement (#668)."""
+        climate, coord = self._hc(
+            data={
+                "hc_a_mode": CircuitMode.NORMAL,
+                "hc_a_room_setpoint_heat_normal": 21.0,
+                "hc_a_room_temp": -327.22,
+            }
+        )
+        coord.unused_registers = set()
+
+        assert climate.native_current_temperature is None
+        assert climate.available is True, "the circuit stays usable without a room sensor"
+
     def test_zone_room_current_temperature_none_when_unused(self):
         climate, coord = self._zone(
             data={

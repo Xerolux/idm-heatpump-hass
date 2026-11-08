@@ -272,6 +272,33 @@ class TestIdmEntityAvailable:
         assert entity.available is True
         assert entity._attr_unique_id == "test_entry_id_temp"
 
+    def test_unavailable_when_temperature_reports_uninitialized_memory(self):
+        """An unwired sensor's memory garbage is "not present", not a reading (#668)."""
+        coord = _make_coordinator(data={"hc_a_room_temp": -327.22}, last_update_success=True, hide_unused=True)
+        reg = _make_register("hc_a_room_temp")
+        reg.unit = "°C"
+        entity = _make_entity(coordinator=coord, reg=reg)
+        assert entity.available is False
+
+    def test_available_when_hide_unused_false_and_uninitialized_memory(self):
+        coord = _make_coordinator(data={"hc_a_room_temp": -327.22}, last_update_success=True, hide_unused=False)
+        reg = _make_register("hc_a_room_temp")
+        reg.unit = "°C"
+        entity = _make_entity(coordinator=coord, reg=reg)
+        assert entity.available is True
+
+    def test_uninitialized_memory_rule_stays_scoped_to_temperatures(self):
+        coord = _make_coordinator(data={"external_power": -327.22}, last_update_success=True, hide_unused=True)
+        entity = _make_entity(coordinator=coord, reg=_make_register("external_power"))
+        assert entity.available is True
+
+    def test_plausible_temperature_stays_available_with_unit(self):
+        coord = _make_coordinator(data={"hc_a_room_temp": 21.4}, last_update_success=True, hide_unused=True)
+        reg = _make_register("hc_a_room_temp")
+        reg.unit = "°C"
+        entity = _make_entity(coordinator=coord, reg=reg)
+        assert entity.available is True
+
     def test_unused_entity_keeps_stable_unique_id_for_history(self):
         coord = _make_coordinator(
             data={"room_temp": UNUSED_VALUE},

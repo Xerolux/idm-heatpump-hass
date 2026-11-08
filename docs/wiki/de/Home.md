@@ -23,12 +23,12 @@ Die **IDM-Heatpump-Home-Assistant-Integration** verbindet [Home Assistant](https
 |---------|---------|
 | **Protokoll** | Modbus TCP (Port 502, Slave-ID 1) |
 | **Optionales Supplement** | Lokale Navigator-Web-API; PIN für Web-Zugriff erforderlich, unterstützte Steuerungen im Navigator-10/Pro-Modus `web_only` |
-| **Dokumentationsversion** | Quellstand `0.26.6`; [aktuellstes stabiles Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
+| **Dokumentationsversion** | Quellstand `0.26.7`; [aktuellstes stabiles Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
 | **Unterstützte/getestete HA-Baseline** | 2026.11.0 |
 | **Python** | 3.14+ (von Home Assistant verwaltet) |
 | **Verbindungsbibliothek** | modbus-connection>=4.12.7 |
 | **Socket-Backend** | tmodbus[async-serial]>=0.6.2 |
-| **Geräte-/Web-Bibliothek** | idm-heatpump-api[web]==2.16.0 |
+| **Geräte-/Web-Bibliothek** | idm-heatpump-api[web]==2.16.1 |
 | **Lizenz** | MIT |
 | **Sprachen** | DE, EN; Einrichtung und Aktionsoberflächen zusätzlich ES, IT, RO, CS, PL |
 | **Entitäten** | Modell- und konfigurationsabhängige Sensoren, Binärsensoren, Zahl-Entitäten, Auswahl-Entitäten, Schalter-Entitäten, Klima-Entitäten, Warmwasserbereiter und Buttons |
@@ -186,7 +186,7 @@ Datenschutz und das Dashboard.
 - **Datentypen**: FLOAT, UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM-Schutz**: Sensible Register werden verfolgt und geschützt
 - **Transportgrenze**: Rohe FC03/FC04-Lese- und FC16-Schreibvorgänge nutzen das exakte Paar `modbus-connection>=4.12.7` / `tmodbus[async-serial]>=0.6.2`; `4.12.7` ist die Version der Verbindungsbibliothek, nicht die Version der IDM-Integration
-- **API-Grenze**: `idm-heatpump-api[web]==2.16.0` stellt Batching, Dekodierung und Schreibsicherheit bereit. Die API besitzt ihre eigene Exception-Hierarchie; die Integration nutzt den tmodbus-gestützten Socket ohne pymodbus-Abhängigkeit
+- **API-Grenze**: `idm-heatpump-api[web]==2.16.1` stellt Batching, Dekodierung und Schreibsicherheit bereit. Die API besitzt ihre eigene Exception-Hierarchie; die Integration nutzt den tmodbus-gestützten Socket ohne pymodbus-Abhängigkeit
 - **Automatische Wiederherstellung**: API-Retry/Backoff plus Wiederverbindung nach Bedarf in der tmodbus-gestützten Verbindung
 - **Verbindungsbesitz**: Jeder Eintrag nutzt nach Möglichkeit die gemeinsame Modbus-Verbindung von Home Assistant (`owns_socket: false`, `supports_shared_connection: true`); wenn diese nicht beansprucht werden kann, wird ein eigener Socket verwendet
 - **Validierungsstatus**: Automatisierte Checks und Nur-Lese-Beobachtungen am Navigator 10 liegen vor; sie ersetzen keine kandidatenspezifische Clean-Install-, Langzeit- und breitere Modellvalidierung. Siehe [Stabilität & Release-Bereitschaft](Stability-and-Release-Readiness).

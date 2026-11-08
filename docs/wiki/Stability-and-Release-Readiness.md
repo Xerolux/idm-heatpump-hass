@@ -4,6 +4,10 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.26.7 release decision
+
+The maintainer requested a stable 0.26 fast-follow for a community field report (#668): a Navigator 2.0 heating circuit without a wired room sensor answers register 1364 with about -327.22 °C of uninitialized memory, permanently tripping the implausible-value health check — the same sentinel the advisor has treated as missing since #504. The fix classifies readings at or below -300 °C as *sensor not present* across the health check, sensor availability and climate/water-heater publication; decoding is unchanged and genuinely out-of-range values still trip the check. The band rule is published by the pinned API 2.16.1 (`is_uninitialized_temperature`) and imported as the single rule. Regression tests cover the health check, entity availability with and without raw-value mode, the temperature-register scope, climate and water-heater publication; the full local suite passed (3492 tests, 98.64% coverage), config flow reached 100%, strict typing passed and 13 genuine HA lifecycle tests passed against Home Assistant 2026.11.0. No wired-sensor plant was retested in the field and a fresh hardware installation from the published ZIP has not been completed. [Detailed evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.7.md).
+
 ## 0.26.6 release decision
 
 The maintainer requested a stable 0.26 patch with a default-off workaround after an authorized Navigator 10 live test: repeated successful zero writes coexisted with message 20300, and a 60-second 0.01 kW production test cleared it without acknowledgement after about 20 seconds. This is evidence for one firmware/plant, not a universal watchdog or firmware diagnosis. Runtime pins and the HA baseline are unchanged. Regression tests cover exact zero, invalid sources, positive production and unmodified household/surplus calculations across setup, options and reconfiguration. The full local suite passed (3463 tests, 98.64% coverage), config flow reached 100%, strict typing passed and 13 genuine HA lifecycle tests passed before the metadata-only release preparation. The patch is a deliberate stable fast-follow; a seven-day unchanged-candidate soak and fresh hardware installation from the published ZIP have not been completed. [Detailed field evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.6.md).
@@ -37,7 +41,7 @@ installer-level enablement path, and the documentation home forwards German
 browsers once per session only (explicit switch stays available). Full quality
 gate on the cut: two-leg CI matrix with coverage gates, strict mypy, ruff,
 hassfest, real-Home-Assistant lifecycle smoke, CodeQL/pip-audit, credential
-scan. Runtime pins unchanged from 0.26.1 (`idm-heatpump-api[web]==2.16.0`).
+scan. Runtime pins unchanged from 0.26.1 (`idm-heatpump-api[web]==2.16.1`).
 
 ## 0.26.1 release decision
 
@@ -53,7 +57,7 @@ installer enables Modbus TCP / the GLT-PV function, and the instructions
 continue from there. The full quality gate ran on the cut itself (two-leg CI
 matrix with coverage gates, strict mypy, ruff, hassfest, real-Home-Assistant
 lifecycle smoke, CodeQL/pip-audit, credential scan); the register catalogue
-and all runtime pins stay identical to 0.26.0 (`idm-heatpump-api[web]==2.16.0`
+and all runtime pins stay identical to 0.26.0 (`idm-heatpump-api[web]==2.16.1`
 — no runtime dependency moved). Removing the two entities needs no migration;
 settings, dashboards and all other entities are untouched, and rollback to
 0.26.0 restores the previous behaviour. A repository-wide scan verified that
@@ -74,7 +78,7 @@ nothing. The full quality gate ran on the cut itself: the two-leg CI matrix
 (Python 3.14 × HA 2026.11.0 × manifest-pinned/api-main) with coverage gates,
 strict mypy, ruff, hassfest, the real-Home-Assistant lifecycle smoke leg,
 CodeQL/pip-audit and the credential scan. The API pin stays at the validated
-`idm-heatpump-api[web]==2.16.0` — identical to 0.25.0, no runtime pin moved.
+`idm-heatpump-api[web]==2.16.1` — identical to 0.25.0, no runtime pin moved.
 No beta soak: accepted consciously for the two scoped changes above; anything
 larger returns to the beta line. Rollback is safe (no stored-data change, no
 entity-ID change).
@@ -495,7 +499,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.26.6` and `idm-heatpump-api` `2.16.0` form the current
+Source-tree integration `0.26.7` and `idm-heatpump-api` `2.16.1` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

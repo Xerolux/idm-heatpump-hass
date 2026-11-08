@@ -232,7 +232,7 @@ module off (or keep it, which dismisses that round of the suggestion).
 | Entity | Description |
 |--------|-------------|
 | `hc_{x}_flow_temp` | Flow temperature |
-| `hc_{x}_room_temp` | Room temperature |
+| `hc_{x}_room_temp` | Room temperature; unavailable when no room sensor is wired (see [Findings](Findings-and-Documentation)) |
 | `hc_{x}_setpoint_flow_temp` | Current setpoint flow temp |
 | `hc_{x}_active_mode` | Active operating mode |
 

@@ -77,7 +77,7 @@
         "Entities.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "be25e40292d59846b15139e281609c801be517b7f4d55d21fbe17035db66956c"
+      "reviewed_source_sha256": "9a1ab45fbfd0ea58ccf01f48de8f9e038a8c0e43e54cf363f3fd641d7c98ae85"
     },
     {
       "feature": "Local Navigator supplement and controls",
@@ -186,6 +186,7 @@
         "custom_components/idm_heatpump/log_filter.py",
         "custom_components/idm_heatpump/repairs.py",
         "custom_components/idm_heatpump/service_report.py",
+        "custom_components/idm_heatpump/temperature_plausibility.py",
         "custom_components/idm_heatpump/versions.py",
         "custom_components/idm_heatpump/whats_new.py"
       ],
@@ -194,7 +195,7 @@
         "Smart-Energy-and-Comfort.md",
         "Entities.md"
       ],
-      "reviewed_source_sha256": "077d318e36a0dc2da23dd37acc6bda18f5ee497ff73973d4fac996f67280f21e"
+      "reviewed_source_sha256": "e6291f9e2c9ad42c14db25ea0cf5b1aec0a47932bc07269ff564987994fd16b4"
     },
     {
       "feature": "KNX bridge and catalog",

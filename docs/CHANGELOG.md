@@ -13,6 +13,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.7] - 2026-11-08
+
+Temperature inputs whose sensor is not wired no longer trigger the implausible-value health check: the controller's uninitialized-memory readings (about -327 °C) now count as *sensor not present* everywhere they surface.
+
+### ⚠️ Upgrade notes
+
+- **The health flag clears and the room sensor reports unavailable**: the permanently-on *Implausible sensor value* check clears by itself, and a heating-circuit room-temperature entity without a wired sensor becomes unavailable instead of showing -327 °C. Dashboards listing that entity display unavailable; wiring a sensor restores it automatically. Nothing else changes — rollback is safe.
+
+### 🐛 Bugfixes
+
+- **Treat unwired room sensors as absent instead of implausible** (#668): a circuit without an iDM room sensor answers register 1364 with uninitialized memory (-327.22 °C) the health check flagged on every poll. Readings at or below -300 °C now mean *sensor not present* for the health check, sensor availability and the climate/water-heater cards. Out-of-range values still trip the check.
+
+### 💼 Maintenance
+
+- **Pin idm-heatpump-api 2.16.1**: the API publishes the uninitialized-temperature band as library knowledge (`is_uninitialized_temperature`), and the integration imports that single rule instead of keeping a local copy. Decoding and register data are unchanged; the tested pair for this release is integration 0.26.7 with API 2.16.1.
+
+### ❤️ Thanks
+
+- @dnamat88 traced the permanently-on health flag to the missing-sensor memory value on register 1364 and reported it with the exact sentinel evidence, matching the advisor's earlier #504 observation.
+
 ## [0.26.6] - 2026-11-07
 
 An optional 10 W workaround keeps affected Navigator controllers from reporting a disconnected PV system at valid zero production. Normal forwarding remains unchanged unless you enable it.

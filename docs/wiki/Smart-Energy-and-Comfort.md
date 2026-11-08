@@ -405,6 +405,14 @@ appear before normal reheating. These snapshot checks do not by themselves
 prove a fault. The report lists which checks are active; unavailable input data
 must also be considered when interpreting the result.
 
+Temperature inputs whose sensor is not wired answer with uninitialized
+controller memory (about -327 °C on a Navigator 2.0 room-temperature register,
+see [Findings](Findings-and-Documentation)). Those readings count as
+*sensor not present*: the implausible-value check ignores them, the sensor
+entity reports unavailable and the climate card shows no room temperature
+instead of a garbage value. Implausible values that are not memory garbage —
+for example a genuine sensor fault — still trigger the check.
+
 Health entities are placed under their own **iDM Health Monitor** device group
 when device hierarchy is enabled. This is a diagnostic grouping only and does
 not imply that the integration can replace an installer inspection.

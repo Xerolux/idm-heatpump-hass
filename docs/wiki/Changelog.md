@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.7 — 2026-11-08
+
+Unwired room sensors no longer trigger the *Implausible sensor value* health check. A heating circuit without an iDM room sensor answers register 1364 with uninitialized memory (about -327 °C); that band now counts as *sensor not present* — the health flag clears, the room-temperature entity reports unavailable, and climate/water-heater cards publish no temperature instead of a garbage value. Genuinely out-of-range readings still trip the check. The band rule is shared with the API (pinned 2.16.1). [Findings and limits](Findings-and-Documentation).
+
 ## v0.26.6 — 2026-11-07
 
 Optional [10 W PV zero-power workaround](Configuration#optional-workaround-for-pv-message-20300-at-zero-production) for message 20300 on affected Navigator controllers. Enable it on the external power sensor mapping page during setup, options or reconfiguration. It is off by default: only valid zero production is replaced, positive production resumes live forwarding, and unavailable sources remain skipped. Source sensors, surplus and household balance stay unchanged. [Evidence and limits](Troubleshooting#pv-not-connected-message-20300-at-zero-production).

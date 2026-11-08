@@ -22,6 +22,7 @@ from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info, is_configured_heating_circuit_register
 from .entity_names import translation_for_register
 from .error_messages import classify_write_error, write_error_detail, write_error_placeholders
+from .temperature_plausibility import is_uninitialized_temperature
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -222,13 +223,33 @@ class IdmEntity(IdmCoordinatorEntityBase):
             return True
         return max_val is not None and value > max_val
 
+    def _value_is_uninitialized_temperature(self) -> bool:
+        """Whether a temperature register reports uninitialized memory.
+
+        An input without a wired sensor answers with uninitialized controller
+        memory (about -327 °C on room-temperature register 1364, issue #668)
+        instead of a documented sentinel, and the register declares no
+        MIN/MAX, so the documented-range guard above cannot catch it. The
+        same ``hide_unused`` gate applies: users who opted into raw values
+        keep seeing the reading.
+        """
+        if not self.coordinator.hide_unused:
+            return False
+        if getattr(self._register, "unit", None) != "°C":
+            return False
+        data = self.coordinator.data
+        if not data:
+            return False
+        return is_uninitialized_temperature(data.get(self._register.name))
+
     @property
     def available(self) -> bool:
         if not super().available:
             return False
         if not self.coordinator.data or self._register.name not in self.coordinator.data:
             return False
-        if self._value_out_of_documented_range() and not (self.is_writable_control() and self._value_is_sentinel()):
+        garbage_reading = self._value_out_of_documented_range() or self._value_is_uninitialized_temperature()
+        if garbage_reading and not (self.is_writable_control() and self._value_is_sentinel()):
             # A reading beyond the documented range is garbage rather than an
             # unset control. A documented sentinel (e.g. -1 for battery SoC)
             # can be outside the normal range and still means an unset input.

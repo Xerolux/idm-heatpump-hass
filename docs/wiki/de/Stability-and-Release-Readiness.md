@@ -4,6 +4,10 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.26.7
+
+Der Maintainer hat einen stabilen Folgepatch der 0.26-Reihe für einen Community-Feldbericht (#668) angefordert: Ein Navigator-2.0-Heizkreis ohne angeschlossenen Raumfühler antwortet auf Register 1364 mit etwa −327,22 °C uninitialisiertem Speicher und ließ die Prüfung auf unplausible Werte dauerhaft ansprechen — derselbe Sentinel, den der Advisor seit #504 als fehlend behandelt. Die Korrektur stuft Werte ≤ −300 °C als *Fühler nicht vorhanden* ein, einheitlich für Gesundheitsprüfung, Sensor-Verfügbarkeit und Klima-/Boiler-Veröffentlichung; die Dekodierung bleibt unverändert, wirklich unplausible Werte lösen weiterhin aus. Die Band-Regel publiziert die gepinnte API 2.16.1 (`is_uninitialized_temperature`) und wird als einzige Regel importiert. Regressionstests decken Gesundheitsprüfung, Entitäts-Verfügbarkeit mit und ohne Rohwertmodus, die Begrenzung auf Temperatur-Register sowie Klima-/Boiler-Veröffentlichung ab; die lokale Suite bestand vollständig (3492 Tests, 98,64 % Abdeckung), der Config Flow erreichte 100 %, die strenge Typprüfung und 13 echte HA-Lebenszyklustests gegen Home Assistant 2026.11.0 bestanden. Eine Anlage mit Fühler wurde nicht erneut im Feld getestet; eine frische Hardwareinstallation aus dem veröffentlichten ZIP ist nicht erfolgt. [Detaillierte Nachweise](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.7.md).
+
 ## Release-Entscheidung zu 0.26.6
 
 Der Maintainer hat nach einem autorisierten Navigator-10-Live-Test einen stabilen Patch der 0.26-Reihe mit standardmäßig ausgeschaltetem Workaround angefordert: Wiederholt erfolgreiche Nullwert-Schreibvorgänge bestanden gleichzeitig mit Meldung 20300; ein 60-Sekunden-Test mit 0,01 kW Produktion ließ sie nach etwa 20 Sekunden ohne Quittierung verschwinden. Das belegt eine Anlage/Firmware, keine allgemeine Watchdog- oder Firmwarediagnose. Laufzeitabhängigkeiten und HA-Mindestversion bleiben unverändert. Regressionstests prüfen exakte Nullwerte, ungültige Quellen, positive Produktion und unveränderte Hausverbrauchs-/Überschussberechnungen über Einrichtung, Optionen und Neukonfiguration. Vor der reinen Release-Metadatenpflege bestanden lokal 3463 Tests mit 98,64 % Abdeckung, der Config Flow erreichte 100 %, die strenge Typprüfung und 13 echte HA-Lebenszyklustests bestanden. Der stabile Folgepatch wird bewusst ohne siebentägigen unveränderten Dauertest veröffentlicht; eine frische Hardwareinstallation aus dem veröffentlichten ZIP ist nicht durchgeführt. [Detaillierte Feldnachweise](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.6.md).
@@ -41,7 +45,7 @@ Qualitätschranke auf dem Schnitt: zweibeinige CI-Matrix mit
 Coverage-Schranken, strenges mypy, ruff, hassfest,
 Real-Home-Assistant-Lebenszyklus-Smoke-Tests, CodeQL/pip-audit,
 Anmeldedaten-Scan. Runtime-Pins unverändert gegenüber 0.26.1
-(`idm-heatpump-api[web]==2.16.0`).
+(`idm-heatpump-api[web]==2.16.1`).
 
 ## Release-Entscheidung zu 0.26.1
 
@@ -59,7 +63,7 @@ Anleitung fährt von dort fort. Die vollständige Qualitätschranke lief auf dem
 Schnitt selbst (zweibeinige CI-Matrix mit Coverage-Schranken, strenges mypy,
 ruff, hassfest, Real-Home-Assistant-Lebenszyklus-Smoke-Tests, CodeQL/pip-audit,
 Anmeldedaten-Scan); Registerkatalog und alle Runtime-Pins bleiben identisch zu
-0.26.0 (`idm-heatpump-api[web]==2.16.0` — keine Runtime-Abhängigkeit hat sich
+0.26.0 (`idm-heatpump-api[web]==2.16.1` — keine Runtime-Abhängigkeit hat sich
 bewegt). Das Entfernen der beiden Entitäten braucht keine Migration;
 Einstellungen, Dashboards und alle anderen Entitäten bleiben unberührt, ein
 Rollback auf 0.26.0 stellt das bisherige Verhalten wieder her. Ein
@@ -83,7 +87,7 @@ selbst: die zweibeinige CI-Matrix (Python 3.14 × HA 2026.11.0 ×
 manifest-pinned/api-main) mit Coverage-Schranken, strenges mypy, ruff,
 hassfest, die Real-Home-Assistant-Lebenszyklus-Smoke-Tests, CodeQL/pip-audit
 und der Anmeldedaten-Scan. Der API-Pin bleibt beim validierten
-`idm-heatpump-api[web]==2.16.0` — identisch zu 0.25.0, kein Runtime-Pin hat
+`idm-heatpump-api[web]==2.16.1` — identisch zu 0.25.0, kein Runtime-Pin hat
 sich bewegt. Kein Beta-Soak: für die beiden oben umrissenen, eng
 begrenzten Änderungen bewusst akzeptiert; alles Größere kehrt auf die
 Beta-Linie zurück. Ein Rollback ist sicher (keine Änderung an gespeicherten
@@ -532,7 +536,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.26.6` und `idm-heatpump-api` `2.16.0` bilden das aktuelle exakt
+Integration im Quellstand `0.26.7` und `idm-heatpump-api` `2.16.1` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
