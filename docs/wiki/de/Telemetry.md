@@ -42,7 +42,8 @@ zusammengesetzt wird.
 
 ## Zustellstatus, Fehler und Reparatur
 
-Mit aktiver Telemetrie-Einwilligung zeigt der Bereich **Diagnose** den lokalen
+Mit aktiver Telemetrie-Einwilligung zeigt die Gerätegruppe **Telemetrie** (bei
+aktivierter optionaler Gerätehierarchie) den lokalen
 Sensor **Telemetrie-Berichtsstatus**. Er meldet `not_sent`, `accepted`,
 `rejected` oder `unavailable`; Attribute sind der letzte und nächste Termin,
 die Zahl aufeinanderfolgender Fehlversuche, ob ein Bericht aussteht und die
@@ -194,10 +195,10 @@ Nach einem Neuladen werden gespeicherte Zähler und Beobachtungszeit gemeinsam m
 
 ## Firmware-Orientierung
 
-Unter **Einstellungen → Geräte & Dienste → IDM Heatpump → Neu konfigurieren → Firmware-Abfrage (freiwillig)** die separate Zustimmung aktivieren. Unter Diagnose am IDM-Gerät erscheinen **Neueste gemeldete Firmware** (Versionsnummer) und **Neuere Firmware gesichtet (unbestätigt)** (Ja/Nein; ohne passende Daten nicht verfügbar). Die Attribute zeigen installierte und gesichtete Version sowie den Zeitpunkt des Vergleichs. Unter **Entwicklerwerkzeuge → Aktionen → IDM Heatpump: Firmware jetzt prüfen** kann die Abfrage mit vorhandener Zustimmung manuell erfolgen.
+Unter **Einstellungen → Geräte & Dienste → IDM Heatpump → Neu konfigurieren → Firmware-Abfrage (freiwillig)** die separate Zustimmung aktivieren. Die Gerätegruppe **Telemetrie** der Anlage zeigt dann **Neueste gemeldete Firmware** (Versionsnummer) und **Neuere Firmware gesichtet (unbestätigt)** (Ja/Nein; ohne passende Daten nicht verfügbar). Die Attribute zeigen installierte und gesichtete Version sowie den Zeitpunkt des Vergleichs. Unter **Entwicklerwerkzeuge → Aktionen → IDM Heatpump: Firmware jetzt prüfen** kann die Abfrage mit vorhandener Zustimmung manuell erfolgen.
 
 Eine neuere passende Sichtung löst zusätzlich einen Hinweis unter **Einstellungen → System → Reparaturen** aus. Mit **Gesehen bestätigen** wird genau diese Version für das Gerät dauerhaft quittiert, auch über Neustarts hinweg. Erst eine andere neuere Version kann erneut gemeldet werden. Das bestätigt nur das Lesen des Hinweises und führt kein Update aus.
 
 Community-Meldungen sind keine Zusage, dass die Version für deine Wärmepumpe verfügbar oder geeignet ist. iDM oder der autorisierte Fachbetrieb muss das prüfen und ein Update durchführen. Nutzer können mit freiwillig geteilten Berichten die Vergleichsbasis verbessern; die Firmware-Abfrage ist dennoch unabhängig von Telemetrie einschaltbar. Beide Zustimmungen bleiben freiwillig und standardmäßig aus.
 
-Bei aktivierter Gerätehierarchie findest du beide Firmware-Vergleichs-Entitäten am Untergerät **Diagnose**, direkt bei der installierten Softwareversion. Die Entity-IDs bleiben beim Verschieben erhalten. Ohne Gerätehierarchie liegen sie im Diagnosebereich des Hauptgeräts.
+Bei aktivierter Gerätehierarchie bilden die Cloud-Einwilligungs-Entitäten — **Neueste gemeldete Firmware**, **Neuere Firmware gesichtet (unbestätigt)** und **Telemetrie-Berichtsstatus** — ein eigenes Untergerät **Telemetrie** unter der Anlage. Die Entity-IDs bleiben beim Verschieben erhalten; die installierte Softwareversion bleibt in **Diagnose**. Ohne Gerätehierarchie liegen sie als Diagnose-Entitäten auf dem Hauptgerät.

@@ -39,7 +39,8 @@ upgrade changed the schema.
 
 ## Delivery status, failures and repair
 
-With telemetry consent active, the **Diagnostics** area shows the local
+With telemetry consent active, the **Telemetry** device group (with the
+optional device hierarchy enabled) shows the local
 **Telemetry report status** sensor. It states `not_sent`, `accepted`,
 `rejected` or `unavailable`, with attributes for the last and next attempt
 time, the consecutive failed attempts, whether a report is pending and the
@@ -180,10 +181,10 @@ After a reload, telemetry resumes saved counters and elapsed time together at cu
 
 ## Firmware orientation
 
-Under **Settings → Devices & services → IDM Heatpump → Reconfigure → Firmware query (optional)**, enable the separate consent. The IDM device Diagnostics section then shows **Latest reported firmware** (version number) and **Newer firmware observed (unconfirmed)** (on/off; unavailable without matching data). Attributes include installed/observed versions and the comparison time. Use **Developer tools → Actions → IDM Heatpump: Check firmware now** to request a manual comparison with existing consent.
+Under **Settings → Devices & services → IDM Heatpump → Reconfigure → Firmware query (optional)**, enable the separate consent. The plant's **Telemetry** device group then shows **Latest reported firmware** (version number) and **Newer firmware observed (unconfirmed)** (on/off; unavailable without matching data). Attributes include installed/observed versions and the comparison time. Use **Developer tools → Actions → IDM Heatpump: Check firmware now** to request a manual comparison with existing consent.
 
 A newer matching observation also raises a notice under **Settings → System → Repairs**. **Acknowledge seeing this notice** remembers that exact version for this device, including across restarts. Only a different newer version can trigger another notice. Acknowledging never performs an update.
 
 Community reports do not establish availability or compatibility for a particular plant. iDM or an authorized installer must verify and perform updates. Voluntarily sharing reports improves the community comparison basis; firmware queries remain independently available without telemetry. Both consent settings remain optional and off by default.
 
-With the optional device hierarchy enabled, both firmware-comparison entities are on the **Diagnostics** subdevice beside the installed software version. Moving them preserves their entity IDs. Without the hierarchy, they remain diagnostic entities on the main device.
+With the optional device hierarchy enabled, the cloud-consent entities — **Latest reported firmware**, **Newer firmware observed (unconfirmed)** and **Telemetry report status** — share their own **Telemetry** subdevice beneath the plant. Moving them preserves their entity IDs; the installed software version stays in **Diagnostics**. Without the hierarchy, they remain diagnostic entities on the main device.

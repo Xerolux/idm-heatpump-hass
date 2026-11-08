@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.10 — 2026-11-08
+
+With the device hierarchy enabled, the three cloud-consent entities — *Telemetry report status*, *Latest reported firmware* and *Newer firmware observed (unconfirmed)* — now form their own **Telemetry** subdevice beneath the plant. Entity IDs and history are preserved; the installed software version stays in *Diagnostics*. [Group placement](Telemetry#firmware-orientation).
+
 ## v0.26.9 — 2026-11-08
 
 Consented plant telemetry becomes verifiable: the local *Telemetry report status* diagnostic sensor shows the last delivery outcome, attempt times and the failure streak, and seven undelivered daily reports raise a self-clearing repair notice. Permanent 4xx rejections drop the frozen report instead of retrying it forever, the report ID survives schema changes, a manual send inside the cooldown raises a clear validation error, and both cloud consents now share one per-minute timer. [Delivery status and failure handling](Telemetry#delivery-status-failures-and-repair).

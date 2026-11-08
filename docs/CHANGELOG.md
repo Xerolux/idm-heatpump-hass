@@ -13,6 +13,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.10] - 2026-11-08
+
+The optional cloud-consent entities get their own home: with the device hierarchy enabled, a dedicated **Telemetry** subdevice beneath the plant groups everything gated behind the telemetry and firmware consents, instead of scattering it through Diagnostics.
+
+### ⚠️ Upgrade notes
+
+- **The three cloud entities move to a new *Telemetry* subdevice**: *Telemetry report status*, *Latest reported firmware* and *Newer firmware observed (unconfirmed)* now form their own group under the plant when the optional device hierarchy is enabled. Entity IDs, history and consent are preserved; the installed software version stays in *Diagnostics*. Without the hierarchy nothing changes; rollback is safe.
+
+### 💼 Maintenance
+
+- **Seed the Telemetry device from the consent options**: the subdevice is created exactly when the telemetry or firmware consent is complete, so hierarchy cleanup keeps it in step with the entities that justify it. Placement, seeding and the installed/observed split are regression-tested.
+
 ## [0.26.9] - 2026-11-08
 
 Optional telemetry becomes verifiable: a local diagnostic sensor shows whether consented plant reports actually arrive, permanent server rejections stop retrying forever, and a full week of failed deliveries raises a repair notice.

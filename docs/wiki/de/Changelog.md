@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.26.10 — 2026-11-08
+
+Bei aktivierter Gerätehierarchie bilden die drei Cloud-Einwilligungs-Entitäten — *Telemetrie-Berichtsstatus*, *Neueste gemeldete Firmware* und *Neuere Firmware gesichtet (unbestätigt)* — jetzt ein eigenes Untergerät **Telemetrie** unter der Anlage. Entity-IDs und Historie bleiben erhalten; die installierte Softwareversion bleibt in *Diagnose*. [Gruppenplatzierung](Telemetry#firmware-orientierung).
+
 ## v0.26.9 — 2026-11-08
 
 Die optionale Anlagen-Telemetrie wird überprüfbar: Der lokale Diagnose-Sensor *Telemetrie-Berichtsstatus* zeigt letztes Zustellergebnis, Terminzeiten und die Fehlversuchsserie; sieben nicht zugestellte Tagesberichte erzeugen einen sich selbst löschenden Repairs-Hinweis. Dauerhafte 4xx-Ablehnungen verwerfen den eingefrorenen Bericht statt ihn endlos zu wiederholen, die Berichtskennung übersteht Schema-Änderungen, ein manueller Versand in der Sperrzeit liefert einen klaren Validierungsfehler, und beide Cloud-Einwilligungen teilen sich jetzt einen Minuten-Timer. [Zustellstatus, Fehler und Reparatur](Telemetry#zustellstatus-fehler-und-reparatur).
