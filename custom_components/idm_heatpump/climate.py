@@ -36,6 +36,7 @@ from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .differential_circuits import configured_differential_circuits
 from .entity import async_write_translated, build_device_info
+from .temperature_plausibility import is_uninitialized_temperature
 from .web_climate_entities import web_climate_entities
 
 _LOGGER = logging.getLogger(__name__)
@@ -151,13 +152,17 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         infinity or -1). Publishing that produced a room temperature of ``nan``
         or ``-1 °C`` on the climate card. The register set is the authority on
         what counts as unused, so this reuses the coordinator's per-poll result
-        instead of introducing sentinel literals here.
+        instead of introducing sentinel literals here. A sensor that is not
+        wired at all answers with uninitialized memory (about -327 °C, #668);
+        that band is equally not a publishable temperature.
         """
         data = self.coordinator.data
         if reg is None or not data:
             return None
         value = data.get(reg.name)
         if value is None or reg.name in self.coordinator.unused_registers:
+            return None
+        if is_uninitialized_temperature(value):
             return None
         try:
             numeric = float(value)

@@ -28,6 +28,7 @@ from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import async_write_translated, build_device_info
 from .ha_compat import WaterHeaterEntityFeature
+from .temperature_plausibility import is_uninitialized_temperature
 from .web_climate_entities import web_water_heater_entities
 
 _LOGGER = logging.getLogger(__name__)
@@ -116,13 +117,16 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
         An unused or non-finite reading must not reach the state machine: the
         water heater card rendered the API's unset sentinel as a real storage
         temperature. The coordinator's per-poll unused set is the authority, so
-        no sentinel literal is repeated here.
+        no sentinel literal is repeated here. Uninitialized memory from an
+        unwired sensor (about -327 °C, #668) is equally not a temperature.
         """
         data = self.coordinator.data
         if not data:
             return None
         value = data.get(reg.name)
         if value is None or reg.name in self.coordinator.unused_registers:
+            return None
+        if is_uninitialized_temperature(value):
             return None
         try:
             numeric = float(value)

@@ -2271,6 +2271,13 @@ class TestWaterHeaterEntityEdges:
 
         assert wh.native_current_temperature is None
 
+    def test_current_temperature_none_when_sensor_reports_uninitialized_memory(self):
+        """An unwired sensor answers with memory garbage, not a measurement (#668)."""
+        wh, coord = self._make(data={"dhw_temp_top": -327.22, "dhw_setpoint": 55})
+        coord.unused_registers = set()
+
+        assert wh.native_current_temperature is None
+
     def test_target_temperature_none_when_the_setpoint_is_not_numeric(self):
         wh, _coord = self._make(data={"dhw_temp_top": 50.0, "dhw_setpoint": "-"})
 

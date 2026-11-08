@@ -38,6 +38,20 @@ def test_implausible_sensor_check_ignores_normal_sentinels():
     assert module._implausible_sensor(_coordinator({"hp_flow_temp": 150.0}), None) is True
 
 
+def test_implausible_sensor_check_ignores_unwired_sensor_memory():
+    """Uninitialized memory from an unwired sensor is "not present", not a fault (#668)."""
+    plant = {
+        "hc_a_room_temp": -327.22,
+        "outdoor_temp": 4.8,
+        "hp_flow_temp": 34.1,
+        "dhw_temp_top": 48.0,
+    }
+    assert module._implausible_sensor(_coordinator(plant), None) is False
+    assert module._implausible_sensor(_coordinator({"hc_a_room_temp": -327.68}), None) is False
+    # A reading that is merely out of band — not uninitialized memory — still trips.
+    assert module._implausible_sensor(_coordinator({"outdoor_temp": -60.0}), None) is True
+
+
 def test_long_defrost_check_is_conservative():
     analysis = SimpleNamespace(current_defrost_minutes=lambda: 46.0)
     assert module._long_defrost(_coordinator({}), analysis) is True

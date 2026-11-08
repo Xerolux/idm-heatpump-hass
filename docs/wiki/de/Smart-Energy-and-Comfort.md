@@ -450,6 +450,14 @@ keinen Fehler. Der Bericht listet, welche Prüfungen aktiv sind; bei der
 Interpretation des Ergebnisses müssen auch nicht verfügbare Eingangsdaten
 berücksichtigt werden.
 
+Temperatur-Eingänge ohne verdrahteten Fühler antworten mit uninitialisiertem
+Controllerspeicher (etwa −327 °C auf einem Navigator-2.0-Raumtemperatur-Register,
+siehe [Erkenntnisse](Findings-and-Documentation)). Diese Werte gelten als
+*Fühler nicht vorhanden*: die Prüfung auf unplausible Werte ignoriert sie, die
+Sensor-Entität meldet „nicht verfügbar“, und die Klima-Karte zeigt keine
+Raumtemperatur statt eines Müllwerts. Unplausible Werte, die kein Speicher-Müll
+sind — etwa ein echter Fühlerfehler — lösen die Prüfung weiterhin aus.
+
 Health-Entitäten liegen bei aktivierter Gerätshierarchie in einer eigenen
 Gerätegruppe **iDM Health Monitor**. Das ist nur eine diagnostische
 Gruppierung und bedeutet nicht, dass die Integration die Inspektion durch
