@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.8 — 2026-11-08
+
+Supported external-power GLT sensors remain registered when startup reads an unset value and recover automatically once the controller returns a valid reading. The manual Number remains writable and polled independently of forwarding. Stable entity IDs and off/on/off reload behavior are regression-tested. Controller-side battery display flicker (#493) remains unresolved. Open-work planning and [diagnostic guidance](Troubleshooting#glt-availability-investigation-493) are refreshed; capture replay establishes no new #577 parser defect.
+
 ## v0.26.7 — 2026-11-08
 
 Unwired room sensors no longer trigger the *Implausible sensor value* health check. A heating circuit without an iDM room sensor answers register 1364 with uninitialized memory (about -327 °C); that band now counts as *sensor not present* — the health flag clears, the room-temperature entity reports unavailable, and climate/water-heater cards publish no temperature instead of a garbage value. Genuinely out-of-range readings still trip the check. The band rule is shared with the API (pinned 2.16.1). [Findings and limits](Findings-and-Documentation).

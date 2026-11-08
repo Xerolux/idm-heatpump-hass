@@ -13,7 +13,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.26.8] - 2026-11-08
 
 ### ⚠️ Upgrade notes
 
@@ -22,6 +22,10 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bugfixes
 
 - **Keep external-power readback sensors across unset startup values** (#493): disabling forwarding can leave a supported GLT input unset on the next setup. Previously the sensor was omitted for that entire entry lifetime, so later valid readings could not recover it. Sensors now remain registered while availability follows the live readback; absent and unsupported registers remain filtered.
+
+### 💼 Maintenance
+
+- **Refresh open work and diagnostic guidance**: completed roadmap items are separated from field validation, and German/English troubleshooting distinguishes unset inputs, excluded polling, unsupported registers and missing reads. Two private issue-referenced captures were replayed against API 2.16.1 without establishing a new #577 parser defect or controller attribution. Existing automatic 90-day upload retention remains unchanged.
 
 ## [0.26.7] - 2026-11-08
 

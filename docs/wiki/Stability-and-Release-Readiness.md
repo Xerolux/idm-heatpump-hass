@@ -4,6 +4,15 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.26.8 release decision
+
+The GLT readback sensor startup omission is reproduced and corrected; live
+sentinels still control availability. The real-HA regression preserves entity
+IDs, Number readback polling and recovery through forwarding off/on/off reloads.
+Controller display flicker remains open. The tested dependency pair stays at
+API 2.16.1 and the existing transport floors. Two verified private captures
+were replayed for #577 without proving a new parser defect or attribution.
+
 ## 0.26.7 release decision
 
 The maintainer requested a stable 0.26 fast-follow for a community field report (#668): a Navigator 2.0 heating circuit without a wired room sensor answers register 1364 with about -327.22 °C of uninitialized memory, permanently tripping the implausible-value health check — the same sentinel the advisor has treated as missing since #504. The fix classifies readings at or below -300 °C as *sensor not present* across the health check, sensor availability and climate/water-heater publication; decoding is unchanged and genuinely out-of-range values still trip the check. The band rule is published by the pinned API 2.16.1 (`is_uninitialized_temperature`) and imported as the single rule. Regression tests cover the health check, entity availability with and without raw-value mode, the temperature-register scope, climate and water-heater publication; the full local suite passed (3492 tests, 98.64% coverage), config flow reached 100%, strict typing passed and 13 genuine HA lifecycle tests passed against Home Assistant 2026.11.0. No wired-sensor plant was retested in the field and a fresh hardware installation from the published ZIP has not been completed. [Detailed evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.7.md).
@@ -499,7 +508,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.26.7` and `idm-heatpump-api` `2.16.1` form the current
+Source-tree integration `0.26.8` and `idm-heatpump-api` `2.16.1` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
