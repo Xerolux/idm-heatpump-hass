@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.26.8 — 2026-11-08
+
+Unterstützte GLT-Sensoren für externe Leistung bleiben bei nicht gesetztem Startwert angelegt und erholen sich bei gültigem Rücklesewert automatisch. Die manuelle Number bleibt unabhängig von der Weiterleitung bedienbar und im Abfrageplan. Stabile Entitäts-IDs und Neuladen bei aus/ein/aus sind durch Regressionstests geprüft. Das Flackern der Batterieanzeige am Regler (#493) bleibt offen. Aufgabenplanung und [Diagnoseanleitung](Troubleshooting) sind aktualisiert; die Capture-Auswertung belegt keinen neuen Parserfehler zu #577.
+
 ## v0.26.7 — 2026-11-08
 
 Nicht angeschlossene Raumfühler lösen die Gesundheitsprüfung *Unplausibler Sensorwert* nicht mehr aus. Ein Heizkreis ohne iDM-Raumfühler antwortet auf Register 1364 mit uninitialisiertem Speicher (etwa −327 °C); dieses Band gilt jetzt als *Fühler nicht vorhanden* — das Health-Flag verschwindet, die Raumtemperatur-Entität meldet „nicht verfügbar", und Klima-/Boiler-Karten veröffentlichen keine Temperatur statt eines Müllwerts. Wirklich unplausible Werte lösen die Prüfung weiter aus. Die Band-Regel teilt sich die Integration mit der API (Pin 2.16.1). [Erkenntnisse und Grenzen](Findings-and-Documentation).

@@ -4,6 +4,16 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.26.8
+
+Der beim Start ausgelassene GLT-Lesesensor ist reproduziert und korrigiert;
+aktuelle Sentinel-Werte bestimmen weiterhin die Verfügbarkeit. Der echte
+HA-Regressionstest prüft stabile Entitäts-IDs, Rücklese-Polling der Number und
+Erholung beim Neuladen mit Weiterleitung aus/ein/aus. Das Flackern am Regler
+bleibt offen. API 2.16.1 und die Transport-Mindestversionen bleiben gleich.
+Zwei geprüfte private Captures zu #577 belegen keinen neuen Parserfehler und
+keine gesicherte Zuordnung zum ursprünglich gemeldeten Modul.
+
 ## Release-Entscheidung zu 0.26.7
 
 Der Maintainer hat einen stabilen Folgepatch der 0.26-Reihe für einen Community-Feldbericht (#668) angefordert: Ein Navigator-2.0-Heizkreis ohne angeschlossenen Raumfühler antwortet auf Register 1364 mit etwa −327,22 °C uninitialisiertem Speicher und ließ die Prüfung auf unplausible Werte dauerhaft ansprechen — derselbe Sentinel, den der Advisor seit #504 als fehlend behandelt. Die Korrektur stuft Werte ≤ −300 °C als *Fühler nicht vorhanden* ein, einheitlich für Gesundheitsprüfung, Sensor-Verfügbarkeit und Klima-/Boiler-Veröffentlichung; die Dekodierung bleibt unverändert, wirklich unplausible Werte lösen weiterhin aus. Die Band-Regel publiziert die gepinnte API 2.16.1 (`is_uninitialized_temperature`) und wird als einzige Regel importiert. Regressionstests decken Gesundheitsprüfung, Entitäts-Verfügbarkeit mit und ohne Rohwertmodus, die Begrenzung auf Temperatur-Register sowie Klima-/Boiler-Veröffentlichung ab; die lokale Suite bestand vollständig (3492 Tests, 98,64 % Abdeckung), der Config Flow erreichte 100 %, die strenge Typprüfung und 13 echte HA-Lebenszyklustests gegen Home Assistant 2026.11.0 bestanden. Eine Anlage mit Fühler wurde nicht erneut im Feld getestet; eine frische Hardwareinstallation aus dem veröffentlichten ZIP ist nicht erfolgt. [Detaillierte Nachweise](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.7.md).
@@ -536,7 +546,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.26.7` und `idm-heatpump-api` `2.16.1` bilden das aktuelle exakt
+Integration im Quellstand `0.26.8` und `idm-heatpump-api` `2.16.1` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
