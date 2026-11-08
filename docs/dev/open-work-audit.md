@@ -292,10 +292,20 @@ unloadable `modbus` component, a conflicting claim, older Home Assistant) and
 reports `supports_shared_connection=False`. No transport option exists and
 there is no second pymodbus socket path.
 
-Still open on real hardware: a read-only validation of the shared path on a
-live Navigator (the maintainers plant runs Navigator 10), including a
-deliberate connection loss/reconnect while another holder shares the link,
-plus a load observation with several entries on one controller.
+**Field-validated 2026-11-08** on the maintainer's Navigator 10 reference
+plant through the read-only Docker bench: the shared claim reports
+`source: homeassistant.modbus` with `owns_socket: false` in redacted live
+diagnostics, polling ran continuously (0 failures), and deliberate proxy
+restarts — once with the core `modbus` integration as a second holder on the
+same endpoint — caused no entity-availability window; both holders recovered
+immediately. 4,113 relayed Modbus frames carried exactly the two synthetic
+write-block verifications, and the Nav10 WebSocket path delivered 73 web
+values read-only. Evidence and the four bench defects fixed during the
+session (logging crashes, stale WS read allowlist, removed password grant,
+Linux bind-mount permissions):
+[release evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/2026-11-08-shared-connection-live-validation.md).
+Still open: a load observation with several IDM entries on one controller
+(more than the one entry plus one core-modbus holder exercised here).
 
 ### API decoupling (completed)
 

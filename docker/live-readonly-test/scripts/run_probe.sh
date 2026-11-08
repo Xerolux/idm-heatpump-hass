@@ -17,7 +17,9 @@ cd "$ROOT"
 mode="${1:-api-tests}"
 if [ "$mode" = "cmd" ]; then
   shift
-  docker compose run --rm --no-deps api-tester "$@"
+  # The image entrypoint dispatches by MODE, so a free-form command overrides
+  # the entrypoint itself.
+  docker compose run --rm --no-deps --entrypoint python api-tester "$@"
 else
   docker compose run --rm --no-deps -e "MODE=$mode" api-tester
 fi

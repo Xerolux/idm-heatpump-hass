@@ -107,8 +107,16 @@ class ProxyState:
 
 
 def _append_line(path: Path, line: str) -> None:
-    with path.open("a", encoding="utf-8") as fh:
-        fh.write(line + "\n")
+    """Append one JSONL record; never raise.
+
+    Read-only enforcement must not depend on file logging: an unwritable log
+    directory must never break the proxy. Fall back to stdout.
+    """
+    try:
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+    except OSError:
+        print(f"[log-fallback {path.name}] {line}", flush=True)
 
 
 def make_exception_response(transaction_id: int, unit_id: int, fc: int, code: int) -> bytes:

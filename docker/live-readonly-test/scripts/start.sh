@@ -16,5 +16,12 @@ if [ "${1:-}" != "--no-build" ]; then
   fi
 fi
 
+# Linux bind-mount permissions: the proxies and the api-tester run as uid 1000
+# inside the containers, while the mounted directories may belong to the
+# invoking user. Make them group/world writable so the probes can write their
+# reports without weakening anything else.
+mkdir -p results logs/modbus-proxy logs/web-proxy logs/homeassistant
+chmod -R a+rwX results logs 2>/dev/null || true
+
 echo ">>> Starting modbus-proxy + web-proxy + homeassistant"
 docker compose up -d modbus-proxy web-proxy homeassistant

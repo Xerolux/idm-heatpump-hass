@@ -10,7 +10,15 @@ All traffic to the heat pump is forced through three read-only proxies:
 |---|---|---|
 | `modbus-proxy` (TCP 5020) | Modbus FC01–04 (reads) | every write FC (05/06/0F/10/16/17/…) |
 | `web-proxy` HTTP (TCP 80) | `GET`, `HEAD`, and `POST` only on `/`, `/index.php`, `/login.php` (Navigator 2.0 login) | all other methods/paths |
-| `web-proxy` Nav10 WS (TCP 61220) | Nav10 read commands `setting/detail`, `statistic/detail`, `notification/overview` | every other WS frame (potential write) |
+| `web-proxy` Nav10 WS (TCP 61220) | the pinned API's read frames (`setting/detail`, `statistic/detail`, `notification/overview`, `home/detail`, `home/overview`, `status/overview`, `system`, `system.freshwater`, `system.heatpump.performance`, `system.heatingcircuit/detail` per circuit, `weather`, `ion`, `energyflow`) | every other WS frame — in particular any `save` command, the protocol's only write verb |
+
+The WS allowlist mirrors the read requests of the **pinned** API client
+(`idm_heatpump/web.py`); when the API adds read frames, extend the allowlist
+in the same change or the proxy will silently drop them (that is how the
+2026-11-08 session found `home/detail` and `system.heatingcircuit/detail`
+missing). Unknown commands stay blocked by default; proxy logging falls back
+to stdout when the log directory is unwritable, so enforcement never depends
+on file logging.
 
 Every request/frame is logged to `logs/<proxy>/`; blocked writes are additionally
 logged to `*_blocked_writes.jsonl` and counted in the health endpoints. The
@@ -103,6 +111,16 @@ The synthetic write-block verifications in `run_api_tests.py` deliberately send 
 single Modbus FC06 to the outdoor-temperature register (with the value just read,
 so it is a no-op even hypothetically) and a Nav10 `setting/save` frame, purely to
 prove the proxies block them. These are the only blocked writes in the logs.
+
+## Shared-connection validation setup
+
+`homeassistant/config/configuration.yaml` optionally configures the **core
+`modbus` integration as a second holder** on the same read-only endpoint (one
+holding-register sensor). With the IDM integration's shared claim
+(`modbus.async_get_unit`) that exercises reference counting and link sharing
+across holders; restart `modbus-proxy` mid-poll to observe both holders recover
+without an availability window. This is the bench used for the 2026-11-08
+shared-connection field validation (see `docs/release-evidence/`).
 
 ## Reproducibility
 

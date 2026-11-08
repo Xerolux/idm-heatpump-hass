@@ -17,3 +17,19 @@ logger:
   logs:
     custom_components.idm_heatpump: debug
     idm_heatpump: info
+
+# A SECOND holder on the same read-only Modbus endpoint: Home Assistant's
+# core modbus integration claims the same unit the IDM integration shares.
+# This exercises the shared-connection contract (reference counting across
+# holders, one physical link) during deliberate proxy restarts. Strictly
+# read-only: the modbus platform here only polls one input register.
+modbus:
+  - name: idm-shared-link-second-holder
+    type: tcp
+    host: modbus-proxy
+    port: 5020
+    sensors:
+      - name: second_holder_probe
+        address: 4108
+        input_type: holding
+        scan_interval: 30

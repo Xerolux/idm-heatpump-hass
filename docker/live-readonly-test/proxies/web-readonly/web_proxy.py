@@ -83,8 +83,18 @@ class State:
 
 
 def _append_line(path: Path, line: str) -> None:
-    with path.open("a", encoding="utf-8") as fh:
-        fh.write(line + "\n")
+    """Append one JSONL record; never raise.
+
+    The read-only enforcement must not depend on file logging: an unwritable
+    log directory (fresh bind mount, wrong ownership) once crashed the proxy
+    and with it the write-block proof. Fall back to stdout so the record is
+    still visible in `docker logs`.
+    """
+    try:
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+    except OSError:
+        print(f"[log-fallback {path.name}] {line}", flush=True)
 
 
 def _filtered_headers(headers) -> dict[str, str]:
