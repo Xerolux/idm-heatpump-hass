@@ -34,6 +34,7 @@ from .advisor_analytics import AdvisorAnalytics
 from .advisor_engine import AdvisorEngine, advisor_forecast_loop
 from .advisor_evidence import AnalysisHistory, async_ensure_analysis
 from .ai_advisor import AiAdvisor
+from .cloud_scheduler import CloudTickScheduler
 from .comfort_scheduler import ComfortScheduler, parse_schedule_rows
 from .const import (
     CONF_ADVISOR_PV_FORECAST_ENTITY,
@@ -289,6 +290,7 @@ class IdmHeatpumpData:
     external_power_forwarding_task: asyncio.Task[None] | None = None
     firmware: FirmwareObservations | None = None
     telemetry: Telemetry | None = None
+    cloud_scheduler: CloudTickScheduler | None = None
     energy_manager: EnergyManager | None = None
     ai_advisor: AiAdvisor | None = None
     energy_statistics: EnergyStatistics | None = None

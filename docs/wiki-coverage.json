@@ -14,7 +14,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "0faa631d1b002da229ddc19f399c8ceec2a50765de839b144de326857311fa74"
+      "reviewed_source_sha256": "8d6feacabd1ef7b6ae94bc0364bf0452afdbeb3eb9fee502102985224885356b"
     },
     {
       "feature": "Model and register semantics",
@@ -38,7 +38,7 @@
         "Supported-Devices.md",
         "Protocol-Capabilities.md"
       ],
-      "reviewed_source_sha256": "b2f21386377dd2330b14968cca249fd1f6edbaac135d7433e2e555ab6b14589a"
+      "reviewed_source_sha256": "352d9097ac50caf9c637d24a3b18a0a20f8ed93aa93a78bd7ec4861c59a5263a"
     },
     {
       "feature": "Polling, transport and recovery",
@@ -77,7 +77,7 @@
         "Entities.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "6cda78cfb394ad06e184b433b66eef18a694a551a8eb5ae385e1d7dbb95b8d90"
+      "reviewed_source_sha256": "c9a27ddabb14f2fcd624a85dd89b0ac195c92531d5d7a6174dd0c6276572ed91"
     },
     {
       "feature": "Local Navigator supplement and controls",
@@ -214,6 +214,7 @@
       "sources": [
         "custom_components/idm_heatpump/firmware_notice.py",
         "custom_components/idm_heatpump/firmware_observations.py",
+        "custom_components/idm_heatpump/cloud_scheduler.py",
         "custom_components/idm_heatpump/telemetry.py",
         "custom_components/idm_heatpump/telemetry_entities.py"
       ],
@@ -222,7 +223,7 @@
         "Configuration.md",
         "Services.md"
       ],
-      "reviewed_source_sha256": "9947224edd57cb3787fbc80794aea1871071eb358681d7137e2f65177df82584"
+      "reviewed_source_sha256": "f80ea1449f1941f202b4b7b0d54790d6717bb758f2d3190d6ccc34b213916ec3"
     },
     {
       "feature": "Actions and dashboard export",
@@ -235,7 +236,7 @@
         "Services.md",
         "Predictive-Advisor.md"
       ],
-      "reviewed_source_sha256": "9697c69586df81b45b914232d05fb8ccf3ec5a06775a019daf582340c56e5da9"
+      "reviewed_source_sha256": "9c6a27e9c8cbcd2b1fc2fc7a2af536482f62fb6cb6c8124bb6e8a58106e4ad25"
     }
   ]
 }

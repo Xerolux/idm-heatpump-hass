@@ -438,9 +438,12 @@ snooze early so it can be evaluated again. Requires an active Predictive Advisor
 Requires `entry_id` and existing plant-telemetry consent. Refusal returns
 `accepted: false`, `status: consent_required` without sending. An enabled
 collector retains persisted report-ID deduplication and a one-minute cooldown;
-a manual report reserves the next randomized daily slot. The response reports
-`accepted` and `status` (`accepted` or `not_sent`); inspect server receipt
-separately when verifying delivery. See [data scope and withdrawal](Telemetry).
+sending again within that cooldown raises a validation error stating the
+remaining wait instead of silently returning `not_sent`. A manual report
+reserves the next randomized daily slot. The response reports
+`accepted` and `status` (`accepted` or `not_sent`); the local
+**Telemetry report status** diagnostic sensor shows delivery outcomes
+continuously. See [data scope and withdrawal](Telemetry).
 
 ```yaml
 action: idm_heatpump.send_telemetry

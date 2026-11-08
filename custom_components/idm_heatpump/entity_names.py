@@ -315,6 +315,7 @@ ENGLISH_NAMES: Final[dict[str, str]] = {
 DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
     "sensor": {
         "telemetry_latest_firmware": ("Latest reported firmware", "Neueste gemeldete Firmware"),
+        "telemetry_report_status": ("Telemetry report status", "Telemetrie-Berichtsstatus"),
         "hc_storage_temp": ("Storage temperature HC {circuit}", "Speichertemperatur HK {circuit}"),
         "hc_reference_temp": ("Reference temperature HC {circuit}", "Referenztemperatur HK {circuit}"),
         "hc_temperature_difference": ("Temperature difference HC {circuit}", "Temperaturdifferenz HK {circuit}"),

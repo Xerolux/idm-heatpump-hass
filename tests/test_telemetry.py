@@ -55,7 +55,7 @@ def make_telemetry(enabled=True):
 async def test_no_means_no_collection_storage_timer_or_network():
     telemetry, entry, _ = make_telemetry(False)
     with (
-        patch("custom_components.idm_heatpump.telemetry.async_track_time_interval") as timer,
+        patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval") as timer,
         patch("custom_components.idm_heatpump.telemetry.async_get_clientsession") as session,
     ):
         await telemetry.async_start()
@@ -89,7 +89,7 @@ async def test_missing_serial_or_consent_never_starts(myidm, consent):
 
 async def test_persisted_daily_reservation_and_unload_callbacks():
     telemetry, entry, _ = make_telemetry()
-    with patch("custom_components.idm_heatpump.telemetry.async_track_time_interval") as timer:
+    with patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval") as timer:
         await telemetry.async_start()
         assert timer.call_count == 1
         assert entry.async_on_unload.call_count == 4
@@ -101,7 +101,7 @@ async def test_persisted_daily_reservation_and_unload_callbacks():
         "last_attempt": time.time() - 100,
         "consent_at": entry.options[CONF_TELEMETRY_CONSENT_AT],
     }
-    with patch("custom_components.idm_heatpump.telemetry.async_track_time_interval"):
+    with patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval"):
         await telemetry.async_start()
     assert 99 < time.time() - telemetry._last_attempt < 105
 
@@ -175,6 +175,12 @@ def test_metadata_validation():
     assert _label("x" * 81) is None
 
 
+def test_payload_tolerates_a_partial_options_dictionary():
+    telemetry, entry, _ = make_telemetry()
+    del entry.options[CONF_TELEMETRY_CONSENT_AT]
+    assert telemetry.payload()["consent_at"] == ""
+
+
 def test_error_transition_quality_and_bounds():
     telemetry, entry, coordinator = make_telemetry()
     coordinator.last_update_success = False
@@ -211,11 +217,167 @@ async def test_submission_reserves_slot_before_io_and_never_follows_redirects(st
         await telemetry.async_tick(datetime.now(UTC))
     assert session.post.call_count == 1
     assert session.post.call_args.kwargs["allow_redirects"] is False
-    assert telemetry._store.async_save.await_count == (2 if status == 201 else 1)
+    # The report is frozen and persisted before I/O for every outcome; only a
+    # retryable outcome keeps it, a permanent rejection drops it, and success
+    # clears it. Every path persists its final state before returning.
+    assert telemetry._store.async_save.await_count == (1 if status == 302 else 2)
     assert telemetry._active_task is None
+    assert telemetry._last_result == {201: "accepted", 400: "rejected", 302: "unavailable"}[status]
+    assert telemetry._failed_attempts == (0 if status == 201 else 1)
     entry.options[CONF_TELEMETRY] = False
     await telemetry.async_options_updated(None, entry)
     assert telemetry._stopped
+
+
+async def test_permanent_rejection_drops_the_frozen_report_and_prepares_a_fresh_one():
+    telemetry, _, _ = make_telemetry()
+    telemetry._last_attempt = time.time() - 90000
+    response = MagicMock(status=404)
+    context = MagicMock()
+    context.__aenter__ = AsyncMock(return_value=response)
+    context.__aexit__ = AsyncMock(return_value=False)
+    session = MagicMock()
+    session.post.return_value = context
+    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession", return_value=session):
+        await telemetry.async_tick(datetime.now(UTC))
+    assert telemetry._outbox is None
+    assert telemetry._pending_report_id is None
+    assert telemetry.status()["pending_report"] is False
+    # The dropped report is persisted as dropped: no silent resurrection.
+    saved = telemetry._store.async_save.call_args.args[0]
+    assert saved["outbox"] is None
+    assert saved["last_result"] == "rejected"
+
+
+@pytest.mark.parametrize("status", [429, 500, 503])
+async def test_throttling_and_server_faults_keep_the_frozen_report(status):
+    telemetry, _, _ = make_telemetry()
+    telemetry._last_attempt = time.time() - 90000
+    response = MagicMock(status=status)
+    context = MagicMock()
+    context.__aenter__ = AsyncMock(return_value=response)
+    context.__aexit__ = AsyncMock(return_value=False)
+    session = MagicMock()
+    session.post.return_value = context
+    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession", return_value=session):
+        await telemetry.async_tick(datetime.now(UTC))
+    assert telemetry._outbox is not None
+    assert telemetry._pending_report_id == telemetry._outbox["report_id"]
+    assert telemetry._last_result == "unavailable"
+    assert telemetry._failed_attempts == 1
+
+
+async def test_repair_notice_requires_a_week_of_failures_and_clears_on_success():
+    telemetry, _, _ = make_telemetry()
+    telemetry._last_attempt = time.time() - 90000
+    response = MagicMock(status=503)
+    context = MagicMock()
+    context.__aenter__ = AsyncMock(return_value=response)
+    context.__aexit__ = AsyncMock(return_value=False)
+    session = MagicMock()
+    session.post.return_value = context
+    failing = patch("custom_components.idm_heatpump.telemetry.async_get_clientsession", return_value=session)
+    with (
+        failing,
+        patch("custom_components.idm_heatpump.telemetry.ir.async_create_issue") as create_issue,
+        patch("custom_components.idm_heatpump.telemetry.ir.async_delete_issue") as delete_issue,
+    ):
+        for _ in range(6):
+            telemetry._last_attempt = time.time() - 90000
+            telemetry._next_attempt = 0
+            await telemetry.async_tick(datetime.now(UTC))
+        create_issue.assert_not_called()
+        telemetry._last_attempt = time.time() - 90000
+        telemetry._next_attempt = 0
+        await telemetry.async_tick(datetime.now(UTC))
+        assert telemetry._failed_attempts == 7
+        create_issue.assert_called_once()
+        issue_id = create_issue.call_args.args[2]
+        assert issue_id.startswith("telemetry_failing_")
+        # Recovery clears the notice and the streak.
+        response.status = 201
+        telemetry._last_attempt = time.time() - 90000
+        telemetry._next_attempt = 0
+        delete_issue.reset_mock()
+        await telemetry.async_tick(datetime.now(UTC))
+        assert telemetry._last_result == "accepted"
+        assert telemetry._failed_attempts == 0
+        delete_issue.assert_called_once()
+        create_issue.assert_called_once()
+
+
+async def test_rejection_streak_survives_restart_and_withdrawal_removes_the_notice():
+    telemetry, _, _ = make_telemetry()
+    telemetry._failed_attempts = 7
+    telemetry._last_result = "unavailable"
+    state = telemetry._serialize()
+    restored, _, _ = make_telemetry()
+    restored._store.async_load.return_value = state
+    with patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval"):
+        await restored.async_start()
+    assert restored._failed_attempts == 7
+    assert restored._last_result == "unavailable"
+    with patch("custom_components.idm_heatpump.telemetry.ir.async_delete_issue") as delete_issue:
+        restored.stop()
+    delete_issue.assert_called_once()
+    assert delete_issue.call_args.args[2].startswith("telemetry_failing_")
+
+
+def test_manual_cooldown_reports_the_remaining_wait():
+    telemetry, _, _ = make_telemetry()
+    assert telemetry.manual_cooldown == 0.0
+    telemetry._last_attempt = time.time() - 10
+    assert 40 < telemetry.manual_cooldown <= 60
+
+
+def test_status_snapshot_stays_local_and_notifies_listeners():
+    telemetry, _, _ = make_telemetry()
+    assert telemetry.status() == {
+        "status": "not_sent",
+        "last_attempt": None,
+        "next_attempt": None,
+        "last_result_at": None,
+        "failed_attempts": 0,
+        "pending_report": False,
+        "policy": "idm-telemetry-v3",
+    }
+    listener = MagicMock()
+    remove = telemetry.async_add_status_listener(listener)
+    telemetry._last_attempt = time.time()
+    telemetry._record_result("accepted")
+    listener.assert_called_once()
+    remove()
+    telemetry._record_result("unavailable")
+    listener.assert_called_once()
+    status = telemetry.status()
+    assert status["status"] == "unavailable"
+    assert status["failed_attempts"] == 1
+    assert status["last_attempt"] is not None and status["last_result_at"] is not None
+
+
+async def test_schema_changed_outbox_keeps_its_report_id():
+    telemetry, entry, _ = make_telemetry()
+    stale = {**telemetry.payload(), "report_id": "b" * 32, "future_field": 1}
+    telemetry._store.async_load.return_value = {
+        "consent_at": entry.options[CONF_TELEMETRY_CONSENT_AT],
+        "outbox": stale,
+    }
+    with patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval"):
+        await telemetry.async_start()
+    assert telemetry._outbox is None
+    assert telemetry._pending_report_id == "b" * 32
+    telemetry._last_attempt = time.time() - 90000
+    telemetry._next_attempt = 0
+    response = MagicMock(status=503)
+    context = MagicMock()
+    context.__aenter__ = AsyncMock(return_value=response)
+    context.__aexit__ = AsyncMock(return_value=False)
+    session = MagicMock()
+    session.post.return_value = context
+    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession", return_value=session):
+        await telemetry.async_tick(datetime.now(UTC))
+    assert telemetry._outbox["report_id"] == "b" * 32
+    assert "future_field" not in telemetry._outbox
 
 
 @pytest.mark.parametrize("error", [aiohttp.ClientError(), TimeoutError(), OSError()])
@@ -228,6 +390,8 @@ async def test_failure_does_not_retry_or_log_private_error(error):
         await telemetry.async_tick(datetime.now(UTC))
         await telemetry.async_tick(datetime.now(UTC))
     assert session.post.call_count == 1
+    assert telemetry._last_result == "unavailable"
+    assert telemetry._outbox is not None
 
 
 async def test_in_flight_request_is_cancelled_on_withdrawal():
@@ -283,7 +447,7 @@ async def test_aggregates_and_frozen_outbox_survive_reload_without_counting_down
     restored, new_entry, new_coordinator = make_telemetry()
     new_coordinator.energy_statistics.total_electrical_kwh = 53
     restored._store.async_load.return_value = saved
-    with patch("custom_components.idm_heatpump.telemetry.async_track_time_interval"):
+    with patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval"):
         await restored.async_start()
     assert restored._outbox == frozen
     assert restored.payload()["counters"]["modbus_polls"] == 25
@@ -305,7 +469,7 @@ async def test_new_consent_never_reuses_old_observations_or_daily_slot():
         "last_attempt": 1,
         "counters": {"modbus_polls": 10000},
     }
-    with patch("custom_components.idm_heatpump.telemetry.async_track_time_interval"):
+    with patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval"):
         await telemetry.async_start()
     assert time.time() - telemetry._last_attempt < 5
     assert telemetry.payload()["counters"]["modbus_polls"] == 0
@@ -329,7 +493,7 @@ async def test_telemetry_uses_controller_myidm_without_exposing_unrelated_data()
     entry.options[CONF_TELEMETRY_MYIDM] = ""
     coordinator.myidm_id = "TEST-MYIDM-123"
     assert telemetry.payload()["myidm_id"] == "TEST-MYIDM-123"
-    with patch("custom_components.idm_heatpump.telemetry.async_track_time_interval"):
+    with patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval"):
         assert await telemetry.async_start()
 
 
@@ -374,7 +538,7 @@ async def test_restart_does_not_backfill_newer_analysis_without_elapsed_time():
         # The independent operating analysis was persisted ten minutes later.
         newer.operation_analysis.mode_durations["heating"] = 1300
         restored._store.async_load.return_value = saved
-        with patch("custom_components.idm_heatpump.telemetry.async_track_time_interval"):
+        with patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval"):
             await restored.async_start()
         assert restored.payload()["counters"]["heating_seconds"] == 600
         clock[0] += 60
@@ -393,7 +557,7 @@ async def test_legacy_duration_window_is_omitted_until_success_without_changing_
         "counters": {"heating_seconds": 9000, "modbus_polls": 90},
         "outbox": frozen,
     }
-    with patch("custom_components.idm_heatpump.telemetry.async_track_time_interval"):
+    with patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval"):
         await telemetry.async_start()
     assert telemetry._outbox == frozen
     assert "heating_seconds" not in telemetry.payload()["counters"]

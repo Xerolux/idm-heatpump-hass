@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.26.9 — 2026-11-08
+
+Die optionale Anlagen-Telemetrie wird überprüfbar: Der lokale Diagnose-Sensor *Telemetrie-Berichtsstatus* zeigt letztes Zustellergebnis, Terminzeiten und die Fehlversuchsserie; sieben nicht zugestellte Tagesberichte erzeugen einen sich selbst löschenden Repairs-Hinweis. Dauerhafte 4xx-Ablehnungen verwerfen den eingefrorenen Bericht statt ihn endlos zu wiederholen, die Berichtskennung übersteht Schema-Änderungen, ein manueller Versand in der Sperrzeit liefert einen klaren Validierungsfehler, und beide Cloud-Einwilligungen teilen sich jetzt einen Minuten-Timer. [Zustellstatus, Fehler und Reparatur](Telemetry#zustellstatus-fehler-und-reparatur).
+
 ## v0.26.8 — 2026-11-08
 
 Unterstützte GLT-Sensoren für externe Leistung bleiben bei nicht gesetztem Startwert angelegt und erholen sich bei gültigem Rücklesewert automatisch. Die manuelle Number bleibt unabhängig von der Weiterleitung bedienbar und im Abfrageplan. Stabile Entitäts-IDs und Neuladen bei aus/ein/aus sind durch Regressionstests geprüft. Das Flackern der Batterieanzeige am Regler (#493) bleibt offen. Aufgabenplanung und [Diagnoseanleitung](Troubleshooting) sind aktualisiert; die Capture-Auswertung belegt keinen neuen Parserfehler zu #577.

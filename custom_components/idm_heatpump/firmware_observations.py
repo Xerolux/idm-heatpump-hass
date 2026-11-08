@@ -7,13 +7,13 @@ import logging
 import secrets
 import time
 from collections.abc import Callable
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 import aiohttp
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.event import async_track_time_interval
 
+from .cloud_scheduler import entry_cloud_scheduler
 from .const import CONF_FIRMWARE_CHECK, CONF_FIRMWARE_CONSENT_AT, CONF_FIRMWARE_POLICY
 from .coordinator import IdmCoordinator, navigator_family
 from .firmware_notice import clear_notices, ensure_notice
@@ -61,7 +61,7 @@ class FirmwareObservations:
         }
         for listener in tuple(self._firmware_listeners):
             listener()
-        self._entry.async_on_unload(async_track_time_interval(self._hass, self.async_tick, timedelta(minutes=1)))
+        self._entry.async_on_unload(entry_cloud_scheduler(self._hass, self._entry).subscribe(self.async_tick))
         return True
 
     async def async_tick(self, now: datetime) -> None:

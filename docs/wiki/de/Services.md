@@ -547,11 +547,13 @@ Predictive Advisor ist erforderlich.
 Benötigt `entry_id` und die bestehende Einwilligung zu Anlagen-Telemetrie.
 Ohne Zustimmung lautet die Antwort `accepted: false`, `status: consent_required`,
 ohne Übertragung. Bei aktivem Sammler bleiben die gespeicherte Report-ID gegen
-Doppelübertragung und eine Minute Sperrzeit erhalten. Ein manueller Bericht
-reserviert den nächsten zufällig verteilten Tagestermin. Die Antwort enthält
-`accepted` und `status` (`accepted` oder `not_sent`); den tatsächlichen
-Servereingang bei einer Lieferprüfung gesondert kontrollieren.
-Siehe [Datenumfang und Widerruf](Telemetry).
+Doppelübertragung und eine Minute Sperrzeit erhalten; ein erneuter Aufruf
+innerhalb der Sperrzeit löst jetzt einen Validierungsfehler mit der
+verbleibenden Wartezeit aus, statt stillschweigend `not_sent` zu liefern. Ein
+manueller Bericht reserviert den nächsten zufällig verteilten Tagestermin. Die
+Antwort enthält `accepted` und `status` (`accepted` oder `not_sent`); der
+lokale Diagnose-Sensor **Telemetrie-Berichtsstatus** zeigt Lieferergebnisse
+dauerhaft an. Siehe [Datenumfang und Widerruf](Telemetry).
 
 ```yaml
 action: idm_heatpump.send_telemetry
