@@ -112,7 +112,7 @@ def test_unrelated_prefixes_do_not_identify_navigator10(version):
 
 
 def test_notice_strings_render_with_the_supplied_placeholders():
-    """The repairs card must name both versions itself, not only inside the fix flow."""
+    """The repairs card is title-only for a fixable issue: it must carry both versions."""
     import json
     from pathlib import Path
 
@@ -120,14 +120,12 @@ def test_notice_strings_render_with_the_supplied_placeholders():
     supplied = {"installed", "observed"}
     for locale in ("strings.json", "translations/en.json", "translations/de.json"):
         issue = json.loads((root / locale).read_text(encoding="utf-8"))["issues"]["firmware_observed"]
-        for field in ("title", "description"):
-            used = set(re.findall(r"{(\w+)}", issue[field]))
-            assert used <= supplied, f"{locale} {field} uses unsupplied placeholders: {used - supplied}"
-        assert "{observed}" in issue["description"], f"{locale} description must name the observed version"
-        assert "{installed}" in issue["description"], f"{locale} description must name the installed version"
+        used = set(re.findall(r"{(\w+)}", issue["title"]))
+        assert used == supplied, f"{locale} title must name observed and installed, got {used}"
+        assert set(issue) == {"title", "fix_flow"}, f"{locale} must stay title + fix_flow (hassfest exclusion)"
     german = json.loads((root / "translations/de.json").read_text(encoding="utf-8"))["issues"]["firmware_observed"]
     english = json.loads((root / "translations/en.json").read_text(encoding="utf-8"))["issues"]["firmware_observed"]
-    assert set(german) == set(english) == {"title", "description", "fix_flow"}
+    assert german["title"] and english["title"]
 
 
 def test_cloud_comparison_entities_share_the_telemetry_subdevice():

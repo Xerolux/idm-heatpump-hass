@@ -6,8 +6,8 @@ normales Changelog.
 
 ## Release-Entscheidung zu 0.26.13
 
-Die Repairs-Kartenbeschreibung ist rein darstellerisch: Titel und Beschreibung
-sind Übersetzungszeichenketten, abgesichert durch einen Platzhalter- und
+Der reichhaltigere Hinweistitel ist rein darstellerisch: Der Titel ist eine
+Übersetzungszeichenkette, abgesichert durch einen Platzhalter- und
 EN/DE-Paritätstest; kein Integrationsmodul wurde geändert, also bleiben
 bestehende Quittierungen, Entity-IDs und das Einwilligungsmodell unberührt.
 API 2.16.2 bleibt seit 0.26.12 gepinnt; das Release härtet nur die

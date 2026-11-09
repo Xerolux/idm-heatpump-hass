@@ -6,9 +6,9 @@ a normal changelog.
 
 ## 0.26.13 release decision
 
-The repairs-card description is presentation only: title and description are
-translation strings enforced by a placeholder and EN/DE parity contract test,
-and no integration module changed, so existing acknowledgements, entity IDs and
+The richer notice title is presentation only: the title is a translation
+string enforced by a placeholder and EN/DE parity contract test, and no
+integration module changed, so existing acknowledgements, entity IDs and
 the consent model are untouched. API 2.16.2 remains pinned from 0.26.12; the
 release hardens release plumbing only — the pin updater now covers the
 parity-test rejection fixture, and the dated pin comparisons on this page

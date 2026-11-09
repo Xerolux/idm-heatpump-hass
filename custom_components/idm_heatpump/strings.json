@@ -3541,8 +3541,7 @@
       "description": "Delivery of the write to register **{register}** at address **{address}** could not be confirmed because the Modbus connection failed. This is not a register-access rejection from the controller.\n\nTechnical detail: `{detail}`\n\nCheck the configured endpoint and port. If using ModBridge or another proxy, check its listener, upstream route, service availability and connection to the Navigator. For a direct connection, check Navigator Modbus TCP availability and the network.\n\nThis warning clears after a successful write to the same register."
     },
     "firmware_observed": {
-      "title": "Newer firmware {observed} observed — unconfirmed",
-      "description": "Installed: **{installed}**. Newest matching community observation: **{observed}**.\n\nThis is orientation from voluntarily shared reports, not a promise of availability or compatibility for your plant. Only iDM or an authorized installer can verify and perform an update — this integration never installs heat-pump firmware. The observed version also stays visible as **Latest reported firmware** on the plant's **Telemetry** device; the comparison re-runs about every six hours.",
+      "title": "Newer firmware {observed} observed — unconfirmed; installed: {installed}",
       "fix_flow": {
         "step": {
           "confirm": {
