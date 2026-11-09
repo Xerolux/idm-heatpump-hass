@@ -3541,7 +3541,7 @@
       "description": "Delivery of the write to register **{register}** at address **{address}** could not be confirmed because the Modbus connection failed. This is not a register-access rejection from the controller.\n\nTechnical detail: `{detail}`\n\nCheck the configured endpoint and port. If using ModBridge or another proxy, check its listener, upstream route, service availability and connection to the Navigator. For a direct connection, check Navigator Modbus TCP availability and the network.\n\nThis warning clears after a successful write to the same register."
     },
     "firmware_observed": {
-      "title": "Newer firmware {observed} observed — unconfirmed",
+      "title": "Newer firmware {observed} observed — unconfirmed; installed: {installed}",
       "fix_flow": {
         "step": {
           "confirm": {

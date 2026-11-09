@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.13 — 2026-11-09
+
+The firmware repairs notice names both versions on the card itself: the repairs page shows the installed version next to the newest matching community observation and repeats that this is orientation, not availability. Release plumbing hardens the pin updater, so dated release-history statements and the parity-test fixture no longer follow or corrupt the current pin. [Firmware orientation](Telemetry#firmware-orientation).
+
 ## v0.26.12 — 2026-11-09
 
 Firmware sightings now persist across independent sharing, telemetry and explicit diagnostic metadata. Existing consents remain valid. A single matching version appears as latest reported; ambiguous Pro metadata cannot trigger a heat-pump update repair. [Firmware sharing and sources](Telemetry#independent-firmware-observations).

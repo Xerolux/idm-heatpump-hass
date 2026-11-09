@@ -13,6 +13,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.13] - 2026-11-09
+
+The firmware repairs notice stops being a riddle: the repairs card itself now names the installed version and the community-observed version side by side.
+
+### ⚠️ Upgrade notes
+
+- Rollback is safe: open firmware notices keep their acknowledgement, and the richer repairs card is presentation only — no new entities, options or stored data.
+
+### 🐛 Bugfixes
+
+- **The firmware repairs notice now names both versions on the card**: it shows the installed version and the newest matching community observation directly under Repairs, points to *Latest reported firmware* on the Telemetry device and repeats that only iDM or an installer performs an update. Previously only the title carried the version.
+
+### 💼 Maintenance
+
+- **Stop the pin updater from rewriting dated release history**: the unchanged-from 0.26.1/0.26.0/0.25.0 comparisons on the Stability page are restored to their published versions and registered as history statements, and the parity-test rejection fixture now follows the pin automatically.
+
 ## [0.26.12] - 2026-11-09
 
 ### ⚠️ Upgrade notes

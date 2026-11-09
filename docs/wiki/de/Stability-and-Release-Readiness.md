@@ -4,6 +4,21 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.26.13
+
+Der reichhaltigere Hinweistitel ist rein darstellerisch: Der Titel ist eine
+Übersetzungszeichenkette, abgesichert durch einen Platzhalter- und
+EN/DE-Paritätstest; kein Integrationsmodul wurde geändert, also bleiben
+bestehende Quittierungen, Entity-IDs und das Einwilligungsmodell unberührt.
+API 2.16.2 bleibt seit 0.26.12 gepinnt; das Release härtet nur die
+Release-Infrastruktur — der Pin-Updater deckt jetzt die Ablehnungs-Fixture des
+Paritätstests ab, und die datierten Pin-Vergleiche auf dieser Seite
+(unverändert gegenüber 0.26.1/0.26.0/0.25.0) sind in ihren veröffentlichten
+Fassungen restauriert und als Historien-Aussagen geschützt. Die echten
+HA-Lebenszyklus-Smoke-Tests bestehen gegen Home Assistant 2026.11.0; eine
+Live-Anlage wurde für dieses Release nicht erneut geprüft.
+[Detailnachweis](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.13.md)
+
 ## Release-Entscheidung zu 0.26.12
 
 Firmwarefreigabe behält bestehende Zustimmungen mit `idm-firmware-v1`, aktiviert keine ausgeschalteten Optionen und ändert die Telemetrie-Einstellungen nicht. Synthetische Tests prüfen vorhandene Zustimmung, die Gleichheit bei einer einzigen Versionssichtung, Komponentenangaben und unterdrückte unklare Pro-Updatehinweise. Der verschlüsselte, begrenzte Quellenindex bleibt an seine Aufbewahrung gebunden; Servertests prüfen Ablauf, alte HTTP-Clients, Neustart und veränderte Chiffrate. Vollständige Integrations-/Config-Flow-Coverage, strenge Typprüfung und echte HA-Lebenszyklustests müssen vor Veröffentlichung bestehen. Kein neuer Anlagen-Schreibzugriff, keine physische Pro-Erkennung und keine Firmwareinstallation werden zugesichert. API 2.16.2 bleibt gepinnt. [Nachweis](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.12.md)
@@ -92,7 +107,7 @@ Qualitätschranke auf dem Schnitt: zweibeinige CI-Matrix mit
 Coverage-Schranken, strenges mypy, ruff, hassfest,
 Real-Home-Assistant-Lebenszyklus-Smoke-Tests, CodeQL/pip-audit,
 Anmeldedaten-Scan. Runtime-Pins unverändert gegenüber 0.26.1
-(`idm-heatpump-api[web]==2.16.2`).
+(`idm-heatpump-api[web]==2.16.1`).
 
 ## Release-Entscheidung zu 0.26.1
 
@@ -110,7 +125,7 @@ Anleitung fährt von dort fort. Die vollständige Qualitätschranke lief auf dem
 Schnitt selbst (zweibeinige CI-Matrix mit Coverage-Schranken, strenges mypy,
 ruff, hassfest, Real-Home-Assistant-Lebenszyklus-Smoke-Tests, CodeQL/pip-audit,
 Anmeldedaten-Scan); Registerkatalog und alle Runtime-Pins bleiben identisch zu
-0.26.0 (`idm-heatpump-api[web]==2.16.2` — keine Runtime-Abhängigkeit hat sich
+0.26.0 (`idm-heatpump-api[web]==2.16.1` — keine Runtime-Abhängigkeit hat sich
 bewegt). Das Entfernen der beiden Entitäten braucht keine Migration;
 Einstellungen, Dashboards und alle anderen Entitäten bleiben unberührt, ein
 Rollback auf 0.26.0 stellt das bisherige Verhalten wieder her. Ein
@@ -134,7 +149,7 @@ selbst: die zweibeinige CI-Matrix (Python 3.14 × HA 2026.11.0 ×
 manifest-pinned/api-main) mit Coverage-Schranken, strenges mypy, ruff,
 hassfest, die Real-Home-Assistant-Lebenszyklus-Smoke-Tests, CodeQL/pip-audit
 und der Anmeldedaten-Scan. Der API-Pin bleibt beim validierten
-`idm-heatpump-api[web]==2.16.2` — identisch zu 0.25.0, kein Runtime-Pin hat
+`idm-heatpump-api[web]==2.16.1` — identisch zu 0.25.0, kein Runtime-Pin hat
 sich bewegt. Kein Beta-Soak: für die beiden oben umrissenen, eng
 begrenzten Änderungen bewusst akzeptiert; alles Größere kehrt auf die
 Beta-Linie zurück. Ein Rollback ist sicher (keine Änderung an gespeicherten
@@ -583,7 +598,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.26.12` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
+Integration im Quellstand `0.26.13` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

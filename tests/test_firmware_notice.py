@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -108,6 +109,23 @@ def test_unrelated_prefixes_do_not_identify_navigator10(version):
     from custom_components.idm_heatpump.web_data import _firmware_indicates_nav10
 
     assert not _firmware_indicates_nav10(version)
+
+
+def test_notice_strings_render_with_the_supplied_placeholders():
+    """The repairs card is title-only for a fixable issue: it must carry both versions."""
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).parents[1] / "custom_components" / "idm_heatpump"
+    supplied = {"installed", "observed"}
+    for locale in ("strings.json", "translations/en.json", "translations/de.json"):
+        issue = json.loads((root / locale).read_text(encoding="utf-8"))["issues"]["firmware_observed"]
+        used = set(re.findall(r"{(\w+)}", issue["title"]))
+        assert used == supplied, f"{locale} title must name observed and installed, got {used}"
+        assert set(issue) == {"title", "fix_flow"}, f"{locale} must stay title + fix_flow (hassfest exclusion)"
+    german = json.loads((root / "translations/de.json").read_text(encoding="utf-8"))["issues"]["firmware_observed"]
+    english = json.loads((root / "translations/en.json").read_text(encoding="utf-8"))["issues"]["firmware_observed"]
+    assert german["title"] and english["title"]
 
 
 def test_cloud_comparison_entities_share_the_telemetry_subdevice():
