@@ -183,7 +183,7 @@ After a reload, telemetry resumes saved counters and elapsed time together at cu
 
 Under **Settings → Devices & services → IDM Heatpump → Reconfigure → Firmware query (optional)**, enable the separate consent. The plant's **Telemetry** device group then shows **Latest reported firmware** (version number) and **Newer firmware observed (unconfirmed)** (on/off; unavailable without matching data). Attributes include installed/observed versions and the comparison time. Use **Developer tools → Actions → IDM Heatpump: Check firmware now** to request a manual comparison with existing consent.
 
-A newer matching observation also raises a notice under **Settings → System → Repairs**. **Acknowledge seeing this notice** remembers that exact version for this device, including across restarts. Only a different newer version can trigger another notice. Acknowledging never performs an update.
+A newer matching observation also raises a notice under **Settings → System → Repairs**. The notice card itself names both versions — the installed one and the newest matching community observation — and repeats that this is orientation, not availability. **Acknowledge seeing this notice** remembers that exact version for this device, including across restarts. Only a different newer version can trigger another notice. Acknowledging never performs an update.
 
 Community reports do not establish availability or compatibility for a particular plant. iDM or an authorized installer must verify and perform updates. Voluntarily sharing reports improves the community comparison basis; firmware queries remain independently available without telemetry. Both consent settings remain optional and off by default.
 

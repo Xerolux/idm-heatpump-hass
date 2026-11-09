@@ -3542,6 +3542,7 @@
     },
     "firmware_observed": {
       "title": "Newer firmware {observed} observed — unconfirmed",
+      "description": "Installed: **{installed}**. Newest matching community observation: **{observed}**.\n\nThis is orientation from voluntarily shared reports, not a promise of availability or compatibility for your plant. Only iDM or an authorized installer can verify and perform an update — this integration never installs heat-pump firmware. The observed version also stays visible as **Latest reported firmware** on the plant's **Telemetry** device; the comparison re-runs about every six hours.",
       "fix_flow": {
         "step": {
           "confirm": {

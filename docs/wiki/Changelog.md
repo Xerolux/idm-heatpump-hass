@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.11 — 2026-11-09
+
+The firmware repairs notice names both versions on the card itself: the repairs page shows the installed version next to the newest matching community observation and repeats that this is orientation, not availability. The release also pins the tested `idm-heatpump-api` 2.16.2, whose Navigator 10 web reader tells capture-confirmed unavailable-circuit notes apart from malformed responses; the register catalog is unchanged. [Firmware orientation](Telemetry#firmware-orientation).
+
 ## v0.26.10 — 2026-11-08
 
 With the device hierarchy enabled, the three cloud-consent entities — *Telemetry report status*, *Latest reported firmware* and *Newer firmware observed (unconfirmed)* — now form their own **Telemetry** subdevice beneath the plant. Entity IDs and history are preserved; the installed software version stays in *Diagnostics*. [Group placement](Telemetry#firmware-orientation).

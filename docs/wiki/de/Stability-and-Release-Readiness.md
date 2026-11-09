@@ -4,6 +4,22 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.26.11
+
+Die Repairs-Kartenbeschreibung ist rein darstellerisch: Titel und Beschreibung
+sind Übersetzungszeichenketten, abgesichert durch einen Platzhalter- und
+EN/DE-Paritätstest; kein Integrationsmodul wurde geändert, also bleiben
+bestehende Quittierungen, Entity-IDs und das Einwilligungsmodell unberührt.
+Der API-Pin wechselt auf 2.16.2, nachdem das komplette lokale Gate-Set dagegen
+lief — der generierte Registerkatalog (687 logische Definitionen, 154 für
+Navigator 1.7), der Entitäts-Metadatenkatalog und die Entitätsübersetzungen
+regenerieren bis auf den Versionsstempel unverändert, und die Verfeinerung für
+nicht verfügbare Kreise liegt API-seitig hinter dem bestehenden
+Antwort-Fehlervertrag. Die echten HA-Lebenszyklus-Smoke-Tests bestehen gegen
+Home Assistant 2026.11.0 mit dem neuen Pin; eine Live-Anlage wurde für dieses
+Release nicht erneut geprüft, und die Transport-Floors bleiben bei den
+bestehenden Home-Assistant-eigenen Mindestversionen. [Detailnachweis](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.11.md)
+
 ## Release-Entscheidung zu 0.26.10
 
 Das Telemetrie-Untergeät ist eine reine Platzierungsänderung: Auflösung,
@@ -568,7 +584,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.26.10` und `idm-heatpump-api` `2.16.1` bilden das aktuelle exakt
+Integration im Quellstand `0.26.11` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

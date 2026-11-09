@@ -4,6 +4,21 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.26.11 release decision
+
+The repairs-card description is presentation only: title and description are
+translation strings enforced by a placeholder and EN/DE parity contract test,
+and no integration module changed, so existing acknowledgements, entity IDs and
+the consent model are untouched. The API pin moves to 2.16.2 with the full local
+gate set run against it — the generated register reference (687 logical
+definitions, 154 for Navigator 1.7), the entity metadata catalog and the entity
+translations regenerate unchanged apart from the version stamp, and the
+unavailable-circuit refinement lives API-side behind the existing
+response-error contract. Real-HA lifecycle smoke tests pass against
+Home Assistant 2026.11.0 with the new pin; no live plant was re-checked for
+this release and the transport floors stay at the existing Home-Assistant-owned
+minimums. [Detailed evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.11.md)
+
 ## 0.26.10 release decision
 
 The Telemetry subdevice is a placement-only change: scope resolution, consent
@@ -528,7 +543,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.26.10` and `idm-heatpump-api` `2.16.1` form the current
+Source-tree integration `0.26.11` and `idm-heatpump-api` `2.16.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

@@ -13,6 +13,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.11] - 2026-11-09
+
+The firmware repairs notice stops being a riddle: the repairs card itself now names the installed version and the community-observed version side by side.
+
+### ⚠️ Upgrade notes
+
+- Rollback is safe: open firmware notices keep their acknowledgement, and the richer repairs card is presentation only — no new entities, options or stored data.
+
+### 🐛 Bugfixes
+
+- **The firmware repairs notice now names both versions on the card**: it shows the installed version and the newest matching community observation directly under Repairs, points to *Latest reported firmware* on the Telemetry device and repeats that only iDM or an installer performs an update. Previously only the title carried the version.
+
+### 💼 Maintenance
+
+- **Pin the tested `idm-heatpump-api` 2.16.2**: the patch release teaches the Navigator 10 web reader to tell capture-confirmed unavailable-circuit notes apart from malformed responses; the register catalog (687 logical definitions, 154 for Navigator 1.7) and entity metadata are unchanged.
+
 ## [0.26.10] - 2026-11-08
 
 The optional cloud-consent entities get their own home: with the device hierarchy enabled, a dedicated **Telemetry** subdevice beneath the plant groups everything gated behind the telemetry and firmware consents, instead of scattering it through Diagnostics.

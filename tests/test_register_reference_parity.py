@@ -117,7 +117,7 @@ def test_pinned_api_version_accepts_stable_and_prerelease_pins(
 
 def test_pinned_api_version_rejects_unpinned_requirement(tmp_path: Path) -> None:
     manifest = tmp_path / "manifest.json"
-    manifest.write_text(json.dumps({"requirements": ["idm-heatpump-api[web]>=2.16.1"]}), encoding="utf-8")
+    manifest.write_text(json.dumps({"requirements": ["idm-heatpump-api[web]>=2.16.2"]}), encoding="utf-8")
 
     with pytest.raises(RuntimeError, match="must be pinned exactly"):
         generator._pinned_api_version(manifest)
