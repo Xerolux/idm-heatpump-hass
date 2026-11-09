@@ -14,7 +14,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "8d6feacabd1ef7b6ae94bc0364bf0452afdbeb3eb9fee502102985224885356b"
+      "reviewed_source_sha256": "91428005e9c17060a08d072d27c365b9c77a2fc5f5e01cb361d686b5106fc5cd"
     },
     {
       "feature": "Model and register semantics",
@@ -195,7 +195,7 @@
         "Smart-Energy-and-Comfort.md",
         "Entities.md"
       ],
-      "reviewed_source_sha256": "e9b4313c359501eece345ab6a7cafb955c4d7629dc5e9c41438cd0f3c1347866"
+      "reviewed_source_sha256": "10486780133af46f06b73bf6f04fa4b91b0bd9cd4bab1338db64fa40876c1b85"
     },
     {
       "feature": "KNX bridge and catalog",
@@ -223,7 +223,7 @@
         "Configuration.md",
         "Services.md"
       ],
-      "reviewed_source_sha256": "f80ea1449f1941f202b4b7b0d54790d6717bb758f2d3190d6ccc34b213916ec3"
+      "reviewed_source_sha256": "a971ba0783104725271fe5845d26d1d4ceda798a799e1dcf2f597a97b8fa290d"
     },
     {
       "feature": "Actions and dashboard export",

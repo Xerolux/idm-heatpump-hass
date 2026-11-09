@@ -149,11 +149,15 @@ class FirmwareObservations:
                 "series": _label(result.get("series")),
                 "status": result["status"],
                 "model_scope": result.get("model_scope")
-                if result.get("model_scope") in {"controller_series_only", "controller_and_plant_model"}
+                if result.get("model_scope") in {"controller_series_only", "controller_and_plant_model", "unconfirmed_component"}
+                else None,
+                "component_status": result.get("component_status")
+                if result.get("component_status") in {"reported_component", "unconfirmed_pro_component"}
                 else None,
                 "source": "community_telemetry",
                 "newer_observed": result.get("newer_observed")
                 if isinstance(result.get("newer_observed"), bool)
+                and result.get("model_scope") != "unconfirmed_component"
                 else None,
                 "observations": _number(result.get("observations")),
                 "last_checked": datetime.fromtimestamp(self._last_firmware_check, UTC).isoformat(),

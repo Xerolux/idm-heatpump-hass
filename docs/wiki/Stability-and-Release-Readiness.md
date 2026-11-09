@@ -4,6 +4,10 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.26.12 release decision
+
+Firmware sharing preserves existing consent revision `idm-firmware-v1`, does not enable disabled options and retains telemetry settings. Synthetic regression gates cover existing consent, single-version equality, explicit component scope and suppression of ambiguous Pro update hints. Firmware source indexing is encrypted, bounded and linked to source retention; server tests cover expiry, old-client HTTP compatibility, restart persistence and changed ciphertext. Full integration/config-flow coverage, strict typing and real-HA lifecycle checks must pass before publication. No new plant write, physical Pro identification or firmware installation is claimed. API 2.16.2 remains pinned. [Evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.12.md)
+
 ## 0.26.11 release decision
 
 The capture-confirmed missing-circuit reply has a precise API error classification.
@@ -540,7 +544,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.26.11` and `idm-heatpump-api` `2.16.2` form the current
+Source-tree integration `0.26.12` and `idm-heatpump-api` `2.16.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

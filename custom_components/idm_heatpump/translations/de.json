@@ -57,7 +57,7 @@
           "features": "Funktionen konfigurieren",
           "diagnostics": "Aktuelle Verbindung testen",
           "telemetry": "Telemetrie",
-          "firmware": "Firmware-Abfrage (freiwillig)"
+          "firmware": "Firmware teilen und vergleichen (optional)"
         },
         "menu_option_descriptions": {
           "connection": "Modbus-Host, Port, Slave-ID, lokale Web-PIN und Proxy-Einstellungen bearbeiten.",
@@ -881,10 +881,10 @@
         }
       },
       "firmware": {
-        "title": "Firmware-Abfrage",
-        "description": "**Gibt es eine neuere Firmware für deine Wärmepumpe?**\n\nDer Sensor **„Neueste gemeldete Firmware“** zeigt dir, ob bei vergleichbaren Anlagen eine neuere Version gemeldet wurde.\n\nDafür erhält **Xerolux nur Reglertyp, Anlagenmodell und Firmware-Version** – etwa alle sechs Stunden. Keine myIDM-ID oder Messwerte. Telemetrie ist dafür nicht nötig.\n\nDie Anzeige ist ein Community-Hinweis. Prüfen und installieren kann die Firmware nur IDM oder dein Fachbetrieb.\n\n**Freiwillig und jederzeit abschaltbar.** Ausschalten stoppt die Abfragen und entfernt den Sensor. Die lokale Steuerung läuft weiter.\n\n[Datenschutz, Anbieter und deine Rechte]({privacy_url})\n\nUnter Diagnose erscheint zusätzlich „Neuere Firmware gesichtet (unbestätigt)“. Neuere passende Sichtungen lassen sich als Reparatur-Hinweis einmalig als gesehen bestätigen. Das installiert kein Update.",
+        "title": "Firmware teilen und vergleichen",
+        "description": "**Neuere Firmware bei vergleichbaren Anlagen gesichtet?**\n\nDer Sensor „Neueste gemeldete Firmware“ zeigt Community-Beobachtungen derselben passenden Regler-/Firmware-Reihe.\n\n**Xerolux erhält nur Reglertyp, Anlagenmodell und installierte Firmware**, etwa alle sechs Stunden. Keine myIDM-ID, Seriennummer oder Messwerte; Telemetrie ist nicht erforderlich. Die Versionsmeldungen werden ohne Anlagenkennung nach Version, Vergleichsgruppe und Tag zusammengefasst, verschlüsselt gespeichert und nach zwölf Monaten automatisch gelöscht. Mengen sind Sichtungen, keine Anzahl unterschiedlicher Anlagen. Bestehende Zustimmungen bleiben gültig; eine erneute Bestätigung ist nicht erforderlich.\n\nNAVIGATOR Pro ist die Einzelraumregelung. Unklare Pro-Meldungen werden gespeichert, aber nicht für einen Firmwarehinweis der Wärmepumpe verwendet. NAV10_ und T_NAV10_ bleiben getrennt.\n\n**Freiwillig, standardmäßig aus und jederzeit abschaltbar.** Ausschalten stoppt weitere Meldungen/Abfragen und entfernt den Sensor. Bereits gespeicherte technische Sammelmeldungen bleiben bis zum Ablauf; sie enthalten keine Anlagenkennung. Die lokale Steuerung läuft weiter.\n\n[Datenschutz, Anbieter und Rechte]({privacy_url})\n\nNur IDM oder der Fachbetrieb kann Eignung prüfen und Firmware installieren. Ein neuerer passender Community-Hinweis kann in Reparaturen einmalig als gesehen bestätigt werden; das installiert kein Update.",
         "data": {
-          "firmware_check": "Firmware-Abfrage erlauben"
+          "firmware_check": "Firmware-Metadaten teilen und Abfrage erlauben"
         }
       }
     },
@@ -3561,6 +3561,10 @@
     "telemetry_failing": {
       "title": "Telemetrieberichte werden nicht zugestellt",
       "description": "{failed_attempts} aufeinanderfolgende tägliche Telemetrieberichte konnten nicht an IDM Tools zugestellt werden. Der lokale Wärmepumpenbetrieb ist nicht betroffen. Prüfe die Internetverbindung; die Integration versucht es automatisch im nächsten täglichen Zeitfenster erneut, und dieser Hinweis verschwindet, sobald ein Bericht angenommen wurde."
+    },
+    "whats_new_0_26_12": {
+      "title": "Firmwaremeldungen verbessern den Community-Vergleich",
+      "description": "Freigegebene Firmwaremeldungen werden unabhängig von Telemetrie gespeichert und für den Community-Vergleich genutzt. Technische Versionsmeldungen enthalten keine Anlagenkennung, werden je Version/Gruppe/Tag zusammengefasst und automatisch nach zwölf Monaten gelöscht.\n\nBestehende Zustimmungen bleiben gültig; es ist keine erneute Bestätigung nötig. Ausgeschaltete Funktionen bleiben aus. Unter **Neu konfigurieren → Firmware teilen und vergleichen** lassen sich die Funktion und Hinweise ansehen. Lokale Steuerung und Telemetrie-Einstellungen bleiben unverändert. NAVIGATOR Pro und Wärmepumpenregelung sowie NAV10_/T_NAV10_ bleiben getrennt. Eine Sichtung ist keine Herstellerfreigabe und installiert nichts.\n\n[Einrichtung und Datenschutzhinweise]({activation_url})"
     }
   },
   "services": {
@@ -3772,7 +3776,7 @@
     },
     "check_firmware": {
       "name": "Firmware jetzt prüfen",
-      "description": "Fragt mit bestehender Firmware-Zustimmung passende Community-Meldungen ab. Es wird keine Firmware installiert.",
+      "description": "Teilt mit bestehender Firmware-Zustimmung die installierte Version und fragt passende Community-Sichtungen ab. Installiert keine Firmware.",
       "fields": {
         "entry_id": {
           "name": "Integration",

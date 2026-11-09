@@ -41,7 +41,7 @@ _PRE_EXISTING_AFTER: Final = timedelta(hours=1)
 #: Bump to the next version (and move the old id into _SUPERSEDED_IDS) when
 #: a future release again warrants a notice. The id encodes the version so
 #: Home Assistant tracks each notice's dismissal separately.
-WHATS_NEW_ISSUE_ID: str = "whats_new_0_26_4"
+WHATS_NEW_ISSUE_ID: str = "whats_new_0_26_12"
 WHATS_NEW_LEARN_MORE_URL: str = "https://xerolux.github.io/idm-heatpump-hass/docs/telemetry/#firmware-orientation"
 
 #: entry.data key holding the integration version this entry last ran with.
@@ -49,7 +49,7 @@ WHATS_NEW_LEARN_MORE_URL: str = "https://xerolux.github.io/idm-heatpump-hass/doc
 #: triggers the reload fingerprint.
 LAST_RUN_VERSION_DATA_KEY: str = "last_run_version"
 
-_SUPERSEDED_IDS: tuple[str, ...] = ("whats_new_0_21_0",)
+_SUPERSEDED_IDS: tuple[str, ...] = ("whats_new_0_21_0", "whats_new_0_26_4")
 
 
 def ensure_whats_new_issue(hass: HomeAssistant) -> None:

@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.26.12 — 2026-11-09
+
+Firmware-Sichtungen werden aus unabhängiger Freigabe, Telemetrie und ausdrücklichen Diagnose-Metadaten gespeichert. Bestehende Zustimmungen bleiben gültig. Eine passende Version ist bereits die neueste gemeldete; unklare Pro-Angaben erzeugen keine Wärmepumpen-Update-Reparatur. [Firmwaremeldungen und Quellen](Telemetry).
+
 ## v0.26.11 — 2026-11-09
 
 Ausdrücklich fehlende Web-Heizkreise verwerfen die anderen erfolgreichen Abfragen nicht mehr. Die Diagnose nennt fehlende Kreise. Bestätigte Erkenntnisse und offene Punkte stehen unter [Erkenntnisse](Findings-and-Documentation).

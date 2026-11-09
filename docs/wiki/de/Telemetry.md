@@ -106,40 +106,15 @@ Berechtigung prüfen. Das öffentliche Formular gewährt keinen Lesezugriff.
 
 ## Unabhängige Firmware-Beobachtungen
 
-Unter **Neu konfigurieren → Firmware-Abfrage** aktiviert ein eigener freiwilliger
-Schalter den Sensor **Neueste gemeldete Firmware**. Er ist standardmäßig aus und
-übernimmt keine Telemetrie-Einwilligung. Die Firmware-Abfrage funktioniert ohne
-myIDM-ID und ohne Telemetrie. Telemetrie auszuschalten beendet eine separat
-freigegebene Firmware-Abfrage nicht. Ausschalten der Firmware-Abfrage bricht
-laufende Anfragen ab und entfernt Sensor und Registry-Eintrag sofort. Ohne diese
-Einwilligung gibt es keinen Kontakt zum Firmware-Katalog.
+Unter **Neu konfigurieren → Firmware teilen und vergleichen** aktiviert ein eigener freiwilliger Schalter **Neueste gemeldete Firmware**. Standardmäßig aus, unabhängig von Telemetrie und ohne myIDM-ID nutzbar. Bestehende Zustimmungen mit `idm-firmware-v1` bleiben gültig; sie werden nicht zurückgesetzt, ausgeschaltete Funktionen nicht aktiviert. Ausschalten bricht weitere Anfragen ab und entfernt den Sensor sofort.
 
-Übertragen werden ausschließlich Navigator-Familie, Regler-/Anlagenmodell und
-installierte Firmware, nach bis zu 30 Minuten zufälliger Startverzögerung, danach alle sechs
-Stunden zuzüglich bis zu 30 Minuten zufälliger Verzögerung. Keine myIDM-ID,
-Betriebszähler, Temperaturen, Zugangsdaten oder fremden HA-Daten. Es gibt keine
-dauerhafte Firmware-Warteschlange; die Integration hält nur das aktuelle Ergebnis.
-HA kann Sensorzustände gemäß deiner Recorder-/Backup-Konfiguration speichern. Der
-Server verarbeitet die Abfrage vorübergehend und speichert keinen Anlagenbericht.
-Die Verbindungs-IP ist technisch sichtbar; kurzlebige Ratenkennungen verfallen
-nach spätestens zwei Stunden beim nächsten stündlichen Bereinigungslauf. Beide
-Funktionen verlinken vor ihrem Zustimmungsschalter deutlich auf die vollständigen
-Datenschutzhinweise.
+Übertragen werden nur Navigator-Familie, Regler-/Anlagenmodell und installierte Firmware, nach bis zu 30 Minuten zufälliger Startverzögerung, danach alle sechs Stunden plus bis zu 30 Minuten zufälliger Verzögerung. Keine myIDM-ID, Seriennummer, Betriebswerte, Zugangsdaten oder anderen HA-Daten. Der Server speichert technische Sichtungen verschlüsselt, zusammengefasst je Vergleichsgruppe, Version und UTC-Tag ohne Anlagenkennung. Automatische Löschung nach zwölf Kalendermonaten. Keine dauerhafte Client-Warteschlange. Recorder und Backups können Sensorzustände entsprechend deiner HA-Konfiguration behalten. Die Verbindungs-IP ist technisch sichtbar; verschlüsselte Ratenkennungen verfallen nach spätestens zwei Stunden beim stündlichen Bereinigungslauf. Der Datenschutzlink steht weiterhin vor dem Schalter. Ausschalten stoppt weitere Meldungen; vorhandene Sammelsichtungen bleiben bis zum Ablauf und enthalten keine Zuordnung zu einzelnen Einsendern.
 
-Der Katalog verwendet nur freigegebene Community-Telemetrie, keine alten
-Diagnose-ZIPs. Navigator/Regler, bekanntes Anlagenmodell, Firmware-Präfix/Kanal und
-Hauptreihe müssen passen. Fehlende Anlagenmodelle werden nur mit anderen Meldungen
-ohne Typangabe innerhalb derselben bekannten Regler-/Firmware-Reihe verglichen.
-Test- und stabile Kanäle bleiben getrennt; Buildnummern werden numerisch verglichen.
-Unbekannte Zuordnung oder fehlende Meldungen liefern keine Versionsempfehlung.
+Der Katalog kombiniert freigegebene Telemetrie, unabhängige Firmwaremeldungen und ausdrückliche Firmware-Metadaten privater Diagnose-ZIPs. Aus ZIPs abgeleitete Einträge bleiben an deren 90-Tage-Ablauf, Löschung und Testausschluss gebunden. Für Telemetrie gelten unverändert zwölf Monate und geprüfte Löschanfragen. Originalarchive werden nicht verändert. Die private Telemetrieübersicht zeigt Firmware, Vergleichsbereich und Quellen. Zahlen sind Quellensichtungen, keine Anzahl verschiedener Wärmepumpen; unabhängige Meldungen werden je Tag zusammengefasst.
 
-Das ist keine offizielle IDM-Verfügbarkeit, Installationsberechtigung oder
-Kompatibilitätsfreigabe. Eignungsprüfung und Installation bleiben bei IDM/Fachbetrieb.
-Telemetrie hilft beim Aufbau des Katalogs, ist aber keine Voraussetzung für seine
-Abfrage. Telemetrie verwendet weiterhin Hinweisfassung v3, die unabhängige
-Firmware-Einwilligung `idm-firmware-v1`. Deren Zeitpunkt und Fassung werden nur
-lokal gespeichert und nicht bei der Firmware-Abfrage übertragen.
+Navigator/Regler, bekanntes Anlagenmodell, Firmware-Präfix/Kanal und Hauptreihe bleiben getrennt. Fehlende Anlagenmodelle passen nur zu anderen fehlenden Typangaben derselben Reglerreihe. `NAV10_` und `T_NAV10_` werden nie vermischt. NAVIGATOR Pro bezeichnet die Einzelraumregelung und ist kein anderer Name für Navigator 10. Allgemeine alte Pro-Angaben bleiben `unconfirmed_component`: Die neueste gemeldete Version ist innerhalb dieser gemeldeten Gruppe sichtbar, aber `newer_observed` bleibt unbekannt und erzeugt keine Update-Reparatur der Wärmepumpe. Ausdrückliche Einzelraumregelungs-Metadaten bilden eine eigene Gruppe. Widersprüchliche Familie/Präfix-Angaben begründen keine Kompatibilität.
 
+Schon eine einzige passende Sichtung ist die **neueste gemeldete Firmware**. Entspricht sie der installierten Version, entsteht kein Hinweis auf eine neuere Version. Gemeint ist die neueste Version in unserem Katalog, keine Aussage über alle Herstellerstände. Eignung prüfen und installieren darf nur iDM oder ein autorisierter Fachbetrieb. Diese Funktion überträgt oder installiert keine Firmwaredatei. Die bestehende Hinweisfassung `idm-firmware-v1` bleibt gültig; technische Speicherung und Laufzeiten werden im aktualisierten Hinweis erklärt.
 
 ## Lastverteilung
 

@@ -69,7 +69,7 @@ async def test_firmware_response_is_bound_to_requested_plant_metadata():
     remove = telemetry.async_add_firmware_listener(listener)
     with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
         await FirmwareObservations.async_refresh_firmware(telemetry)
-    assert set(session.post.call_args.kwargs["json"]) == {"navigator", "navigator_model", "heatpump_model", "firmware"}
+    assert session.post.call_args.kwargs["json"] == query
     assert telemetry._entry.options[CONF_TELEMETRY] is False
     assert telemetry.firmware_result["latest_firmware"] == "NAV10_20.24-11"
     listener.assert_called_once()
@@ -149,3 +149,33 @@ async def test_firmware_has_independent_lifecycle_and_six_hour_timer():
     entry.options[CONF_FIRMWARE_CHECK] = False
     await client.async_options_updated(None, entry)
     assert not client.enabled
+
+
+async def test_unknown_firmware_consent_never_contacts_server():
+    firmware, entry, _ = make_firmware()
+    entry.options[CONF_FIRMWARE_POLICY] = "unsupported-policy"
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession") as session:
+        await firmware.async_refresh_firmware()
+    assert not firmware.enabled
+    session.assert_not_called()
+
+
+@pytest.mark.parametrize("scope,expected", [("controller_and_plant_model", False), ("unconfirmed_component", None)])
+async def test_existing_consent_and_single_report_show_latest_without_update_notice(scope, expected):
+    firmware, entry, coordinator = make_firmware()
+    assert entry.options[CONF_FIRMWARE_POLICY] == "idm-firmware-v1"
+    coordinator.firmware_version = "NAV10_20.24-9"
+    query = {"navigator": "navigator_10", "navigator_model": "Navigator 10", "heatpump_model": "AERO ALM", "firmware": coordinator.firmware_version}
+    response = MagicMock(status=200)
+    response.json = AsyncMock(return_value={"query": query, "source": "community_telemetry", "status": "observed", "latest_firmware": query["firmware"], "series": "nav10_20", "observations": 1, "newer_observed": scope == "unconfirmed_component", "model_scope": scope, "component_status": "reported_component"})
+    context = MagicMock()
+    context.__aenter__ = AsyncMock(return_value=response)
+    context.__aexit__ = AsyncMock(return_value=False)
+    session = MagicMock()
+    session.post.return_value = context
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
+        await firmware.async_refresh_firmware()
+    assert firmware.enabled
+    assert firmware.firmware_result["latest_firmware"] == query["firmware"]
+    assert firmware.firmware_result["newer_observed"] is expected
+    assert firmware.firmware_result["component_status"] == "reported_component"
