@@ -149,7 +149,8 @@ class FirmwareObservations:
                 "series": _label(result.get("series")),
                 "status": result["status"],
                 "model_scope": result.get("model_scope")
-                if result.get("model_scope") in {"controller_series_only", "controller_and_plant_model", "unconfirmed_component"}
+                if result.get("model_scope")
+                in {"controller_series_only", "controller_and_plant_model", "unconfirmed_component"}
                 else None,
                 "component_status": result.get("component_status")
                 if result.get("component_status") in {"reported_component", "unconfirmed_pro_component"}

@@ -165,9 +165,26 @@ async def test_existing_consent_and_single_report_show_latest_without_update_not
     firmware, entry, coordinator = make_firmware()
     assert entry.options[CONF_FIRMWARE_POLICY] == "idm-firmware-v1"
     coordinator.firmware_version = "NAV10_20.24-9"
-    query = {"navigator": "navigator_10", "navigator_model": "Navigator 10", "heatpump_model": "AERO ALM", "firmware": coordinator.firmware_version}
+    query = {
+        "navigator": "navigator_10",
+        "navigator_model": "Navigator 10",
+        "heatpump_model": "AERO ALM",
+        "firmware": coordinator.firmware_version,
+    }
     response = MagicMock(status=200)
-    response.json = AsyncMock(return_value={"query": query, "source": "community_telemetry", "status": "observed", "latest_firmware": query["firmware"], "series": "nav10_20", "observations": 1, "newer_observed": scope == "unconfirmed_component", "model_scope": scope, "component_status": "reported_component"})
+    response.json = AsyncMock(
+        return_value={
+            "query": query,
+            "source": "community_telemetry",
+            "status": "observed",
+            "latest_firmware": query["firmware"],
+            "series": "nav10_20",
+            "observations": 1,
+            "newer_observed": scope == "unconfirmed_component",
+            "model_scope": scope,
+            "component_status": "reported_component",
+        }
+    )
     context = MagicMock()
     context.__aenter__ = AsyncMock(return_value=response)
     context.__aexit__ = AsyncMock(return_value=False)
