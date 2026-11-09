@@ -13,6 +13,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.12] - 2026-11-09
+
+### ⚠️ Upgrade notes
+
+- **Existing firmware and telemetry consents remain valid.** No setting is reset or enabled automatically. Firmware sharing now contributes stored technical sightings without a plant identifier; the updated notice explains daily aggregation and twelve-month expiry. Diagnostic-derived sightings retain their original 90-day boundary. Local control, entity IDs and history remain unchanged; rollback is safe.
+
+### ✨ New
+
+- **Every authorized firmware sighting can improve the comparison.** Independent [firmware sharing](https://xerolux.github.io/idm-heatpump-hass/docs/telemetry/#firmware-orientation), telemetry and explicit diagnostic metadata contribute with separate source counts. A single matching version already appears as the latest reported firmware; an equal installed version produces no update notice. This remains community orientation, never manufacturer availability or an installation function.
+
+### 🐛 Bugfixes
+
+- **Keep ambiguous Pro metadata out of heat-pump update notices.** NAVIGATOR Pro room control stays separate from Navigator 10 heat-pump control. Generic Pro labels show their latest reported version with an unconfirmed component scope and suppress newer-version repairs. Stable and test prefixes remain separate, and the capture tool shows explicit Navigator metadata before lengthy frontend discovery.
+
+### 💼 Maintenance
+
+- **Keep older diagnostic donations useful.** The capture server accepts older tool versions while recommending current captures; automatic signed client updates remain. English/German instructions, consent text, privacy notices and source-aware firmware documentation are synchronized. The API stays exactly pinned to 2.16.2; no register definitions, controller writes or heat-pump firmware are changed.
+
 ## [0.26.11] - 2026-11-09
 
 ### ⚠️ Upgrade notes

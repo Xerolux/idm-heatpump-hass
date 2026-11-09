@@ -4,6 +4,10 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.26.12
+
+Firmwarefreigabe behält bestehende Zustimmungen mit `idm-firmware-v1`, aktiviert keine ausgeschalteten Optionen und ändert die Telemetrie-Einstellungen nicht. Synthetische Tests prüfen vorhandene Zustimmung, die Gleichheit bei einer einzigen Versionssichtung, Komponentenangaben und unterdrückte unklare Pro-Updatehinweise. Der verschlüsselte, begrenzte Quellenindex bleibt an seine Aufbewahrung gebunden; Servertests prüfen Ablauf, alte HTTP-Clients, Neustart und veränderte Chiffrate. Vollständige Integrations-/Config-Flow-Coverage, strenge Typprüfung und echte HA-Lebenszyklustests müssen vor Veröffentlichung bestehen. Kein neuer Anlagen-Schreibzugriff, keine physische Pro-Erkennung und keine Firmwareinstallation werden zugesichert. API 2.16.2 bleibt gepinnt. [Nachweis](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.12.md)
+
 ## Release-Entscheidung zu 0.26.11
 
 Die bestätigte Antwort zu einem nicht vorhandenen Heizkreis wird von der API
@@ -579,7 +583,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.26.11` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
+Integration im Quellstand `0.26.12` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

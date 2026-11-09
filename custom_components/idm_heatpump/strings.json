@@ -57,7 +57,7 @@
           "features": "Configure features",
           "diagnostics": "Test current connection",
           "telemetry": "Telemetry",
-          "firmware": "Firmware query (voluntary)"
+          "firmware": "Share and compare firmware (optional)"
         },
         "menu_option_descriptions": {
           "connection": "Edit Modbus host, port, slave ID, local web PIN, and proxy settings.",
@@ -881,10 +881,10 @@
         }
       },
       "firmware": {
-        "title": "Firmware query",
-        "description": "**Is there newer firmware for your heat pump?**\n\nThe **Latest reported firmware** sensor shows whether a newer version has been reported by comparable plants.\n\nFor this, **Xerolux receives only controller type, plant model and firmware version**, roughly every six hours. No myIDM ID or measurements. Telemetry is not required.\n\nThis is a community observation. Only IDM or your installer can assess and install firmware.\n\n**Optional and easy to turn off.** Disabling stops queries and removes the sensor. Local control keeps working.\n\n[Privacy, operator and your rights]({privacy_url})\n\nDiagnostics also shows Newer firmware observed (unconfirmed). A newer matching observation can be acknowledged once in Repairs. This never installs an update.",
+        "title": "Share and compare firmware",
+        "description": "**Has newer firmware been observed on comparable plants?**\n\nThe Latest reported firmware sensor shows community observations from the same matching controller/firmware series.\n\n**Xerolux receives only controller type, plant model and installed firmware**, roughly every six hours. No myIDM ID, serial number or measurements; telemetry is not required. Version sightings are aggregated by version, cohort and day without a plant identifier, encrypted and automatically deleted after twelve months. Counts are sightings, not distinct plants. Existing consents remain valid; no renewed confirmation is required.\n\nNAVIGATOR Pro is individual room control. Ambiguous Pro reports are stored for review but do not supply a heat-pump firmware notice. NAV10_ and T_NAV10_ stay separate.\n\n**Optional, off by default and easy to disable.** Disabling stops future reports/queries and removes the sensor. Existing technical aggregates remain until expiry and contain no plant identifier. Local control continues.\n\n[Privacy, operator and rights]({privacy_url})\n\nOnly IDM or your installer can assess and install firmware. A newer matching community observation can be acknowledged once in Repairs; this never installs an update.",
         "data": {
-          "firmware_check": "Allow firmware queries"
+          "firmware_check": "Allow firmware metadata sharing and queries"
         }
       }
     },
@@ -3561,6 +3561,10 @@
     "telemetry_failing": {
       "title": "Telemetry reports are not being delivered",
       "description": "{failed_attempts} consecutive daily telemetry reports could not be delivered to IDM Tools. Local heat-pump operation is unaffected. Check your internet connection; the integration retries automatically in its next daily slot and this notice clears itself once a report is accepted."
+    },
+    "whats_new_0_26_12": {
+      "title": "Firmware sightings improve the community comparison",
+      "description": "Authorized firmware sightings are stored independently of telemetry and contribute to the community comparison. Technical version sightings contain no plant identifier, are aggregated per version/cohort/day, and expire automatically after twelve months.\n\nExisting consents remain valid; no renewed confirmation is required. Disabled features stay disabled. Review the feature and notices under **Reconfigure → Share and compare firmware**. Local control and telemetry settings are unchanged. NAVIGATOR Pro and heat-pump control, and NAV10_/T_NAV10_ channels, stay separate. An observation is not manufacturer approval and installs nothing.\n\n[Setup and privacy notice]({activation_url})"
     }
   },
   "services": {
@@ -3772,7 +3776,7 @@
     },
     "check_firmware": {
       "name": "Check firmware now",
-      "description": "Query matching community observations with existing firmware consent. No firmware is installed.",
+      "description": "Share the installed version and query matching community sightings with existing firmware consent. No firmware is installed.",
       "fields": {
         "entry_id": {
           "name": "Integration",

@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.12 — 2026-11-09
+
+Firmware sightings now persist across independent sharing, telemetry and explicit diagnostic metadata. Existing consents remain valid. A single matching version appears as latest reported; ambiguous Pro metadata cannot trigger a heat-pump update repair. [Firmware sharing and sources](Telemetry#independent-firmware-observations).
+
 ## v0.26.11 — 2026-11-09
 
 Explicitly absent web heating circuits no longer discard other successful circuit reads. Diagnostics list absent circuit letters. See [Findings](Findings-and-Documentation) for confirmed donation evidence and open work.
