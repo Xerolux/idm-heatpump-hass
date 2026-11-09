@@ -5,6 +5,11 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.26.11 — 2026-11-09
+
+Explicitly absent web heating circuits no longer discard other successful circuit reads. Diagnostics list absent circuit letters. See [Findings](Findings-and-Documentation) for confirmed donation evidence and open work.
+
+
 ## v0.26.10 — 2026-11-08
 
 With the device hierarchy enabled, the three cloud-consent entities — *Telemetry report status*, *Latest reported firmware* and *Newer firmware observed (unconfirmed)* — now form their own **Telemetry** subdevice beneath the plant. Entity IDs and history are preserved; the installed software version stays in *Diagnostics*. [Group placement](Telemetry#firmware-orientation).

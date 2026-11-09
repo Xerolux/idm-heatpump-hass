@@ -3,7 +3,7 @@
 ``scripts/generate_modbus_register_reference.py`` regenerates both the English
 wiki page (``docs/wiki/Modbus-Register.md``) and its German mirror
 (``docs/wiki/de/Modbus-Register.md``) from the pinned ``idm-heatpump-api``
-package, including pre-release pins such as ``2.16.1b2``. These tests enforce
+package, including pre-release pins. These tests enforce
 that both committed catalogs match the generator output and remain row-for-row
 equivalent after normalizing the German column vocabulary.
 """

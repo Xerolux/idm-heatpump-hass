@@ -14,7 +14,7 @@ contact, including no telemetry endpoint test. Firmware queries are separate. No
 
 The fixed schema includes the myIDM ID, consent time/revision, report ID, integration
 version, Navigator family/model, heat-pump model, firmware, connection mode/web
-variant, detected solar/PV/cascade/ISC capabilities, snapshot register count,
+variant, API model solar/PV/cascade/ISC capability metadata (not verified installed equipment), snapshot register count,
 observed hours, Modbus polls/failures, observed web outages and alarm-code
 transitions. Existing plant analysis may add compressor starts, operating-mode
 seconds and electrical/thermal energy aggregates. Missing sources are omitted;

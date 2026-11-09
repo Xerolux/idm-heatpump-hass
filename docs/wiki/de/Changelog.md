@@ -5,6 +5,11 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.26.11 — 2026-11-09
+
+Ausdrücklich fehlende Web-Heizkreise verwerfen die anderen erfolgreichen Abfragen nicht mehr. Die Diagnose nennt fehlende Kreise. Bestätigte Erkenntnisse und offene Punkte stehen unter [Erkenntnisse](Findings-and-Documentation).
+
+
 ## v0.26.10 — 2026-11-08
 
 Bei aktivierter Gerätehierarchie bilden die drei Cloud-Einwilligungs-Entitäten — *Telemetrie-Berichtsstatus*, *Neueste gemeldete Firmware* und *Neuere Firmware gesichtet (unbestätigt)* — jetzt ein eigenes Untergerät **Telemetrie** unter der Anlage. Entity-IDs und Historie bleiben erhalten; die installierte Softwareversion bleibt in *Diagnose*. [Gruppenplatzierung](Telemetry#firmware-orientierung).

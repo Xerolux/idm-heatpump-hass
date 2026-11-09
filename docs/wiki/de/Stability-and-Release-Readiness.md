@@ -4,6 +4,17 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.26.11
+
+Die bestätigte Antwort zu einem nicht vorhandenen Heizkreis wird von der API
+gezielt erkannt. Synthetische Tests prüfen Anfragezuordnung, unbekannte Antworten
+und den Erhalt anderer erfolgreicher Kreise. Die lokale Gesamtsuite besteht mit 3.523 Tests (zwei übersprungen), 98,58 %
+Integrations-Coverage und 100 % Config-Flow-Coverage. Strenge Typprüfung für
+88 Module und 14 echte HA-Lebenszyklustests bestehen. CI und Release wiederholen die Prüfungen. Kein neuer physischer Anlagenlauf,
+kein erzwungener Fehler und keine Pro-Browseranmeldung wurden geprüft. Historien,
+Zustimmungen und Schreibverhalten bleiben erhalten. Der Quellstand pinnt API
+2.16.2; offene Punkte stehen unter [Erkenntnisse](Findings-and-Documentation).
+
 ## Release-Entscheidung zu 0.26.10
 
 Das Telemetrie-Untergeät ist eine reine Platzierungsänderung: Auflösung,
@@ -77,7 +88,7 @@ Qualitätschranke auf dem Schnitt: zweibeinige CI-Matrix mit
 Coverage-Schranken, strenges mypy, ruff, hassfest,
 Real-Home-Assistant-Lebenszyklus-Smoke-Tests, CodeQL/pip-audit,
 Anmeldedaten-Scan. Runtime-Pins unverändert gegenüber 0.26.1
-(`idm-heatpump-api[web]==2.16.1`).
+(`idm-heatpump-api[web]==2.16.2`).
 
 ## Release-Entscheidung zu 0.26.1
 
@@ -95,7 +106,7 @@ Anleitung fährt von dort fort. Die vollständige Qualitätschranke lief auf dem
 Schnitt selbst (zweibeinige CI-Matrix mit Coverage-Schranken, strenges mypy,
 ruff, hassfest, Real-Home-Assistant-Lebenszyklus-Smoke-Tests, CodeQL/pip-audit,
 Anmeldedaten-Scan); Registerkatalog und alle Runtime-Pins bleiben identisch zu
-0.26.0 (`idm-heatpump-api[web]==2.16.1` — keine Runtime-Abhängigkeit hat sich
+0.26.0 (`idm-heatpump-api[web]==2.16.2` — keine Runtime-Abhängigkeit hat sich
 bewegt). Das Entfernen der beiden Entitäten braucht keine Migration;
 Einstellungen, Dashboards und alle anderen Entitäten bleiben unberührt, ein
 Rollback auf 0.26.0 stellt das bisherige Verhalten wieder her. Ein
@@ -119,7 +130,7 @@ selbst: die zweibeinige CI-Matrix (Python 3.14 × HA 2026.11.0 ×
 manifest-pinned/api-main) mit Coverage-Schranken, strenges mypy, ruff,
 hassfest, die Real-Home-Assistant-Lebenszyklus-Smoke-Tests, CodeQL/pip-audit
 und der Anmeldedaten-Scan. Der API-Pin bleibt beim validierten
-`idm-heatpump-api[web]==2.16.1` — identisch zu 0.25.0, kein Runtime-Pin hat
+`idm-heatpump-api[web]==2.16.2` — identisch zu 0.25.0, kein Runtime-Pin hat
 sich bewegt. Kein Beta-Soak: für die beiden oben umrissenen, eng
 begrenzten Änderungen bewusst akzeptiert; alles Größere kehrt auf die
 Beta-Linie zurück. Ein Rollback ist sicher (keine Änderung an gespeicherten
@@ -568,7 +579,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.26.10` und `idm-heatpump-api` `2.16.1` bilden das aktuelle exakt
+Integration im Quellstand `0.26.11` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

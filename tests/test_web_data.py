@@ -1839,3 +1839,34 @@ def test_dual_label_sensors_registered_in_sensor_name_map() -> None:
     web_data._register_dual_label_sensors()
     assert SENSOR_NAME_MAP.get("B33/B113") == "intermediate_flow_temperature"
     assert SENSOR_NAME_MAP.get("B34/B114") == "intermediate_return_temperature"
+
+
+async def test_unavailable_circuit_does_not_discard_other_web_circuits() -> None:
+    from idm_heatpump import IdmWebHeatingCircuit, IdmWebHeatingCircuitRef, IdmWebHeatingCircuitUnavailableError
+
+    first = IdmWebHeatingCircuit(
+        hc_id="A", available_circuits=(IdmWebHeatingCircuitRef(hc_id="D"), IdmWebHeatingCircuitRef(hc_id="E"))
+    )
+
+    async def read(hc_id: str):
+        if hc_id == "D":
+            raise IdmWebHeatingCircuitUnavailableError("D")
+        return first if hc_id == "A" else IdmWebHeatingCircuit(hc_id=hc_id)
+
+    client = SimpleNamespace(read_heatingcircuit=read)
+    result = await web_data._read_optional_heatingcircuits(client, IdmWebSupplement(web_variant="nav10"))
+    assert [item.hc_id for item in result.heating_circuits] == ["A", "E"]
+    assert result.unavailable_heating_circuits == ("D",)
+
+
+async def test_first_circuit_unavailable_never_invents_a_control() -> None:
+    from idm_heatpump import IdmWebHeatingCircuitUnavailableError
+
+    async def read(hc_id: str):
+        raise IdmWebHeatingCircuitUnavailableError(hc_id)
+
+    result = await web_data._read_optional_heatingcircuits(
+        SimpleNamespace(read_heatingcircuit=read), IdmWebSupplement(web_variant="nav10")
+    )
+    assert result.heating_circuits == ()
+    assert result.unavailable_heating_circuits == ("A",)

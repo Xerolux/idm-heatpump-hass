@@ -60,3 +60,38 @@ coverage check as well as version consistency. Automated checks make omissions
 visible; they cannot prove that every sentence is correct. Recheck field
 claims when new evidence contradicts them. Do not rewrite published release
 history to match current behavior.
+
+## Donation review: 9 November 2026
+
+Three additional diagnostic ZIPs and six additional telemetry reports were reviewed.
+The two Navigator 10 ZIPs contain usable web and statistic responses; numeric
+setting parameters parse with the parameter reader and must not be routed to
+the HTML-section parser. A note-only reply explicitly stating that a circuit
+is unavailable is separate from malformed JSON. API 2.16.2 and integration
+0.26.11 retain other successful circuits; diagnostics list absent circuit
+letters without copying names or controller response text.
+
+Open work, not forgotten or declared fixed:
+
+- The donation declared as NAVIGATOR Pro has 499 readable FC03/FC04 words,
+  including 48 function/address pairs absent from earlier readable references.
+  Attribution, scaling and physical model remain unverified: do not create
+  entities or change official register definitions from readability alone.
+- Its HTTP login remains at an authentication form; the cause is not proven
+  to be an incorrect PIN. Compare a fresh browser login and the capture tool's
+  sanitized per-attempt trace before changing an authentication flow.
+- Physical heat-pump models are absent in all eight reviewed telemetry reports.
+  Capability flags are API model metadata, not proof of installed equipment.
+- Five later telemetry reports have coherent complete duration counters; the
+  transitional report intentionally omits them. Historical inconsistencies stay
+  flagged. Do not mix stable `NAV10_` and test-channel `T_NAV10_` observations.
+- #577's remaining parser and packed-register questions need exact issue-linked
+  evidence. #649 has a healthy-state field confirmation; a forced fault was not
+  tested. #493 still awaits the manufacturer's technical explanation; #668
+  still awaits reporter confirmation. Existing public replies remain separate
+  from a verified general controller requirement.
+
+The private originals stay under their existing retention policies. Synthetic
+regression fixtures reproduce structures only; no donated readings or private
+notes are published. A reviewed inbox status means the evidence was evaluated,
+not that every open hypothesis is fixed or every address has a mapping.

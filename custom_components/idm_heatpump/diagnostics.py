@@ -163,6 +163,11 @@ def _web_supplement_diagnostics(coordinator: Any) -> dict[str, Any]:
         "last_error": _sanitized_web_error(getattr(coordinator, "last_web_error", None)),
         "available_values": list(getattr(coordinator, "web_value_keys", ()) or ()),
         "missing_core_values": list(getattr(coordinator, "missing_web_core_values", ()) or ()),
+        "unavailable_heating_circuits": [
+            key
+            for key in getattr(getattr(coordinator, "web_supplement", None), "unavailable_heating_circuits", ())
+            if isinstance(key, str) and key in "ABCDEFG" and len(key) == 1
+        ],
     }
 
 

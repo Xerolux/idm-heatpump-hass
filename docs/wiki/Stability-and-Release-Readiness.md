@@ -4,6 +4,18 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.26.11 release decision
+
+The capture-confirmed missing-circuit reply has a precise API error classification.
+Synthetic regressions cover request binding, malformed/unknown notes and retaining
+other successful circuits. The local full suite passed 3,523 tests (two skips), with 98.58% integration
+coverage and 100% config-flow coverage. Strict typing passed for 88 modules;
+14 real-HA lifecycle tests passed. CI and the release workflow repeat the gates.
+No new physical controller run, forced fault, Pro browser authentication or
+undocumented register mapping was validated for this patch. Existing histories,
+consents and writes remain unchanged. The source pins API 2.16.2; open evidence
+and limitations are tracked in [Findings](Findings-and-Documentation).
+
 ## 0.26.10 release decision
 
 The Telemetry subdevice is a placement-only change: scope resolution, consent
@@ -70,7 +82,7 @@ installer-level enablement path, and the documentation home forwards German
 browsers once per session only (explicit switch stays available). Full quality
 gate on the cut: two-leg CI matrix with coverage gates, strict mypy, ruff,
 hassfest, real-Home-Assistant lifecycle smoke, CodeQL/pip-audit, credential
-scan. Runtime pins unchanged from 0.26.1 (`idm-heatpump-api[web]==2.16.1`).
+scan. Runtime pins unchanged from 0.26.1 (`idm-heatpump-api[web]==2.16.2`).
 
 ## 0.26.1 release decision
 
@@ -86,7 +98,7 @@ installer enables Modbus TCP / the GLT-PV function, and the instructions
 continue from there. The full quality gate ran on the cut itself (two-leg CI
 matrix with coverage gates, strict mypy, ruff, hassfest, real-Home-Assistant
 lifecycle smoke, CodeQL/pip-audit, credential scan); the register catalogue
-and all runtime pins stay identical to 0.26.0 (`idm-heatpump-api[web]==2.16.1`
+and all runtime pins stay identical to 0.26.0 (`idm-heatpump-api[web]==2.16.2`
 — no runtime dependency moved). Removing the two entities needs no migration;
 settings, dashboards and all other entities are untouched, and rollback to
 0.26.0 restores the previous behaviour. A repository-wide scan verified that
@@ -107,7 +119,7 @@ nothing. The full quality gate ran on the cut itself: the two-leg CI matrix
 (Python 3.14 × HA 2026.11.0 × manifest-pinned/api-main) with coverage gates,
 strict mypy, ruff, hassfest, the real-Home-Assistant lifecycle smoke leg,
 CodeQL/pip-audit and the credential scan. The API pin stays at the validated
-`idm-heatpump-api[web]==2.16.1` — identical to 0.25.0, no runtime pin moved.
+`idm-heatpump-api[web]==2.16.2` — identical to 0.25.0, no runtime pin moved.
 No beta soak: accepted consciously for the two scoped changes above; anything
 larger returns to the beta line. Rollback is safe (no stored-data change, no
 entity-ID change).
@@ -528,7 +540,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.26.10` and `idm-heatpump-api` `2.16.1` form the current
+Source-tree integration `0.26.11` and `idm-heatpump-api` `2.16.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

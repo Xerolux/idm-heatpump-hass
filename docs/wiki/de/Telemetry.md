@@ -202,3 +202,5 @@ Eine neuere passende Sichtung löst zusätzlich einen Hinweis unter **Einstellun
 Community-Meldungen sind keine Zusage, dass die Version für deine Wärmepumpe verfügbar oder geeignet ist. iDM oder der autorisierte Fachbetrieb muss das prüfen und ein Update durchführen. Nutzer können mit freiwillig geteilten Berichten die Vergleichsbasis verbessern; die Firmware-Abfrage ist dennoch unabhängig von Telemetrie einschaltbar. Beide Zustimmungen bleiben freiwillig und standardmäßig aus.
 
 Bei aktivierter Gerätehierarchie bilden die Cloud-Einwilligungs-Entitäten — **Neueste gemeldete Firmware**, **Neuere Firmware gesichtet (unbestätigt)** und **Telemetrie-Berichtsstatus** — ein eigenes Untergerät **Telemetrie** unter der Anlage. Die Entity-IDs bleiben beim Verschieben erhalten; die installierte Softwareversion bleibt in **Diagnose**. Ohne Gerätehierarchie liegen sie als Diagnose-Entitäten auf dem Hauptgerät.
+
+Die übermittelten Fähigkeitsmerkmale stammen aus API-Modellmetadaten; sie beweisen keine installierte Solar-, PV- oder ISC-Ausstattung. Fehlende physische Modellangaben bleiben unbekannt.

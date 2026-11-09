@@ -96,7 +96,7 @@
         "Navigator-Protocol-Analysis.md",
         "Protocol-Capabilities.md"
       ],
-      "reviewed_source_sha256": "946b1febd885a79fabd8df9b588df548261b1e5a1ba346ea6e4e5c094b52c236"
+      "reviewed_source_sha256": "d056d6efa0eca6beda41841bac85cf01fbb65f62bd69aba560017167df5f394d"
     },
     {
       "feature": "Energy and operating analysis",
@@ -195,7 +195,7 @@
         "Smart-Energy-and-Comfort.md",
         "Entities.md"
       ],
-      "reviewed_source_sha256": "e6291f9e2c9ad42c14db25ea0cf5b1aec0a47932bc07269ff564987994fd16b4"
+      "reviewed_source_sha256": "e9b4313c359501eece345ab6a7cafb955c4d7629dc5e9c41438cd0f3c1347866"
     },
     {
       "feature": "KNX bridge and catalog",

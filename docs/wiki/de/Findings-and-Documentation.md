@@ -63,3 +63,35 @@ diese Prüfung zusätzlich zur Versionskonsistenz. Automatische Prüfungen mache
 Auslassungen sichtbar, beweisen aber nicht die Richtigkeit jedes Satzes.
 Felderkenntnisse bei widersprechenden Nachweisen erneut prüfen. Veröffentlichte
 Versionsgeschichte wird nicht auf das heutige Verhalten umgeschrieben.
+
+## Datenspende-Auswertung: 9. November 2026
+
+Drei weitere Diagnose-ZIPs und sechs weitere Telemetrieberichte wurden geprüft.
+Die beiden Navigator-10-ZIPs enthalten Web- und Statistikantworten. Numerische
+Parameter werden mit dem Parameterparser verarbeitet, nicht mit dem Parser für
+HTML-Abschnitte. Eine ausdrückliche Meldung über einen nicht verfügbaren Heizkreis
+ist von einer fehlerhaften Antwort zu unterscheiden. API 2.16.2 und Integration
+0.26.11 behalten die anderen erfolgreich gelesenen Kreise bei; die Diagnose nennt
+nur die Buchstaben fehlender Kreise, keine Namen oder Antworttexte.
+
+Offen und ausdrücklich nicht als behoben erklärt:
+
+- Als NAVIGATOR Pro deklarierte Einsendung: 499 lesbare FC03/FC04-Wörter,
+  davon 48 Funktions-/Adresspaare ohne frühere lesbare Referenz. Bedeutung,
+  Skalierung und physisches Modell sind nicht bestätigt. Daraus folgen keine
+  neuen Entitäten oder Änderungen offizieller Registerdefinitionen.
+- Die HTTP-Anmeldung bleibt beim Loginformular. Eine falsche PIN ist nicht
+  bewiesen. Frische Browseranmeldung und bereinigtes Loginprotokoll vergleichen.
+- Bei allen acht Telemetrieberichten fehlt das physische Wärmepumpenmodell.
+  Fähigkeitsmerkmale stammen aus API-Modellmetadaten und beweisen keine Ausstattung.
+- Fünf spätere Berichte haben vollständige, zeitlich passende Laufzeitzähler;
+  der Übergangsbericht lässt sie bewusst weg. Historische Abweichungen bleiben
+  markiert. `NAV10_` und `T_NAV10_` werden nicht zusammengefasst.
+- Bei #577 bleiben Parser und gepackte Register offen. #649 ist im gesunden
+  Anlagenzustand bestätigt; ein Fehler wurde nicht ausgelöst. #493 wartet auf
+  iDMs Erklärung, #668 auf Bestätigung des Melders. Frühere Antworten ersetzen
+  keine bestätigte allgemeine Anforderung des Reglers.
+
+Originale bleiben unter den bisherigen Aufbewahrungsregeln erhalten. Tests
+verwenden synthetische Strukturen statt gespendeter Messwerte oder Notizen.
+„Bearbeitet“ bedeutet ausgewertet, nicht dass jede Hypothese bereits behoben ist.
