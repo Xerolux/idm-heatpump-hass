@@ -3542,6 +3542,7 @@
     },
     "firmware_observed": {
       "title": "Neuere Firmware {observed} gesichtet – unbestätigt",
+      "description": "Installiert: **{installed}**. Neueste passende Community-Beobachtung: **{observed}**.\n\nDas ist eine Orientierung aus freiwillig geteilten Meldungen, keine Zusage, dass diese Version für deine Anlage verfügbar oder geeignet ist. Nur iDM oder der autorisierte Fachbetrieb kann das prüfen und ein Update durchführen — diese Integration installiert keine Wärmepumpen-Firmware. Die gesichtete Version bleibt außerdem als **Neueste gemeldete Firmware** auf dem **Telemetrie**-Gerät der Anlage sichtbar; der Vergleich läuft etwa alle sechs Stunden erneut.",
       "fix_flow": {
         "step": {
           "confirm": {

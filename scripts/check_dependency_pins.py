@@ -141,6 +141,11 @@ BARE_VERSION_STATEMENTS: dict[str, tuple[tuple[str, str], ...]] = {
         ("idm-heatpump-api", r"(?<=idm-heatpump-api ){version}(?= \(device logic\))"),
     ),
     "docs/wiki/Home.md": (("modbus-connection", r"(?<=`){version}(?=` is the connection-library version)"),),
+    # The parity test's rejection fixture writes an open-ended requirement on
+    # purpose; the updater moves that fixture version along with the pin.
+    "tests/test_register_reference_parity.py": (
+        ("idm-heatpump-api", r"(?<=idm-heatpump-api\[web\]>=){version}"),
+    ),
     "docs/wiki/Configuration.md": (("modbus-connection", r"(?<=`){version}(?=` is the version of)"),),
     "docs/wiki/Local-Web-Interface.md": (
         ("modbus-connection", r"(?<=version `){version}(?=` an IDM integration release)"),
@@ -183,6 +188,9 @@ HISTORY_STATEMENTS: dict[str, tuple[str, ...]] = {
         r"`beta\.4`, on `idm-heatpump-api` `[0-9][0-9a-z.]*` and `modbus-connection` `[0-9][0-9a-z.]*`\.",
         r"`idm-heatpump-api` `[0-9][0-9a-z.]*` is[\s\S]*?validated pair with this cut\.",
         r"`idm-heatpump-api` `[0-9][0-9a-z.]*` — identical code[\s\S]*?before the integration tag\.",
+        r"unchanged from 0\.26\.1 \(`idm-heatpump-api\[web\]==[0-9][0-9a-z.]*`\)",
+        r"stay identical to 0\.26\.0 \(`idm-heatpump-api\[web\]==[0-9][0-9a-z.]*`",
+        r"`idm-heatpump-api\[web\]==[0-9][0-9a-z.]*` — identical to 0\.25\.0, no runtime pin moved",
     ),
     "docs/wiki/de/Stability-and-Release-Readiness.md": (
         r"Bis\s+einschließlich `0\.14\.1`[\s\S]*?`tmodbus==0\.5\.0` gepinnt\.",
@@ -191,6 +199,9 @@ HISTORY_STATEMENTS: dict[str, tuple[str, ...]] = {
         r"\*\*`0\.15\.0`\*\* zog dieses Paar[\s\S]*?`tmodbus\[async-serial\]==0\.5\.1`",
         r"`idm-heatpump-api` `[0-9][0-9a-z.]*` ist das mit diesem Schnitt[\s\S]*?validierte Paar\.",
         r"`idm-heatpump-api` `[0-9][0-9a-z.]*` —\s*identischer Code[\s\S]*?PyPI\.",
+        r"unverändert gegenüber 0\.26\.1\s*\(`idm-heatpump-api\[web\]==[0-9][0-9a-z.]*`\)",
+        r"0\.26\.0 \(`idm-heatpump-api\[web\]==[0-9][0-9a-z.]*` — keine Runtime-Abhängigkeit",
+        r"`idm-heatpump-api\[web\]==[0-9][0-9a-z.]*` — identisch zu 0\.25\.0",
     ),
 }
 
