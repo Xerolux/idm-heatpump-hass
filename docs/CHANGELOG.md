@@ -21,7 +21,7 @@ All notable changes to this project will be documented in this file.
 
 ### ✨ New
 
-- **Every authorized firmware sighting can improve the comparison.** Independent firmware reports, telemetry and explicit diagnostic metadata contribute with separate source counts. A single matching version already appears as the latest reported firmware; an equal installed version produces no update notice. This remains community orientation, never manufacturer availability or an installation function.
+- **Every authorized firmware sighting can improve the comparison.** Independent [firmware sharing](https://xerolux.github.io/idm-heatpump-hass/docs/telemetry/#firmware-orientation), telemetry and explicit diagnostic metadata contribute with separate source counts. A single matching version already appears as the latest reported firmware; an equal installed version produces no update notice. This remains community orientation, never manufacturer availability or an installation function.
 
 ### 🐛 Bugfixes
 
