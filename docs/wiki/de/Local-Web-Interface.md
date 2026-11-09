@@ -137,3 +137,11 @@ und `idm-heatpump-api[web]==2.16.2`. Die ersten beiden besitzen den direkten
 Modbus-Socket; seit API 2.0.0 ist pymodbus gar nicht mehr installiert. Das ändert
 weder das Web-Protokoll noch macht es die Version `4.12.2` zu einem
 IDM-Integrations-Release.
+
+## Capture-Updates und fehlgeschlagene Webanmeldung
+
+Für neue Diagnosen das aktuelle [IDM-Web-Capture-Paket](https://idmtools.xerolux.de/) verwenden. Ab Tool 1.19.4 installiert und startet die App neuere signierte Programmversionen automatisch vor Aufnahme oder Upload, unter Windows und Linux/Quellcode. Linux benötigt das Paket `openssl`; System-Python wird nicht ersetzt. Quellcode-Clients bis 1.19.3 einmal manuell aktualisieren. Ein bekanntes Update oder eine ungültige Signatur sperrt die Aufnahme. Ist der Update-Dienst nicht erreichbar, bleibt lokales Auslesen möglich; `manifest.json` enthält `update_check`.
+
+Neue Upload-Tickets benötigen die aktuelle Tool-Version. HTTP 426 bedeutet: neu starten, aktualisieren und frisch auslesen. Eine Bereinigung alter ZIPs ersetzt keine neue Aufnahme. Vorhandene Einsendungen und bereits ausgestellte Upload-Tickets bleiben gültig. Nach bestätigtem Neustart bleiben die aktive und eine geprüfte Rückfallversion erhalten; Diagnose-ZIPs werden nicht gelöscht.
+
+Wenn eingegebene Webzugangsdaten weder nutzbare HTTP- noch WebSocket-Daten liefern, pausiert das Tool: Eingaben korrigieren, bewusst ohne Webdaten fortfahren oder abbrechen. Bereinigte `web_diagnostics.json` und begrenzte Login-Antwortdateien dokumentieren Fehlerkategorie, bekannte Anmeldepfade, Statuscodes und Laufzeiten ohne PIN oder Formularwerte. Unbekannte Anmeldeantworten beweisen keine falsche PIN. Beim Fortfahren ohne Web bleiben diese Belege erhalten; anschließend läuft der gewählte Modbus-Pfad. Neue Anmeldewege und NAVIGATOR-Pro-Authentifizierung bleiben bis zur Bestätigung offen; keine PIN oder rohe Anmeldeantwort öffentlich posten.
