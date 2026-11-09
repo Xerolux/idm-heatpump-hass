@@ -13,6 +13,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.11] - 2026-11-09
+
+### ⚠️ Upgrade notes
+
+- **Successful web heating circuits remain available when another circuit is explicitly absent.** No new controls are created for absent circuits. Existing entity IDs, controller settings, consent and history are preserved. Unknown protocol errors and transport failures retain their previous handling; rollback is safe.
+
+### 🐛 Bugfixes
+
+- **Separate an unavailable circuit from a broken web response.** API 2.16.2 recognizes the confirmed Navigator 10 note-only reply. The optional reader skips that circuit while keeping other successful reads and exposes only its letter in diagnostics. A note naming another requested circuit remains an error. Modbus mappings and write behavior are unchanged.
+
+### 💼 Maintenance
+
+- **Carry the donation review into the findings register.** Document confirmed numeric parameter handling, absent-circuit replies and firmware channel separation. Keep Pro web authentication, additional raw register attribution, missing physical model metadata and the remaining #577 questions explicitly open; readability alone does not establish register semantics or a verified model.
+
 ## [0.26.10] - 2026-11-08
 
 The optional cloud-consent entities get their own home: with the device hierarchy enabled, a dedicated **Telemetry** subdevice beneath the plant groups everything gated behind the telemetry and firmware consents, instead of scattering it through Diagnostics.

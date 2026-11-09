@@ -23,12 +23,12 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
 | **Optional supplement** | Local Navigator web API; PIN required for web access, supported controls in Navigator 10/Pro `web_only` mode |
-| **Documentation version** | `0.26.10` source tree; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
+| **Documentation version** | `0.26.11` source tree; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
 | **Supported/tested HA baseline** | 2026.11.0 |
 | **Python** | 3.14+ (managed by Home Assistant) |
 | **Connection library** | modbus-connection>=4.12.7 |
 | **Socket backend** | tmodbus[async-serial]>=0.6.2 |
-| **Device/web library** | idm-heatpump-api[web]==2.16.1 |
+| **Device/web library** | idm-heatpump-api[web]==2.16.2 |
 | **License** | MIT |
 | **Languages** | DE, EN; setup and action interfaces also ES, IT, RO, CS, PL |
 | **Entities** | Model- and configuration-dependent sensors, binary sensors, numbers, selects, switches, climate, water heater, and buttons |
@@ -185,7 +185,7 @@ privacy and the dashboard.
 - **Data types**: FLOAT, UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM protection**: Sensitive registers tracked and protected
 - **Transport boundary**: Raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection>=4.12.7` / `tmodbus[async-serial]>=0.6.2` pair; `4.12.7` is the connection-library version, not the IDM integration version
-- **API boundary**: `idm-heatpump-api[web]==2.16.1` provides batching, decoding and write safety. The API owns its own exception hierarchy; the integration uses the tmodbus-backed socket without a pymodbus dependency
+- **API boundary**: `idm-heatpump-api[web]==2.16.2` provides batching, decoding and write safety. The API owns its own exception hierarchy; the integration uses the tmodbus-backed socket without a pymodbus dependency
 - **Auto-recovery**: API retry/backoff plus reconnect-on-demand in the tmodbus-backed connection
 - **Connection ownership**: Each entry uses Home Assistant's shared Modbus connection when available (`owns_socket: false`, `supports_shared_connection: true`), with a private socket fallback when the shared claim cannot be acquired
 - **Validation status**: Automated checks and read-only Navigator 10 observations are available; they do not replace candidate-specific clean-install, long-duration and broader model validation. See [Stability & Release Readiness](Stability-and-Release-Readiness).

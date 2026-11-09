@@ -110,6 +110,7 @@ class TestDiagnostics:
             "last_error": None,
             "available_values": ["navigator_version", "software_version"],
             "missing_core_values": ["heatpump_model"],
+            "unavailable_heating_circuits": [],
         }
         assert data["sensor_count"] == 3
         assert data["binary_sensor_count"] == 1

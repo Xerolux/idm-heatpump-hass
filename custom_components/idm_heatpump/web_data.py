@@ -92,6 +92,7 @@ class IdmWebSupplement:
     # Heating circuits of a Navigator 10 (system.heatingcircuit/detail per
     # configured circuit); empty on other variants or failure.
     heating_circuits: tuple[Any, ...] = ()
+    unavailable_heating_circuits: tuple[str, ...] = ()
     # Navigator 10 system.heatpump.performance snapshot (live power figures:
     # consumption, environment/source side, heating rod, modes); None on
     # other variants or when the frame failed.
@@ -521,18 +522,27 @@ async def _read_optional_heatingcircuits(
     read_heatingcircuit = getattr(client, "read_heatingcircuit", None)
     if not callable(read_heatingcircuit):
         return supplement
+    from idm_heatpump import IdmWebHeatingCircuitUnavailableError
+
     circuits: list[Any] = []
+    unavailable: list[str] = []
     try:
         async with asyncio.timeout(WEB_READ_TIMEOUT):
-            first = await read_heatingcircuit("A")
+            try:
+                first = await read_heatingcircuit("A")
+            except IdmWebHeatingCircuitUnavailableError as error:
+                return replace(supplement, unavailable_heating_circuits=(error.hc_id,))
             circuits.append(first)
             wanted = [ref.hc_id for ref in first.available_circuits if ref.hc_id != first.hc_id]
             for hc_id in wanted:
-                circuits.append(await read_heatingcircuit(hc_id))
+                try:
+                    circuits.append(await read_heatingcircuit(hc_id))
+                except IdmWebHeatingCircuitUnavailableError as error:
+                    unavailable.append(error.hc_id)
     except Exception:
         _LOGGER.debug("IDM web heating-circuit read failed", exc_info=True)
         return supplement
-    return replace(supplement, heating_circuits=tuple(circuits))
+    return replace(supplement, heating_circuits=tuple(circuits), unavailable_heating_circuits=tuple(unavailable))
 
 
 async def _read_optional_system_frames(
