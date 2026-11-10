@@ -13,6 +13,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.27.0-b4] - 2026-11-10
+
+The PV zero-power workaround is rebuilt around the real mechanism: a live
+series on a Navigator 10 proved the controller flags a *frozen* pv_production
+register — any constant substitute re-trips message 20300 — so the workaround
+now alternates 10/20 W every minute, and dusk values below the register's
+5 W resolution are finally replaced too.
+
+### ⚠️ Upgrade notes
+
+- **The PV zero-power workaround alternates 10 W and 20 W every minute instead of a constant**, and production below the 5 W register resolution is also replaced. The Navigator latches message 20300 after ten minutes of an *unchanged* register whatever its level; any change clears it. Statistics see an average 15 W; the option stays off and rollback is safe.
+
+### 🐛 Bugfixes
+
+- **Dusk production no longer slips through the PV zero-power workaround**: sources below 5 W were quantized to the register resolution and written as a real 0 W, and message 20300 latched exactly in that window. Every production that rounds to zero is now substituted; readings of 5 W and above pass through unchanged.
+- **The workaround substitute no longer freezes**: a constant value — 10 W like the old substitute or any other level — re-latches the message after roughly ten minutes; the new heartbeat changes the register every minute and kept the message clear through the whole verified window.
+
 ## [0.27.0-b3] - 2026-11-10
 
 The firmware orientation survives a restart: the sensor keeps its last server answer instead of going blank, and the repairs notice keeps its acknowledged or dismissed state.

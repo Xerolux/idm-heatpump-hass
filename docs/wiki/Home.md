@@ -23,7 +23,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
 | **Optional supplement** | Local Navigator web API; PIN required for web access, supported controls in Navigator 10/Pro `web_only` mode |
-| **Documentation version** | `0.27.0-b3` source tree; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
+| **Documentation version** | `0.27.0-b4` source tree; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
 | **Supported/tested HA baseline** | 2026.11.0 |
 | **Python** | 3.14+ (managed by Home Assistant) |
 | **Connection library** | modbus-connection>=4.12.7 |
@@ -61,7 +61,7 @@ The current feature overview includes:
 | Setup network scan | Find Modbus TCP endpoints in a selected IPv4 subnet and use a discovered address; manual entry remains available |
 | Voluntary plant reports | Separate opt-in for daily plant reports; [Telemetry and privacy](Telemetry) explains data scope, storage and deletion |
 | Independent firmware query | Compare installed firmware with community observations; separately enabled, without automatic installation or guaranteed availability |
-| PV zero-power workaround | Optionally forward valid 0 W as 10 W when the Navigator otherwise reports message 20300; controller PV displays and statistics may be affected |
+| PV zero-power workaround | Optionally forward valid production below the 5 W register resolution as an alternating 10/20 W heartbeat when the Navigator otherwise reports message 20300; controller PV displays and statistics may be affected |
 | Additional UI languages | Setup, options, actions, repairs and errors in Spanish, Italian, Romanian, Czech and Polish; entity names remain German/English |
 | Installer checklist | [Printable preparation](Installer-Checklist) covering Modbus TCP, networking, GLT/PV and web access |
 

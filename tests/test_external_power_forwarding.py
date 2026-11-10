@@ -63,26 +63,55 @@ def test_power_conversion(value: object, unit: str | None, expected: float | Non
         (1500, "W", 1.5),
         (1, "W", 0.001),
         (-1, "W", -0.001),
+        # Dusk sources observed on 2026-11-10 writing a real 0.0 kW while the
+        # workaround only matched exactly 0.0: anything below the 10 W register
+        # resolution, positive or negative, must be substituted as well.
+        (0.7, "W", 0.0007),
+        (2.5, "W", 0.0025),
+        (3.1, "W", 0.0031),
+        # 5 W and above round to a nonzero register value and pass through.
+        (7.2, "W", 0.0072),
         ("unavailable", "W", None),
         ("unknown", "W", None),
         ("nan", "W", None),
         (0, "kWh", None),
     ],
 )
-async def test_pv_zero_workaround_only_replaces_valid_exact_zero(
+async def test_pv_zero_workaround_replaces_valid_zero_resolution_production(
     enabled: bool, value: object, unit: str, expected: float | None
 ) -> None:
     forwarder, coordinator = _forwarder(
         {"sensor.pv": _state(value, unit)}, {"pv_production": "sensor.pv"}, pv_zero_workaround=enabled
     )
-    assert forwarder._value("pv_production", _state(value, unit)) == (0.01 if enabled and expected == 0.0 else expected)
+    substituted = expected is not None and round(expected, 2) == 0
+    substituted = expected is not None and round(expected, 2) == 0
+    substitute_values = (module._PV_ZERO_SUBSTITUTE_KW_LOW, module._PV_ZERO_SUBSTITUTE_KW_HIGH)
+    written_value = forwarder._value("pv_production", _state(value, unit))
+    if enabled and substituted:
+        assert written_value in substitute_values
+    else:
+        assert written_value == expected
     await forwarder.async_forward()
     if expected is None:
         coordinator.async_write_register.assert_not_awaited()
     else:
         assert coordinator.async_write_register.await_args.args[1] == (
-            0.01 if enabled and expected == 0.0 else round(expected, 2)
+            written_value if enabled and substituted else round(expected, 2)
         )
+
+
+@pytest.mark.parametrize(
+    ("now", "expected"),
+    [
+        (0.0, module._PV_ZERO_SUBSTITUTE_KW_LOW),
+        (59.9, module._PV_ZERO_SUBSTITUTE_KW_LOW),
+        (60.0, module._PV_ZERO_SUBSTITUTE_KW_HIGH),
+        (120.0, module._PV_ZERO_SUBSTITUTE_KW_LOW),
+        (180.0, module._PV_ZERO_SUBSTITUTE_KW_HIGH),
+    ],
+)
+def test_pv_zero_substitute_alternates_so_the_register_never_freezes(now: float, expected: float) -> None:
+    assert module._pv_zero_substitute_kw(now) == expected
 
 
 async def test_pv_zero_workaround_preserves_sources_surplus_and_derived_balance() -> None:
@@ -92,7 +121,9 @@ async def test_pv_zero_workaround_preserves_sources_surplus_and_derived_balance(
     )
     await forwarder.async_forward()
     written = {call.args[0].name: call.args[1] for call in coordinator.async_write_register.await_args_list}
-    assert written == {"pv_production": 0.01, "pv_surplus": -1.0, "house_consumption": 1.0}
+    assert written["pv_production"] in (module._PV_ZERO_SUBSTITUTE_KW_LOW, module._PV_ZERO_SUBSTITUTE_KW_HIGH)
+    assert written["pv_surplus"] == -1.0
+    assert written["house_consumption"] == 1.0
     assert states["sensor.pv"].state == 0
     assert forwarder._value("pv_surplus", _state(0)) == 0
     states["sensor.pv"] = _state(2500, "W")

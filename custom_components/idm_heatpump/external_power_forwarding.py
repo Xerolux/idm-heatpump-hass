@@ -5,9 +5,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final
 
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, PERCENTAGE
 from homeassistant.core import HomeAssistant, callback
@@ -21,6 +22,29 @@ from .coordinator import IdmCoordinator
 from .error_messages import classify_write_error, friendly_write_error, write_error_detail
 
 _LOGGER = logging.getLogger(__name__)
+#: Substitute transmitted for a valid PV production that quantizes to the
+#: register's zero resolution when the zero-power workaround is enabled.
+#: The Navigator's 20300 "PV not connected" assessment tracks whether the
+#: forwarded value CHANGES: a frozen register latches the message after about
+#: ten minutes regardless of its level (10 W and 50 W alike), while any value
+#: change — up or down — clears it within seconds (verified 2026-11-10 on
+#: firmware T_NAV10_20.24-1580-g02a20b66f). A constant substitute therefore
+#: re-trips the message; the workaround alternates between 10 W and 20 W
+#: every minute so the input never freezes long enough to latch. The longest
+#: verified frozen stretch without a latch is 127 seconds; a one-minute
+#: alternation keeps a comfortable margin below it.
+_PV_ZERO_SUBSTITUTE_KW_LOW: Final = 0.01
+_PV_ZERO_SUBSTITUTE_KW_HIGH: Final = 0.02
+_PV_ZERO_SUBSTITUTE_PERIOD_SECONDS: Final = 60.0
+
+
+def _pv_zero_substitute_kw(now: float) -> float:
+    """Return the alternating substitute for a zero-resolution production."""
+    if int(now // _PV_ZERO_SUBSTITUTE_PERIOD_SECONDS) % 2 == 0:
+        return _PV_ZERO_SUBSTITUTE_KW_LOW
+    return _PV_ZERO_SUBSTITUTE_KW_HIGH
+
+
 _POWER_UNITS = frozenset({"W", "kW", "MW"})
 _POWER_NAMES = frozenset(name for name in EXTERNAL_POWER_MEASUREMENT_NAMES if name != "battery_soc")
 
@@ -193,11 +217,21 @@ class ExternalPowerForwarder:
         value = _power_kw(state.state, _unit(state))
         if value is None:
             return None
-        if name == "pv_production" and value == 0.0 and self._config.pv_zero_workaround:
+        if name == "pv_production" and self._config.pv_zero_workaround and round(value, 2) == 0:
             # Some Navigator controllers report 20300 despite successful zero
-            # writes. Substitute only a valid zero production input; derived
-            # balances and surplus still use the original measured source.
-            return 0.01
+            # writes, and they latch it again after roughly ten minutes of an
+            # UNCHANGED register value whatever its level is. Substitute a
+            # valid production input that quantizes to the register's 10 W
+            # resolution — the write path rounds to two decimals below, so a
+            # source wiggling through +1..+4 W at dusk or a small negative
+            # inverter standby value would otherwise be sent as a real 0 W
+            # (observed 2026-11-10: 0.7/2.5/3.1 W sources produced register
+            # writes of 0.0 kW). The substitute alternates between 10 W and
+            # 20 W every minute so the value keeps changing; derived
+            # balances and surplus still use the original measured source,
+            # and readings of 5 W and above round to a nonzero value and pass
+            # through unchanged.
+            return _pv_zero_substitute_kw(time.monotonic())
         if name == "battery_discharge" and self._config.battery_sign == "invert":
             value = -value
         return value

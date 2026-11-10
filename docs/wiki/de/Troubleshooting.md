@@ -213,7 +213,7 @@ Ein gültiger **0-W-Wert** und eine **nicht verfügbare** Quelle sind verschiede
 
 | Beobachtung | Bedeutung und nächster Schritt |
 |---|---|
-| Quelle liefert gültige 0 W; wiederholte Schreibvorgänge gelingen, aber 20300 kommt wieder | Der Regler könnte Nullleistung als fehlende Verbindung bewerten. Prüfe den standardmäßig ausgeschalteten [10-W-Workaround](Configuration#optionaler-workaround-fur-pv-meldung-20300-bei-nullleistung). |
+| Quelle liefert gültige 0 W; wiederholte Schreibvorgänge gelingen, aber 20300 kommt wieder | Der Regler könnte (nahezu) Nullleistung als fehlende Verbindung bewerten. Prüfe den standardmäßig ausgeschalteten [PV-Nullleistungs-Workaround](Configuration#optionaler-workaround-fur-pv-meldung-20300-bei-nullleistung). |
 | Quelle ist nicht verfügbar, unbekannt oder ungültig | Die Weiterleitung überspringt sie. Stelle die Verbindung zur Quelle wieder her; der Workaround erfindet keinen Messwert. Prüfe nach einem HA-Neustart auch die Quellen schlafender Wechselrichter. |
 | Eine Number-Entität zeigt den angeforderten Wert | Das kann eine optimistische HA-Aktualisierung sein und beweist allein weder Zustellung noch dauerhafte Speicherung im Regler. |
 | Im Debug-Protokoll steht wiederholt `Forwarded external power pv_production = 0.0` | Jede Zeile folgt einem erfolgreich abgeschlossenen Schreibaufruf des Koordinators. Notiere die Zeitpunkte; ein unveränderter Quellzeitstempel beweist keinen Stillstand der Auffrischung. |
@@ -238,13 +238,63 @@ wurde die echte Quelle wiederhergestellt. Die normale Weiterleitung rundet kW
 auf zwei Nachkommastellen; kleinere Wattwerte eignen sich hier nicht als
 zuverlässig von null verschiedener Ersatzwert.
 
-Der optionale Workaround verändert ausschließlich gültige, exakt null betragende
-**PV-Produktion** bei der Übertragung. Fehlende Werte und Quellsensoren werden
-nicht ersetzt, kein Überschuss erzeugt und die Hausverbrauchsberechnung bleibt
-unverändert. PV-Statistiken des Reglers können die künstlichen 10 W trotzdem
-enthalten. Positive Messwerte werden wieder normal live übertragen. Das klärt
-weder den separaten Batterie-/Anzeigebericht #493 noch die genaue Firmwarelogik
-oder Langzeitstabilität. [Feldnachweise](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.6.md).
+**Eine kontrollierte Versuchsreihe vom 10.11.2026 (gleiche Anlage, gleiche
+Firmware)** klärte den tatsächlichen Mechanismus — es ist ein
+**Eingefroren-Erkennung, kein Watt-Schwellwert**:
+
+- **Ein statisches Register latched die Meldung nach rund zehn Minuten,
+  egal welcher Pegel.** Statisch 0,01 kW latched um 15:18 nach 10:28;
+  statisch 0,02 kW um 20:15:03 nach 10:27; statisch 0,05 kW um 20:02:51 nach
+  9:39; das vor-workaround-statische 0,00 kW jede Nacht durchgehend. 10 W
+  oder 50 W machen keinen Unterschied — nur die *Änderung* zählt.
+- **Jede Registeränderung löscht die Meldung in Sekunden.** Ein Anstieg
+  0,01 → 0,05 kW löschte sie nach 37 s (19:52:35 → 19:53:12); ein
+  **Abfall** 0,05 → 0,01 kW nach 38 s (20:03:14 → 20:03:52); ein Abfall
+  0,02 → 0,01 kW nach 19 s (20:15:15 → 20:15:34). Hoch oder runter, 10 W
+  oder 50 W — Richtung und Pegel sind irrelevant. Die beobachtete Verzögerung
+  ist im Wesentlichen das 30-Sekunden-Web-Poll-Intervall.
+- Das erklärt die Beobachtung vom 07.11.: Dass „10 W sie nach 20 Sekunden
+  löschten", war die **Änderung** von 0 auf 0,01 kW — und ihr späteres
+  Wiederkommen das Wiedereinfrieren der Konstante. Eine konstante
+  Ersatzleistung beliebiger Größe hält die Meldung nicht fern.
+- **Das Register kann Werte unter 5 W nicht darstellen.** Es quantisiert auf
+  die 10-W-Auflösung; eine 1-W-Quelle wird also exakt wie 0 W oder 2 W als
+  0,00 kW geschrieben — live verifiziert: 1-W- und 2-W-Quellen ließen das
+  Register jeweils exakt bei 0,00 kW, und ein 1↔2-W-Wechsel erzeugt
+  *keine* für den Regler sichtbare Registeränderung. In der Dämmerung
+  durchlief die gemappte Quelle 0,7–7,2 W; die Werte unter 5 W wurden als
+  echte 0 W geschrieben, obwohl der Workaround aktiv war (er griff damals nur
+  bei exakt null). Seit 0.27.0 wird jede gültige Produktion ersetzt, die zu
+  null rundet.
+- **Statische Null verhält sich anders als ein eingefrorener positiver
+  Wert.** In der Versuchsreihe blieb ein statisches 0,00-kW-Register zwölf
+  Minuten lang ohne Meldung, während jeder statische positive Wert innerhalb
+  von rund zehn Minuten latchte — aber Nächte ganz ohne Workaround zeigen,
+  dass ein dauerhaftes 0,00 kW die Meldung 20300 irgendwann doch auslöst.
+  Der Herzschlag meidet beide Regime.
+- **Ein alternierender Wert hält die Meldung fern.** Ein Wechsel von 10 ↔ 20 W
+  mit einer Änderung mindestens alle ~80–127 Sekunden hielt die Meldung über
+  die gesamte verifizierte Spanne von 11½ Minuten fern — deutlich über dem
+  ~zehnminütigen Latch-Timer. Die längste ohne Latch verifizierte eingefrorene
+  Spanne beträgt 127 Sekunden; die Minuten-Alternierung des Workarounds hat
+  damit bequeme Reserve.
+- Separat erschien an beiden Morgen um den Sonnenaufgang **20303:
+  N2_SMARTMETER_NOTCONNECTED** und verschwand mit echter Produktion; das ist
+  eine reglerseitige Zählererkennung, die das GLT-Register nicht adressiert.
+
+Der Workaround überträgt daher für gültige Null-Auflösungs-Produktion einen
+**alternierenden 10/20-W-Herzschlag** statt einer Konstante. Das klärt weder
+den separaten Batterie-/Anzeigebericht #493 noch die genaue Firmwarelogik oder
+das Verhalten anderer Firmware-Versionen und Reglergenerationen.
+[Feldnachweise](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.6.md).
+
+Der optionale Workaround verändert ausschließlich gültige PV-Produktion, die
+auf die Nullauflösung des Registers rundet (unter 5 W, positiv oder negativ),
+bei der Übertragung. Fehlende Werte und Quellsensoren werden nicht ersetzt,
+kein Überschuss erzeugt und die Hausverbrauchsberechnung bleibt unverändert.
+PV-Statistiken des Reglers können den künstlichen Herzschlag trotzdem
+enthalten. Ab 5 W aufwärts werden positive Messwerte wieder normal live
+übertragen.
 
 ### Bedienelemente oder Aktoren scheinen zu fehlen
 
@@ -473,7 +523,7 @@ Bei manchen Reglern trat „Photovoltaik nicht verbunden“ trotz erfolgreich
 wiederholter Nullwertübertragung auf. Prüfe zuerst Quelle, GLT-Freigabe und
 Weiterleitung. Ein erfolgreich abgeschlossener Schreibaufruf belegt noch
 nicht, wie die Firmware den PV-Verbindungszustand bewertet. Der optionale
-[10-W-Workaround](Configuration#optionaler-workaround-fur-pv-meldung-20300-bei-nullleistung)
+[PV-Nullleistungs-Workaround](Configuration#optionaler-workaround-fur-pv-meldung-20300-bei-nullleistung)
 ist standardmäßig aus; er beeinflusst die Regleranzeige und gegebenenfalls
 Statistiken. Er ersetzt keine Reparatur einer unterbrochenen Verbindung.
 
