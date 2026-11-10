@@ -94,6 +94,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── advisor_engine.py             # Producer orchestration: anomalies, heating curve, DHW window, 24 h plan
 │   ├── advisor_inputs.py             # Shared unit-aware input normalization for advisor models and quality
 │   ├── advisor_evidence.py           # Shared history, period changes and observed optimization review
+│   ├── advisor_titles.py             # Localized recommendation titles (stable keys, DE/EN rendering)
 │   ├── cop_plausibility.py           # Shared COP-sample plausibility guard for the advisor and AI learner (#610)
 │   ├── advisor_operation_reason.py   # Composes the why-is-the-heat-pump-running explanation
 │   ├── whats_new.py                  # One-time release notice in Home Assistant Repairs
@@ -191,6 +192,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_operation_analysis.py
 │   ├── test_operation_entities.py
 │   ├── test_advisor_analytics.py
+   ├── test_advisor_titles.py
 │   ├── test_advisor_engine.py
 │   ├── test_advisor_operation_reason.py
 │   ├── test_predictive_advisor.py

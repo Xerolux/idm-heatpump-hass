@@ -71,6 +71,12 @@ There is no Recorder backfill, and existing AI report history remains separate.
 - Recommendation attributes include localized observations, supporting reasons,
   current/suggested values, confidence interpretation, missing evidence and a
   first check. Confidence is not a probability that the plant has a defect.
+- Since 0.27.0-b1 the recommendation **titles are localized too**: the sensor
+  attributes and local Assist render them in German or English following the
+  Home Assistant language, with German decimal commas. The `title` field itself
+  stays the documented English data field — events, stored records and
+  diagnostics remain language-independent, and recommendations persisted before
+  the update keep working and render their stored title.
 - Regenerate the plant dashboard to add the available **Advisor** view and
   explanation cards. Existing dashboards are not modified automatically.
 

@@ -265,7 +265,7 @@ class IdmHeatpumpConversationEntity(IdmCoordinatorEntityBase, ConversationEntity
                 if callable(getattr(record, "summary", None))
                 else {}
             )
-            title = str(summary.get("title") or getattr(record, "title", ""))
+            title = str(summary.get("title_localized") or summary.get("title") or getattr(record, "title", ""))
             if title:
                 explanation = summary.get("explanation", {})
                 if isinstance(explanation, dict) and explanation:

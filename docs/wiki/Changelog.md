@@ -7,7 +7,7 @@ This page only summarizes recent milestones.
 
 ## v0.27.0-b1 — 2026-11-10
 
-The 0.27 *measurability* line begins: the Modbus transport boundary now times every physical request passively — reads, writes, coils, including bisect re-reads — in a bounded 100-request window. With *Communication diagnostics* enabled, the new *Modbus request duration (window)* sensor publishes the median plus outcome classes and per-function-code statistics, and the diagnostics export carries the same snapshot. The scan-interval repair gains a *Fix it* flow with a measured interval suggestion. [Per-request metrics](Troubleshooting#per-request-metrics), [scan interval](Troubleshooting#idm-polling-barely-fits-into-the-scan-interval).
+The 0.27 *measurability* line begins: the Modbus transport boundary now times every physical request passively — reads, writes, coils, including bisect re-reads — in a bounded 100-request window. With *Communication diagnostics* enabled, the new *Modbus request duration (window)* sensor publishes the median plus outcome classes and per-function-code statistics, and the diagnostics export carries the same snapshot. The scan-interval repair gains a *Fix it* flow with a measured interval suggestion, and advisor recommendation titles render in German or English. [Per-request metrics](Troubleshooting#per-request-metrics), [scan interval](Troubleshooting#idm-polling-barely-fits-into-the-scan-interval), [Predictive Advisor](Predictive-Advisor).
 
 ## v0.26.13 — 2026-11-09
 
