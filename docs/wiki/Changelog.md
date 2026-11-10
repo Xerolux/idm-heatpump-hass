@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.27.0-b4 — 2026-11-10
+
+The PV zero-power workaround is rebuilt around the mechanism a live series on a Navigator 10 established: the controller flags a *frozen* pv_production register — any constant substitute re-trips message 20300 after about ten minutes, while any value change clears it in seconds. There is no wattage threshold. The workaround now alternates 10 W and 20 W every minute, and dusk production below the 5 W register resolution (which was written as a real 0 W before) is also replaced. [PV message 20300](Troubleshooting#pv-not-connected-message-20300-at-zero-production).
+
 ## v0.27.0-b3 — 2026-11-10
 
 Firmware orientation survives a restart: *Latest reported firmware* keeps its last server answer instead of going blank — it is stored locally and restored at startup, with the original comparison time until the next check. The *newer firmware observed* repairs notice keeps its acknowledged or dismissed state across restarts, the first check after a restart runs within 15 minutes, and withdrawing the consent clears notice and stored answer. [Firmware orientation](Telemetry#firmware-orientation).

@@ -245,7 +245,7 @@ pump writes are not enabled.
 ## SolarEdge battery and multiple inverters over GLT
 
 If the Navigator reports **20300: PV not connected** at valid zero production,
-see the optional [10 W zero-power workaround](Configuration#optional-workaround-for-pv-message-20300-at-zero-production).
+see the optional [PV zero-power workaround](Configuration#optional-workaround-for-pv-message-20300-at-zero-production).
 It is disabled by default and does not replace unavailable sources.
 
 Use this recipe when HA reads several SolarEdge inverters and the battery, while

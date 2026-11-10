@@ -203,7 +203,7 @@ A valid **0 W** reading and an **unavailable** source are different cases:
 
 | Observation | Meaning and next step |
 |---|---|
-| Source reports valid 0 W; repeated writes succeed, but 20300 recurs | The controller may assess zero production as disconnected. Consider the default-off [10 W workaround](Configuration#optional-workaround-for-pv-message-20300-at-zero-production). |
+| Source reports valid 0 W; repeated writes succeed, but 20300 recurs | The controller may assess (near-)zero production as disconnected. Consider the default-off [PV zero-power workaround](Configuration#optional-workaround-for-pv-message-20300-at-zero-production). |
 | Source is unavailable, unknown or invalid | Forwarding skips it. Restore the inverter/source connection; the workaround does not invent a measurement. Recheck sources after an HA restart, including sleeping inverters. |
 | A number entity shows the requested value | This can be an optimistic HA update; it alone does not prove delivery or continuous controller retention. |
 | Debug log records `Forwarded external power pv_production = 0.0` repeatedly | Each line follows a successfully completed coordinator write. Record timestamps; an unchanged source timestamp is not proof that refresh stopped. |
@@ -226,13 +226,61 @@ sustained test. The controlled test restored the true source afterward.
 The normal forwarder rounds kW to two decimals; smaller watt values are not a
 reliable nonzero workaround on this path.
 
-The optional workaround changes only valid, exactly zero **PV production** on
-transmission. It does not replace missing readings, alter the source sensor,
-create PV surplus, or change derived household consumption. Controller-side
-PV statistics can still include the artificial 10 W. Positive readings resume
-normal live forwarding. This finding does not resolve the separate #493
-battery/display-retention report, establish the exact firmware algorithm or
-prove long-term reliability. [Field evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.6.md).
+**A controlled series on 2026-11-10 (same plant and firmware)** established
+the actual mechanism — it is a **frozen-input detector, not a wattage
+threshold**:
+
+- **A static register latches the message after about ten minutes, whatever
+  its level.** Static 0.01 kW latched at 15:18 after 10:28; static 0.02 kW
+  latched at 20:15:03 after 10:27; static 0.05 kW latched at 20:02:51 after
+  9:39; the pre-workaround static 0.00 kW latched every night all night. Ten
+  W or 50 W makes no difference — only *change* does.
+- **Any register change clears the message within seconds.** A rise
+  0.01 → 0.05 kW cleared it 37 s later (19:52:35 → 19:53:12); a **drop**
+  0.05 → 0.01 kW cleared it 38 s later (20:03:14 → 20:03:52); a drop
+  0.02 → 0.01 kW cleared it 19 s later (20:15:15 → 20:15:34). Up or down,
+  10 W or 50 W — the direction and the level are irrelevant. The observed
+  lag is dominated by the 30-second web poll interval.
+- This explains the 2026-11-07 observation: that "10 W cleared it after
+  20 seconds" was the **change** from 0 to 0.01 kW clearing it, and the
+  message returning later was the frozen constant re-latching. A constant
+  substitute of any size cannot keep the message away.
+- **The register cannot represent values below 5 W.** It quantizes to the
+  10 W resolution, so a 1 W source is written as 0.00 kW exactly like 0 W
+  or 2 W — verified live: 1 W and 2 W sources each left the forwarded
+  register at exactly 0.00 kW, and a 1↔2 W alternation produces *no*
+  register change the controller could see. During dusk the mapped source
+  passed through 0.7–7.2 W; the values below 5 W were written as a real
+  0 W although the workaround was active (it then only matched an exactly
+  zero source). Since 0.27.0 every valid production that rounds to zero is
+  substituted.
+- **Static zero behaves differently from a frozen positive value.** In the
+  controlled series a static 0.00 kW register stayed clear for twelve
+  minutes, while every static positive value latched within about ten
+  minutes — but nights without any workaround show that a permanent
+  0.00 kW does latch 20300 eventually. The heartbeat avoids both regimes.
+- **An alternating value keeps the message away.** Alternating 10 ↔ 20 W
+  with a change at least every ~80–127 seconds kept the message clear for
+  the whole verified 11½-minute window, well past the ~ten-minute latch
+  timer. The longest verified frozen stretch *without* a latch is 127
+  seconds, so the workaround's one-minute alternation has a comfortable
+  margin.
+- Separately, **20303: N2_SMARTMETER_NOTCONNECTED** appeared around sunrise on
+  both days and cleared with real production; it is a controller-side meter
+  detection, not addressed by the GLT register.
+
+The workaround therefore transmits an **alternating 10 W / 20 W heartbeat**
+for valid zero-resolution production instead of a constant. This finding does
+not resolve the separate #493 battery/display-retention report, establish the
+exact firmware algorithm, or prove behavior on other firmware or controller
+generations. [Field evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.26.6.md).
+
+The optional workaround changes only valid PV production that rounds to the
+register's zero resolution (below 5 W, positive or negative) on transmission.
+It does not replace missing readings, alter the source sensor, create PV
+surplus, or change derived household consumption. Controller-side PV
+statistics can still include the artificial heartbeat. Positive readings from
+5 W up resume normal live forwarding.
 
 ### Controls or actuators appear to be missing
 
@@ -455,7 +503,7 @@ remains the manual shortcut — same effect, immediately.
 Some controllers reported "PV not connected" despite repeated successful zero
 writes. First check the source, GLT activation and forwarding. A completed
 write does not establish how firmware assesses the PV connection. The optional
-[10 W workaround](Configuration#optional-workaround-for-pv-message-20300-at-zero-production)
+[PV zero-power workaround](Configuration#optional-workaround-for-pv-message-20300-at-zero-production)
 is off by default and can affect controller displays and statistics. It does
 not repair a disconnected transport.
 

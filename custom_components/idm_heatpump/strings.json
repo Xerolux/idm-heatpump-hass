@@ -475,7 +475,7 @@
           "external_power_forwarding_grid_power": "Bidirectional grid power sensor",
           "external_power_battery_sign": "Battery sign convention",
           "external_power_grid_sign": "Grid meter sign convention",
-          "external_power_pv_zero_workaround": "PV zero-power workaround (10 W)"
+          "external_power_pv_zero_workaround": "PV zero-power workaround"
         },
         "data_description": {
           "external_power_forwarding_pv_surplus": "W or kW; written to IDM pv_surplus (registers 74–75).",
@@ -487,7 +487,7 @@
           "external_power_forwarding_grid_power": "W or kW from a bidirectional grid-connection meter. The integration normalizes the sign and derives pv_surplus (registers 74–75); together with the PV production sensor it also derives house_consumption (registers 82–83), including mapped battery flow. Explicit surplus and house-consumption sensors take precedence.",
           "external_power_battery_sign": "As-is means the source already uses the IDM convention. Invert changes the battery value's sign.",
           "external_power_grid_sign": "Positive = grid import (negative = export) or positive = export (negative = grid import). The derived pv_surplus always reports positive for export/surplus and negative for grid import.",
-          "external_power_pv_zero_workaround": "Off by default. Only valid 0 W PV production is sent to IDM as 10 W (0.01 kW) to avoid message 20300 on affected controllers. Positive live values are unchanged; unavailable sources are skipped. PV surplus and the HA source sensor remain unchanged. IDM sees artificial PV production at night."
+          "external_power_pv_zero_workaround": "Off by default. Valid PV production that rounds to the register's zero resolution (below 5 W) is sent to IDM as an alternating 10/20 W heartbeat whose value changes every minute. The Navigator latches message 20300 when the register stays unchanged for about ten minutes whatever its level, and any change clears it — a constant substitute cannot help. Live values of 5 W and up are unchanged; unavailable sources are skipped. PV surplus and the HA source sensor remain unchanged. IDM sees artificial production at night (average 15 W)."
         }
       },
       "feature_notice": {
@@ -1272,7 +1272,7 @@
           "external_power_forwarding_grid_power": "Bidirectional grid power sensor",
           "external_power_battery_sign": "Battery sign convention",
           "external_power_grid_sign": "Grid meter sign convention",
-          "external_power_pv_zero_workaround": "PV zero-power workaround (10 W)"
+          "external_power_pv_zero_workaround": "PV zero-power workaround"
         },
         "data_description": {
           "external_power_forwarding_pv_surplus": "W or kW; written to IDM pv_surplus (registers 74–75).",
@@ -1284,7 +1284,7 @@
           "external_power_forwarding_grid_power": "W or kW from a bidirectional grid-connection meter. The integration normalizes the sign and derives pv_surplus (registers 74–75); together with the PV production sensor it also derives house_consumption (registers 82–83), including mapped battery flow. Explicit surplus and house-consumption sensors take precedence.",
           "external_power_battery_sign": "As-is means the source already uses the IDM convention. Invert changes the battery value's sign.",
           "external_power_grid_sign": "Positive = grid import (negative = export) or positive = export (negative = grid import). The derived pv_surplus always reports positive for export/surplus and negative for grid import.",
-          "external_power_pv_zero_workaround": "Off by default. Only valid 0 W PV production is sent to IDM as 10 W (0.01 kW) to avoid message 20300 on affected controllers. Positive live values are unchanged; unavailable sources are skipped. PV surplus and the HA source sensor remain unchanged. IDM sees artificial PV production at night."
+          "external_power_pv_zero_workaround": "Off by default. Valid PV production that rounds to the register's zero resolution (below 5 W) is sent to IDM as an alternating 10/20 W heartbeat whose value changes every minute. The Navigator latches message 20300 when the register stays unchanged for about ten minutes whatever its level, and any change clears it — a constant substitute cannot help. Live values of 5 W and up are unchanged; unavailable sources are skipped. PV surplus and the HA source sensor remain unchanged. IDM sees artificial production at night (average 15 W)."
         }
       },
       "feature_notice": {

@@ -175,30 +175,38 @@ Für einen SolarEdge-Wechselrichter mit Batterie und weitere Wechselrichter sieh
 
 Einige Navigator-Regler melden nachts oder bei wenig Licht **20300:
 Photovoltaik nicht verbunden**, obwohl gültige Nullwerte wiederholt erfolgreich
-über GLT geschrieben werden. Bei einem Navigator 10 mit Firmware
-`T_NAV10_20.24-1580-g02a20b66f` verschwand die Meldung im Live-Test ohne
-Quittierung etwa 20 Sekunden nach Übertragung von 0,01 kW statt 0 kW. Das deutet
-auf die Verbindungsbewertung des Reglers bei Nullleistung hin. Die genaue
-Firmwarelogik und Übertragbarkeit auf andere Anlagen sind nicht geklärt;
-nicht jede Meldung 20300 muss diese Ursache haben.
+über GLT geschrieben werden. Eine kontrollierte Versuchsreihe vom 10.11.2026 an
+einem Navigator 10 mit Firmware `T_NAV10_20.24-1580-g02a20b66f` hat den
+Mechanismus geklärt: Der Regler bemängelt einen **eingefrorenen**
+pv_production-Wert — nach rund zehn Minuten ohne Register*änderung* erscheint
+Meldung 20300, unabhängig vom Pegel (statisch 10 W, 20 W und 50 W latchten
+alle), während **jede Wertänderung — hoch oder runter, 10 W oder 50 W — sie
+in Sekunden löscht**. Es gibt keinen Watt-Schwellwert; eine konstante
+Ersatzleistung beliebiger Größe hält die Meldung daher nicht fern.
 
 Öffne bei einer betroffenen Anlage **Einstellungen → Geräte & Dienste → IDM
 Heatpump → Konfigurieren** oder **Neu konfigurieren → Funktionen**. Aktiviere
 in den geführten Funktionseinstellungen die externe Leistungsweiterleitung
-und öffne deren Sensorzuordnung. Schalte **PV-Nullleistungs-Workaround (10 W)**
-ein und speichere die restlichen Schritte des Assistenten. Das gleiche Feld
-ist bei der Ersteinrichtung vorhanden. Es ist **standardmäßig ausgeschaltet**.
+und öffne deren Sensorzuordnung. Schalte **PV-Nullleistungs-Workaround** ein
+und speichere die restlichen Schritte des Assistenten. Das gleiche Feld ist
+bei der Ersteinrichtung vorhanden. Es ist **standardmäßig ausgeschaltet**.
 
-Nur eine gültige PV-Produktion von exakt 0 wird als **10 W (0,01 kW)** an die
-iDM übertragen. Sobald wieder positive Leistung vorliegt, werden die Live-Werte
-mit der üblichen GLT-Rundung übertragen. Nicht verfügbare, ungültige oder nicht
-zugeordnete Quellen werden nicht ersetzt. PV-Überschuss, Batteriewerte,
-Hausverbrauchsberechnung und der ursprüngliche HA-Quellsensor bleiben
-unverändert; es wird kein künstliches Überschusssignal erzeugt. Die Steuerung
-und ihre daraus abgeleiteten PV-Anzeigen oder Statistiken können allerdings
-eine künstliche Produktion sehen. Verdeck damit keine echten
-Kommunikationsausfälle. Ausschalten stellt die normale Nullwertübertragung
-wieder her; die Controller-Firmware wird nicht verändert.
+Ist der Workaround aktiv, wird eine gültige PV-Produktionsquelle, die auf die
+10-W-Auflösung des Registers rundet — alles unter 5 W, positiv wie ein
+Dämmerungswert von 3 W oder negativ wie ein kleiner Standby-Wert des
+Wechselrichters —, als **alternierender 10/20-W-Herzschlag** übertragen: Der
+Ersatzwert wechselt jede Minute, damit das Register nie lange genug einfriert,
+um die Meldung auszulösen (die längste ohne Latch verifizierte eingefrorene
+Spanne beträgt 127 Sekunden). Sobald die Quelle 5 W oder mehr meldet, werden
+wieder die Live-Werte mit der üblichen GLT-Rundung übertragen. Nicht
+verfügbare, ungültige oder nicht zugeordnete Quellen werden nicht ersetzt.
+PV-Überschuss, Batteriewerte, Hausverbrauchsberechnung und der ursprüngliche
+HA-Quellsensor bleiben unverändert; der Herzschlag erzeugt kein künstliches
+Überschusssignal. Die Steuerung und ihre PV-Anzeigen beziehungsweise
+Statistiken sehen nachts eine künstliche Produktion von im Mittel 15 W.
+Verdeck damit keine echten Kommunikationsausfälle. Ausschalten stellt die
+normale Nullwertübertragung wieder her; die Controller-Firmware wird nicht
+verändert.
 
 ### Optionaler PV-Energiemanager
 

@@ -475,7 +475,7 @@
           "external_power_forwarding_grid_power": "Bidirektionaler Netzleistungssensor",
           "external_power_battery_sign": "Vorzeichen der Batterieleistung",
           "external_power_grid_sign": "Vorzeichenkonvention des Netzleistungssensors",
-          "external_power_pv_zero_workaround": "PV-Nullleistungs-Workaround (10 W)"
+          "external_power_pv_zero_workaround": "PV-Nullleistungs-Workaround"
         },
         "data_description": {
           "external_power_forwarding_pv_surplus": "W oder kW; wird in IDM pv_surplus (Register 74–75) geschrieben.",
@@ -487,7 +487,7 @@
           "external_power_forwarding_grid_power": "W oder kW eines bidirektionalen Netzleistungssensors am Netzverknüpfungspunkt. Die Integration normalisiert das Vorzeichen und leitet daraus pv_surplus (Register 74–75) ab; zusammen mit dem PV-Produktionssensor wird auch house_consumption (Register 82–83) abgeleitet, einschließlich einer gemappten Batterieleistung. Explizite Überschuss- und Verbrauchssensoren haben Vorrang.",
           "external_power_battery_sign": "Unverändert bedeutet IDM-Vorzeichen. Invertieren dreht das Vorzeichen der Batterieleistung um.",
           "external_power_grid_sign": "Positiv = Netzbezug (negativ = Einspeisung) oder positiv = Einspeisung (negativ = Netzbezug). Der abgeleitete pv_surplus meldet immer positiv für Überschuss/Einspeisung und negativ für Netzbezug.",
-          "external_power_pv_zero_workaround": "Standardmäßig aus. Nur bei gültigen 0 W PV-Produktion werden 10 W (0,01 kW) an die iDM gesendet, um Meldung 20300 bei betroffenen Reglern zu vermeiden. Positive Live-Werte bleiben unverändert; nicht verfügbare Quellen werden übersprungen. PV-Überschuss und HA-Quellsensor bleiben unverändert. Die iDM sieht nachts eine künstliche PV-Produktion."
+          "external_power_pv_zero_workaround": "Standardmäßig aus. Gültige PV-Produktion, die auf die Nullauflösung des Registers rundet (unter 5 W), wird als alternierender 10/20-W-Herzschlag übertragen, dessen Wert jede Minute wechselt. Der Navigator meldet 20300, wenn das Register rund zehn Minuten unverändert bleibt — unabhängig vom Pegel —, und jede Änderung löscht sie; eine konstante Ersatzleistung hilft daher nicht. Ab 5 W bleiben Live-Werte unverändert; nicht verfügbare Quellen werden übersprungen. PV-Überschuss und HA-Quellsensor bleiben unverändert. Die iDM sieht nachts eine künstliche Produktion (im Mittel 15 W)."
         }
       },
       "feature_notice": {
@@ -1272,7 +1272,7 @@
           "external_power_forwarding_grid_power": "Bidirektionaler Netzleistungssensor",
           "external_power_battery_sign": "Vorzeichen der Batterieleistung",
           "external_power_grid_sign": "Vorzeichenkonvention des Netzleistungssensors",
-          "external_power_pv_zero_workaround": "PV-Nullleistungs-Workaround (10 W)"
+          "external_power_pv_zero_workaround": "PV-Nullleistungs-Workaround"
         },
         "data_description": {
           "external_power_forwarding_pv_surplus": "W oder kW; wird in IDM pv_surplus (Register 74–75) geschrieben.",
@@ -1284,7 +1284,7 @@
           "external_power_forwarding_grid_power": "W oder kW eines bidirektionalen Netzleistungssensors am Netzverknüpfungspunkt. Die Integration normalisiert das Vorzeichen und leitet daraus pv_surplus (Register 74–75) ab; zusammen mit dem PV-Produktionssensor wird auch house_consumption (Register 82–83) abgeleitet, einschließlich einer gemappten Batterieleistung. Explizite Überschuss- und Verbrauchssensoren haben Vorrang.",
           "external_power_battery_sign": "Unverändert bedeutet IDM-Vorzeichen. Invertieren dreht das Vorzeichen der Batterieleistung um.",
           "external_power_grid_sign": "Positiv = Netzbezug (negativ = Einspeisung) oder positiv = Einspeisung (negativ = Netzbezug). Der abgeleitete pv_surplus meldet immer positiv für Überschuss/Einspeisung und negativ für Netzbezug.",
-          "external_power_pv_zero_workaround": "Standardmäßig aus. Nur bei gültigen 0 W PV-Produktion werden 10 W (0,01 kW) an die iDM gesendet, um Meldung 20300 bei betroffenen Reglern zu vermeiden. Positive Live-Werte bleiben unverändert; nicht verfügbare Quellen werden übersprungen. PV-Überschuss und HA-Quellsensor bleiben unverändert. Die iDM sieht nachts eine künstliche PV-Produktion."
+          "external_power_pv_zero_workaround": "Standardmäßig aus. Gültige PV-Produktion, die auf die Nullauflösung des Registers rundet (unter 5 W), wird als alternierender 10/20-W-Herzschlag übertragen, dessen Wert jede Minute wechselt. Der Navigator meldet 20300, wenn das Register rund zehn Minuten unverändert bleibt — unabhängig vom Pegel —, und jede Änderung löscht sie; eine konstante Ersatzleistung hilft daher nicht. Ab 5 W bleiben Live-Werte unverändert; nicht verfügbare Quellen werden übersprungen. PV-Überschuss und HA-Quellsensor bleiben unverändert. Die iDM sieht nachts eine künstliche Produktion (im Mittel 15 W)."
         }
       },
       "feature_notice": {

@@ -14,7 +14,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "660336ceeb3797dd089b066a32a77119f27ec914a1a1542753945a9aa241af2c"
+      "reviewed_source_sha256": "6d254be453a5d610c11e46797e2c1aa32e47b7c92380408b755b426e190132e2"
     },
     {
       "feature": "Model and register semantics",
@@ -126,7 +126,7 @@
         "Installation-and-Setup.md",
         "Smart-Energy-and-Comfort.md"
       ],
-      "reviewed_source_sha256": "772eae1c6721ed87b3862e89d54a3392aa9e00bf4870b244ccd2ff231b5a96ec"
+      "reviewed_source_sha256": "7079895799c99292f6062e2dc7e0c0da4aed564fd96b5e507718d3f59aa726d0"
     },
     {
       "feature": "Comfort and hot water automation",

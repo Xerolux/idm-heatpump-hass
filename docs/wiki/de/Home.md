@@ -23,7 +23,7 @@ Die **IDM-Heatpump-Home-Assistant-Integration** verbindet [Home Assistant](https
 |---------|---------|
 | **Protokoll** | Modbus TCP (Port 502, Slave-ID 1) |
 | **Optionales Supplement** | Lokale Navigator-Web-API; PIN für Web-Zugriff erforderlich, unterstützte Steuerungen im Navigator-10/Pro-Modus `web_only` |
-| **Dokumentationsversion** | Quellstand `0.27.0-b3`; [aktuellstes stabiles Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
+| **Dokumentationsversion** | Quellstand `0.27.0-b4`; [aktuellstes stabiles Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
 | **Unterstützte/getestete HA-Baseline** | 2026.11.0 |
 | **Python** | 3.14+ (von Home Assistant verwaltet) |
 | **Verbindungsbibliothek** | modbus-connection>=4.12.7 |
@@ -62,7 +62,7 @@ Die aktuelle Funktionsübersicht umfasst:
 | Netzwerksuche bei der Einrichtung | Modbus-TCP-Endpunkte im gewählten IPv4-Subnetz suchen und die gefundene Adresse übernehmen; manuelle Eingabe bleibt möglich |
 | Freiwillige Anlagenberichte | Separates Opt-in für tägliche Anlagenberichte; Datenumfang, Speicherung und Löschung erklärt [Telemetrie und Datenschutz](Telemetry) |
 | Unabhängige Firmware-Abfrage | Installierte und von der Community beobachtete Firmware vergleichen; separat aktivierbar, ohne automatische Installation oder Verfügbarkeitsgarantie |
-| PV-Nullwert-Workaround | Optional gültige 0 W als 10 W weiterleiten, wenn der Navigator sonst Meldung 20300 ausgibt; kann die PV-Anzeige und Statistik des Reglers beeinflussen |
+| PV-Nullwert-Workaround | Optional gültige Produktion unter der 5-W-Registerauflösung als alternierender 10/20-W-Herzschlag weiterleiten, wenn der Navigator sonst Meldung 20300 ausgibt; kann die PV-Anzeige und Statistik des Reglers beeinflussen |
 | Weitere UI-Sprachen | Einrichtung, Optionen, Aktionen, Reparaturen und Fehlertexte zusätzlich auf Spanisch, Italienisch, Rumänisch, Tschechisch und Polnisch; Entitätsnamen bleiben Deutsch/Englisch |
 | Installateur-Checkliste | [Druckbare Vorbereitung](Installer-Checklist) für Modbus TCP, Netzwerk, GLT/PV und Web-Zugang |
 

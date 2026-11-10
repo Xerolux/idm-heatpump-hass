@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.27.0-b4 — 2026-11-10
+
+Der PV-Nullleistungs-Workaround ist um den Mechanismus neu gebaut, den eine Live-Versuchsreihe an einem Navigator 10 klärte: Der Regler bemängelt ein *eingefrorenes* pv_production-Register — jede konstante Ersatzleistung löst Meldung 20300 nach rund zehn Minuten erneut aus, während jede Wertänderung sie in Sekunden löscht. Es gibt keinen Watt-Schwellwert. Der Workaround alterniert jetzt 10 W und 20 W pro Minute, und auch Dämmerungsproduktion unter der 5-W-Registerauflösung (zuvor als echte 0 W geschrieben) wird ersetzt. [PV-Meldung 20300](Troubleshooting#pv-nicht-verbunden-meldung-20300-bei-nullleistung).
+
 ## v0.27.0-b3 — 2026-11-10
 
 Die Firmware-Orientierung übersteht einen Neustart: *Neueste gemeldete Firmware* behält ihre letzte Server-Antwort, statt leer zu erscheinen — sie wird lokal gespeichert und beim Start wiederhergestellt, mit der ursprünglichen Vergleichszeit bis zum nächsten Check. Der *neuere Firmware gesichtet*-Hinweis behält Quittierung oder Wegklicken über Neustarts, der erste Check nach einem Neustart erfolgt innerhalb von 15 Minuten, und das Zurückziehen der Zustimmung löscht Hinweis und gespeicherte Antwort. [Firmware-Orientierung](Telemetry#firmware-orientierung).
