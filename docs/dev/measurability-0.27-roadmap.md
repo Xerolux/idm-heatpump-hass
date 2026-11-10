@@ -76,9 +76,11 @@ producers ship translation keys (spec §13); this closes that gap.
 
 ### WP4 — Accompanying, evidence-driven items (not version blockers)
 
-- `#493`: once IDM's written answer arrives (all five values per write?),
-  carry it into the forwarding documentation and the options-flow help texts;
-  clarify the "unknown vs. unavailable" presentation under HA 2026.11.
+- `#493`: **answered and shipped.** IDM support confirmed that when a battery
+  is used, register 84 (`battery_discharge`) must be written together with the
+  SoC — not "all five values at every write". The requirement is documented
+  across the wiki and both mirrors, the Findings register and the options-flow
+  help texts (0.27.0-b2); the issue is closed.
 - `#577`: parser work only on attributable evidence (private capture or the
   reporter's diagnostics), per the open-work-audit decision rule.
 - `#668`: close after the reporter confirms 0.26.7 on the reporting plant.

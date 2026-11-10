@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.27.0-b2 — 2026-11-10
+
+Die #493-Antwort des IDM-Supports ist dokumentiert: Wird eine Batterie genutzt, muss Register 84 (Batterie Laden/Entladen) zusammen mit dem Batterie-SOC geschrieben werden. Die Einrichtungs- und Optionshilfen zu beiden Batteriefeldern nennen das direkt bei der Quellwahl, und die Registerreferenz markiert Register 84 als bei Batterie erforderlich. [Einrichtung der externen Leistungsweiterleitung](Installation-and-Setup#automatische-externe-leistungsweiterleitung-von-home-assistant).
+
 ## v0.27.0-b1 — 2026-11-10
 
 Die 0.27er-Linie *Messbarkeit* beginnt: Die Modbus-Transportschicht misst jetzt passiv jede physische Anfrage — Lesen, Schreiben, Coils, einschließlich Bisektions-Nachlesen — in einem begrenzten Fenster von 100 Anfragen. Mit aktivierter *Kommunikationsdiagnose* veröffentlicht der neue Sensor *Modbus-Anfragedauer (Zeitfenster)* den Median samt Fehlerklassen und Statistiken je Funktioncode; der Diagnose-Export trägt dieselben Daten. Der Abfrageintervall-Repair erhält einen *Beheben*-Flow mit gemessenem Intervallvorschlag, und Advisor-Empfehlungstitel erscheinen deutsch oder englisch. [Kennzahlen pro Anfrage](Troubleshooting#kennzahlen-pro-anfrage), [Abfrageintervall](Troubleshooting#idm-abfrage-passt-kaum-in-das-abfrageintervall), [Predictive Advisor](Predictive-Advisor).
