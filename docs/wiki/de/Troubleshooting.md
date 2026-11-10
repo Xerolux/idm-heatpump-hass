@@ -283,6 +283,22 @@ bleiben. Um die zugrunde liegenden Zahlen zu sehen, aktiviere die **Kommunikatio
 in den Optionen — sie legt die Abfragedauer und die Anzahl aktiv abgefragter Register als
 Sensoren offen.
 
+### Kennzahlen pro Anfrage
+
+Seit 0.27.0-b1 stellt dieselbe Option zusätzlich die **Modbus-Anfragedauer (Zeitfenster)**
+bereit: den Median der Dauer der letzten 100 physischen Modbus-Anfragen (FC03/FC04-Lesen,
+FC16-Schreiben, FC01/FC05-Coils) über alle Funktioncodes hinweg. Die Attribute tragen das
+vollständige Messfenster — Anzahl der Anfragen, Fehlerklassen (Timeout, Illegal Address,
+Device, Connection, Transport) und Dauerstatistiken je Funktioncode
+(Minimum/Median/Durchschnitt/p95/Maximum). Dieselben Werte stehen auch im
+Diagnose-Download unter `client_diagnostics → transport → request_metrics`.
+
+Damit lassen sich Fragen beantworten, die eine Abfragedauer des Gesamtpolls nicht kann:
+welche Anfrageart den Zyklus dominiert, wie viele zusätzliche Anfragen der robuste
+Bisektionspfad auf Anlagen mit nicht unterstützten Registern erzeugt und wie sich die
+Anfragedauern verhalten, wenn ein zweiter Modbus-Client die Verbindung teilt. Die Messung
+ist passiv — sie sendet selbst keine zusätzliche Anfrage.
+
 ## Ein Registerschreibvorgang wird abgelehnt
 
 Symptom: Das Ändern eines Werts (zum Beispiel der Zieltemperatur eines Heizkreises in der

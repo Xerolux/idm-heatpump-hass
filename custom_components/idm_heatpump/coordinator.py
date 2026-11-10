@@ -482,6 +482,21 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     @property
+    def request_metrics(self) -> dict[str, Any]:
+        """Return the request-level transport metrics snapshot for diagnostics.
+
+        The entry setup wraps its transport in the passive request-metrics
+        decorator; clients without that wrapper (web-only entries, stubs in
+        tests) answer an empty snapshot instead of failing diagnostics.
+        """
+        raw = getattr(self._client, "request_metrics", None)
+        if callable(raw):
+            raw = raw()
+        if isinstance(raw, dict):
+            return raw
+        return {}
+
+    @property
     def hierarchy_device_ids(self) -> Mapping[tuple[str, str], str]:
         """Return the device registry IDs of the entry's sub-devices."""
         return self._hierarchy_device_ids

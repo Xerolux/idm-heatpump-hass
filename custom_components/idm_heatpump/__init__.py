@@ -203,8 +203,8 @@ from .internal_messages import warm_error_code_database
 from .knx_bridge import KnxBridge, KnxBridgeConfig
 from .knx_catalog import OBJECT_GROUPS, InvalidGroupAddressError
 from .library_adapter import get_idm_client
-from .modbus_shared_transport import create_shared_modbus_transport
-from .modbus_transport import ModbusTcpEndpoint
+from .modbus_shared_transport import HaModbusTransport, create_shared_modbus_transport
+from .modbus_transport import ModbusConnectionTransport, ModbusTcpEndpoint
 from .model_resolution import (
     DetectionResult,
     StoredDetection,
@@ -225,6 +225,7 @@ from .registers import (
     get_all_switch_descriptions,
     normalize_zone_rooms,
 )
+from .request_metrics import RequestMetricsTransport
 from .room_temp_forwarding import (
     HumidityForwarder,
     HumidityForwardingConfig,
@@ -910,6 +911,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
         connect_delay=modbus_connect_delay,
     )
     shared_transport = await create_shared_modbus_transport(hass, entry, endpoint)
+    base_transport: HaModbusTransport = shared_transport or ModbusConnectionTransport(endpoint)
+    # Passive request-level timing around whichever transport serves this
+    # entry (shared claim or private socket).  The wrapper performs no I/O of
+    # its own; it only observes request durations and outcomes for the
+    # communication diagnostics and the diagnostics export (0.27/WP1).
+    metrics_transport = RequestMetricsTransport(base_transport)
     client = get_idm_client(
         host=host,
         port=port,
@@ -918,7 +925,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
         max_retries=modbus_max_retries,
         message_spacing=modbus_message_spacing,
         connect_delay=modbus_connect_delay,
-        transport=shared_transport,
+        transport=metrics_transport,
     )
     # Apply the per-entry EEPROM write interval (power-user override; default
     # stays 60s to protect the EEPROM's limited write cycles).

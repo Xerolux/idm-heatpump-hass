@@ -2698,6 +2698,9 @@
       "modbus_poll_duration": {
         "name": "Modbus poll duration"
       },
+      "modbus_request_metrics": {
+        "name": "Modbus request duration (window)"
+      },
       "outdoor_temp": {
         "name": "Outdoor temperature"
       },

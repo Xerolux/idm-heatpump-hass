@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.26.13` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
+- **Current Version**: `0.27.0-b1` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.11.0 (the 2026.8.1–2026.10 line stays on integration 0.24.x)
@@ -55,6 +55,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── modbus_client.py              # API client adapter routing raw I/O through the local transport
 │   ├── modbus_transport.py           # Backend-neutral contract + modbus-connection/tmodbus implementation
 │   ├── modbus_shared_transport.py    # Claims Home Assistant's shared Modbus connection, private-socket fallback
+│   ├── request_metrics.py            # Passive request-level transport timing and counts (0.27/WP1)
 │   ├── telemetry_entities.py        # Opt-in matching firmware sensor, removed on withdrawal
 │   ├── firmware_notice.py           # Per-version persistent acknowledgement of unconfirmed community observations
 │   ├── firmware_observations.py     # Independent opt-in firmware metadata queries without myIDM or operating data
@@ -202,6 +203,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_register_reference_parity.py
 │   ├── test_registers.py
 │   ├── test_recovery_watchdog.py
+   ├── test_request_metrics.py
 │   ├── test_release_contract.py
 │   ├── test_release_data_callout.py # Automatic/curated release notes retain one voluntary data request
 │   ├── test_release_discussion.py

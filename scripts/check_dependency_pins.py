@@ -101,6 +101,7 @@ PIN_DOCUMENTS = (
     "docs/RELEASE_SMOKE_TEST.md",
     "docs/ha-core-integration-page.md",
     "docs/dev/heatpump-feature-roadmap.md",
+    "docs/dev/measurability-0.27-roadmap.md",
     "docs/dev/open-work-audit.md",
     "docs/dev/ws-first-roadmap.md",
     "docs/wiki/Home.md",

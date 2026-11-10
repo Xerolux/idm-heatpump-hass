@@ -649,9 +649,11 @@ class IdmCommunicationDiagnosticSensor(IdmCoordinatorEntityBase, SensorEntity):
         native_unit_of_measurement: str | None = None,
         device_class: SensorDeviceClass | None = None,
         state_class: SensorStateClass | None = None,
+        attributes_fn: Callable[[IdmCoordinator], dict[str, Any]] | None = None,
     ) -> None:
         super().__init__(coordinator)
         self._value_fn = value_fn
+        self._attributes_fn = attributes_fn
         entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
         self._attr_unique_id = build_entity_unique_id(entry_id, key)
         self.entity_description = SensorEntityDescription(
@@ -674,7 +676,9 @@ class IdmCommunicationDiagnosticSensor(IdmCoordinatorEntityBase, SensorEntity):
         return self._value_fn(self.coordinator)
 
     @property
-    def extra_state_attributes(self) -> dict[str, int] | None:
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        if self._attributes_fn is not None:
+            return self._attributes_fn(self.coordinator)
         if self.entity_description.key != "modbus_consecutive_failures":
             return None
         statistics = self.coordinator.poll_statistics
@@ -718,7 +722,32 @@ def _communication_diagnostic_entities(coordinator: IdmCoordinator) -> list[IdmC
             state_class=SensorStateClass.MEASUREMENT,
             value_fn=lambda item: item.poll_statistics.planned_registers,
         ),
+        IdmCommunicationDiagnosticSensor(
+            coordinator,
+            "modbus_request_metrics",
+            icon="mdi:chart-timeline-variant",
+            native_unit_of_measurement="s",
+            device_class=SensorDeviceClass.DURATION,
+            state_class=SensorStateClass.MEASUREMENT,
+            value_fn=lambda item: _request_metrics_median(item),
+            attributes_fn=lambda item: item.request_metrics,
+        ),
     ]
+
+
+def _request_metrics_median(coordinator: IdmCoordinator) -> float | None:
+    """Median request duration over the recorded window, or ``None`` empty.
+
+    Kept as a helper so the sensor stays declarative and the fallback for
+    uninstrumented clients (web-only entries) lives in one place.
+    """
+    metrics = coordinator.request_metrics
+    durations = metrics.get("duration_seconds")
+    if isinstance(durations, dict):
+        median = durations.get("median")
+        if isinstance(median, (int, float)):
+            return float(median)
+    return None
 
 
 class IdmSensor(IdmEntity, SensorEntity):
