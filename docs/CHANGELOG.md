@@ -13,6 +13,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.27.0-b2] - 2026-11-10
+
+The #493 field data is in: IDM requires register 84 when a battery is used, and the configuration help now says so where the mapping is chosen.
+
+### ⚠️ Upgrade notes
+
+- **Rollback is safe**: this beta adds documentation only — the battery-mapping help texts in the setup and options flows name the requirement, and the wiki documents it. No behavior, entity or setting changes.
+
+### 💼 Maintenance
+
+- **Battery mapping help names the register-84 requirement (#493)**: IDM support confirmed that when a battery is used, register 84 (battery charge/discharge) must be written together with the battery SoC — mapping SoC alone can make the controller's battery display flicker. Both battery fields' setup, options and reconfigure help state this where the sources are chosen, German and English.
+- **The register reference and Findings register carry the evidence with its scope**: register 84 is marked as required with battery, and the Findings page records that IDM did *not* confirm that every other external-power register must be written in every cycle — only register 84 is established.
+
 ## [0.27.0-b1] - 2026-11-10
 
 The first prerelease of the 0.27 *measurability* line: the Modbus transport
