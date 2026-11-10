@@ -15,11 +15,20 @@ from custom_components.idm_heatpump.const import (
     CONF_FIRMWARE_POLICY,
     CONF_TELEMETRY,
 )
-from custom_components.idm_heatpump.firmware_observations import FIRMWARE_POLICY, FirmwareObservations
+from custom_components.idm_heatpump.firmware_observations import (
+    FIRMWARE_POLICY,
+    FIRMWARE_RESULT_DATA_KEY,
+    FirmwareObservations,
+    _restorable_result,
+)
 
 
 def make_firmware(enabled=True):
     _, entry, coordinator = make_telemetry(False)
+    hass = MagicMock()
+    hass.config_entries.async_update_entry.side_effect = lambda target, **kwargs: setattr(
+        target, "data", kwargs["data"]
+    )
     entry.options.update(
         {
             CONF_FIRMWARE_CHECK: enabled,
@@ -29,7 +38,44 @@ def make_firmware(enabled=True):
     )
     entry.options.pop("telemetry_myidm_id", None)
     coordinator.myidm_id = None
-    return FirmwareObservations(MagicMock(), entry, coordinator), entry, coordinator
+    return FirmwareObservations(hass, entry, coordinator), entry, coordinator
+
+
+STORED_ANSWER = {
+    "latest_firmware": "NAV10_20.24-11",
+    "installed_firmware": "NAV10_20.24-9",
+    "matching_model": "AERO ALM",
+    "series": "nav10_20",
+    "status": "observed",
+    "model_scope": "controller_and_plant_model",
+    "component_status": "reported_component",
+    "source": "community_telemetry",
+    "newer_observed": True,
+    "observations": 3,
+    "last_checked": "2026-11-09T12:00:00+00:00",
+}
+
+
+def _session_with_answer(query, latest, newer_observed):
+    response = MagicMock(status=200)
+    response.json = AsyncMock(
+        return_value={
+            "query": query,
+            "source": "community_telemetry",
+            "status": "observed",
+            "latest_firmware": latest,
+            "series": "nav10_20",
+            "observations": 3,
+            "newer_observed": newer_observed,
+            "model_scope": "controller_and_plant_model",
+        }
+    )
+    context = MagicMock()
+    context.__aenter__ = AsyncMock(return_value=response)
+    context.__aexit__ = AsyncMock(return_value=False)
+    session = MagicMock()
+    session.post.return_value = context
+    return session
 
 
 async def test_no_firmware_query_without_consent():
@@ -190,9 +236,137 @@ async def test_existing_consent_and_single_report_show_latest_without_update_not
     context.__aexit__ = AsyncMock(return_value=False)
     session = MagicMock()
     session.post.return_value = context
-    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
+    with patch("custom_components/idm_heatpump_hass" if False else "custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
         await firmware.async_refresh_firmware()
     assert firmware.enabled
     assert firmware.firmware_result["latest_firmware"] == query["firmware"]
     assert firmware.firmware_result["newer_observed"] is expected
     assert firmware.firmware_result["component_status"] == "reported_component"
+
+
+async def test_restart_restores_last_answer_without_contacting_the_server():
+    """The sensor keeps its value across restarts; the load delay bridges it."""
+    firmware, entry, _ = make_firmware()
+    entry.data[FIRMWARE_RESULT_DATA_KEY] = dict(STORED_ANSWER)
+    with (
+        patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval"),
+        patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession") as session,
+    ):
+        assert await firmware.async_start()
+        session.assert_not_called()
+    restored = firmware.firmware_result
+    assert restored["latest_firmware"] == "NAV10_20.24-11"
+    assert restored["newer_observed"] is True
+    assert restored["last_checked"] == "2026-11-09T12:00:00+00:00"
+    assert restored["status"] == "observed"
+    assert "next_check" in restored
+    firmware.stop()
+
+
+async def test_answer_is_saved_and_kept_until_a_newer_one_replaces_it():
+    firmware, entry, coordinator = make_firmware()
+    coordinator.firmware_version = "NAV10_20.24-9"
+    query = {
+        "navigator": "navigator_10",
+        "navigator_model": "Navigator 10",
+        "heatpump_model": "AERO ALM",
+        "firmware": "NAV10_20.24-9",
+    }
+    session = _session_with_answer(query, "NAV10_20.24-11", True)
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
+        await firmware.async_refresh_firmware()
+    stored = entry.data[FIRMWARE_RESULT_DATA_KEY]
+    assert stored["latest_firmware"] == "NAV10_20.24-11"
+    assert stored["newer_observed"] is True
+
+    # Restart: the same entry restores the stored answer without a request.
+    restarted = FirmwareObservations(firmware._hass, entry, coordinator)
+    with (
+        patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval"),
+        patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession") as session2,
+    ):
+        assert await restarted.async_start()
+        session2.assert_not_called()
+    assert restarted.firmware_result["latest_firmware"] == "NAV10_20.24-11"
+    restarted.stop()
+
+    # The next answer replaces the stored one; nothing older survives.
+    session = _session_with_answer(query, "NAV10_20.24-12", True)
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
+        await firmware.async_refresh_firmware()
+    assert entry.data[FIRMWARE_RESULT_DATA_KEY]["latest_firmware"] == "NAV10_20.24-12"
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        None,
+        "NAV10_20.24-11",
+        STORED_ANSWER | {"source": "manufacturer"},
+        STORED_ANSWER | {"status": "withdrawn"},
+        {key: value for key, value in STORED_ANSWER.items() if key != "status"},
+        {key: value for key, value in STORED_ANSWER.items() if key != "last_checked"},
+    ],
+)
+def test_corrupt_or_foreign_persisted_answers_are_ignored(payload):
+    assert _restorable_result(payload) is None
+
+
+def test_mistyped_fields_fall_back_to_none_but_keep_the_answer():
+    restored = _restorable_result(STORED_ANSWER | {"latest_firmware": 11, "observations": "many"})
+    assert restored is not None
+    assert restored["latest_firmware"] is None
+    assert restored["observations"] is None
+    assert restored["newer_observed"] is True
+
+
+async def test_stop_keeps_the_notice_but_withdrawal_clears_notice_and_stored_answer():
+    from custom_components.idm_heatpump import _entry_reload_fingerprint
+
+    firmware, entry, _ = make_firmware()
+    entry.data[FIRMWARE_RESULT_DATA_KEY] = dict(STORED_ANSWER)
+    fingerprint_before = _entry_reload_fingerprint(entry)
+    with patch("custom_components.idm_heatpump.firmware_notice.ir.async_delete_issue") as delete_issue:
+        firmware.stop()
+        delete_issue.assert_not_called()
+    assert _entry_reload_fingerprint(entry) == fingerprint_before
+    firmware._stopped = False
+
+    entry.options[CONF_FIRMWARE_CHECK] = False
+    entry.options.pop(CONF_FIRMWARE_CONSENT_AT, None)
+    with (
+        patch("custom_components.idm_heatpump.firmware_notice.ir.async_get") as registry,
+        patch("custom_components.idm_heatpump.firmware_notice.ir.async_delete_issue") as delete_issue,
+    ):
+        registry.return_value.issues = {("idm_heatpump", "firmware_observed_private-entry-id_ab"): None}
+        await firmware.async_options_updated(None, entry)
+        delete_issue.assert_called_once()
+    assert FIRMWARE_RESULT_DATA_KEY not in entry.data
+    assert not firmware.enabled
+
+
+def test_stored_answer_key_never_triggers_an_entry_reload():
+    from custom_components.idm_heatpump import _entry_reload_fingerprint
+
+    _, entry, _ = make_firmware()
+    before = _entry_reload_fingerprint(entry)
+    entry.data[FIRMWARE_RESULT_DATA_KEY] = dict(STORED_ANSWER)
+    assert _entry_reload_fingerprint(entry) == before
+
+
+async def test_startup_check_load_spreads_within_fifteen_minutes():
+    import secrets as secrets_module
+
+    client, _, _ = make_firmware()
+    with (
+        patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval"),
+        patch(
+            "custom_components.idm_heatpump.firmware_observations.secrets.randbelow",
+            wraps=secrets_module.randbelow,
+        ) as spread,
+        patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession") as session,
+    ):
+        assert await client.async_start()
+        assert {call.args[0] for call in spread.call_args_list} == {900}
+        session.assert_not_called()
+    client.stop()

@@ -198,7 +198,7 @@ from .error_messages import (
 )
 from .external_power_forwarding import ExternalPowerForwarder, ExternalPowerForwardingConfig
 from .firmware_notice import ACK_KEY as FIRMWARE_ACK_DATA_KEY
-from .firmware_observations import FirmwareObservations
+from .firmware_observations import FIRMWARE_RESULT_DATA_KEY, FirmwareObservations
 from .internal_messages import warm_error_code_database
 from .knx_bridge import KnxBridge, KnxBridgeConfig
 from .knx_catalog import OBJECT_GROUPS, InvalidGroupAddressError
@@ -274,6 +274,9 @@ _DETECTION_ONLY_DATA_KEYS = frozenset(
         # The what's-new stamp: bookkeeping, not a setting.
         LAST_RUN_VERSION_DATA_KEY,
         FIRMWARE_ACK_DATA_KEY,
+        # The last firmware-observation answer: cached display data, not a
+        # setting — writing it must never reload the entry.
+        FIRMWARE_RESULT_DATA_KEY,
     }
 )
 

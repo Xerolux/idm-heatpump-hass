@@ -70,6 +70,7 @@ async def test_500_overdue_reconnections_do_not_upload_immediately():
 
 
 async def test_500_firmware_startups_are_delayed_and_never_contact_on_setup():
+    """The startup check load-spreads within the first 15 minutes."""
     rng = random.Random(502)
     slots = []
     with (
@@ -82,7 +83,7 @@ async def test_500_firmware_startups_are_delayed_and_never_contact_on_setup():
             await client.async_start()
             await client.async_tick(datetime.now(UTC))
             client.async_refresh_firmware.assert_not_awaited()
-            assert 1 <= client._next_firmware_check - 1_800_000_000 <= 1800
+            assert 1 <= client._next_firmware_check - 1_800_000_000 <= 900
             slots.append(int((client._next_firmware_check - 1_800_000_000) // 60))
-    assert len(set(slots)) >= 29
-    assert max(Counter(slots).values()) < 50
+    assert len(set(slots)) >= 14
+    assert max(Counter(slots).values()) < 80
