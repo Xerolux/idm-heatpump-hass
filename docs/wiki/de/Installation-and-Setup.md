@@ -255,6 +255,16 @@ openWB-Vorzeichenkonvention (negativ bedeutet Entladen), wähle **Quellvorzeiche
 invertieren**. Nicht verfügbare oder ungültige Sensoren werden übersprungen; die
 Integration schreibt niemals null als Ersatz.
 
+Wenn eine Batterie genutzt wird, verlangt der IDM-Support, dass Register 84
+(`battery_discharge`, Batterie Laden/Entladen) zusammen mit dem Batterie-SOC
+(Register 86) geschrieben wird. Nur den SOC zuzuordnen reicht nicht und kann
+dazu führen, dass die Batteriezeilen flackern oder verschwinden; siehe
+[#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493).
+Positive Werte bedeuten Entladen, negative Werte Laden. Bei zwei getrennten
+Batterien die Summe ihrer vorzeichenbehafteten Leistungswerte in derselben
+Einheit und Vorzeichenkonvention weiterleiten. Nutzt der Helper positiv für
+Laden, die Vorzeichenumkehr der Integration aktivieren.
+
 Ein bidirektionaler Netzleistungszähler lässt sich direkt auswählen (#519):
 Lege seine Vorzeichenkonvention fest (**positiv = Netzbezug** oder **positiv =
 Einspeisung**); die Integration normalisiert das Vorzeichen und leitet den

@@ -131,9 +131,15 @@ Batterie-SOC darf nicht als Float über zwei Register kodiert werden.
 | 76 | `electric_heater_power` | FLOAT, wortgetauscht | kW | Beschreibbare GLT-Messung |
 | 78 | `pv_production` | FLOAT, wortgetauscht | kW | Beschreibbare GLT-Messung |
 | 82 | `house_consumption` | FLOAT, wortgetauscht | kW | Beschreibbare GLT-Messung |
-| 84 | `battery_discharge` | FLOAT, wortgetauscht | kW | Beschreibbare GLT-Messung |
+| 84 | `battery_discharge` | FLOAT, wortgetauscht | kW | Beschreibbare GLT-Messung; bei Batterie erforderlich, siehe unten |
 | 86 | `battery_soc` | INT16 mit Vorzeichen, ein Register | % | `0–100`; `-1` bedeutet nicht verfügbar |
 | 88 | `pv_target_value` | FLOAT, wortgetauscht | kW | Modell-/Firmware-abhängig |
+
+Wenn eine Batterie genutzt wird, verlangt der IDM-Support, dass Register 84
+(`battery_discharge`) zusammen mit dem Batterie-SOC (Register 86) geschrieben
+wird. Positive Werte bedeuten Entladen, negative Werte Laden. Siehe
+[Einrichtung der externen Leistungsweiterleitung](Installation-and-Setup#automatische-externe-leistungsweiterleitung-von-home-assistant)
+und [#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493).
 
 Beim Schreiben verwende immer die erzeugte Entität oder die Registerdefinition
 aus der Bibliothek. Die erweiterte Aktion für Roh-Schreibzugriffe kann den

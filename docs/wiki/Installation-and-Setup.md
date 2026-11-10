@@ -244,6 +244,16 @@ Home Assistant sensor entities:
 
 Power sensors must expose `W`, `kW` or `MW`; values are converted to kW before writing. Battery SOC must be a finite percentage from 0 to 100; fractional values are rounded. Invalid SOC is skipped, not forwarded as a replacement value. If the energy manager uses the openWB sign convention (negative means discharge), choose **Invert source sign**. Unavailable or invalid sensors are skipped; the integration never writes zero as a fallback.
 
+When a battery is used, IDM support requires that register 84
+(`battery_discharge`, battery charge/discharge) is written together with
+battery SoC (register 86). Mapping only SoC is not sufficient and can make
+the battery rows flicker or disappear; see
+[#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493).
+Positive values mean discharge and negative values mean charging. For two
+separate batteries, forward the sum of their signed power readings in the
+same unit and sign convention. If the helper uses positive for charging,
+enable the integration's battery-sign inversion.
+
 A bidirectional grid meter can be selected directly (#519): choose its sign
 convention (**positive = grid import** or **positive = export**), and the
 integration normalizes the sign and derives the signed `pv_surplus`; together

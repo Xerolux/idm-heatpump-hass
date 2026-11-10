@@ -121,7 +121,7 @@ eigene Durchflusszeile, füllt deren Wert den Durchfluss automatisch auf
 | Batterie Entladung | 84 | FLOAT, wortvertauscht | kW |
 | Batterie SOC | 86 | signed INT16, ein Register | % |
 
-Der Batterie SOC akzeptiert `0–100`; `-1` bedeutet, dass kein Batteriewert vorliegt. Wer Adresse 86 wie die umgebenden FLOAT-Werte über zwei Register behandelt, erhält ein unplausibles Ergebnis.
+Der Batterie SOC akzeptiert `0–100`; `-1` bedeutet, dass kein Batteriewert vorliegt. Wer Adresse 86 wie die umgebenden FLOAT-Werte über zwei Register behandelt, erhält ein unplausibles Ergebnis. Wenn eine Batterie genutzt wird, verlangt der IDM-Support zusätzlich das Schreiben von Register 84 (`battery_discharge`); nur den SOC zuzuordnen reicht nicht ([#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493)).
 
 #### PV-Überschussbetrieb (abgeleitete Diagnose)
 

@@ -9,7 +9,8 @@ release uses its tagged manifest. Release history stays in [Changelog](Changelog
 | Finding | Evidence and scope | Practical consequence and open questions |
 |---------|--------------------|-----------------------------------------|
 | Issue #577 capture replay | Two issue-referenced private captures passed archive-ledger verification and were replayed with API 2.16.1. HTTP JSON yielded three circuit flow temperatures; the checked WebSocket status/home responses parsed and its HTTP data paths were 404s. | Capture notes do not prove controller identity or attribution to the original module. Missing quantities are not inferred. Compare current reporter diagnostics, API version and parsed keys with the exact module before claiming a parser fix. |
-| External-power GLT entity recovery (#493) | Regression reproduces a read-only sensor omitted when startup reads an unset sentinel; supported inputs now retain their entity and recover on valid readback. See [Configuration](Configuration). | Writable Numbers already retain sentinel availability and polling dependencies. This correction does not establish a fix for controller-side battery display flicker; absent/unsupported registers remain filtered. |
+| External-power GLT entity recovery (#493) | Regression reproduces a read-only sensor omitted when startup reads an unset sentinel; supported inputs now retain their entity and recover on valid readback. See [Configuration](Configuration). | Writable Numbers already retain sentinel availability and polling dependencies. This correction does not itself fix controller-side battery display flicker; absent/unsupported registers remain filtered. |
+| Battery use requires register 84 (#493) | IDM support confirmed to the #493 reporter that when a battery is used, register 84 (`battery_discharge`) must be written. After mapping battery charge/discharge together with SoC, the reporter saw no further flicker. See [external power setup](Installation-and-Setup#automatic-external-power-forwarding-from-home-assistant). | Map battery charge/discharge as well as SoC. For two batteries, forward the sum of their signed power (positive = discharge). This is a controller input requirement, not an integration defect. IDM did not confirm that every other external-power register must be written in every cycle. |
 | PV message 20300 at valid zero production | A Navigator 10 field test cleared the warning without acknowledgement after forwarding a small positive value. The tested firmware and procedure are recorded in [Configuration](Configuration#optional-workaround-for-pv-message-20300-at-zero-production). | Optional 10 W workaround; affects controller PV displays/statistics. Does not prove every 20300 warning has this cause or fix communication failures. |
 | `NAV10_` and `T_NAV10_` firmware prefixes | Controller-family matching accepts both exact prefixes; lookalikes such as `NAV100_` are rejected. See [Configuration](Configuration). | HTTP transport alone does not identify a Navigator 2.0. Explicit model overrides retain precedence. |
 | Shared Modbus connections | The active provider reports shared ownership when Home Assistant's unit API can be claimed; failures use the private transport. See [Troubleshooting](Troubleshooting#connection-drops). | Read actual `source`, `owns_socket` and `supports_shared_connection` diagnostics before investigating duplicate clients. A successful TCP connection alone does not prove correct register data. |
@@ -87,9 +88,10 @@ Open work, not forgotten or declared fixed:
   flagged. Do not mix stable `NAV10_` and test-channel `T_NAV10_` observations.
 - #577's remaining parser and packed-register questions need exact issue-linked
   evidence. #649 has a healthy-state field confirmation; a forced fault was not
-  tested. #493 still awaits the manufacturer's technical explanation; #668
-  still awaits reporter confirmation. Existing public replies remain separate
-  from a verified general controller requirement.
+  tested. #493 is answered: IDM support requires register 84 to be written
+  when a battery is used. #668 still awaits reporter confirmation. Existing
+  public replies remain separate from a verified general controller
+  requirement, except for this IDM confirmation of register 84.
 
 The private originals stay under their existing retention policies. Synthetic
 regression fixtures reproduce structures only; no donated readings or private

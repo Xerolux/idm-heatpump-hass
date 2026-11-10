@@ -143,6 +143,11 @@ skipped; an unavailable source does not write a fallback zero. Blank fields
 leave their registers untouched. Do not have another energy manager write the
 same register at the same time.
 
+When a battery is used, also map battery charge/discharge so register 84 is
+written together with battery SoC (register 86). IDM support confirmed this
+requirement; writing SoC alone is not sufficient
+([#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493)).
+
 The saved mapping also supplies the optional PV estimate and automatic DHW
 manager. They can read an existing mapping while forwarding is off. The
 current guided wizard shows the mapping page only when forwarding is enabled;
@@ -379,6 +384,11 @@ Important behavior:
 - When a bidirectional **Grid meter sensor** and **PV production sensor** are
   configured, the integration automatically derives `pv_surplus` and
   `house_consumption` when their direct sensor fields are left empty (#519).
+- When a battery is used, map battery charge/discharge as well as battery SoC
+  so register 84 is written together with register 86. IDM support requires
+  that write; see
+  [external power setup](Installation-and-Setup#automatic-external-power-forwarding-from-home-assistant)
+  and [#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493).
 - Forwarded values are written to the controller's GLT input registers (for
   example register 74 `pv_surplus` and register 82 `house_consumption`). In Home
   Assistant, the writable GLT input registers appear as `number` entities with

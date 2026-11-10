@@ -153,7 +153,9 @@ flow rate in automatically (see [Known Limitations](Known-Limitations)).
 
 Battery SOC accepts `0–100`; `-1` means that no battery value is available.
 Treating address 86 like the surrounding two-register FLOAT values produces an
-implausible result.
+implausible result. When a battery is used, IDM support also requires that
+register 84 (`battery_discharge`) is written; mapping SoC alone is not
+sufficient ([#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493)).
 
 #### PV surplus operation (derived diagnostic)
 

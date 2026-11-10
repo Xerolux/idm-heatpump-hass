@@ -167,9 +167,12 @@ Nullwert, Ungültig-Markierung oder Rücksetzbefehl. Beim erneuten Aktivieren
 werden die aktuellen gültigen Quellwerte verwendet, keine gespeicherten alten
 Werte. Einen allgemeinen Regler-Timeout garantiert die Integration nicht:
 Gespeicherte Werte und vorübergehend nicht verfügbare Regleranzeigen benötigen
-jeweils einen Nachweis für die konkrete Firmware. Der am 21.10.2026 in #493
-gemeldete Rückfall bleibt ungeklärt. Ein erfolgreicher Schreibzugriff oder ein
-optimistischer HA-Zustand beweist keine durchgehend gültige Navigator-Anzeige.
+jeweils einen Nachweis für die konkrete Firmware. Wenn eine Batterie genutzt
+wird, verlangt der IDM-Support, dass Register 84 (`battery_discharge`)
+zusammen mit dem Batterie-SOC geschrieben wird; nur den SOC zuzuordnen kann
+die Batterieanzeige flackern lassen
+([#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493)). Ein erfolgreicher Schreibzugriff oder ein
+optimistischer HA-Zustand beweist weiterhin keine durchgehend gültige Navigator-Anzeige.
 Ein pauschales Zurücksetzen beim Beenden könnte einen anderen GLT-Schreiber
 überschreiben.
 
@@ -372,8 +375,10 @@ Batterie-SOC und Entladung. Rücklesen vom Gerät ist aussagekräftiger als ein
 optimistischer HA-Entitätswert unmittelbar nach dem Schreiben. Prüfe Laden und
 Entladen, Wechselrichterausfall und Rückkehr sowie fehlende Netz-/Batteriedaten.
 Die Verfügbarkeitszahl zeigt Teilsummen an. Ein kurzer erfolgreicher Test belegt
-keine langfristige Zuverlässigkeit. Das Batterieanzeige-Problem #493 bei älterer
-Firmware bleibt vom behobenen Abbruch laufender Übertragungen zu unterscheiden.
+keine langfristige Zuverlässigkeit. Das Batterieanzeige-Problem in #493
+war ein fehlender Schreibzugriff auf Register 84 bei Batteriebetrieb und
+ist vom behobenen Abbruch laufender Übertragungen zu unterscheiden.
+Batterie Laden/Entladen zusammen mit dem SOC zuordnen.
 
 ## Komfort-Zeitplan und schreibgeschützte Berater
 

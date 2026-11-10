@@ -155,6 +155,12 @@ werden übersprungen; eine nicht verfügbare Quelle schreibt keinen Ersatzwert
 Null. Leere Felder lassen ihre Register unangetastet. Sorge dafür, dass nicht
 gleichzeitig ein anderer Energiemanager dasselbe Register beschreibt.
 
+Wenn eine Batterie genutzt wird, zusätzlich Batterie Laden/Entladen zuordnen,
+damit Register 84 zusammen mit dem Batterie-SOC (Register 86) geschrieben
+wird. Der IDM-Support hat diese Anforderung bestätigt; nur den SOC zu
+schreiben reicht nicht
+([#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493)).
+
 Die gespeicherte Zuordnung versorgt auch die optionale PV-Schätzung und den
 automatischen Warmwasser-Manager. Sie können eine bestehende Zuordnung lesen,
 während die Weiterleitung aus ist. Der aktuelle geführte Assistent zeigt die
@@ -416,6 +422,11 @@ der PV-Erzeugung — in die IDM-GLT-Leistungsregister (`pv_surplus`,
   ausgewählt sind, berechnet die Integration automatisch den PV-Überschuss
   (`pv_surplus`) und den Hausverbrauch (`house_consumption`), sofern deren
   direkte Sensorfelder leer gelassen werden (#519).
+- Wenn eine Batterie genutzt wird, Batterie Laden/Entladen und Batterie-SOC
+  zuordnen, damit Register 84 zusammen mit Register 86 geschrieben wird. Der
+  IDM-Support verlangt diesen Schreibzugriff; siehe
+  [Einrichtung der externen Leistungsweiterleitung](Installation-and-Setup#automatische-externe-leistungsweiterleitung-von-home-assistant)
+  und [#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493).
 - Die weitergeleiteten Werte werden in die GLT-Eingangsregister des Reglers
   geschrieben (z. B. Register 74 `pv_surplus` und Register 82
   `house_consumption`). In Home Assistant sind diese beschreibbaren

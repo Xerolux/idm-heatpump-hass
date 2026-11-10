@@ -479,6 +479,15 @@ Statistiken. Er ersetzt keine Reparatur einer unterbrochenen Verbindung.
 
 ### GLT-Verfügbarkeit untersuchen (#493)
 
+Wenn eine Batterie genutzt wird, verlangt der IDM-Support, dass Register 84
+(`battery_discharge`) zusammen mit dem Batterie-SOC (Register 86) geschrieben
+wird. Beide Quellen unter der externen Leistungsweiterleitung zuordnen; nur
+den SOC zu setzen kann dem Regler den erforderlichen Batterieleistungs-Eingang
+fehlen lassen und die Batterieanzeige oder den GLT-Rücklesewert flackern oder
+unbekannt machen. Siehe
+[Einrichtung der externen Leistungsweiterleitung](Installation-and-Setup#automatische-externe-leistungsweiterleitung-von-home-assistant)
+und [#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493).
+
 Bei einem unterstützten externen Leistungseingang vier Diagnosefälle trennen:
 `unused_sentinel` bedeutet einen nicht gesetzten Reglerwert; `not_polled`
 bedeutet ein vom Abfrageplan ausgeschlossenes Register; `unsupported` eine

@@ -150,9 +150,12 @@ sending zero, an unavailable sentinel, or a restore command. Re-enabling starts
 with the current valid source states, not a saved copy of the previous values.
 There is no universal controller timeout guarantee: a retained value and a
 temporarily unavailable controller display both need firmware-specific evidence.
-The recurrence reported in #493 on 2026-10-21 remains unresolved; a successful
-write or an optimistic HA state does not prove a continuously valid Navigator
-display. A blanket reset on shutdown could overwrite another GLT writer.
+When a battery is used, IDM support requires that register 84
+(`battery_discharge`) is written together with battery SoC; mapping SoC
+alone can make the battery display flicker
+([#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493)). A successful
+write or an optimistic HA state still does not prove a continuously valid
+Navigator display. A blanket reset on shutdown could overwrite another GLT writer.
 
 The current wizard opens the source-mapping page through enabled external
 power forwarding. Existing mappings remain usable with forwarding off; a
@@ -337,8 +340,10 @@ SOC and discharge. Read-back from the device is stronger evidence than an
 optimistic HA entity state immediately after a write. Verify charging and
 discharging, an inverter dropout and recovery, and missing grid/battery data.
 Watch the availability count to identify a partial sum. A short successful test
-does not establish long-term reliability. The battery-display report #493 on
-older firmware remains distinct from the fixed forwarding cancellation race.
+does not establish long-term reliability. The battery-display issue in #493
+was a missing register-84 write when a battery is used, distinct from the
+fixed forwarding cancellation race. Map battery charge/discharge together
+with SoC.
 
 ## Comfort schedule and read-only advisers
 
