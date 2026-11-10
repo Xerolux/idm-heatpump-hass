@@ -461,6 +461,14 @@ not repair a disconnected transport.
 
 ### GLT availability investigation (#493)
 
+When a battery is used, IDM support requires that register 84
+(`battery_discharge`) is written as well as battery SoC (register 86).
+Configure both sources under external power forwarding; mapping SoC alone
+can leave the controller without a required battery-power input and may
+cause the battery display or GLT readback to flicker or become unknown.
+See [external power setup](Installation-and-Setup#automatic-external-power-forwarding-from-home-assistant)
+and [#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493).
+
 For a supported external-power input, distinguish four cases in diagnostics:
 `unused_sentinel` means the controller reports an unset value; `not_polled`
 means the poll plan excludes the register; `unsupported` means the controller

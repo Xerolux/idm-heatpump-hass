@@ -126,9 +126,15 @@ particular, battery SOC must not be encoded as a two-register float.
 | 76 | `electric_heater_power` | FLOAT, word-swapped | kW | Writable GLT measurement |
 | 78 | `pv_production` | FLOAT, word-swapped | kW | Writable GLT measurement |
 | 82 | `house_consumption` | FLOAT, word-swapped | kW | Writable GLT measurement |
-| 84 | `battery_discharge` | FLOAT, word-swapped | kW | Writable GLT measurement |
+| 84 | `battery_discharge` | FLOAT, word-swapped | kW | Writable GLT measurement; required when a battery is used, see below |
 | 86 | `battery_soc` | signed INT16, one register | % | `0–100`; `-1` means unavailable |
 | 88 | `pv_target_value` | FLOAT, word-swapped | kW | Model/firmware dependent |
+
+When a battery is used, IDM support requires that register 84
+(`battery_discharge`) is written together with battery SoC (register 86).
+Positive values mean discharge and negative values mean charging. See
+[external power setup](Installation-and-Setup#automatic-external-power-forwarding-from-home-assistant)
+and [#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493).
 
 Always use the generated entity or library register definition when writing.
 The advanced raw-write action cannot infer the correct datatype from an address.

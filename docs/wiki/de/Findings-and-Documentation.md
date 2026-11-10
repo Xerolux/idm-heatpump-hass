@@ -10,7 +10,8 @@ Release gilt dessen getaggtes Manifest. Die Versionsgeschichte steht im
 | Erkenntnis | Nachweis und Gültigkeitsbereich | Konsequenz und offene Fragen |
 |------------|-------------------------------|------------------------------|
 | Capture-Wiedergabe zu #577 | Zwei privat eingereichte Captures mit Issue-Verweis bestanden die Archiv-Prüfung und wurden mit API 2.16.1 ausgewertet. HTTP-JSON lieferte drei Heizkreis-Vorlauftemperaturen; die geprüften WebSocket-Status-/Startseitenantworten waren lesbar, deren HTTP-Datenpfade lieferten 404. | Notizen beweisen weder Regleridentität noch Zuordnung zum ursprünglich gemeldeten Modul. Fehlende Größen werden nicht geschätzt. Aktuelle Melderdiagnosen, API-Version und gelesene Schlüssel mit dem genauen Modul vergleichen, bevor ein Parserfix behauptet wird. |
-| GLT-Entitäten nach nicht gesetztem Startwert (#493) | Ein Regressionstest reproduziert den beim Start ausgelassenen Lesesensor. Unterstützte Eingänge behalten nun ihre Entität und erholen sich bei gültigem Rücklesewert. Siehe [Konfiguration](Configuration). | Beschreibbare Numbers behalten bereits Bedienbarkeit und Polling-Abhängigkeiten. Das Flackern der Batterieanzeige am Regler ist damit nicht als behoben bestätigt; fehlende/nicht unterstützte Register bleiben ausgefiltert. |
+| GLT-Entitäten nach nicht gesetztem Startwert (#493) | Ein Regressionstest reproduziert den beim Start ausgelassenen Lesesensor. Unterstützte Eingänge behalten nun ihre Entität und erholen sich bei gültigem Rücklesewert. Siehe [Konfiguration](Configuration). | Beschreibbare Numbers behalten bereits Bedienbarkeit und Polling-Abhängigkeiten. Das Flackern der Batterieanzeige am Regler ist damit allein nicht behoben; fehlende/nicht unterstützte Register bleiben ausgefiltert. |
+| Batteriebetrieb erfordert Register 84 (#493) | Der IDM-Support hat dem Melder von #493 bestätigt: Wird eine Batterie genutzt, muss Register 84 (`battery_discharge`) geschrieben werden. Nach Zuordnung von Batterie Laden/Entladen zusammen mit dem SOC trat kein Flackern mehr auf. Siehe [Einrichtung der externen Leistungsweiterleitung](Installation-and-Setup#automatische-externe-leistungsweiterleitung-von-home-assistant). | Batterie Laden/Entladen und SOC zuordnen. Bei zwei Batterien die Summe der vorzeichenbehafteten Leistung weiterleiten (positiv = Entladen). Das ist eine Eingangsanforderung des Reglers, kein Integrationsfehler. IDM hat nicht bestätigt, dass jedes andere externe Leistungsregister in jedem Zyklus geschrieben werden muss. |
 | PV-Meldung 20300 bei gültiger Nullproduktion | Bei einem Navigator 10 verschwand die Meldung nach Weiterleitung eines kleinen positiven Wertes ohne Quittierung. Getestete Firmware und Vorgehen stehen in der [Konfiguration](Configuration#optionaler-workaround-fur-pv-meldung-20300-bei-nullleistung). | Optionaler 10-W-Workaround mit Auswirkungen auf PV-Anzeige und Statistik des Reglers. Belegt nicht, dass jede Meldung 20300 diese Ursache hat, und behebt keine Kommunikationsausfälle. |
 | Firmware-Präfixe `NAV10_` und `T_NAV10_` | Die Familienerkennung akzeptiert beide exakten Präfixe; ähnliche Angaben wie `NAV100_` werden abgelehnt. Siehe [Konfiguration](Configuration). | HTTP als Transport allein identifiziert keinen Navigator 2.0. Die explizite Modellauswahl behält Vorrang. |
 | Gemeinsame Modbus-Verbindung | Die Diagnose meldet gemeinsame Nutzung, wenn die Unit-API von Home Assistant beansprucht werden kann; andernfalls greift der private Transport. Siehe [Fehlerbehebung](Troubleshooting#verbindungsabbruche). | Vor der Suche nach doppelten Clients tatsächliche Werte für `source`, `owns_socket` und `supports_shared_connection` prüfen. Ein TCP-Verbindungsaufbau belegt noch keine korrekten Registerdaten. |
@@ -88,9 +89,11 @@ Offen und ausdrücklich nicht als behoben erklärt:
   der Übergangsbericht lässt sie bewusst weg. Historische Abweichungen bleiben
   markiert. `NAV10_` und `T_NAV10_` werden nicht zusammengefasst.
 - Bei #577 bleiben Parser und gepackte Register offen. #649 ist im gesunden
-  Anlagenzustand bestätigt; ein Fehler wurde nicht ausgelöst. #493 wartet auf
-  iDMs Erklärung, #668 auf Bestätigung des Melders. Frühere Antworten ersetzen
-  keine bestätigte allgemeine Anforderung des Reglers.
+  Anlagenzustand bestätigt; ein Fehler wurde nicht ausgelöst. #493 ist
+  beantwortet: Der IDM-Support verlangt bei Batterie das Schreiben von
+  Register 84. #668 wartet auf Bestätigung des Melders. Frühere Antworten
+  ersetzen keine bestätigte allgemeine Anforderung des Reglers, ausgenommen
+  diese IDM-Bestätigung zu Register 84.
 
 Originale bleiben unter den bisherigen Aufbewahrungsregeln erhalten. Tests
 verwenden synthetische Strukturen statt gespendeter Messwerte oder Notizen.
