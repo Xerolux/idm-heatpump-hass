@@ -43,6 +43,10 @@ async def test_confirmation_survives_reload_and_only_new_version_notifies():
     result = {"newer_observed": True, "installed_firmware": "NAV10_20.24-1", "latest_firmware": "NAV10_20.24-2"}
     with patch("custom_components.idm_heatpump.firmware_notice.ir.async_create_issue") as create:
         ensure_notice(hass, entry, result)
+        # The issue is linked to its entry: Home Assistant removes it when the
+        # entry is removed, so the integration never has to wipe it on unload.
+        assert create.call_args.kwargs["config_entry_id"] == "example"
+        assert create.call_args.kwargs["is_persistent"] is True
         issue = create.call_args.args[2]
         data = create.call_args.kwargs["data"]
         flow = await async_create_fix_flow(hass, issue, data)

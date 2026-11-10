@@ -14,7 +14,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "da89717dabf89c4333f3d9baf3cba19df2b24dea6ba37ad5099b0e0875e16f23"
+      "reviewed_source_sha256": "660336ceeb3797dd089b066a32a77119f27ec914a1a1542753945a9aa241af2c"
     },
     {
       "feature": "Model and register semantics",
@@ -225,7 +225,7 @@
         "Configuration.md",
         "Services.md"
       ],
-      "reviewed_source_sha256": "bbb175e6660e7b6cd5ff81e32ddbd9cebd774426a9c1e801dcff33e2ad2049ee"
+      "reviewed_source_sha256": "b9ffe825b19d0def8861dadc9de9d34192be71539ea30d5cb145cbb66798c8c7"
     },
     {
       "feature": "Actions and dashboard export",

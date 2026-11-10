@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.27.0-b3 — 2026-11-10
+
+Die Firmware-Orientierung übersteht einen Neustart: *Neueste gemeldete Firmware* behält ihre letzte Server-Antwort, statt leer zu erscheinen — sie wird lokal gespeichert und beim Start wiederhergestellt, mit der ursprünglichen Vergleichszeit bis zum nächsten Check. Der *neuere Firmware gesichtet*-Hinweis behält Quittierung oder Wegklicken über Neustarts, der erste Check nach einem Neustart erfolgt innerhalb von 15 Minuten, und das Zurückziehen der Zustimmung löscht Hinweis und gespeicherte Antwort. [Firmware-Orientierung](Telemetry#firmware-orientierung).
+
 ## v0.27.0-b2 — 2026-11-10
 
 Die #493-Antwort des IDM-Supports ist dokumentiert: Wird eine Batterie genutzt, muss Register 84 (Batterie Laden/Entladen) zusammen mit dem Batterie-SOC geschrieben werden. Die Einrichtungs- und Optionshilfen zu beiden Batteriefeldern nennen das direkt bei der Quellwahl, und die Registerreferenz markiert Register 84 als bei Batterie erforderlich. [Einrichtung der externen Leistungsweiterleitung](Installation-and-Setup#automatische-externe-leistungsweiterleitung-von-home-assistant).

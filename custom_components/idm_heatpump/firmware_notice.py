@@ -44,6 +44,7 @@ def ensure_notice(hass: HomeAssistant, entry: Any, result: dict[str, Any]) -> No
         hass,
         DOMAIN,
         issue_id,
+        config_entry_id=entry.entry_id,
         is_fixable=True,
         is_persistent=True,
         severity=ir.IssueSeverity.WARNING,

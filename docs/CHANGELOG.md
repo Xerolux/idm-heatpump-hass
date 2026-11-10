@@ -13,6 +13,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.27.0-b3] - 2026-11-10
+
+The firmware orientation survives a restart: the sensor keeps its last server answer instead of going blank, and the repairs notice keeps its acknowledged or dismissed state.
+
+### ⚠️ Upgrade notes
+
+- **Rollback is safe**: returning to 0.27.0-b2 or older restores the previous behavior — the firmware sensor blanks until the next check and an open notice may reappear. One exception: a notice dismissed (not acknowledged) before this update can surface one last time, because older versions erased the dismissal at every restart; dismissing it again sticks.
+- **The first firmware check after a restart now happens within 15 minutes** instead of up to 30. The restored value covers the window, so nothing goes blank while waiting.
+
+### 🐛 Bugfixes
+
+- **The firmware sensor keeps its value across restarts**: the last validated catalog answer is stored locally in the config entry and restored at startup, so *Latest reported firmware* and *Newer firmware observed* no longer show nothing while the delayed startup check waits. A failed check keeps the previous value until the next one succeeds.
+- **The "newer firmware observed" repairs notice no longer returns after every restart**: the persistent notice is now linked to its config entry and survives an unload. Home Assistant preserves a dismissal across restarts; removing the integration entry removes the notice with it, and withdrawing the firmware consent clears the notice and the stored answer.
+
 ## [0.27.0-b2] - 2026-11-10
 
 The #493 field data is in: IDM requires register 84 when a battery is used, and the configuration help now says so where the mapping is chosen.

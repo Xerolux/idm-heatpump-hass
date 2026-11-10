@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.27.0-b3 — 2026-11-10
+
+Firmware orientation survives a restart: *Latest reported firmware* keeps its last server answer instead of going blank — it is stored locally and restored at startup, with the original comparison time until the next check. The *newer firmware observed* repairs notice keeps its acknowledged or dismissed state across restarts, the first check after a restart runs within 15 minutes, and withdrawing the consent clears notice and stored answer. [Firmware orientation](Telemetry#firmware-orientation).
+
 ## v0.27.0-b2 — 2026-11-10
 
 The #493 answer from IDM support is documented: when a battery is used, register 84 (battery charge/discharge) must be written together with the battery SoC. The setup and options help for both battery fields states this where the sources are chosen, and the register reference marks register 84 as required with battery. [External power setup](Installation-and-Setup#automatic-external-power-forwarding-from-home-assistant).
