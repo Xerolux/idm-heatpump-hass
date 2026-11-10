@@ -13,6 +13,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.27.0-b1] - 2026-11-10
+
+The first prerelease of the 0.27 *measurability* line: the Modbus transport
+boundary now measures itself, so field evidence no longer depends on whole-poll
+aggregates alone.
+
+### ⚠️ Upgrade notes
+
+- **One new opt-in diagnostic sensor appears with *Communication diagnostics* enabled**: *Modbus request duration (window)* publishes the median duration of the last 100 physical requests; its attributes carry outcome classes and per-function-code statistics. The option stays off by default, nothing else changes, and rollback is safe — without the option no new entity exists.
+
+### ✨ New
+
+- **Request-level Modbus timing and count metrics** ([#694](https://github.com/Xerolux/idm-heatpump-hass/issues/694)): every transport request — FC03/FC04 reads, FC16 writes, FC01/FC05 coils, including the resilient bisect re-reads — is timed passively at the transport boundary (private socket or shared Home Assistant claim) and kept in a bounded 100-request window per entry. The measurement sends no additional request.
+- **The metrics surface where reporters need them**: with *Communication diagnostics* enabled, the new *Modbus request duration (window)* sensor publishes the median request duration with outcome classes and per-function-code duration statistics as attributes; the diagnostics export carries the same snapshot under `client_diagnostics → transport → request_metrics` — the measuring stick for shared links under several holders and maximum-plant response times.
+
+### 💼 Maintenance
+
+- **A time-dependent advisor diagnostics regression is pinned to a relative date**: the stage assertion drifted past its 30-day observation boundary on 2026-11-10 (same class as #622); the fixture now pins "ten days ago" instead of a fixed calendar date.
+
 ## [0.26.13] - 2026-11-09
 
 The firmware repairs notice stops being a riddle: the repairs card itself now names the installed version and the community-observed version side by side.

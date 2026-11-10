@@ -64,6 +64,7 @@ from .adapter_names import _get_german_name
 from .adapter_registers import MOMENTARY_COIL_REGISTERS, build_filtered_register_map
 from .modbus_client import IdmModbusConnectionClient
 from .modbus_shared_transport import HaModbusTransport
+from .request_metrics import RequestMetricsTransport
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -574,7 +575,7 @@ def get_idm_client(
     max_retries: int | None = None,
     message_spacing: float | None = None,
     connect_delay: float | None = None,
-    transport: HaModbusTransport | None = None,
+    transport: HaModbusTransport | RequestMetricsTransport | None = None,
 ) -> LibIdmModbusClient:
     """Factory that returns a properly typed client from the library.
 

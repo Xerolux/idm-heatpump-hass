@@ -18,6 +18,7 @@ from idm_heatpump import IdmModbusClient
 
 from .modbus_shared_transport import HaModbusTransport, SharedModbusUnitTransport
 from .modbus_transport import ModbusConnectionTransport, ModbusTcpEndpoint
+from .request_metrics import RequestMetricsTransport
 
 
 class IdmModbusConnectionClient(IdmModbusClient):
@@ -46,7 +47,7 @@ class IdmModbusConnectionClient(IdmModbusClient):
         *,
         message_spacing: float = 0.0,
         connect_delay: float = 0.0,
-        transport: HaModbusTransport | None = None,
+        transport: HaModbusTransport | RequestMetricsTransport | None = None,
     ) -> None:
         endpoint = ModbusTcpEndpoint(
             host=host,
@@ -68,7 +69,7 @@ class IdmModbusConnectionClient(IdmModbusClient):
         )
         # Keep a dedicated handle to the transport so diagnostics can reach the
         # backend-neutral details without relying on the API's private attribute.
-        self._owned_transport: HaModbusTransport = owned_transport
+        self._owned_transport: HaModbusTransport | RequestMetricsTransport = owned_transport
 
     def __repr__(self) -> str:
         return f"IdmModbusConnectionClient(host={self.host!r}, port={self.port}, connected={self.is_connected})"
@@ -76,6 +77,22 @@ class IdmModbusConnectionClient(IdmModbusClient):
     def transport_diagnostics(self) -> dict[str, object]:
         """Return redaction-safe transport details for HA diagnostics."""
         return self._owned_transport.as_redacted_diagnostics()
+
+    @property
+    def request_metrics(self) -> dict[str, object] | None:
+        """Return the request-level metrics snapshot, or ``None`` uninstrumented.
+
+        Only an entry setup wrapping its transport in
+        :class:`~.request_metrics.RequestMetricsTransport` carries metrics; the
+        config-flow probe and tests may pass plain transports, which answer
+        ``None`` instead of failing.
+        """
+        getter = getattr(self._owned_transport, "request_metrics_snapshot", None)
+        if callable(getter):
+            snapshot = getter()
+            if isinstance(snapshot, dict):
+                return snapshot
+        return None
 
 
 __all__ = ["IdmModbusConnectionClient", "SharedModbusUnitTransport"]

@@ -724,7 +724,10 @@ class TestAdvisorAndEnergySections:
         coordinator.data = {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 4.0}
         coordinator.config_entry = SimpleNamespace(entry_id="entry1", options={})
         advisor = PredictiveAdvisor(coordinator)
-        advisor._first_observed = datetime(2026, 10, 11, tzinfo=UTC)
+        # Ten days before "now": the stage assertions must not depend on the
+        # calendar date the test happens to run (same discipline as #622; a
+        # fixed date drifted past the 30-day boundary on 2026-11-10).
+        advisor._first_observed = datetime.now(UTC) - timedelta(days=10)
         analytics = AdvisorAnalytics(mock_hass, "entry1")
         engine = AdvisorEngine(mock_hass, coordinator, advisor, analytics)
         statistics = EnergyStatistics(mock_hass, "entry1", 30)

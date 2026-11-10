@@ -188,6 +188,7 @@ class TestTranslationFilesStayInSync:
             "modbus_consecutive_failures",
             "modbus_last_success",
             "modbus_poll_duration",
+            "modbus_request_metrics",
             "acknowledge_errors",
             "dhw_boost_start",
             "dhw_boost_cancel",

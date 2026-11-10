@@ -116,6 +116,7 @@ def test_communication_diagnostic_entities_expose_runtime_metrics():
         "modbus_poll_duration": 0.457,
         "modbus_consecutive_failures": 2,
         "modbus_active_registers": 42,
+        "modbus_request_metrics": None,
     }
     failure_sensor = next(
         entity for entity in entities if entity.entity_description.key == "modbus_consecutive_failures"
@@ -2006,6 +2007,7 @@ class TestSensorSetupOptionGatedEntities:
             "modbus_poll_duration",
             "modbus_consecutive_failures",
             "modbus_active_registers",
+            "modbus_request_metrics",
         }
 
 

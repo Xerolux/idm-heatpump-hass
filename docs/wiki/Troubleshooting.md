@@ -271,6 +271,23 @@ again. To see the underlying numbers, enable **Communication diagnostics** in
 the options — it exposes the poll duration and the number of actively polled
 registers as sensors.
 
+### Per-request metrics
+
+Since 0.27.0-b1 the same option also provides **Modbus request duration
+(window)**: the median duration of the last 100 physical Modbus requests
+(FC03/FC04 reads, FC16 writes, FC01/FC05 coils) across all function codes. Its
+attributes carry the full measurement window — request count, outcome classes
+(timeout, illegal address, device, connection, transport), and per-function-code
+duration statistics (min/median/average/p95/max). The values land in the
+diagnostics download too, under `client_diagnostics → transport →
+request_metrics`.
+
+Use it to answer questions a whole-poll duration cannot: which request class
+dominates the cycle, how many extra requests the resilient bisect path adds on a
+plant with unsupported registers, and how request durations behave when a second
+Modbus client shares the connection. The measurement is passive — it never sends
+an additional request.
+
 ## A register write is rejected
 
 Symptom: changing a value (for example the target temperature of a heating

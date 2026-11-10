@@ -118,6 +118,7 @@ _DIAGNOSTIC_KEYS = frozenset(
         "modbus_consecutive_failures",
         "modbus_last_success",
         "modbus_poll_duration",
+        "modbus_request_metrics",
         "navigator_version",
         "software_version",
     }
