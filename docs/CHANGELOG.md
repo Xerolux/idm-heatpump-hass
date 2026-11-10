@@ -27,6 +27,7 @@ aggregates alone.
 
 - **Request-level Modbus timing and count metrics** ([#694](https://github.com/Xerolux/idm-heatpump-hass/issues/694)): every transport request — FC03/FC04 reads, FC16 writes, FC01/FC05 coils, including the resilient bisect re-reads — is timed passively at the transport boundary (private socket or shared Home Assistant claim) and kept in a bounded 100-request window per entry. The measurement sends no additional request.
 - **The metrics surface where reporters need them**: with *Communication diagnostics* enabled, the new *Modbus request duration (window)* sensor publishes the median request duration with outcome classes and per-function-code duration statistics as attributes; the diagnostics export carries the same snapshot under `client_diagnostics → transport → request_metrics` — the measuring stick for shared links under several holders and maximum-plant response times.
+- **The scan-interval repair becomes fixable with a concrete suggestion** ([#695](https://github.com/Xerolux/idm-heatpump-hass/issues/695)): the coordinator derives a suggested interval from a bounded history of poll durations — p95 divided by the warning ratio, rounded to the next 5 s step, within the 5–300 s bounds. The *Fix it* dialog pre-fills it, validates like the options flow and reloads once; nothing changes unconfirmed.
 
 ### 💼 Maintenance
 

@@ -11,6 +11,9 @@ from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -23,11 +26,16 @@ from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
+    CONF_SCAN_INTERVAL,
     CONF_SOLAR_THERMAL,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
     CONF_WEB_PIN,
+    DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    SCAN_INTERVAL_MAX,
+    SCAN_INTERVAL_MIN,
+    SCAN_INTERVAL_SUGGESTION_STEP,
 )
 from .error_messages import scoped_issue_id
 from .firmware_notice import ACK_KEY, fingerprint
@@ -44,6 +52,7 @@ else:
 _ISSUE_WEB_PIN_MISSING = "web_pin_missing"
 _ISSUE_WEB_AUTH_FAILED = "web_authentication_failed"
 _ISSUE_SOLAR_MODULE_UNUSED = "solar_module_unused"
+_ISSUE_SCAN_INTERVAL_TOO_LOW = "scan_interval_too_low"
 _ACTION_SET_PIN = "set_pin"
 _ACTION_DISABLE_WEB = "disable_web"
 _ACTION_DISABLE_SOLAR = "disable"
@@ -61,6 +70,8 @@ async def async_create_fix_flow(
         return IdmFirmwareObservedRepairFlow(hass, issue_id, data or {})
     if issue_id.startswith(_ISSUE_SOLAR_MODULE_UNUSED):
         return IdmSolarUnusedRepairFlow(hass, data or {})
+    if issue_id.startswith(_ISSUE_SCAN_INTERVAL_TOO_LOW):
+        return IdmScanIntervalRepairFlow(hass, data or {})
     return IdmWebPinMissingRepairFlow(hass, data or {})
 
 
@@ -101,6 +112,100 @@ class IdmFirmwareObservedRepairFlow(repairs.RepairsFlow):
                 "observed": version,
             },
         )
+
+
+class IdmScanIntervalRepairFlow(repairs.RepairsFlow):
+    """Apply a measured scan interval to an entry that saturates its own polls.
+
+    The coordinator derives the suggestion from the recorded poll durations
+    (p95 divided by the slow-poll ratio, rounded up); the flow pre-fills that
+    value, the user confirms or adjusts it inside the options-flow bounds, and
+    the entry reloads with the new interval. Nothing adapts silently — without
+    the confirmation the interval stays as configured.
+    """
+
+    def __init__(self, hass: HomeAssistant, data: dict[str, Any]) -> None:
+        self.hass = hass
+        self._issue_data = data
+
+    def _get_entry(self) -> ConfigEntry | None:
+        entry_id = self._issue_data.get("entry_id")
+        entries = list(self.hass.config_entries.async_entries(DOMAIN))
+        if entry_id:
+            return next((entry for entry in entries if entry.entry_id == entry_id), None)
+        if len(entries) == 1:
+            return entries[0]
+        return None
+
+    def _suggested_interval(self, entry: ConfigEntry) -> int:
+        """Prefer the coordinator's live measurement; fall back to issue data."""
+        coordinator = getattr(getattr(entry, "runtime_data", None), "coordinator", None)
+        suggestion = getattr(coordinator, "suggested_scan_interval_seconds", None)
+        if callable(suggestion):
+            live = suggestion()
+            if isinstance(live, int) and SCAN_INTERVAL_MIN <= live <= SCAN_INTERVAL_MAX:
+                return live
+        fallback = self._issue_data.get("suggested_interval")
+        current = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
+        if isinstance(fallback, (int, float)) and SCAN_INTERVAL_MIN <= int(fallback) <= SCAN_INTERVAL_MAX:
+            return max(int(fallback), current)
+        return min(max(current + SCAN_INTERVAL_SUGGESTION_STEP, SCAN_INTERVAL_MIN), SCAN_INTERVAL_MAX)
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
+        """Show the measured suggestion and apply the confirmed interval."""
+        entry = self._get_entry()
+        if entry is None:
+            return self.async_abort(reason="entry_not_found")
+
+        if user_input is not None:
+            scan_interval = int(user_input.get(CONF_SCAN_INTERVAL, 0))
+            if not SCAN_INTERVAL_MIN <= scan_interval <= SCAN_INTERVAL_MAX:
+                return self.async_show_form(
+                    step_id="init",
+                    data_schema=self._schema(entry),
+                    errors={"base": "invalid_scan_interval"},
+                    description_placeholders=self._placeholders(entry),
+                )
+            self.hass.config_entries.async_update_entry(
+                entry,
+                options={**entry.options, CONF_SCAN_INTERVAL: scan_interval},
+            )
+            ir.async_delete_issue(
+                self.hass,
+                DOMAIN,
+                scoped_issue_id(entry.entry_id, _ISSUE_SCAN_INTERVAL_TOO_LOW),
+            )
+            await self.hass.config_entries.async_reload(entry.entry_id)
+            return self.async_create_entry(title="", data={})
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self._schema(entry),
+            description_placeholders=self._placeholders(entry),
+        )
+
+    def _schema(self, entry: ConfigEntry) -> vol.Schema:
+        default = self._suggested_interval(entry)
+        return vol.Schema(
+            {
+                vol.Required(CONF_SCAN_INTERVAL, default=default): NumberSelector(
+                    NumberSelectorConfig(
+                        min=SCAN_INTERVAL_MIN,
+                        max=SCAN_INTERVAL_MAX,
+                        step=1,
+                        mode=NumberSelectorMode.BOX,
+                        unit_of_measurement="s",
+                    )
+                )
+            }
+        )
+
+    def _placeholders(self, entry: ConfigEntry) -> dict[str, str]:
+        current = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
+        return {
+            "current_interval": f"{current:g}",
+            "suggested_interval": f"{self._suggested_interval(entry):g}",
+        }
 
 
 class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):

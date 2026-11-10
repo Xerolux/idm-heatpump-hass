@@ -2815,9 +2815,9 @@ class TestScanIntervalSelfDiagnosis:
 
         mock_ir.async_create_issue.assert_called_once()
         assert mock_ir.async_create_issue.call_args.args[2] == self._ISSUE_ID
-        placeholders = mock_ir.async_create_issue.call_args.kwargs["translation_placeholders"]
-        assert placeholders["duration"] == "9.5"
-        assert placeholders["interval"] == "10"
+        # Fixable issue: the explanation lives in the fix flow, not in card
+        # placeholders (hassfest keeps description and fix_flow exclusive).
+        assert "translation_placeholders" not in mock_ir.async_create_issue.call_args.kwargs
 
     def test_fast_polls_below_the_ratio_never_warn(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry)
@@ -2884,6 +2884,57 @@ class TestScanIntervalSelfDiagnosis:
 
         assert coord._fast_poll_streak == 1
         assert coord._slow_poll_streak == 0
+
+    def test_suggestion_without_history_or_interval_is_none(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        assert coord.suggested_scan_interval_seconds() is None
+
+        coord.update_interval = None
+        coord._poll_duration_history.append(9.5)
+
+        assert coord.suggested_scan_interval_seconds() is None
+
+    def test_suggestion_derives_from_the_recorded_p95(self, mock_hass, mock_config_entry):
+        """p95 9.5 s ÷ 0.8 = 11.875 s → next 5 s step = 15 s."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        self._poll(coord, None, 9.5, times=10)
+
+        assert coord.suggested_scan_interval_seconds() == 15
+
+    def test_suggestion_rounds_up_to_the_next_step(self, mock_hass, mock_config_entry):
+        """p95 13 s ÷ 0.8 = 16.25 s → 20 s, and never below interval + step."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        self._poll(coord, None, 13.0, times=10)
+
+        assert coord.suggested_scan_interval_seconds() == 20
+
+    def test_suggestion_is_capped_at_the_options_maximum(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        coord.update_interval = timedelta(seconds=300)
+
+        self._poll(coord, None, 299.0, times=10)
+
+        assert coord.suggested_scan_interval_seconds() == 300
+
+    def test_issue_is_fixable_and_carries_the_suggestion(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            self._poll(coord, mock_ir, 9.5, times=10)
+
+        kwargs = mock_ir.async_create_issue.call_args.kwargs
+        assert kwargs["is_fixable"] is True
+        assert kwargs["data"] == {"entry_id": "test_entry_id", "suggested_interval": 15}
+
+    def test_history_stays_bounded(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        self._poll(coord, None, 1.0, times=60)
+
+        assert len(coord._poll_duration_history) == 20
 
 
 def test_register_map_names_stay_complete_when_polling_narrows(mock_hass, mock_config_entry):

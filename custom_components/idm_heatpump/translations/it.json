@@ -548,8 +548,7 @@
       "description": "Home Assistant si è connesso a **{host}**, ma non ha ricevuto valori di registro Modbus utilizzabili.\n\nControlla:\n- L'ID slave/unità è di norma 1\n- Il proxy Modbus inoltra alla pompa di calore corretta\n- Il modello Navigator configurato e i circuiti di riscaldamento corrispondono al dispositivo\n- Nessun altro client Modbus blocca la comunicazione"
     },
     "scan_interval_too_low": {
-      "title": "Il polling IDM entra a malapena nell'intervallo",
-      "description": "La lettura dei registri di **{host}** richiede attualmente circa {duration} s dell'intervallo configurato di {interval} s, e così per diversi polling di fila.\n\nIl regolatore della pompa di calore non ottiene quasi tempo di riposo tra le richieste, il che tipicamente si manifesta in timeout — soprattutto quando un altro client Modbus condivide il regolatore.\n\nAiuta:\n- Aumentare l'intervallo di scansione nelle opzioni dell'integrazione\n- Disattivare le entità che non usi (il polling salta i loro registri)\n- Verificare se un altro client Modbus interroga la pompa di calore contemporaneamente"
+      "title": "Il polling IDM entra a malapena nell'intervallo"
     },
     "write_rejected": {
       "title": "Scrittura registro IDM rifiutata",

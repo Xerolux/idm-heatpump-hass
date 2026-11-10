@@ -459,7 +459,13 @@ def _stub_homeassistant() -> None:
 
     class _RepairsFlow:
         def async_show_form(self, *, step_id, data_schema=None, errors=None, description_placeholders=None):
-            return {"type": "form", "step_id": step_id, "errors": errors or {}}
+            return {
+                "type": "form",
+                "step_id": step_id,
+                "errors": errors or {},
+                "data_schema": data_schema,
+                "description_placeholders": description_placeholders,
+            }
 
         def async_create_entry(self, title="", data=None):
             return {"type": "create_entry", "title": title, "data": data or {}}

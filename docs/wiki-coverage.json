@@ -14,7 +14,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "b40754b86d427d801245a2108744df0f4de2ca2d89050539277a455dc6ed9d4e"
+      "reviewed_source_sha256": "f931ec65e9ff88961a77d679d04efe6359a0f02dd2417f4a6c37bb1ad16e6ed2"
     },
     {
       "feature": "Model and register semantics",
@@ -57,7 +57,7 @@
         "Configuration.md",
         "Troubleshooting.md"
       ],
-      "reviewed_source_sha256": "f0c4622247ca94dc6d0bb223fa9a6b65a61c5d7b2e4cd3c5bd695c4675bbf3d1"
+      "reviewed_source_sha256": "6bc5ad2e95d650f7f6f77ad58a5ecd798818ba450d77dd3b3691b2379a0d9ce0"
     },
     {
       "feature": "Core entities and device placement",
@@ -196,7 +196,7 @@
         "Smart-Energy-and-Comfort.md",
         "Entities.md"
       ],
-      "reviewed_source_sha256": "10486780133af46f06b73bf6f04fa4b91b0bd9cd4bab1338db64fa40876c1b85"
+      "reviewed_source_sha256": "90659f2b4c554cfe1d050985219cba9306969162bd87469e8155d3350d3d556f"
     },
     {
       "feature": "KNX bridge and catalog",

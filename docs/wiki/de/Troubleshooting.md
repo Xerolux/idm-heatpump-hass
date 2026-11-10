@@ -268,6 +268,13 @@ mindestens 80 % des konfigurierten Abfrageintervalls beansprucht hat. Der Regler
 zwischen den Anfragen fast keine Ruhezeit, was sich meist als Zeitüberschreitungen zeigt —
 besonders wenn ein zweiter Modbus-Client die Wärmepumpe mitbenutzt.
 
+Seit 0.27.0-b1 trägt der Hinweis eine **Beheben**-Schaltfläche: Die Integration leitet ein
+konkretes vorgeschlagenes Intervall aus den aufgezeichneten Abfragedauern ab (das 95.
+Perzentil geteilt durch die Warnschwelle, aufgerundet auf den nächsten 5-s-Schritt), der
+Reparaturdialog füllt diesen Wert vor, und die Bestätigung schreibt die Option und lädt den
+Eintrag einmal neu. Im selben Dialog lässt sich auch ein eigener Wert zwischen 5 und 300 s
+wählen; ohne Bestätigung ändert sich nichts.
+
 Was hilft, nach Wirkung geordnet:
 
 1. **Erhöhe das Abfrageintervall** in den Integrationsoptionen. Die meisten Werte ändern

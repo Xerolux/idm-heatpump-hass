@@ -3521,7 +3521,20 @@
     },
     "scan_interval_too_low": {
       "title": "IDM-Abfrage passt kaum in das Abfrageintervall",
-      "description": "Das Lesen der Register von **{host}** dauert derzeit rund {duration} s bei einem eingestellten Abfrageintervall von {interval} s – und das über mehrere Abfragen hinweg.\n\nDamit bleibt der Wärmepumpenregelung fast keine Pause zwischen den Anfragen, was sich typischerweise als Timeouts zeigt – besonders, wenn ein weiterer Modbus-Client dieselbe Regelung abfragt.\n\nDas hilft:\n- Abfrageintervall in den Integrationsoptionen erhöhen\n- Nicht genutzte Entitäten deaktivieren (deren Register werden dann nicht mehr gelesen)\n- Prüfen, ob ein weiterer Modbus-Client die Wärmepumpe gleichzeitig abfragt"
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Abfrageintervall erhöhen",
+            "description": "Das Lesen der Register braucht regelmäßig den größten Teil des aktuellen Intervalls von {current_interval} s. Der Wärmepumpenregelung bleibt damit fast keine Pause zwischen den Anfragen, was sich typischerweise als Timeouts zeigt – besonders, wenn ein weiterer Modbus-Client dieselbe Regelung abfragt.\n\nAus den gemessenen Abfragedauern ergibt sich der Vorschlag **{suggested_interval} s** – bestätige ihn oder wähle einen eigenen Wert zwischen 5 und 300 s. Alternativ deaktiviere nicht genutzte Entitäten; deren Register werden dann nicht mehr gelesen. Die Integration lädt einmal mit dem neuen Intervall neu.",
+            "data": {
+              "scan_interval": "Abfrageintervall (s)"
+            }
+          }
+        },
+        "error": {
+          "invalid_scan_interval": "Wähle ein Abfrageintervall zwischen 5 und 300 s."
+        }
+      }
     },
     "write_rejected": {
       "title": "IDM-Registerschreibvorgang abgelehnt",

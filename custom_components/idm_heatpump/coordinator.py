@@ -11,6 +11,7 @@ import logging
 import math
 import random
 import time
+from collections import deque
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime, timedelta
@@ -44,6 +45,8 @@ from .const import (
     ISSUE_SOLAR_MODULE_UNUSED,
     MANUFACTURER,
     MODEL,
+    SCAN_INTERVAL_MAX,
+    SCAN_INTERVAL_SUGGESTION_STEP,
     connection_state_label,
 )
 from .error_messages import (
@@ -144,6 +147,10 @@ _SCAN_INTERVAL_TOO_LOW_ISSUE = "scan_interval_too_low"
 _SLOW_POLL_RATIO = 0.8
 _SLOW_POLL_STREAK_TO_WARN = 10
 _FAST_POLL_STREAK_TO_CLEAR = 10
+# Recent poll durations kept for the scan-interval suggestion: enough cycles
+# to see the poll pattern across fast and slow rounds, bounded so the memory
+# never grows with uptime.
+_POLL_DURATION_HISTORY_SIZE = 20
 # A rebooting proxy, a switching hiccup or a short network partition lasts
 # seconds to minutes and self-heals. Raising a repair issue, an error line
 # and unavailable entities for every such blip trained users to read the log
@@ -360,6 +367,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._slow_poll_streak = 0
         self._fast_poll_streak = 0
         self._scan_interval_issue_active = False
+        self._poll_duration_history: deque[float] = deque(maxlen=_POLL_DURATION_HISTORY_SIZE)
         self._dhw_boost_manager: DhwBoostManager | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
         # True while the pending write-confirmation task is inside its
@@ -1484,8 +1492,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         starts almost immediately after the previous one — which shows up as
         timeouts, especially when a second Modbus client (an energy manager, a
         second Home Assistant integration) shares the controller. The user fix
-        is a longer scan interval or fewer enabled entities, so this is reported
-        as a non-fixable repair issue rather than silently absorbed.
+        is a longer scan interval or fewer enabled entities, so the repair
+        issue carries a concrete suggested interval (from the recorded poll
+        durations) and a fix flow that applies it, instead of silently
+        absorbing the saturation.
         """
         if self.update_interval is None:
             return
@@ -1493,6 +1503,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if interval <= 0:
             return
 
+        self._poll_duration_history.append(duration)
         if duration >= interval * _SLOW_POLL_RATIO:
             self._slow_poll_streak += 1
             self._fast_poll_streak = 0
@@ -1502,31 +1513,55 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         if not self._scan_interval_issue_active and self._slow_poll_streak >= _SLOW_POLL_STREAK_TO_WARN:
             self._scan_interval_issue_active = True
+            suggested = self.suggested_scan_interval_seconds()
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
                 self._scoped_issue_id(_SCAN_INTERVAL_TOO_LOW_ISSUE),
                 config_entry_id=(self.config_entry.entry_id if self.config_entry is not None else None),
-                is_fixable=False,
+                is_fixable=True,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=_SCAN_INTERVAL_TOO_LOW_ISSUE,
-                translation_placeholders={
-                    "host": self._client.host,
-                    "duration": f"{duration:.1f}",
-                    "interval": f"{interval:g}",
+                data={
+                    "entry_id": (self.config_entry.entry_id if self.config_entry is not None else None),
+                    "suggested_interval": suggested,
                 },
             )
             _LOGGER.warning(
                 "IDM polling of %s took %.1fs of its %gs scan interval for %d consecutive polls; "
-                "increase the scan interval or disable unused entities",
+                "the repair suggests a %ss scan interval (or disable unused entities)",
                 self._client.host,
                 duration,
                 interval,
                 self._slow_poll_streak,
+                suggested or 0,
             )
         elif self._scan_interval_issue_active and self._fast_poll_streak >= _FAST_POLL_STREAK_TO_CLEAR:
             self._scan_interval_issue_active = False
             ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(_SCAN_INTERVAL_TOO_LOW_ISSUE))
+
+    def suggested_scan_interval_seconds(self) -> int | None:
+        """Return a concrete scan interval suggestion, or ``None`` without data.
+
+        Derivation, deliberately conservative and explainable: the p95 of the
+        recent poll durations divided by the slow-poll ratio, so the observed
+        p95 would land exactly at the warning threshold, then rounded up to the
+        next 5 s step. The result always exceeds the currently configured
+        interval (otherwise the issue would not be active) and stays inside the
+        options-flow bounds.
+        """
+        if self.update_interval is None or not self._poll_duration_history:
+            return None
+        interval = self.update_interval.total_seconds()
+        if interval <= 0:
+            return None
+        ordered = sorted(self._poll_duration_history)
+        rank = max(1, math.ceil(0.95 * len(ordered)))
+        p95 = ordered[rank - 1]
+        required = p95 / _SLOW_POLL_RATIO
+        stepped = math.ceil(required / SCAN_INTERVAL_SUGGESTION_STEP) * SCAN_INTERVAL_SUGGESTION_STEP
+        suggested = max(stepped, interval + SCAN_INTERVAL_SUGGESTION_STEP)
+        return int(min(suggested, SCAN_INTERVAL_MAX))
 
     def _quiet_outage_active(self) -> bool:
         """Return whether a connection outage is still inside its quiet window."""
