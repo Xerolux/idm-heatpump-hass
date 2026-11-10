@@ -7,7 +7,7 @@ Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
 ## v0.27.0-b1 — 2026-11-10
 
-Die 0.27er-Linie *Messbarkeit* beginnt: Die Modbus-Transportschicht misst jetzt passiv jede physische Anfrage — Lesen, Schreiben, Coils, einschließlich Bisektions-Nachlesen — in einem begrenzten Fenster von 100 Anfragen. Mit aktivierter *Kommunikationsdiagnose* veröffentlicht der neue Sensor *Modbus-Anfragedauer (Zeitfenster)* den Median samt Fehlerklassen und Statistiken je Funktioncode; der Diagnose-Export trägt dieselben Daten. Der Abfrageintervall-Repair erhält einen *Beheben*-Flow mit gemessenem Intervallvorschlag. [Kennzahlen pro Anfrage](Troubleshooting#kennzahlen-pro-anfrage), [Abfrageintervall](Troubleshooting#idm-abfrage-passt-kaum-in-das-abfrageintervall).
+Die 0.27er-Linie *Messbarkeit* beginnt: Die Modbus-Transportschicht misst jetzt passiv jede physische Anfrage — Lesen, Schreiben, Coils, einschließlich Bisektions-Nachlesen — in einem begrenzten Fenster von 100 Anfragen. Mit aktivierter *Kommunikationsdiagnose* veröffentlicht der neue Sensor *Modbus-Anfragedauer (Zeitfenster)* den Median samt Fehlerklassen und Statistiken je Funktioncode; der Diagnose-Export trägt dieselben Daten. Der Abfrageintervall-Repair erhält einen *Beheben*-Flow mit gemessenem Intervallvorschlag, und Advisor-Empfehlungstitel erscheinen deutsch oder englisch. [Kennzahlen pro Anfrage](Troubleshooting#kennzahlen-pro-anfrage), [Abfrageintervall](Troubleshooting#idm-abfrage-passt-kaum-in-das-abfrageintervall), [Predictive Advisor](Predictive-Advisor).
 
 ## v0.26.13 — 2026-11-09
 

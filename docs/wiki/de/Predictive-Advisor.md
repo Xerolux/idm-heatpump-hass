@@ -76,6 +76,12 @@ Es gibt keinen Recorder-Nachimport; bestehende KI-Berichte bleiben separat.
 - Empfehlungen enthalten übersetzte Beobachtungen, Gründe, aktuelle/vorgeschlagene
   Werte, die Bedeutung der Konfidenz, fehlende Daten und eine erste Prüfung.
   Die Konfidenz ist keine Wahrscheinlichkeit für einen Defekt.
+- Seit 0.27.0-b1 sind auch die **Titel der Empfehlungen übersetzt**: Sensor-Attribute
+  und das lokale Assist geben sie deutsch oder englisch passend zur
+  Home-Assistant-Sprache aus, mit deutschen Dezimalkommas. Das Feld `title` selbst
+  bleibt der dokumentierte englische Datenbestandteil — Events, gespeicherte
+  Einträge und Diagnosen bleiben sprachunabhängig; vor dem Update gespeicherte
+  Empfehlungen funktionieren weiter und zeigen ihren gespeicherten Titel.
 - Ein neu generiertes Anlagen-Dashboard ergänzt die vorhandenen Advisor-Entitäten
   und Erklärungskarten. Bestehende Dashboards werden nicht automatisch geändert.
 

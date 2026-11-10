@@ -21,6 +21,7 @@ from custom_components.idm_heatpump.advisor_engine import (
     parse_price_hourly,
     parse_pv_hourly_kwh,
 )
+from custom_components.idm_heatpump.advisor_titles import TITLE_TEXTS
 from custom_components.idm_heatpump.binary_sensor import async_setup_entry as async_setup_binary_sensors
 from custom_components.idm_heatpump.const import HeatPumpStatus
 from custom_components.idm_heatpump.predictive_advisor import (
@@ -51,6 +52,13 @@ from custom_components.idm_heatpump.sensor import async_setup_entry as async_set
 # must not depend on the run time define their own fixed timestamps instead
 # (issue #622).
 T0 = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
+
+
+def _template_names(template: str) -> set[str]:
+    """Placeholder names of one title template, for the key/value parity check."""
+    from string import Formatter
+
+    return {field for _, field, _, _ in Formatter().parse(template) if field}
 
 
 def _day(offset: float) -> datetime:
@@ -341,6 +349,17 @@ def test_anomaly_producer_submits_and_retracts() -> None:
     assert engine.anomaly_active is True
     assert engine.anomaly_findings
 
+    # Every anomaly recommendation names its localized rendering (0.27/WP3):
+    # a stable title key plus pre-formatted placeholder values, while the
+    # English title stays the machine-readable data field.
+    for rec in advisor.active_recommendations:
+        if rec.category is RecommendationCategory.ANOMALY:
+            assert rec.title_key in TITLE_TEXTS, rec.title_key
+            assert rec.title_key.startswith("anomaly_")
+            assert set(rec.title_values) <= {
+                name for template in TITLE_TEXTS[rec.title_key] for name in _template_names(template)
+            }
+
     # A fresh engine on a healthy day withdraws the recommendation again.
     healthy_data = {
         "power_consumption_hp": 2.0,
@@ -507,6 +526,9 @@ def test_heating_curve_producer_recommends_and_retracts() -> None:
     assert recs[0].current_value == 0.35
     assert recs[0].recommended_value == 0.33
     assert "room_temperature_above_target" in recs[0].reasons
+    assert recs[0].title_key == "advisor_heating_curve_review"
+    assert recs[0].title_values == {"circuit": "A", "curve": "0.35", "recommended": "0.33"}
+    assert recs[0].summary("de")["title_localized"] == "Heizkurve HK A prüfen: 0,35 → 0,33"
     assert engine.curve_recommendations["a"]["recommended"] == 0.33
 
     # Well-regulated rooms produce no recommendation.

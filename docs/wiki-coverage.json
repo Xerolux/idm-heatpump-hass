@@ -151,6 +151,7 @@
         "custom_components/idm_heatpump/advisor_evidence.py",
         "custom_components/idm_heatpump/advisor_inputs.py",
         "custom_components/idm_heatpump/advisor_operation_reason.py",
+        "custom_components/idm_heatpump/advisor_titles.py",
         "custom_components/idm_heatpump/assist_agent.py",
         "custom_components/idm_heatpump/conversation.py",
         "custom_components/idm_heatpump/predictive_advisor.py",
@@ -161,7 +162,7 @@
         "Configuration.md",
         "Entities.md"
       ],
-      "reviewed_source_sha256": "d23c65214c45e4e502aef540dcefa570a7871e8da0bf4f72c4532776618c43e3"
+      "reviewed_source_sha256": "9492491f56c551ae458346ba3c6dbe1bb978e09c70db462be318627121b28ee7"
     },
     {
       "feature": "Experimental reports and providers",

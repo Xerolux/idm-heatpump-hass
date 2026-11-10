@@ -580,8 +580,10 @@ class AdvisorEngine:
         return self._analytics.metric_baseline(dominant, current)
 
     def _produce_anomalies(self, current: datetime) -> None:
-        # key -> (strong, message, reason, baseline_days, threshold_overshoot)
-        found: dict[str, tuple[bool, str, str, int, float]] = {}
+        # key -> (strong, message, reason, baseline_days, threshold_overshoot,
+        #         title_key, title_values) — the trailing pair names the
+        # localized rendering (advisor_titles); the message stays English.
+        found: dict[str, tuple[bool, str, str, int, float, str, dict[str, str]]] = {}
         flow = self._mode_aware_baseline("heat_sink_flow_rate", current)
         if (
             flow is not None
@@ -589,8 +591,10 @@ class AdvisorEngine:
             and flow.z_score <= _FLOW_LOW_Z
             and not flow.is_seasonal_normal
         ):
-            mode_label = _FLOW_MODE_LABELS.get(flow.key.rsplit(":", 1)[-1], "")
+            mode = flow.key.rsplit(":", 1)[-1]
+            mode_label = _FLOW_MODE_LABELS.get(mode, "")
             suffix = f" {mode_label}" if mode_label else ""
+            title_key = "anomaly_flow_rate_low" if not mode_label else f"anomaly_flow_rate_low_{mode}"
             percent = flow.deviation_percent if flow.deviation_percent is not None else 0.0
             found["anomaly_flow_rate_low"] = (
                 flow.z_score <= 2 * _FLOW_LOW_Z,
@@ -598,6 +602,8 @@ class AdvisorEngine:
                 "heat_circle_flow_below_baseline",
                 flow.days,
                 _threshold_overshoot(flow.z_score, _FLOW_LOW_Z),
+                title_key,
+                {"percent": f"{abs(percent):.0f}", "days": str(flow.days)},
             )
         spread = self._mode_aware_baseline("hp_temperature_spread", current)
         if (
@@ -615,6 +621,8 @@ class AdvisorEngine:
                 "spread_above_baseline",
                 spread.days,
                 _threshold_overshoot(spread.z_score, _SPREAD_HIGH_Z),
+                "anomaly_spread_high_k" if delta is not None else "anomaly_spread_high",
+                ({"delta": f"{delta:.1f}"} if delta is not None else {}),
             )
         starts = self._analytics.metric_baseline("compressor_starts", current, condition_outdoor=True)
         if (
@@ -631,6 +639,8 @@ class AdvisorEngine:
                 "compressor_starts_above_baseline",
                 starts.days,
                 _threshold_overshoot(starts.z_score, _STARTS_HIGH_Z),
+                "anomaly_compressor_starts",
+                {"percent": f"{percent:.0f}", "days": str(starts.days)},
             )
         dhw = self._analytics.metric_baseline("dhw_charge_minutes", current, condition_outdoor=True)
         if (
@@ -647,6 +657,8 @@ class AdvisorEngine:
                 "dhw_charge_time_above_baseline",
                 dhw.days,
                 _threshold_overshoot(dhw.z_score, _DHW_HIGH_Z),
+                "anomaly_dhw_charge_long",
+                {"percent": f"{percent:.0f}"},
             )
 
         # Snoozed reasons (#612) are suppressed: they are neither re-submitted
@@ -656,13 +668,15 @@ class AdvisorEngine:
 
         stamp = _day_stamp(current)
         quality = self._advisor.usable_fraction
-        for key, (strong, message, reason, baseline_days, overshoot) in found.items():
+        for key, (strong, message, reason, baseline_days, overshoot, title_key, title_values) in found.items():
             self._advisor.submit(
                 Recommendation(
                     id=f"{key}_{stamp}",
                     category=RecommendationCategory.ANOMALY,
                     severity=RecommendationSeverity.WARNING if strong else RecommendationSeverity.HINT,
                     title=message,
+                    title_key=title_key,
+                    title_values=title_values,
                     reasons=(reason,),
                     # The confidence scales with how far past its threshold the
                     # deviation sits: a borderline finding carries the base
@@ -719,6 +733,12 @@ class AdvisorEngine:
                             category=RecommendationCategory.HEATING_CURVE,
                             severity=RecommendationSeverity.HINT,
                             title=f"Review heating curve HC {circuit.upper()}: {curve:.2f} -> {recommended:.2f}",
+                            title_key="advisor_heating_curve_review",
+                            title_values={
+                                "circuit": circuit.upper(),
+                                "curve": f"{curve:.2f}",
+                                "recommended": f"{recommended:.2f}",
+                            },
                             current_value=curve,
                             recommended_value=recommended,
                             confidence=clamp_confidence(
@@ -900,9 +920,16 @@ class AdvisorEngine:
         window_text = f"{start_local.strftime('%H:%M')}-{end_local.strftime('%H:%M')}"
         if window["source"] == "pv_surplus_forecast":
             title = f"Consider hot water {window_text}: forecast PV generation {window['expected_pv_kwh']} kWh; surplus unconfirmed"
+            title_key = "advisor_dhw_window_pv"
+            title_values = {"window": window_text, "pv_kwh": str(window["expected_pv_kwh"])}
             reasons = ("pv_forecast_surplus_window",)
         else:
             title = f"Consider hot water {window_text}: lowest estimated heat cost {window['heat_cost_eur_per_kwh']:.3f} €/kWh"
+            title_key = "advisor_dhw_window_price"
+            title_values = {
+                "window": window_text,
+                "heat_cost": f"{window['heat_cost_eur_per_kwh']:.3f}",
+            }
             reasons = ("electricity_price_and_expected_cop",)
         self._advisor.submit(
             Recommendation(
@@ -910,6 +937,8 @@ class AdvisorEngine:
                 category=RecommendationCategory.DHW,
                 severity=RecommendationSeverity.INFO,
                 title=title,
+                title_key=title_key,
+                title_values=title_values,
                 recommended_value=window_text,
                 confidence=clamp_confidence(0.55 * (quality if quality is not None else 1.0) + 0.25),
                 reasons=reasons,
@@ -967,6 +996,7 @@ class AdvisorEngine:
                         category=RecommendationCategory.ELECTRICITY_PRICE,
                         severity=RecommendationSeverity.WARNING,
                         title="Recommended hot-water window overlaps the most expensive hours",
+                        title_key="advisor_dhw_window_conflict",
                         reasons=("dhw_window_inside_expensive_hours",),
                         confidence=clamp_confidence(0.6 * (plan_quality if plan_quality is not None else 1.0) + 0.2),
                     )

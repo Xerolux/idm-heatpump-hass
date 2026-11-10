@@ -24,6 +24,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
 from .advisor_evidence import explain_recommendation
+from .advisor_titles import localized_title
 from .const import (
     CONF_ADVISOR_ROOM_TEMP_ENTITIES,
     CONF_DYNAMIC_PRICE_ENTITY,
@@ -281,6 +282,10 @@ class Recommendation:
     ``reasons`` carries snake_case reason codes (e.g.
     ``room_temperature_above_target``) so the UI can translate them; the
     rendered explanation always lists these reasons (spec section 13).
+    ``title`` stays the documented English data field; ``title_key`` plus
+    ``title_values`` name the localized rendering (see
+    :mod:`.advisor_titles`) without changing the stored shape — legacy
+    records without them keep working and render their English title.
     """
 
     id: str
@@ -288,6 +293,8 @@ class Recommendation:
     severity: RecommendationSeverity
     title: str
     description: str = ""
+    title_key: str = ""
+    title_values: dict[str, str] = field(default_factory=dict)
     current_value: float | int | str | None = None
     recommended_value: float | int | str | None = None
     unit: str | None = None
@@ -318,6 +325,8 @@ class Recommendation:
             "severity": str(self.severity),
             "title": self.title,
             "description": self.description,
+            "title_key": self.title_key,
+            "title_values": dict(self.title_values),
             "current_value": self.current_value,
             "recommended_value": self.recommended_value,
             "unit": self.unit,
@@ -335,6 +344,7 @@ class Recommendation:
             "category": str(self.category),
             "severity": str(self.severity),
             "title": self.title,
+            "title_localized": localized_title(self.title_key, self.title_values, self.title, language),
             "description": self.description,
             "explanation": explain_recommendation(self.to_dict(), language),
             "current_value": self.current_value,
@@ -380,12 +390,17 @@ def recommendation_from_dict(value: Any) -> Recommendation | None:
     if created_at is None:
         created_at = _utcnow()
     refreshed_at = _parse_datetime(value.get("refreshed_at"))
+    title_values = value.get("title_values")
+    if not isinstance(title_values, Mapping):
+        title_values = {}
     return Recommendation(
         id=rec_id,
         category=category,
         severity=severity,
         title=str(value.get("title", rec_id)),
         description=str(value.get("description", "")),
+        title_key=str(value.get("title_key", "") or ""),
+        title_values={str(key): str(item) for key, item in title_values.items()},
         current_value=value.get("current_value"),
         recommended_value=value.get("recommended_value"),
         unit=value.get("unit") if isinstance(value.get("unit"), str) else None,
@@ -404,6 +419,8 @@ def _same_recommendation_content(left: Recommendation, right: Recommendation) ->
         and left.severity == right.severity
         and left.title == right.title
         and left.description == right.description
+        and left.title_key == right.title_key
+        and left.title_values == right.title_values
         and left.current_value == right.current_value
         and left.recommended_value == right.recommended_value
         and left.unit == right.unit
