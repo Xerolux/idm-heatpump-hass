@@ -179,3 +179,8 @@ Community-Meldungen sind keine Zusage, dass die Version für deine Wärmepumpe v
 Bei aktivierter Gerätehierarchie bilden die Cloud-Einwilligungs-Entitäten — **Neueste gemeldete Firmware**, **Neuere Firmware gesichtet (unbestätigt)** und **Telemetrie-Berichtsstatus** — ein eigenes Untergerät **Telemetrie** unter der Anlage. Die Entity-IDs bleiben beim Verschieben erhalten; die installierte Softwareversion bleibt in **Diagnose**. Ohne Gerätehierarchie liegen sie als Diagnose-Entitäten auf dem Hauptgerät.
 
 Die übermittelten Fähigkeitsmerkmale stammen aus API-Modellmetadaten; sie beweisen keine installierte Solar-, PV- oder ISC-Ausstattung. Fehlende physische Modellangaben bleiben unbekannt.
+
+
+## Qualität der Auswertung
+
+Die private Serverauswertung zeigt betroffene Berichte neben der Modbus-Fehlerquote mit passendem Nenner. `reports_with_failures` zählt gültige Berichtspaare mit gemeldeten Fehlern, keine verschiedenen Anlagen. Für Web-Abbrüche gelten eigene Abdeckungszähler (`web_reports`, `reports_with_web_outages`, `web_outage_transitions`). Fehlende Zähler bleiben unbekannt statt null. Ergebnisse je Vergleichsgruppe bleiben getrennt; eine geringe Gesamtquote ersetzt nicht das Ergebnis der betroffenen Gruppe. Die Einzelbewertung erfasst positive Verbindungsbeobachtungen ohne Aussagen über Ursache oder Dauer und verwirft sonst stimmige Laufzeit-/Energiedaten nicht automatisch. Es werden keine neuen Telemetriefelder erhoben; bestehende Zustimmungen bleiben erhalten.

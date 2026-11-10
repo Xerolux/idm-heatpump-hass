@@ -97,3 +97,12 @@ The private originals stay under their existing retention policies. Synthetic
 regression fixtures reproduce structures only; no donated readings or private
 notes are published. A reviewed inbox status means the evidence was evaluated,
 not that every open hypothesis is fixed or every address has a mapping.
+
+
+## Donation review: 10 November 2026
+
+Fresh Navigator 10 capture replays with API 2.16.2 confirm that explicitly unavailable heating circuits and freshwater components remain missing rather than becoming fabricated zeroes. Weather forecasts and numeric parameters parse successfully. Different menu counts reflect reported availability; identical firmware and Modbus address coverage do not establish one physical plant.
+
+The server now exposes affected-report counts and web-outage coverage alongside paired Modbus failure ratios, both overall and by comparison cohort. A small overall ratio must not hide an affected report. These are reported communication observations, without a proven cause or outage duration; otherwise coherent runtime/energy observations are not discarded automatically. No extra client data, consent change or controller request is introduced. See [telemetry review quality](Telemetry#review-quality).
+
+A menu type set narrowing from number-or-text to text-only is visible in the private structure diff but adds no new type fact for the selective notification. Synthetic regressions cover the distinction and preserve notification for a genuinely unseen type. No new API parser change is justified by this difference. Physical heat-pump model metadata, ambiguous Pro component attribution and explicit observation boundaries remain open; firmware matching continues to use source metadata rather than a hardcoded latest version.
