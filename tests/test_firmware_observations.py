@@ -236,7 +236,7 @@ async def test_existing_consent_and_single_report_show_latest_without_update_not
     context.__aexit__ = AsyncMock(return_value=False)
     session = MagicMock()
     session.post.return_value = context
-    with patch("custom_components/idm_heatpump_hass" if False else "custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
         await firmware.async_refresh_firmware()
     assert firmware.enabled
     assert firmware.firmware_result["latest_firmware"] == query["firmware"]
