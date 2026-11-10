@@ -548,8 +548,7 @@
       "description": "Home Assistant se připojil k **{host}**, ale neobdržel použitelné hodnoty registrů Modbus.\n\nZkontrolujte:\n- ID slave/jednotky je obvykle 1\n- Proxy Modbus přeposílá ke správnému tepelnému čerpadlu\n- Nakonfigurovaný model Navigator a topné okruhy odpovídají zařízení\n- Žádný jiný klient Modbus neblokuje komunikaci"
     },
     "scan_interval_too_low": {
-      "title": "Dotazování IDM se do intervalu skenování téměř nevejde",
-      "description": "Čtení registrů **{host}** v současnosti trvá asi {duration} s z nakonfigurovaného intervalu skenování {interval} s, a to už několik dotazování v řadě.\n\nRegulátor tepelného čerpadla pak mezi požadavky téměř nemá čas na odpočinek, což se typicky projevuje vypršením časového limitu — zvlášť když regulátor sdílí jiný klient Modbus.\n\nPomůže:\n- Zvýšit interval skenování v možnostech integrace\n- Vypnout entity, které nepoužíváte (dotazování přeskočí jejich registry)\n- Ověřit, zda zároveň tepelné čerpadlo nevyptává jiný klient Modbus"
+      "title": "Dotazování IDM se do intervalu skenování téměř nevejde"
     },
     "write_rejected": {
       "title": "Zápis registru IDM odmítnut",

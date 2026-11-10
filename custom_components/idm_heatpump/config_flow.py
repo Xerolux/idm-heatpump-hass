@@ -243,6 +243,8 @@ from .const import (
     MODEL_OVERRIDE_OPTIONS,
     REGISTER_ADDRESS_CONNECTION_PROBE,
     REGISTER_COUNT_CONNECTION_PROBE,
+    SCAN_INTERVAL_MAX,
+    SCAN_INTERVAL_MIN,
 )
 from .external_power_forwarding import grid_meter_is_usable
 from .ha_compat import vol
@@ -734,8 +736,8 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                 default=int(options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)),
             ): NumberSelector(
                 NumberSelectorConfig(
-                    min=5,
-                    max=300,
+                    min=SCAN_INTERVAL_MIN,
+                    max=SCAN_INTERVAL_MAX,
                     step=1,
                     mode=NumberSelectorMode.SLIDER,
                     unit_of_measurement="s",

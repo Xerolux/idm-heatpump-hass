@@ -256,6 +256,13 @@ the configured scan interval for several polls in a row. The controller then
 gets almost no idle time between requests, which usually surfaces as timeouts —
 especially when a second Modbus client shares the heat pump.
 
+Since 0.27.0-b1 the issue carries a **Fix it** button: the integration derives
+a concrete suggested interval from the recorded poll durations (the 95th
+percentile divided by the warning ratio, rounded up to the next 5 s step), the
+repair dialog pre-fills that value, and confirming it writes the option and
+reloads the entry once. You can also pick your own value between 5 and 300 s in
+the same dialog; nothing changes without your confirmation.
+
 What helps, in order of effect:
 
 1. **Increase the scan interval** in the integration options. Most values change

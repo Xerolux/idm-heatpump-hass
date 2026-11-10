@@ -3521,7 +3521,20 @@
     },
     "scan_interval_too_low": {
       "title": "IDM polling barely fits into the scan interval",
-      "description": "Reading the registers of **{host}** currently takes about {duration} s of the configured {interval} s scan interval, and has done so for several polls in a row.\n\nThe heat pump controller then gets almost no idle time between requests, which typically shows up as timeouts — especially when another Modbus client shares the controller.\n\nWhat helps:\n- Increase the scan interval in the integration options\n- Disable entities you do not use (polling skips their registers)\n- Check whether another Modbus client is querying the heat pump at the same time"
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Increase the scan interval",
+            "description": "Reading the registers regularly needs most of the current {current_interval} s scan interval, which leaves the heat pump controller almost no idle time between requests and typically shows up as timeouts — especially when another Modbus client shares the controller.\n\nThe measured poll durations suggest **{suggested_interval} s** — confirm it or set your own value between 5 and 300 s. Alternatively disable entities you do not use; polling then skips their registers. The integration reloads once with the new interval.",
+            "data": {
+              "scan_interval": "Scan interval (s)"
+            }
+          }
+        },
+        "error": {
+          "invalid_scan_interval": "Choose a scan interval between 5 and 300 s."
+        }
+      }
     },
     "write_rejected": {
       "title": "IDM register write rejected",

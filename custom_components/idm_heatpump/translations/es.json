@@ -548,8 +548,7 @@
       "description": "Home Assistant se conectó a **{host}**, pero no recibió valores de registro Modbus utilizables.\n\nComprueba:\n- El ID de esclavo/unidad es normalmente 1\n- El proxy Modbus reenvía a la bomba de calor correcta\n- El modelo Navigator configurado y los circuitos de calefacción coinciden con el dispositivo\n- Ningún otro cliente Modbus bloquea la comunicación"
     },
     "scan_interval_too_low": {
-      "title": "El sondeo IDM apenas cabe en el intervalo",
-      "description": "Leer los registros de **{host}** actualmente tarda unos {duration} s del intervalo configurado de {interval} s, y así durante varios sondeos seguidos.\n\nEl regulador de la bomba de calor casi no obtiene tiempo de reposo entre peticiones, lo que típicamente se manifiesta en timeouts — especialmente cuando otro cliente Modbus comparte el regulador.\n\nAyuda:\n- Aumentar el intervalo de sondeo en las opciones de la integración\n- Desactivar entidades que no uses (el sondeo omite sus registros)\n- Comprobar si otro cliente Modbus interroga la bomba de calor al mismo tiempo"
+      "title": "El sondeo IDM apenas cabe en el intervalo"
     },
     "write_rejected": {
       "title": "Escritura de registro IDM rechazada",

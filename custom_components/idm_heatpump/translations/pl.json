@@ -548,8 +548,7 @@
       "description": "Home Assistant połączył się z **{host}**, ale nie otrzymał użytecznych wartości rejestrów Modbus.\n\nSprawdź:\n- ID slave/jednostki to zazwyczaj 1\n- Proxy Modbus przekazuje do właściwej pompy ciepła\n- Skonfigurowany model Navigatora i obiegi grzewcze odpowiadają urządzeniu\n- Żaden inny klient Modbus nie blokuje komunikacji"
     },
     "scan_interval_too_low": {
-      "title": "Odpytywanie IDM ledwo mieści się w interwale skanowania",
-      "description": "Odczyt rejestrów **{host}** zajmuje obecnie około {duration} s ze skonfigurowanego interwału skanowania {interval} s, i to już kilka odpytań z rzędu.\n\nRegulator pompy ciepła nie ma wtedy prawie żadnego czasu bezczynności między żądaniami, co typowo objawia się limitami czasu — zwłaszcza gdy inny klient Modbus współdzieli regulator.\n\nPomaga:\n- Zwiększenie interwału skanowania w opcjach integracji\n- Wyłączenie nieużywanych encji (odpytywanie pomija ich rejestry)\n- Sprawdzenie, czy inny klient Modbus nie odpytuje pompy ciepła w tym samym czasie"
+      "title": "Odpytywanie IDM ledwo mieści się w interwale skanowania"
     },
     "write_rejected": {
       "title": "Odrzucony zapis rejestru IDM",

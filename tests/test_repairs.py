@@ -328,3 +328,117 @@ async def test_solar_repair_finds_the_only_entry_without_an_id(mock_hass, repair
     _, kwargs = mock_hass.config_entries.async_update_entry.call_args
     assert kwargs["options"][CONF_SOLAR_THERMAL] is False
     mock_hass.config_entries.async_reload.assert_awaited_once_with(repair_entry.entry_id)
+
+
+def _scan_interval_entry(mock_config_entry, *, suggestion: int | None) -> MagicMock:
+    entry = mock_config_entry
+    if suggestion is None:
+        entry.runtime_data = SimpleNamespace(coordinator=SimpleNamespace())
+    else:
+        entry.runtime_data = SimpleNamespace(
+            coordinator=SimpleNamespace(suggested_scan_interval_seconds=lambda: suggestion)
+        )
+    return entry
+
+
+@pytest.mark.asyncio
+async def test_scan_interval_repair_flow_is_dispatched(mock_hass, repair_entry) -> None:
+    mock_hass.config_entries.async_entries.return_value = [repair_entry]
+
+    flow = await async_create_fix_flow(
+        mock_hass, f"scan_interval_too_low_{repair_entry.entry_id}", {"entry_id": repair_entry.entry_id}
+    )
+
+    assert type(flow).__name__ == "IdmScanIntervalRepairFlow"
+
+
+@pytest.mark.asyncio
+async def test_scan_interval_repair_prefills_the_live_suggestion(mock_hass, mock_config_entry) -> None:
+    entry = _scan_interval_entry(mock_config_entry, suggestion=35)
+    mock_hass.config_entries.async_entries.return_value = [entry]
+    flow = await async_create_fix_flow(
+        mock_hass, f"scan_interval_too_low_{entry.entry_id}", {"entry_id": entry.entry_id, "suggested_interval": 25}
+    )
+
+    result = await flow.async_step_init()
+
+    assert result["type"] == "form"
+    assert result["step_id"] == "init"
+    assert result["description_placeholders"] == {"current_interval": "10", "suggested_interval": "35"}
+    assert flow._suggested_interval(entry) == 35
+
+
+@pytest.mark.asyncio
+async def test_scan_interval_repair_falls_back_to_the_issue_data(mock_hass, mock_config_entry) -> None:
+    """Without a live coordinator the frozen suggestion from the issue data serves."""
+    entry = _scan_interval_entry(mock_config_entry, suggestion=None)
+    mock_hass.config_entries.async_entries.return_value = [entry]
+    flow = await async_create_fix_flow(
+        mock_hass, f"scan_interval_too_low_{entry.entry_id}", {"entry_id": entry.entry_id, "suggested_interval": 25}
+    )
+
+    result = await flow.async_step_init()
+
+    assert result["description_placeholders"] == {"current_interval": "10", "suggested_interval": "25"}
+
+
+@pytest.mark.asyncio
+async def test_scan_interval_repair_falls_back_to_current_plus_step(mock_hass, mock_config_entry) -> None:
+    entry = _scan_interval_entry(mock_config_entry, suggestion=None)
+    mock_hass.config_entries.async_entries.return_value = [entry]
+    flow = await async_create_fix_flow(
+        mock_hass, f"scan_interval_too_low_{entry.entry_id}", {"entry_id": entry.entry_id}
+    )
+
+    result = await flow.async_step_init()
+
+    assert result["description_placeholders"] == {"current_interval": "10", "suggested_interval": "15"}
+
+
+@pytest.mark.asyncio
+async def test_scan_interval_repair_applies_the_confirmed_interval(mock_hass, mock_config_entry) -> None:
+    from custom_components.idm_heatpump.const import CONF_SCAN_INTERVAL
+
+    entry = _scan_interval_entry(mock_config_entry, suggestion=30)
+    mock_hass.config_entries.async_entries.return_value = [entry]
+    ir.async_delete_issue.reset_mock()
+    flow = await async_create_fix_flow(
+        mock_hass, f"scan_interval_too_low_{entry.entry_id}", {"entry_id": entry.entry_id, "suggested_interval": 30}
+    )
+
+    result = await flow.async_step_init({CONF_SCAN_INTERVAL: 30})
+
+    assert result["type"] == "create_entry"
+    _, kwargs = mock_hass.config_entries.async_update_entry.call_args
+    assert kwargs["options"][CONF_SCAN_INTERVAL] == 30
+    ir.async_delete_issue.assert_called_once_with(mock_hass, "idm_heatpump", f"scan_interval_too_low_{entry.entry_id}")
+    mock_hass.config_entries.async_reload.assert_awaited_once_with(entry.entry_id)
+
+
+@pytest.mark.asyncio
+async def test_scan_interval_repair_rejects_out_of_bounds_values(mock_hass, mock_config_entry) -> None:
+    from custom_components.idm_heatpump.const import CONF_SCAN_INTERVAL
+
+    entry = _scan_interval_entry(mock_config_entry, suggestion=30)
+    mock_hass.config_entries.async_entries.return_value = [entry]
+    flow = await async_create_fix_flow(
+        mock_hass, f"scan_interval_too_low_{entry.entry_id}", {"entry_id": entry.entry_id}
+    )
+
+    result = await flow.async_step_init({CONF_SCAN_INTERVAL: 500})
+
+    assert result["type"] == "form"
+    assert result["errors"] == {"base": "invalid_scan_interval"}
+    mock_hass.config_entries.async_update_entry.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_scan_interval_repair_aborts_without_its_entry(mock_hass) -> None:
+    mock_hass.config_entries.async_entries.return_value = []
+
+    flow = await async_create_fix_flow(mock_hass, "scan_interval_too_low", {"entry_id": "missing"})
+
+    result = await flow.async_step_init()
+
+    assert result["type"] == "abort"
+    assert result["reason"] == "entry_not_found"

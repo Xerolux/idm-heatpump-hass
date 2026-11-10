@@ -548,8 +548,7 @@
       "description": "Home Assistant s-a conectat la **{host}**, dar nu a primit valori de registru Modbus utilizabile.\n\nVerifică:\n- ID-ul slave/unități este de regulă 1\n- Proxy-ul Modbus redirecționează către pompa de căldură corectă\n- Modelul Navigator configurat și circuitele de încălzire corespund dispozitivului\n- Niciun alt client Modbus nu blochează comunicarea"
     },
     "scan_interval_too_low": {
-      "title": "Interogarea IDM abia încape în intervalul de scanare",
-      "description": "Citirea registrelor de la **{host}** durează în prezent aproximativ {duration} s din intervalul configurat de {interval} s, și așa de mai multe interogări la rând.\n\nRegulatorul pompei de căldură nu primește aproape deloc timp de repaus între cereri, ceea ce se manifestă de regulă prin timeout-uri — mai ales când un alt client Modbus partajează regulatorul.\n\nAjută:\n- Creșterea intervalului de scanare în opțiunile integrării\n- Dezactivarea entităților pe care nu le folosești (interogarea omite registrele lor)\n- Verificarea dacă un alt client Modbus interoghează pompa de căldură în același timp"
+      "title": "Interogarea IDM abia încape în intervalul de scanare"
     },
     "write_rejected": {
       "title": "Scriere registru IDM respinsă",
