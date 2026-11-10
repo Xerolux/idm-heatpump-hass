@@ -98,3 +98,12 @@ Offen und ausdrücklich nicht als behoben erklärt:
 Originale bleiben unter den bisherigen Aufbewahrungsregeln erhalten. Tests
 verwenden synthetische Strukturen statt gespendeter Messwerte oder Notizen.
 „Bearbeitet“ bedeutet ausgewertet, nicht dass jede Hypothese bereits behoben ist.
+
+
+## Datenspendenprüfung: 10. November 2026
+
+Neue Navigator-10-Aufnahmen bestätigen beim Replay mit API 2.16.2: Ausdrücklich nicht vorhandene Heizkreise und Frischwasserkomponenten bleiben fehlend und werden nicht durch erfundene Nullwerte ersetzt. Wetterprognosen und numerische Parameter werden korrekt gelesen. Unterschiedliche Menümengen folgen der gemeldeten Verfügbarkeit; gleiche Firmware und Modbus-Adressen beweisen keine identische physische Anlage.
+
+Die Serverauswertung zeigt jetzt betroffene Berichte und die Quellenabdeckung von Web-Abbrüchen zusätzlich zur Modbus-Fehlerquote, insgesamt und je Vergleichsgruppe. Eine kleine Gesamtquote soll einen betroffenen Bericht nicht verdecken. Das sind gemeldete Verbindungsereignisse ohne bewiesene Ursache oder Ausfalldauer; sonst stimmige Laufzeit-/Energiedaten werden nicht automatisch verworfen. Keine zusätzlichen Clientdaten, geänderten Zustimmungen oder Anlagenabfragen. Siehe [Qualität der Auswertung](Telemetry#qualitat-der-auswertung).
+
+Eine verkleinerte Typmenge von Zahl-oder-Text zu nur Text ist im privaten Strukturvergleich sichtbar, erzeugt aber keinen neuen Typbefund für die selektive Benachrichtigung. Synthetische Tests sichern diese Unterscheidung und die Meldung eines tatsächlich neuen Typs ab. Daraus ergibt sich kein weiterer API-Parserfix. Physische Wärmepumpenmodelle, unklare Pro-Komponenten und ausdrückliche Beobachtungsgrenzen bleiben offen; Firmwarevergleiche verwenden Quelldaten statt fest codierter aktueller Versionen.

@@ -153,3 +153,8 @@ A newer matching observation also raises a notice under **Settings → System �
 Community reports do not establish availability or compatibility for a particular plant. iDM or an authorized installer must verify and perform updates. Voluntarily sharing reports improves the community comparison basis; firmware queries remain independently available without telemetry. Both consent settings remain optional and off by default.
 
 With the optional device hierarchy enabled, the cloud-consent entities — **Latest reported firmware**, **Newer firmware observed (unconfirmed)** and **Telemetry report status** — share their own **Telemetry** subdevice beneath the plant. Moving them preserves their entity IDs; the installed software version stays in **Diagnostics**. Without the hierarchy, they remain diagnostic entities on the main device.
+
+
+## Review quality
+
+The private server reports affected-report counts as well as paired Modbus failure ratios. `reports_with_failures` counts valid paired reports with nonzero failures; it does not count distinct plants. Web-outage totals have their own source coverage (`web_reports`, `reports_with_web_outages`, `web_outage_transitions`). Missing counters remain unknown instead of zero. Per-cohort results remain separate, so a low overall rate cannot replace the affected cohort's result. Per-report assessment records positive communication observations without claiming their cause or duration and without automatically dropping otherwise coherent runtime/energy data. No new telemetry fields are collected and existing consent is preserved.
