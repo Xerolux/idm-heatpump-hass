@@ -301,7 +301,7 @@ Typical web-only sensors include:
 | Flow meter (Web) | Heat-sink flow rate in L/min from the controller's own flowmeter row; when the Modbus register 1072 reports not-present (no plate heat exchanger), this value fills the *Heat sink flow rate (B2)* entity automatically |
 | Intermediate circuit flow temperature (Web) | Flow temperature of the intermediate circuit on plants with a separation heat exchanger; the web interface reports the sensor under the dual label B33/B113. Exists alongside the Modbus flow/return entities, because it is a distinct physical sensor (issue #598) |
 | Intermediate circuit return temperature (Web) | Return temperature of the intermediate circuit (dual label B34/B114); see above |
-| Hot water station flow (Web) | Flow through the hot water station in L/min from the web interface |
+| Hot water station flow (Web) | Potable-water (tapping) flow through the hot water station in L/min from the web interface; reads 0.0 when nothing is drawn. Recorder history from a Navigator 10 plant (2026-11) shows the value follows the tap — typical shower draws cluster at 5.5–6.1 L/min, a wide-open bath tap peaked at 19.4 L/min. Station model names such as "35 l" denote the tapping-capacity rating (35 L/min), not a value this sensor reports. See [Findings](Findings-and-Documentation) |
 
 The heat pump model is deliberately no entity of its own: Navigator 10
 firmware 20.24-1580 (installed from 2026-09-29) removed the model row from

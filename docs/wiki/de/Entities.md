@@ -226,7 +226,7 @@ Typische reine Web-Sensoren sind unter anderem:
 | Durchflussmesser (Web) | Durchfluss der Wärmesenke in L/min aus der eigenen Durchflusszeile des Reglers; meldet das Modbus-Register 1072 „nicht vorhanden“ (ohne Trennwärmetauscher), füllt dieser Wert automatisch die Entität *Durchfluss Wärmesenke (B2)* auf |
 | Vorlauftemperatur Zwischenkreis (Web) | Vorlauftemperatur des Zwischenkreises bei Anlagen mit Trennwärmetauscher; die Weboberfläche meldet den Sensor unter dem Doppellabel B33/B113. Bestet zusätzlich zu den Modbus-Vorlauf/Rücklauf-Entitäten, da es sich um einen eigenen physikalischen Sensor handelt (Issue #598) |
 | Rücklauftemperatur Zwischenkreis (Web) | Rücklauftemperatur des Zwischenkreises (Doppellabel B34/B114); siehe oben |
-| Warmwasserstation Durchfluss (Web) | Durchfluss durch die Warmwasserstation in L/min aus der Weboberfläche |
+| Warmwasserstation Durchfluss (Web) | Trinkwasser-Durchfluss (Zapfstrom) durch die Warmwasserstation in L/min aus der Weboberfläche; meldet 0,0, wenn nichts gezapft wird. Der Recorder-Verlauf einer Navigator-10-Anlage (2026-11) zeigt: Der Wert folgt dem Hahn — typische Duschen häufen sich bei 5,5–6,1 L/min, eine voll geöffnete Badewanne erreichte 19,4 L/min. Stationsnamen wie „35 l“ bezeichnen die Zapfleistung (35 L/min), keinen Messwert dieses Sensors. Siehe [Erkenntnisse](Findings-and-Documentation) |
 
 Das Wärmepumpenmodell ist bewusst keine eigene Entität: Die Navigator-10-
 Firmware 20.24-1580 (ab 29.09.2026 installiert) hat die Modell-Zeile aus der
