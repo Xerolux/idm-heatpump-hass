@@ -4,6 +4,24 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.27.2 release decision
+
+A same-day patch for the hot-water report
+[#713](https://github.com/Xerolux/idm-heatpump-hass/issues/713): the
+reporter's diagnostics showed the normal charge cycling between 46 °C and
+50 °C while `dhw_setpoint` reads 55 °C, so the health monitor's
+`setpoint − 5 K` comparison flagged every normal cool-down. The corrected
+check is read-only and charge-cycle based: it adds `dhw_demand` edge tracking
+to the operation analysis and keeps its three inputs in the always-polled
+register set — adjacent batches, no additional physical Modbus request. Two
+German entity display names follow the Navigator interface wording; entity
+IDs are unchanged. The local suite passed with 98.45 % integration and
+100 % config-flow coverage; strict typing passed for 90 modules; 14 real-HA
+lifecycle tests passed against Home Assistant 2026.11.0; the API pin stays
+2.16.2. The charge-cycle judgment is validated against the reporter's
+diagnostic snapshot and synthetic cycle series, not a live plant replay.
+[Detailed evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.27.2.md)
+
 ## 0.27.1 release decision
 
 This patch adds only local, bounded network reason counters to existing request diagnostics. High-level outcomes, request execution/retries, entity IDs, consent and transmitted telemetry remain unchanged. Synthetic tests cover wrapped Linux/Windows error codes, unknown/suppressed/cyclic/deep chains, redaction safety, window expiry and unchanged exception propagation. The real-Home-Assistant lifecycle smoke suite passes; the release requires the complete coverage, typing, lint and documentation gates before tagging. No live plant was deliberately disconnected or reconfigured, and historical failures remain unexplained. [Troubleshooting](Troubleshooting#per-request-metrics).
@@ -578,7 +596,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.27.1` and `idm-heatpump-api` `2.16.2` form the current
+Source-tree integration `0.27.2` and `idm-heatpump-api` `2.16.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

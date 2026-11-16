@@ -178,8 +178,8 @@ The German description is intended for identification; the code-form register na
 | 1014–1015 | Trinkwassererwärmer oben | `dhw_temp_top` | FLOAT | °C | R | — |
 | 1030–1031 | Warmwasser Zapftemperatur | `dhw_tapping_temp` | FLOAT | °C | R | — |
 | 1032 | Warmwasser Sollwert | `dhw_setpoint` | UCHAR | °C | RW · EEPROM | — |
-| 1033 | WW Einchargetemperatur | `dhw_charge_on_temp` | UCHAR | °C | RW · EEPROM | — |
-| 1034 | WW Ausschalttemperatur | `dhw_charge_off_temp` | UCHAR | °C | RW · EEPROM | — |
+| 1033 | Warmwasserladung Einschalttemperatur | `dhw_charge_on_temp` | UCHAR | °C | RW · EEPROM | — |
+| 1034 | Warmwasserladung Ausschalttemperatur | `dhw_charge_off_temp` | UCHAR | °C | RW · EEPROM | — |
 | 1048–1049 | Aktueller Strompreis | `current_electricity_price` | FLOAT | €/MWh | R | — |
 | 1050–1051 | Wärmepumpen Vorlauftemperatur | `hp_flow_temp` | FLOAT | °C | R | — |
 | 1052–1053 | Wärmepumpen Rücklauftemperatur | `hp_return_temp` | FLOAT | °C | R | — |

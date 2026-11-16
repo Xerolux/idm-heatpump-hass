@@ -636,7 +636,7 @@ Schreibgeschützte Problemprüfungen plus ein kombinierter Bericht. Jede Prüfun
 | iDM-Gesundheitsbericht (`health_report`) | Kombinierter Bericht aller Befunde, Details als Attribute |
 | Kommunikationsproblem (`health_communication`) | Wiederholte Modbus-Kommunikationsfehler |
 | Wiederkehrende Wärmepumpen-Alarme (`health_recurrent_alarms`) | Das Alarmsignal kehrt wiederholt zurück |
-| Warmwasser erreicht Sollwert nicht (`health_dhw_not_reaching_target`) | Warmwasser bleibt unter Last unter dem Sollwert |
+| Warmwasser erreicht Sollwert nicht (`health_dhw_not_reaching_target`) | Eine Ladung erreicht die Warmwasserladung-Ausschalttemperatur nicht — steckengebliebene oder wiederholt fehlgeschlagene Ladungen; normales Abkühlen zwischen den Ladungen löst nicht aus |
 | COP ungewöhnlich niedrig (`health_low_cop`) | Der beobachtete COP liegt unter dem erwarteten Bereich |
 | Zu viele Verdichterstarts (`health_many_compressor_starts`) | Die Startanzahl übersteigt das konfigurierte Limit |
 | Verdichtertakte werden kürzer (`health_shortening_cycles`) | Taktlaufzeiten schrumpfen über die Zeit — klassischer Verschleißindikator |

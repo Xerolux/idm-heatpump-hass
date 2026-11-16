@@ -4,6 +4,25 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.27.2
+
+Ein Patch noch am selben Tag für den Warmwasser-Bericht
+[#713](https://github.com/Xerolux/idm-heatpump-hass/issues/713): Die
+Diagnosedaten des Melders zeigten die normale Ladung zwischen 46 °C und
+50 °C, während `dhw_setpoint` 55 °C liest — der `Sollwert − 5 K`-Vergleich
+der Gesundheitsprüfung meldete deshalb jedes normale Abkühlen. Die korrigierte
+Prüfung ist rein lesend und ladezyklusbasiert: sie ergänzt die
+`dhw_demand`-Flankenerkennung in der Betriebsanalyse und hält ihre drei
+Eingänge im immer abgefragten Registersatz — angrenzende Batches, keine
+zusätzliche physische Modbus-Anfrage. Zwei deutsche Anzeigenamen folgen der
+Navigator-Benennung; die Entity-IDs bleiben unverändert. Die lokale Suite
+bestand mit 98,45 % Integrations- und 100 % Config-Flow-Abdeckung; das strenge
+Typing bestand für 90 Module; 14 Lebenszyklus-Tests bestanden gegen ein
+echtes Home Assistant 2026.11.0; der API-Pin bleibt 2.16.2. Die
+Ladezyklusbewertung ist gegen die Diagnose-Schnappschüsse des Melders und
+synthetische Zyklenreihen abgesichert, nicht durch eine Live-Anlage.
+[Detailnachweis](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.27.2.md)
+
 ## Release-Entscheidung zu 0.27.1
 
 Dieser Patch ergänzt ausschließlich lokale, begrenzte Netzwerk-Ursachenzähler in der vorhandenen Anfragediagnose. Bisherige Fehlerklassen, Abfragen und Wiederholungen, Entitäts-IDs, Zustimmungen und übertragene Telemetrie bleiben unverändert. Synthetische Tests prüfen gekapselte Linux-/Windows-Fehlercodes, unbekannte/unterdrückte/zyklische/tiefe Fehlerketten, datensparsame Ausgabe, Fensterablauf und unveränderte Weitergabe der Fehler. Die Lebenszyklustests mit echtem Home Assistant bestehen; vor dem Tag müssen die vollständigen Abdeckungs-, Typ-, Stil- und Dokumentationsprüfungen grün sein. Keine reale Anlage wurde absichtlich getrennt oder umkonfiguriert; historische Fehlerursachen bleiben offen. [Fehlersuche](Troubleshooting#kennzahlen-pro-anfrage).
@@ -620,7 +639,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.27.1` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
+Integration im Quellstand `0.27.2` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

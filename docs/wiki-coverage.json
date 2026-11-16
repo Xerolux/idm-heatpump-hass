@@ -38,7 +38,7 @@
         "Supported-Devices.md",
         "Protocol-Capabilities.md"
       ],
-      "reviewed_source_sha256": "23e2754f6cdfb122c770abea6ca9af39e06852128f222dfb36c35588df083af1"
+      "reviewed_source_sha256": "786158243dddcf59aea7eccc96514383cadd97e938e247812f67a114f2c7c004"
     },
     {
       "feature": "Polling, transport and recovery",
@@ -57,7 +57,7 @@
         "Configuration.md",
         "Troubleshooting.md"
       ],
-      "reviewed_source_sha256": "50163b789dc563f8f043427ff308c4d1ff09fa576dce1adba33e51f448bb317a"
+      "reviewed_source_sha256": "79cf811be6f635ce2388eaa11ae7d03687693ffb008ccfe947cc4621fde8a604"
     },
     {
       "feature": "Core entities and device placement",
@@ -113,7 +113,7 @@
         "Smart-Energy-and-Comfort.md",
         "Entities.md"
       ],
-      "reviewed_source_sha256": "384c1ff3416008962715f915b6b1d340d9a7e4f84004799f2509dc0a6d7b6307"
+      "reviewed_source_sha256": "a5fc980eab13e19a76c03a22e3d786a6191149c2d857d512e371f9a69af8ec92"
     },
     {
       "feature": "External climate and power forwarding",
@@ -197,7 +197,7 @@
         "Smart-Energy-and-Comfort.md",
         "Entities.md"
       ],
-      "reviewed_source_sha256": "90659f2b4c554cfe1d050985219cba9306969162bd87469e8155d3350d3d556f"
+      "reviewed_source_sha256": "fcd52c37c49abd57b14e4b6f67ae9a7658b7565d2ce0b4f48bd61fd7ca5ee8c7"
     },
     {
       "feature": "KNX bridge and catalog",

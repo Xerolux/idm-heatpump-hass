@@ -1928,10 +1928,10 @@
         "name": "Kaskade Mindestleistung Heizen"
       },
       "dhw_charge_off_temp": {
-        "name": "WW Ausschalttemperatur"
+        "name": "Warmwasserladung Ausschalttemperatur"
       },
       "dhw_charge_on_temp": {
-        "name": "WW Einchargetemperatur"
+        "name": "Warmwasserladung Einschalttemperatur"
       },
       "dhw_setpoint": {
         "name": "Warmwasser Sollwert"

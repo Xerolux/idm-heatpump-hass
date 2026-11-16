@@ -200,8 +200,9 @@ _GERMAN_NAMES: dict[str, str] = {
     "isc_cold_storage_pump_status": "ISC Kältespeicherpumpe M84",
     "isc_recooling_pump_status": "ISC Rückkühlpumpe M17",
     # === DHW detail ===
-    "dhw_charge_on_temp": "WW Einchargetemperatur",
-    "dhw_charge_off_temp": "WW Ausschalttemperatur",
+    # Charge hysteresis labels follow the Navigator's own interface wording (#713).
+    "dhw_charge_on_temp": "Warmwasserladung Einschalttemperatur",
+    "dhw_charge_off_temp": "Warmwasserladung Ausschalttemperatur",
     "current_electricity_price": "Aktueller Strompreis",
     "current_power_solar": "Aktuelle Solarleistung",
     "energy_passive_cooling": "Wärmemenge Passive Kühlung",

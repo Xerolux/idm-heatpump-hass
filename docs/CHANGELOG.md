@@ -13,6 +13,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.27.2] - 2026-11-16
+
+A hot-water field report from a Navigator 10 ([#713](https://github.com/Xerolux/idm-heatpump-hass/issues/713)): the normal charge cycles between the two charge temperatures and never sees the setpoint — so the health monitor's setpoint comparison flagged every normal cool-down, and the charge entities carried made-up abbreviations instead of the Navigator's own wording.
+
+### ⚠️ Upgrade notes
+
+- **Two German entity names switch to the Navigator interface wording**: *WW Einchargetemperatur* becomes *Warmwasserladung Einschalttemperatur*, *WW Ausschalttemperatur* becomes *Warmwasserladung Ausschalttemperatur*. Entity IDs keep working; only the display names change. Rollback restores the old names.
+- **The hot-water health check no longer flags a resting tank**: *DHW does not reach target* used to fire whenever the tank sat below `dhw_setpoint` minus 5 K — on charge-hysteresis plants that meant every pause between charges, flapping around the switch-off temperature. Existing false alarms clear by themselves; rollback restores the old comparison.
+
+### 🐛 Bugfixes
+
+- **The two charge-hysteresis entities carry the Navigator's own German names** ([#713](https://github.com/Xerolux/idm-heatpump-hass/issues/713)): the reporter matched register 1033 to the controller menu's *Warmwasserladung Einschalttemperatur* (46 °C) and register 1034 to *Warmwasserladung Ausschalttemperatur* (50 °C). Translations and the register reference follow in both languages; the English names stay.
+- **The hot-water health check evaluates the charge cycle, not the resting tank** ([#713](https://github.com/Xerolux/idm-heatpump-hass/issues/713)): the reporting plant charges 46 °C to 50 °C while `dhw_setpoint` reads 55 °C, so the `setpoint − 5 K` rule tripped on every cool-down. It now flags only a charge stuck 90 minutes below its start temperature, or two consecutive charges missing the stop temperature.
+- **The charge-cycle inputs stay polled**: `dhw_demand` and both charge temperatures join the always-required register set, so the check keeps working when their entities are disabled. All three sit in batches next to already-polled registers and add no physical Modbus request.
+
+### 💼 Maintenance
+
+- **The finding is recorded in the wiki**: the Findings register documents the observed 46/50/55 °C band from the reporter's diagnostics and what stays unconfirmed — whether `dhw_setpoint` drives any charge on these controllers. Both wiki languages describe the new check semantics with their grace period and tolerance.
+
 ## [0.27.1] - 2026-11-16
 
 Connection failures are easier to investigate: the local request window now preserves safe network reason counts alongside the existing outcome classes. This closes an evidence gap identified while reviewing donated telemetry, without guessing why earlier failures happened.

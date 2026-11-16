@@ -53,10 +53,31 @@ def _registers() -> dict[str, RegisterDef]:
         name="hp_sum_alarm",
         binary=True,
     )
+    registers["dhw_demand"] = RegisterDef(
+        address=1093,
+        datatype=DataType.UCHAR,
+        name="dhw_demand",
+        binary=True,
+    )
+    registers["dhw_temp_top"] = RegisterDef(
+        address=1014,
+        datatype=DataType.FLOAT,
+        name="dhw_temp_top",
+    )
+    registers["dhw_charge_off_temp"] = RegisterDef(
+        address=1034,
+        datatype=DataType.UCHAR,
+        name="dhw_charge_off_temp",
+    )
     return registers
 
 
-def _analysis(monkeypatch, *, loaded: dict[str, Any] | None = None) -> tuple[OperationAnalysis, FakeStore]:
+def _analysis(
+    monkeypatch,
+    *,
+    loaded: dict[str, Any] | None = None,
+    expected_poll_interval: float = 10,
+) -> tuple[OperationAnalysis, FakeStore]:
     fake_store = FakeStore(loaded)
     monkeypatch.setattr(module, "Store", lambda *args, **kwargs: fake_store)
     registers = _registers()
@@ -65,9 +86,18 @@ def _analysis(monkeypatch, *, loaded: dict[str, Any] | None = None) -> tuple[Ope
         "entry",
         registers.get,
         short_cycle_minutes=15,
-        expected_poll_interval=10,
+        expected_poll_interval=expected_poll_interval,
     )
     return analysis, fake_store
+
+
+def _dhw_analysis(
+    monkeypatch,
+    *,
+    loaded: dict[str, Any] | None = None,
+) -> tuple[OperationAnalysis, FakeStore]:
+    """Analysis with a ten-minute poll cadence, as a DHW charge cycle sees it (#713)."""
+    return _analysis(monkeypatch, loaded=loaded, expected_poll_interval=600)
 
 
 def _snapshot(*, compressor: int = 0, mode: int = 0) -> dict[str, int]:
@@ -77,6 +107,16 @@ def _snapshot(*, compressor: int = 0, mode: int = 0) -> dict[str, int]:
         "compressor_status_3": 0,
         "compressor_status_4": 0,
         "hp_operating_mode": mode,
+    }
+
+
+def _dhw_snapshot(*, demand: int, top: float = 48.0, charge_off: float = 50.0) -> dict[str, Any]:
+    """One snapshot of a Navigator-10 style plant with charge hysteresis (#713)."""
+    return {
+        **_snapshot(mode=4 if demand else 0),
+        "dhw_demand": demand,
+        "dhw_temp_top": top,
+        "dhw_charge_off_temp": charge_off,
     }
 
 
@@ -458,3 +498,116 @@ def test_current_defrost_minutes_reports_the_observed_cycle(monkeypatch) -> None
     # Leaving defrost reconciles again: the cycle is over, so zero, not None.
     analysis.process_snapshot(_snapshot(mode=1), set(), now=now + timedelta(minutes=45))
     assert analysis.current_defrost_minutes(now=now + timedelta(minutes=50)) == 0.0
+
+
+@pytest.mark.asyncio
+async def test_dhw_charge_outcome_follows_the_switch_off_temperature(monkeypatch) -> None:
+    """A completed charge is judged against dhw_charge_off_temp, not dhw_setpoint (#713)."""
+    analysis, store = _dhw_analysis(monkeypatch)
+    await analysis.async_load()
+    now = datetime(2026, 11, 16, 5, 0, tzinfo=UTC)
+
+    # First observation reconciles: a running charge starts at the first sample.
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=49.9), set(), now=now)
+    analysis.process_snapshot(_dhw_snapshot(demand=1, top=46.2), set(), now=now + timedelta(minutes=10))
+    assert analysis.dhw_charge_minutes(now + timedelta(minutes=10)) == 0.0
+    analysis.process_snapshot(_dhw_snapshot(demand=1, top=49.4), set(), now=now + timedelta(minutes=40))
+    assert analysis.dhw_charge_minutes(now + timedelta(minutes=40)) == 30.0
+    # Demand clears with the tank above the switch-off temperature: success.
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=50.1), set(), now=now + timedelta(minutes=45))
+
+    assert analysis.last_dhw_charge_reached_target is True
+    assert analysis.last_dhw_charge_ended == now + timedelta(minutes=45)
+    assert analysis.dhw_consecutive_charge_failures == 0
+    assert analysis.dhw_charge_minutes(now + timedelta(minutes=45)) == 0.0
+    assert store.delayed is not None
+
+
+@pytest.mark.asyncio
+async def test_dhw_charge_failures_accumulate_and_reset(monkeypatch) -> None:
+    analysis, _store = _dhw_analysis(monkeypatch)
+    await analysis.async_load()
+    now = datetime(2026, 11, 16, 5, 0, tzinfo=UTC)
+
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=47.9), set(), now=now)
+    # First failed charge: peak 47.9 never reaches 50 - 1.0.
+    analysis.process_snapshot(_dhw_snapshot(demand=1, top=46.4), set(), now=now + timedelta(minutes=5))
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=47.1), set(), now=now + timedelta(minutes=35))
+    assert analysis.last_dhw_charge_reached_target is False
+    assert analysis.dhw_consecutive_charge_failures == 1
+    # Second failed charge: two in a row.
+    analysis.process_snapshot(_dhw_snapshot(demand=1, top=45.8), set(), now=now + timedelta(minutes=40))
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=46.9), set(), now=now + timedelta(minutes=70))
+    assert analysis.dhw_consecutive_charge_failures == 2
+    # A successful charge clears the streak.
+    analysis.process_snapshot(_dhw_snapshot(demand=1, top=46.1), set(), now=now + timedelta(minutes=75))
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=50.3), set(), now=now + timedelta(minutes=105))
+    assert analysis.dhw_consecutive_charge_failures == 0
+    assert analysis.last_dhw_charge_reached_target is True
+
+
+@pytest.mark.asyncio
+async def test_dhw_charge_outcome_survives_restart_without_false_edges(monkeypatch) -> None:
+    analysis, store = _dhw_analysis(monkeypatch)
+    await analysis.async_load()
+    now = datetime(2026, 11, 16, 5, 0, tzinfo=UTC)
+
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=47.5), set(), now=now)
+    analysis.process_snapshot(_dhw_snapshot(demand=1, top=46.0), set(), now=now + timedelta(minutes=5))
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=47.2), set(), now=now + timedelta(minutes=30))
+    assert analysis.dhw_consecutive_charge_failures == 1
+
+    restarted, _store = _dhw_analysis(monkeypatch, loaded=store.delayed)
+    await restarted.async_load()
+    assert restarted.dhw_consecutive_charge_failures == 1
+    assert restarted.last_dhw_charge_reached_target is False
+    # The first snapshot after the restart only reconciles: a running charge
+    # re-anchors at the observation and no completion is invented.
+    restarted.process_snapshot(_dhw_snapshot(demand=1, top=46.0), set(), now=now + timedelta(minutes=35))
+    assert restarted.dhw_consecutive_charge_failures == 1
+    assert restarted.last_dhw_charge_reached_target is False
+    assert restarted.dhw_charge_minutes(now + timedelta(minutes=35)) == 0.0
+
+
+@pytest.mark.asyncio
+async def test_dhw_charge_gap_never_implies_a_stuck_charge(monkeypatch) -> None:
+    analysis, _store = _dhw_analysis(monkeypatch)
+    await analysis.async_load()
+    now = datetime(2026, 11, 16, 5, 0, tzinfo=UTC)
+
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=49.5), set(), now=now)
+    analysis.process_snapshot(_dhw_snapshot(demand=1, top=46.0), set(), now=now + timedelta(minutes=1))
+    # A communication gap of hours must not be charged to the running charge.
+    analysis.process_snapshot(_dhw_snapshot(demand=1, top=46.4), set(), now=now + timedelta(hours=3))
+    assert analysis.dhw_charge_minutes(now + timedelta(hours=3, minutes=1)) == 1.0
+
+
+@pytest.mark.asyncio
+async def test_dhw_charge_paused_when_demand_register_unavailable(monkeypatch) -> None:
+    analysis, _store = _dhw_analysis(monkeypatch)
+    await analysis.async_load()
+    now = datetime(2026, 11, 16, 5, 0, tzinfo=UTC)
+
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=49.5), set(), now=now)
+    analysis.process_snapshot(_dhw_snapshot(demand=1, top=46.0), set(), now=now + timedelta(minutes=1))
+    # A snapshot without the demand bit neither completes nor anchors a charge.
+    analysis.process_snapshot(_snapshot(mode=4), set(), now=now + timedelta(minutes=10))
+    assert analysis.dhw_charge_minutes(now + timedelta(minutes=10)) == 9.0
+    assert analysis.last_dhw_charge_reached_target is None
+    # Unused registers are treated like missing data: no invented outcome.
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=50.2), {"dhw_demand"}, now=now + timedelta(minutes=11))
+    assert analysis.last_dhw_charge_reached_target is None
+
+
+@pytest.mark.asyncio
+async def test_dhw_charge_without_peak_or_target_stays_unknown(monkeypatch) -> None:
+    analysis, _store = _dhw_analysis(monkeypatch)
+    await analysis.async_load()
+    now = datetime(2026, 11, 16, 5, 0, tzinfo=UTC)
+
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=49.5), set(), now=now)
+    # No usable tank temperature during the whole charge: no invented outcome.
+    analysis.process_snapshot(_dhw_snapshot(demand=1, top=-327.2), set(), now=now + timedelta(minutes=1))
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=-327.2), set(), now=now + timedelta(minutes=30))
+    assert analysis.last_dhw_charge_reached_target is None
+    assert analysis.dhw_consecutive_charge_failures == 0

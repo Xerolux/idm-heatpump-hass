@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from statistics import median
-from typing import Any
+from typing import Any, Final
 
 from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
@@ -15,11 +15,16 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription
 from homeassistant.const import EntityCategory
 
+from .binary_semantics import binary_value_is_on
 from .calculated_sensors import _cop
 from .coordinator import IdmCoordinator
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
 from .ha_compat import BinarySensorDeviceClass
 from .temperature_plausibility import is_uninitialized_temperature
+
+#: A hot-water charge running this long without the tank lifting above its
+#: switch-on temperature is treated as stuck (#713).
+_DHW_STUCK_CHARGE_MINUTES: Final = 90.0
 
 
 @dataclass(frozen=True)
@@ -50,7 +55,78 @@ def _low_cop(coordinator: IdmCoordinator, _analysis: Any) -> bool | None:
     return cop < 2.0 if cop is not None else None
 
 
-def _dhw_not_reaching_target(coordinator: IdmCoordinator, _analysis: Any) -> bool | None:
+def _dhw_charge_setting(data: Mapping[str, Any], unused: frozenset[str], key: str) -> float | None:
+    """Return one finite positive charge-hysteresis setting from a snapshot."""
+    if key in unused:
+        return None
+    value = data.get(key)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if not math.isfinite(value) or value <= 0.0:
+        return None
+    return float(value)
+
+
+def _dhw_demand_active(
+    coordinator: IdmCoordinator,
+    data: Mapping[str, Any],
+    unused: frozenset[str],
+) -> bool | None:
+    """Return whether the controller currently demands hot-water charging."""
+    if "dhw_demand" not in data or "dhw_demand" in unused:
+        return None
+    value = data.get("dhw_demand")
+    if value is None:
+        return None
+    register = None
+    getter = getattr(coordinator, "get_register", None)
+    if callable(getter):
+        register = getter("dhw_demand")
+    if register is not None:
+        return binary_value_is_on(register, value)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value != 0
+    return None
+
+
+def _analysis_dhw_charge_minutes(analysis: Any) -> float | None:
+    """Return the running charge duration the analysis observed, if any."""
+    getter = getattr(analysis, "dhw_charge_minutes", None)
+    if not callable(getter):
+        return None
+    try:
+        minutes = getter()
+    except (TypeError, ValueError):
+        return None
+    if isinstance(minutes, bool) or not isinstance(minutes, (int, float)):
+        return None
+    if not math.isfinite(minutes):
+        return None
+    return float(minutes)
+
+
+def _analysis_dhw_failed_charges(analysis: Any) -> int:
+    """Return consecutive completed charges that missed their target."""
+    value = getattr(analysis, "dhw_consecutive_charge_failures", 0)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return 0
+    if not math.isfinite(value):
+        return 0
+    return int(value)
+
+
+def _dhw_not_reaching_target(coordinator: IdmCoordinator, analysis: Any) -> bool | None:
+    """Flag only a hot-water charge that fails against its own charge cycle.
+
+    Navigator 10/2.0/Pro charge the tank on a hysteresis: charging starts at
+    ``dhw_charge_on_temp`` and a completed charge must reach
+    ``dhw_charge_off_temp`` — the tank then cools between charges without that
+    being a fault (#713). Comparing the resting tank with ``dhw_setpoint``
+    instead flagged every normal cool-down. Plants without the hysteresis
+    registers keep the setpoint rule.
+    """
     data = coordinator.data
     if not data or "dhw_temp_top" not in data or "dhw_setpoint" not in data:
         return None
@@ -64,6 +140,23 @@ def _dhw_not_reaching_target(coordinator: IdmCoordinator, _analysis: Any) -> boo
         return None
     if not all(math.isfinite(value) for value in (current, target)) or target in (-1.0, 0.0) or current <= -1.0:
         return None
+
+    charge_on = _dhw_charge_setting(data, unused, "dhw_charge_on_temp")
+    charge_off = _dhw_charge_setting(data, unused, "dhw_charge_off_temp")
+    if charge_on is not None and charge_off is not None and charge_off > charge_on:
+        demand_on = _dhw_demand_active(coordinator, data, unused)
+        if demand_on is None:
+            # Without the demand signal a resting tank and a failing charge
+            # cannot be told apart.
+            return None
+        failed_charges = current < charge_on and _analysis_dhw_failed_charges(analysis) >= 2
+        if not demand_on:
+            return failed_charges
+        minutes = _analysis_dhw_charge_minutes(analysis)
+        stuck = minutes is not None and minutes >= _DHW_STUCK_CHARGE_MINUTES and current < charge_on
+        return failed_charges or stuck
+
+    # Legacy plants without the charge-hysteresis registers keep the setpoint rule.
     return current < target - 5.0
 
 

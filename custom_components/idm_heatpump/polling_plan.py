@@ -24,7 +24,10 @@ from .coordinator import IdmCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 # Communication, alarm, operating-analysis and safe DHW restore registers are
-# intentionally retained even when their UI entities are disabled.
+# intentionally retained even when their UI entities are disabled. The DHW
+# charge-hysteresis registers and demand bit feed the hot-water health check
+# and its operation-analysis charge tracking (#713); they sit in batches next
+# to always-required registers, so they add no physical Modbus request.
 _ALWAYS_REQUIRED = frozenset(
     {
         "outdoor_temp",
@@ -32,6 +35,9 @@ _ALWAYS_REQUIRED = frozenset(
         "system_mode",
         "dhw_temp_top",
         "dhw_setpoint",
+        "dhw_charge_on_temp",
+        "dhw_charge_off_temp",
+        "dhw_demand",
         "hp_operating_mode",
         "hp_sum_alarm",
         "compressor_status_1",

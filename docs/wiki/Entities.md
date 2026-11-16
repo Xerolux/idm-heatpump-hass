@@ -780,7 +780,7 @@ findings as attributes.
 | iDM health report (`health_report`) | Combined report of all findings, with details as attributes |
 | Communication problem (`health_communication`) | Repeated Modbus communication failures |
 | Recurring heat-pump alarms (`health_recurrent_alarms`) | Alarm signal returns repeatedly |
-| DHW does not reach target (`health_dhw_not_reaching_target`) | Hot water stays below its setpoint under load |
+| DHW does not reach target (`health_dhw_not_reaching_target`) | A charge never reaches the hot water charge stop temperature — a stuck charge or repeated failed charges; normal cooling between charges does not flag |
 | COP unusually low (`health_low_cop`) | Observed COP is below the expected range |
 | Too many compressor starts (`health_many_compressor_starts`) | Compressor start count exceeds the configured limit |
 | Compressor cycles getting shorter (`health_shortening_cycles`) | Cycle runtimes shrink over time — a classic wear indicator |
