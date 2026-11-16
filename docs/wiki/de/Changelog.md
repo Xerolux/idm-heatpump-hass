@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.27.1 — 2026-11-16
+
+Die lokale Anfragediagnose ergänzt datensparsame Netzwerk-Ursachenzähler neben unveränderten Fehlerklassen. Verbindungsablehnung, Timeout, DNS, Berechtigungen, fehlende Route und Verbindungsabbruch lassen sich unterscheiden, soweit die ursprüngliche Fehlerkette das belegt. Keine zusätzlichen Abfragen oder Telemetriedaten. [Fehlersuche](Troubleshooting#kennzahlen-pro-anfrage).
+
 ## v0.27.0 — 2026-11-16
 
 Die 0.27er-Linie *Messbarkeit* wird stabil: Die Transportschicht misst jede physische Modbus-Anfrage in einem begrenzten 100-Anfragen-Fenster — mit aktivierter *Kommunikationsdiagnose* veröffentlicht der Sensor *Modbus-Anfragedauer (Zeitfenster)* den Median samt Fehlerklassen und Statistiken je Funktioncode, und der Abfrageintervall-Repair bietet über *Beheben* einen gemessenen Intervallvorschlag. Die Firmware-Orientierung übersteht Neustarts, und der PV-Nullleistungs-Workaround folgt dem Eingefroren-Mechanismus mit einem 10/20-W-Wechsel pro Minute, der auch Dämmerungsproduktion unter der 5-W-Registerauflösung ersetzt. Advisor-Empfehlungstitel erscheinen deutsch oder englisch. [Kennzahlen pro Anfrage](Troubleshooting#kennzahlen-pro-anfrage), [PV-Meldung 20300](Troubleshooting#pv-nicht-verbunden-meldung-20300-bei-nullleistung), [Firmware-Orientierung](Telemetry#firmware-orientierung), [Predictive Advisor](Predictive-Advisor).

@@ -544,7 +544,9 @@ controls in addition to timeout and retry settings:
 - **Extended communication diagnostics** creates diagnostic entities for the
   last successful poll, poll duration, consecutive failures, and the active
   register count. Total polls and failures are included as attributes and in
-  downloaded diagnostics.
+  downloaded diagnostics. The existing **Modbus request duration (window)** sensor
+  also exposes safe network reason counts in `network_error_reasons` from 0.27.1.
+  See [per-request troubleshooting](Troubleshooting#per-request-metrics).
 - **Write cooldown (0–600 seconds)** applies per register. A second write to
   the same register during the configured interval is rejected without sending
   anything to the heat pump, and Home Assistant reports the remaining wait.

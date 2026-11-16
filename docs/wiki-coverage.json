@@ -57,7 +57,7 @@
         "Configuration.md",
         "Troubleshooting.md"
       ],
-      "reviewed_source_sha256": "6bc5ad2e95d650f7f6f77ad58a5ecd798818ba450d77dd3b3691b2379a0d9ce0"
+      "reviewed_source_sha256": "50163b789dc563f8f043427ff308c4d1ff09fa576dce1adba33e51f448bb317a"
     },
     {
       "feature": "Core entities and device placement",

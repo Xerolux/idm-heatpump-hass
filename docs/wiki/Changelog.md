@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.27.1 — 2026-11-16
+
+Local request diagnostics add privacy-safe network reason counts alongside unchanged outcome classes. Refusal, timeout, DNS, permissions, unreachable routes and lost connections can be distinguished when the original error chain supplies evidence. No new polling or telemetry. [Troubleshooting](Troubleshooting#per-request-metrics).
+
 ## v0.27.0 — 2026-11-16
 
 The 0.27 *measurability* line goes stable: the transport boundary times every physical Modbus request in a bounded 100-request window — with *Communication diagnostics* enabled, the *Modbus request duration (window)* sensor publishes the median plus outcome classes and per-function-code statistics, and the scan-interval repair offers a measured interval suggestion through *Fix it*. Firmware orientation survives restarts, and the PV zero-power workaround follows the frozen-register mechanism with a 10/20 W heartbeat that also replaces dusk production below the 5 W register resolution. Advisor recommendation titles render German or English. [Per-request metrics](Troubleshooting#per-request-metrics), [PV message 20300](Troubleshooting#pv-not-connected-message-20300-at-zero-production), [Firmware orientation](Telemetry#firmware-orientation), [Predictive Advisor](Predictive-Advisor).

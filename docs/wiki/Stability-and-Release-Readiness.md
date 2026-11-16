@@ -4,6 +4,10 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.27.1 release decision
+
+This patch adds only local, bounded network reason counters to existing request diagnostics. High-level outcomes, request execution/retries, entity IDs, consent and transmitted telemetry remain unchanged. Synthetic tests cover wrapped Linux/Windows error codes, unknown/suppressed/cyclic/deep chains, redaction safety, window expiry and unchanged exception propagation. The real-Home-Assistant lifecycle smoke suite passes; the release requires the complete coverage, typing, lint and documentation gates before tagging. No live plant was deliberately disconnected or reconfigured, and historical failures remain unexplained. [Troubleshooting](Troubleshooting#per-request-metrics).
+
 ## 0.27.0 release decision
 
 The stable ships the 0.27.0-b4 line unchanged: after the b4 tag (2026-11-10)
@@ -574,7 +578,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.27.0` and `idm-heatpump-api` `2.16.2` form the current
+Source-tree integration `0.27.1` and `idm-heatpump-api` `2.16.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

@@ -4,6 +4,10 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.27.1
+
+Dieser Patch ergänzt ausschließlich lokale, begrenzte Netzwerk-Ursachenzähler in der vorhandenen Anfragediagnose. Bisherige Fehlerklassen, Abfragen und Wiederholungen, Entitäts-IDs, Zustimmungen und übertragene Telemetrie bleiben unverändert. Synthetische Tests prüfen gekapselte Linux-/Windows-Fehlercodes, unbekannte/unterdrückte/zyklische/tiefe Fehlerketten, datensparsame Ausgabe, Fensterablauf und unveränderte Weitergabe der Fehler. Die Lebenszyklustests mit echtem Home Assistant bestehen; vor dem Tag müssen die vollständigen Abdeckungs-, Typ-, Stil- und Dokumentationsprüfungen grün sein. Keine reale Anlage wurde absichtlich getrennt oder umkonfiguriert; historische Fehlerursachen bleiben offen. [Fehlersuche](Troubleshooting#kennzahlen-pro-anfrage).
+
 ## Release-Entscheidung zu 0.27.0
 
 Das stabile Release bringt die Linie 0.27.0-b4 unverändert: Nach dem b4-Tag
@@ -616,7 +620,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.27.0` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
+Integration im Quellstand `0.27.1` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

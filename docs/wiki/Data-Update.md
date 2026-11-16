@@ -4,6 +4,8 @@
 
 The integration uses Modbus TCP to read register data directly from the IDM heat pump. Plant communication and control are **local**. Separately enabled AI providers, telemetry and firmware queries have their own consent and privacy boundaries; see [AI adviser](Experimental-AI-Adviser) and [Telemetry](Telemetry).
 
+The transport also keeps a passive last-100-request timing window. Since 0.27.1, typed network failures add safe `network_error_reasons` counts alongside the existing outcomes, without changing retry behavior or adding requests. View them in local diagnostics or enable extended communication diagnostics for the request-duration sensor. See [per-request metrics](Troubleshooting#per-request-metrics).
+
 ## Polling Mechanism
 
 The integration uses Home Assistant's **DataUpdateCoordinator**:

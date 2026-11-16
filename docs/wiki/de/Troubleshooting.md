@@ -356,6 +356,20 @@ Bisektionspfad auf Anlagen mit nicht unterstützten Registern erzeugt und wie si
 Anfragedauern verhalten, wenn ein zweiter Modbus-Client die Verbindung teilt. Die Messung
 ist passiv — sie sendet selbst keine zusätzliche Anfrage.
 
+
+Seit 0.27.1 ergänzt `network_error_reasons` die Ursachenzähler desselben Anfragefensters in den Sensorattributen und im Diagnose-Export. Die bisherigen `outcomes` bleiben unverändert. Grundlage sind ausschließlich Exception-Typen und Betriebssystem-Fehlercodes aus einer begrenzten Fehlerkette; Fehlermeldungstexte, Zieladressen und Zugangsdaten werden nicht übernommen. Eine leere Zuordnung bedeutet keine eingeordnete Ursache im aktuellen Fenster, nicht den Nachweis eines fehlerfreien bisherigen Betriebs. Die Zähler laufen mit dem 100-Anfragen-Fenster aus und werden nicht mit der Telemetrie übertragen.
+
+| Ursache | Was prüfen? |
+| --- | --- |
+| `connection_refused` | Ziel und Port prüfen; mit dem Fachbetrieb klären, ob Modbus TCP freigegeben ist. Die Ablehnung allein beweist keine deaktivierte Modbus-Schnittstelle. |
+| `timeout` | Erreichbarkeit, Reglerlast, weitere Clients und Zeitlimit prüfen; das Merkmal beweist die Ursache noch nicht. |
+| `name_resolution_failed` | Konfigurierten Hostnamen und lokale DNS-/VPN-Auflösung prüfen. |
+| `permission_denied` | Lokale Netzwerkberechtigungen und Firewall-/Richtlinienbeschränkungen prüfen. |
+| `network_unreachable` | Route, Subnetz, VPN und Firewall prüfen. |
+| `connection_lost` | Netzwerkstabilität, Reglerneustarts und konkurrierende Verbindungen prüfen. |
+
+Das sind Beobachtungen fehlgeschlagener physischer Anfragen, keine Historie der Einrichtungsverbindungen und keine Diagnose eines Hardwaredefekts. Unbekannte Ursachen bleiben unbekannt. Diagnose möglichst zeitnah herunterladen, bevor der Fehler das Fenster verlässt; die Funktion sendet keine zusätzliche Anfrage.
+
 ## Ein Registerschreibvorgang wird abgelehnt
 
 Symptom: Das Ändern eines Werts (zum Beispiel der Zieltemperatur eines Heizkreises in der

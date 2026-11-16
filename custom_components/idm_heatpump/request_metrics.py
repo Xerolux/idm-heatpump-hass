@@ -22,7 +22,9 @@ path.
 
 from __future__ import annotations
 
+import errno
 import math
+import socket
 import time
 from collections import deque
 from dataclasses import dataclass
@@ -62,6 +64,16 @@ _OUTCOME_DEVICE = "device_error"
 _OUTCOME_OTHER = "other_error"
 
 _DURATION_KEYS = ("min", "median", "average", "p95", "max")
+_NETWORK_REASONS = frozenset(
+    {
+        "name_resolution_failed",
+        "timeout",
+        "connection_refused",
+        "permission_denied",
+        "network_unreachable",
+        "connection_lost",
+    }
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,6 +85,7 @@ class RequestRecord:
     duration_seconds: float
     outcome: str
     at: datetime
+    network_reason: str | None = None
 
 
 def _classify_error(error: Exception) -> str:
@@ -95,6 +108,46 @@ def _classify_error(error: Exception) -> str:
     if isinstance(error, IdmDeviceError):
         return _OUTCOME_DEVICE
     return _OUTCOME_OTHER
+
+
+def _network_error_reason(error: Exception) -> str | None:
+    """Inspect bounded exception chains by type/errno, never private messages."""
+    if isinstance(error, IdmDeviceError):
+        return None
+    current: BaseException | None = error
+    seen: set[int] = set()
+    for _ in range(8):
+        if current is None or id(current) in seen:
+            break
+        seen.add(id(current))
+        if isinstance(current, socket.gaierror):
+            return "name_resolution_failed"
+        if isinstance(current, TimeoutError):
+            return "timeout"
+        if isinstance(current, OSError):
+            code = current.errno
+            if isinstance(current, ConnectionRefusedError) or code in (errno.ECONNREFUSED, 10061):
+                return "connection_refused"
+            if isinstance(current, PermissionError) or code in (errno.EACCES, errno.EPERM, 10013):
+                return "permission_denied"
+            if code in (errno.ENETUNREACH, errno.EHOSTUNREACH, 10051, 10065):
+                return "network_unreachable"
+            if code in (errno.ETIMEDOUT, 10060):
+                return "timeout"
+            if isinstance(current, (ConnectionResetError, BrokenPipeError)) or code in (
+                errno.ECONNRESET,
+                errno.EPIPE,
+                errno.ECONNABORTED,
+                10053,
+                10054,
+            ):
+                return "connection_lost"
+        current = (
+            current.__cause__
+            if current.__cause__ is not None
+            else (None if current.__suppress_context__ else current.__context__)
+        )
+    return None
 
 
 def _percentile(sorted_values: list[float], fraction: float) -> float:
@@ -134,6 +187,8 @@ class RequestMetricsRecorder:
         register_count: int,
         duration_seconds: float,
         outcome: str = _OUTCOME_SUCCESS,
+        *,
+        network_reason: str | None = None,
     ) -> None:
         """Append one observation; the oldest record drops out when full."""
         self._records.append(
@@ -143,6 +198,7 @@ class RequestMetricsRecorder:
                 duration_seconds=duration_seconds,
                 outcome=outcome,
                 at=datetime.now(UTC),
+                network_reason=network_reason if network_reason in _NETWORK_REASONS else None,
             )
         )
 
@@ -166,9 +222,12 @@ class RequestMetricsRecorder:
                 "requests_recorded": 0,
             }
         outcomes: dict[str, int] = {}
+        network_reasons: dict[str, int] = {}
         by_function: dict[str, dict[str, Any]] = {}
         for record in records:
             outcomes[record.outcome] = outcomes.get(record.outcome, 0) + 1
+            if record.network_reason is not None:
+                network_reasons[record.network_reason] = network_reasons.get(record.network_reason, 0) + 1
             entry = by_function.setdefault(
                 record.function_code,
                 {"requests": 0, "registers": 0, "errors": 0, "durations_seconds": []},
@@ -184,6 +243,7 @@ class RequestMetricsRecorder:
             "requests_recorded": len(records),
             "window_seconds": round(span, 1),
             "outcomes": dict(sorted(outcomes.items())),
+            "network_error_reasons": dict(sorted(network_reasons.items())),
             "duration_seconds": _duration_summary([r.duration_seconds for r in records]),
             "by_function_code": {
                 code: {
@@ -268,6 +328,7 @@ class RequestMetricsTransport:
                 register_count,
                 time.monotonic() - started,
                 _classify_error(error),
+                network_reason=_network_error_reason(error),
             )
             raise
         self._recorder.record(
