@@ -4,6 +4,8 @@
 
 Die Integration nutzt Modbus TCP, um Registerdaten direkt von der IDM-Wärmepumpe zu lesen. Anlagenkommunikation und Steuerung laufen **lokal**. Separat aktivierte KI-Anbieter, Telemetrie und Firmware-Abfragen haben eigene Einwilligungs- und Datenschutzgrenzen; siehe [KI-Berater](Experimental-AI-Adviser) und [Telemetrie](Telemetry).
 
+Der Transport führt zusätzlich ein passives Zeitfenster der letzten 100 Anfragen. Seit 0.27.1 ergänzen typisierte Netzwerkfehler datensparsame Ursachenzähler unter `network_error_reasons`, neben den bisherigen Fehlerklassen. Wiederholungen und Anlagenabfragen bleiben unverändert. Sichtbar sind die Werte in der lokalen Diagnose oder mit erweiterter Kommunikationsdiagnose im Anfragedauer-Sensor. Siehe [Kennzahlen pro Anfrage](Troubleshooting#kennzahlen-pro-anfrage).
+
 ## Abfrage-Mechanismus
 
 Die Integration verwendet den **DataUpdateCoordinator** von Home Assistant:

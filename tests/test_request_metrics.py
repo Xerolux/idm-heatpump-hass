@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import errno
+import socket
 from datetime import timedelta
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -27,6 +29,7 @@ from custom_components.idm_heatpump.request_metrics import (
     RequestMetricsRecorder,
     RequestMetricsTransport,
     _classify_error,
+    _network_error_reason,
 )
 
 _ENDPOINT = ModbusTcpEndpoint("192.0.2.10", 502, 1, 10.0, 3)
@@ -164,6 +167,70 @@ class TestErrorClassification:
 
 
 class TestRequestMetricsTransport:
+    @pytest.mark.parametrize(
+        ("cause", "reason"),
+        [
+            (ConnectionRefusedError(errno.ECONNREFUSED, "private endpoint"), "connection_refused"),
+            (OSError(10061, "private endpoint"), "connection_refused"),
+            (socket.gaierror(socket.EAI_NONAME, "private host"), "name_resolution_failed"),
+            (TimeoutError("private endpoint"), "timeout"),
+            (OSError(10060, "private endpoint"), "timeout"),
+            (PermissionError(errno.EACCES, "private endpoint"), "permission_denied"),
+            (OSError(10013, "private endpoint"), "permission_denied"),
+            (OSError(errno.ENETUNREACH, "private endpoint"), "network_unreachable"),
+            (OSError(10065, "private endpoint"), "network_unreachable"),
+            (ConnectionResetError(errno.ECONNRESET, "private endpoint"), "connection_lost"),
+            (OSError(10053, "private endpoint"), "connection_lost"),
+        ],
+    )
+    async def test_wrapped_network_reason_is_local_safe_and_preserves_exception(
+        self, cause: Exception, reason: str
+    ) -> None:
+        wrapper, inner = self._wrapped()
+        error = IdmConnectionError("private endpoint with pin=4321")
+        error.__cause__ = cause
+        inner.errors["fc04"] = error
+        with pytest.raises(IdmConnectionError) as caught:
+            await wrapper.read_input_registers(address=1000, count=2)
+        assert caught.value is error
+        snapshot = wrapper.request_metrics_snapshot()
+        assert snapshot["outcomes"] == {"connection_error": 1}
+        assert snapshot["network_error_reasons"] == {reason: 1}
+        assert "private" not in str(snapshot)
+        assert "4321" not in str(snapshot)
+        assert len(inner.calls) == 1
+
+    def test_unknown_suppressed_cyclic_and_device_chains_do_not_invent_a_cause(self) -> None:
+        error = IdmConnectionError("connection refused is only message text")
+        assert _network_error_reason(error) is None
+        error.__context__ = ConnectionRefusedError()
+        error.__suppress_context__ = True
+        assert _network_error_reason(error) is None
+        error.__suppress_context__ = False
+        assert _network_error_reason(error) == "connection_refused"
+        error.__cause__ = error
+        assert _network_error_reason(error) is None
+        device = IllegalAddressError("unsupported register")
+        device.__cause__ = ConnectionRefusedError()
+        assert _network_error_reason(device) is None
+        error.__cause__ = None
+        error.__context__ = None
+        current: Exception = error
+        for _ in range(12):
+            child = RuntimeError("wrapper")
+            current.__cause__ = child
+            current = child
+        current.__cause__ = ConnectionRefusedError()
+        assert _network_error_reason(error) is None
+
+    def test_network_reasons_roll_out_with_window_and_reject_arbitrary_text(self) -> None:
+        recorder = RequestMetricsRecorder(window_size=1)
+        recorder.record("fc04", 2, 0.1, "connection_error", network_reason="connection_refused")
+        assert recorder.snapshot()["network_error_reasons"] == {"connection_refused": 1}
+        recorder.record("fc04", 2, 0.1, network_reason="private host")
+        assert recorder.snapshot()["network_error_reasons"] == {}
+        assert "private" not in str(recorder.snapshot())
+
     def _wrapped(self) -> tuple[RequestMetricsTransport, InnerTransport]:
         inner = InnerTransport()
         return RequestMetricsTransport(inner), inner

@@ -343,6 +343,20 @@ plant with unsupported registers, and how request durations behave when a second
 Modbus client shares the connection. The measurement is passive — it never sends
 an additional request.
 
+
+Since 0.27.1, `network_error_reasons` adds reason counts to that same request window, both in the sensor attributes and the diagnostic export. Existing `outcomes` are unchanged. Reasons are derived only from typed exceptions and operating-system error codes through a bounded cause chain; raw exception text, endpoints and credentials are never included. An empty mapping means no classified reason in this window, not proof that no earlier failure occurred. Counters expire with the 100-request window and are not sent in telemetry.
+
+| Reason | What to check |
+| --- | --- |
+| `connection_refused` | Verify the configured endpoint/port and whether Modbus TCP is enabled with the installer. A refusal alone does not prove it is disabled. |
+| `timeout` | Check reachability, controller load, shared clients and the configured timeout; the cause is not established by this label. |
+| `name_resolution_failed` | Check the configured hostname and local DNS/VPN resolution. |
+| `permission_denied` | Check local network permissions and firewall/policy restrictions. |
+| `network_unreachable` | Check the route, subnet, VPN and firewall. |
+| `connection_lost` | Check network stability, controller restarts and competing connections. |
+
+These are observations about failed physical requests, not a setup-connection history or a diagnosis of faulty hardware. Unknown causes stay unknown. Download diagnostics near the event before it leaves the window; no additional request is sent for this feature.
+
 ## A register write is rejected
 
 Symptom: changing a value (for example the target temperature of a heating

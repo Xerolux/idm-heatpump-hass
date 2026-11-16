@@ -13,6 +13,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.27.1] - 2026-11-16
+
+Connection failures are easier to investigate: the local request window now preserves safe network reason counts alongside the existing outcome classes. This closes an evidence gap identified while reviewing donated telemetry, without guessing why earlier failures happened.
+
+### ⚠️ Upgrade notes
+
+- **Enable Communication diagnostics to see the extra detail** in the existing *Modbus request duration (window)* attributes, or download diagnostics. No new entity, extra poll or telemetry field is introduced. Existing counters, options, acknowledgements and consent remain valid; rollback to 0.27.0 is safe.
+
+### ✨ New
+
+- **Failed Modbus requests retain a safe network reason** when the original exception chain supplies one: connection refused, timeout, name-resolution failure, permission denied, unreachable network or lost connection. Counts share the existing last-100-request window; the established outcome classes remain unchanged. Missing evidence stays unknown, and a refusal does not prove Modbus is disabled.
+
+### 💼 Maintenance
+
+- **Donation findings become practical troubleshooting guidance** in both wiki languages. Reason labels come only from exception types and operating-system codes, never raw messages, addresses or credentials. Bounded/cyclic error chains and unchanged exception propagation are covered by regressions. The reviewed HTTP/statistics payloads already parse with API 2.16.2; no speculative register mapping is added.
+
 ## [0.27.0] - 2026-11-16
 
 The 0.27 line is about measurability: the transport boundary now times every

@@ -601,6 +601,10 @@ fortgeschrittene Nutzer:
   Fehlschläge und die Anzahl aktiver Register. Abfragen und Fehlschläge
   insgesamt sind als Attribute und in der heruntergeladenen Diagnose
   enthalten.
+  Der vorhandene Sensor **Modbus-Anfragedauer (Zeitfenster)** ergänzt ab 0.27.1
+  datensparsame Ursachenzähler unter `network_error_reasons`. Siehe
+  [Kennzahlen pro Anfrage](Troubleshooting#kennzahlen-pro-anfrage).
+
 - **Schreib-Cooldown (0–600 Sekunden)** gilt je Register. Eine zweite
   Schreiboperation auf dasselbe Register innerhalb des konfigurierten
   Intervalls wird abgelehnt, ohne etwas an die Wärmepumpe zu senden; Home
