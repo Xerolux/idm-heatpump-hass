@@ -292,7 +292,7 @@ jobs:
       - name: Create the dependency update pull request
         id: pull-request
         if: steps.summary.outputs.updated == 'true'
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # guardrails-disable-line
+        uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1  # guardrails-disable-line
         with:
           token: ${{ secrets.DEPENDENCY_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
           branch: ${{ steps.branch.outputs.name }}
