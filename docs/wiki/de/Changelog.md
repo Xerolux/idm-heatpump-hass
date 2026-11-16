@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.27.0 — 2026-11-16
+
+Die 0.27er-Linie *Messbarkeit* wird stabil: Die Transportschicht misst jede physische Modbus-Anfrage in einem begrenzten 100-Anfragen-Fenster — mit aktivierter *Kommunikationsdiagnose* veröffentlicht der Sensor *Modbus-Anfragedauer (Zeitfenster)* den Median samt Fehlerklassen und Statistiken je Funktioncode, und der Abfrageintervall-Repair bietet über *Beheben* einen gemessenen Intervallvorschlag. Die Firmware-Orientierung übersteht Neustarts, und der PV-Nullleistungs-Workaround folgt dem Eingefroren-Mechanismus mit einem 10/20-W-Wechsel pro Minute, der auch Dämmerungsproduktion unter der 5-W-Registerauflösung ersetzt. Advisor-Empfehlungstitel erscheinen deutsch oder englisch. [Kennzahlen pro Anfrage](Troubleshooting#kennzahlen-pro-anfrage), [PV-Meldung 20300](Troubleshooting#pv-nicht-verbunden-meldung-20300-bei-nullleistung), [Firmware-Orientierung](Telemetry#firmware-orientierung), [Predictive Advisor](Predictive-Advisor).
+
 ## v0.27.0-b4 — 2026-11-10
 
 Der PV-Nullleistungs-Workaround ist um den Mechanismus neu gebaut, den eine Live-Versuchsreihe an einem Navigator 10 klärte: Der Regler bemängelt ein *eingefrorenes* pv_production-Register — jede konstante Ersatzleistung löst Meldung 20300 nach rund zehn Minuten erneut aus, während jede Wertänderung sie in Sekunden löscht. Es gibt keinen Watt-Schwellwert. Der Workaround alterniert jetzt 10 W und 20 W pro Minute, und auch Dämmerungsproduktion unter der 5-W-Registerauflösung (zuvor als echte 0 W geschrieben) wird ersetzt. [PV-Meldung 20300](Troubleshooting#pv-nicht-verbunden-meldung-20300-bei-nullleistung).

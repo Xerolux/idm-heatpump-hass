@@ -4,6 +4,24 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.27.0
+
+Das stabile Release bringt die Linie 0.27.0-b4 unverändert: Nach dem b4-Tag
+(2026-11-10) kam ausschließlich Wiki-Dokumentation (PR #706), der Code trägt
+also sechs Tage Feldeinsatz über die vier veröffentlichten Betas ohne eine
+blockierende Meldung. Die Transportmetriken sind passiv — keine zusätzliche
+Anfrage — und der neu gebaute PV-Nullleistungs-Workaround bleibt
+standardmäßig aus und schreibt nur bei ausdrücklicher Aktivierung; es zieht
+kein neuer Schreibpfad aktiviert ein. Die lokale Suite bestand 3.619 Tests mit
+98,52 % Integrations- und 100 % Config-Flow-Abdeckung; das strenge Typing
+bestand für 90 Module; 14 Lebenszyklus-Tests bestanden gegen ein echtes
+Home Assistant 2026.11.0; die Runtime-Pins sind aktuell (API 2.16.2 unverändert
+seit 0.26.12; der tmodbus-Major 1.1.0 bleibt bewusst zur Prüfung gehalten).
+Der Firmware-Neustart-Erhalt ist synthetisch abgesichert; der
+PV-Herzschlag-Mechanismus ist durch eine Navigator-10-Live-Reihe belegt, und
+für den Stable-Cut selbst wurde keine Live-Anlage erneut geprüft.
+[Detailnachweis](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.27.0.md)
+
 ## Release-Entscheidung zu 0.26.13
 
 Der reichhaltigere Hinweistitel ist rein darstellerisch: Der Titel ist eine
@@ -598,7 +616,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.27.0-b4` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
+Integration im Quellstand `0.27.0` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
