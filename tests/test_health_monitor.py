@@ -33,6 +33,69 @@ def test_low_cop_and_dhw_target_checks():
     assert module._dhw_not_reaching_target(coordinator, None) is True
 
 
+def _charge_coordinator(top: float, demand: int) -> object:
+    """A Navigator-10 style plant with charge hysteresis registers (#713)."""
+    return _coordinator(
+        {
+            "dhw_temp_top": top,
+            "dhw_setpoint": 55.0,
+            "dhw_charge_on_temp": 46,
+            "dhw_charge_off_temp": 50,
+            "dhw_demand": demand,
+        }
+    )
+
+
+def test_dhw_target_resting_tank_is_not_a_fault():
+    """Normal cooling between charges must not flag (#713: setpoint 55, off 50)."""
+    # The reporter's own snapshot: charge correctly completed, demand idle.
+    assert module._dhw_not_reaching_target(_charge_coordinator(51.36, demand=0), None) is False
+    # Cooling below the switch-off temperature on the way to the next charge.
+    assert module._dhw_not_reaching_target(_charge_coordinator(48.9, demand=0), None) is False
+    # Even resting inside the hysteresis band is normal between charges.
+    assert module._dhw_not_reaching_target(_charge_coordinator(45.5, demand=0), None) is False
+
+
+def test_dhw_target_stuck_charge_flags_only_after_grace_period():
+    analysis = SimpleNamespace(dhw_charge_minutes=lambda: 95.0, dhw_consecutive_charge_failures=0)
+    # A charge stuck for over 90 minutes below the switch-on temperature flags.
+    assert module._dhw_not_reaching_target(_charge_coordinator(45.2, demand=1), analysis) is True
+    # A freshly started charge is granted its grace period.
+    fresh = SimpleNamespace(dhw_charge_minutes=lambda: 30.0, dhw_consecutive_charge_failures=0)
+    assert module._dhw_not_reaching_target(_charge_coordinator(45.2, demand=1), fresh) is False
+    # A long charge that lifted the tank above the switch-on temperature is healthy.
+    lifted = SimpleNamespace(dhw_charge_minutes=lambda: 120.0, dhw_consecutive_charge_failures=0)
+    assert module._dhw_not_reaching_target(_charge_coordinator(47.5, demand=1), lifted) is False
+    # Without an analysis duration the stuck rule stays conservative.
+    assert module._dhw_not_reaching_target(_charge_coordinator(45.2, demand=1), None) is False
+
+
+def test_dhw_target_flags_after_repeated_failed_charges():
+    failed = SimpleNamespace(dhw_charge_minutes=lambda: 0.0, dhw_consecutive_charge_failures=2)
+    single = SimpleNamespace(dhw_charge_minutes=lambda: 0.0, dhw_consecutive_charge_failures=1)
+    # Two consecutive charges that missed the switch-off temperature and a tank
+    # still below the switch-on temperature: a real problem.
+    assert module._dhw_not_reaching_target(_charge_coordinator(44.5, demand=0), failed) is True
+    assert module._dhw_not_reaching_target(_charge_coordinator(44.5, demand=1), failed) is True
+    # One failed charge alone is not enough evidence.
+    assert module._dhw_not_reaching_target(_charge_coordinator(44.5, demand=0), single) is False
+    # A tank that recovered above the switch-on temperature is fine again.
+    assert module._dhw_not_reaching_target(_charge_coordinator(47.0, demand=0), failed) is False
+
+
+def test_dhw_target_unknown_without_demand_signal():
+    coordinator = _coordinator(
+        {
+            "dhw_temp_top": 45.0,
+            "dhw_setpoint": 55.0,
+            "dhw_charge_on_temp": 46,
+            "dhw_charge_off_temp": 50,
+        }
+    )
+    # Without the demand bit a resting tank and a failing charge are indistinguishable.
+    assert module._dhw_not_reaching_target(coordinator, None) is None
+
+
 def test_implausible_sensor_check_ignores_normal_sentinels():
     assert module._implausible_sensor(_coordinator({"hp_flow_temp": -1.0}), None) is False
     assert module._implausible_sensor(_coordinator({"hp_flow_temp": 150.0}), None) is True

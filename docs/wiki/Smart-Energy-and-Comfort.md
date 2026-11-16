@@ -405,10 +405,22 @@ heat-pump setting and does not replace a technician diagnosis.
 The eight checks are communication failures, frequent compressor starts, low
 instantaneous COP, DHW below target, implausible temperatures, long defrost,
 shortening compressor cycles and repeated alarm transitions. A low-COP flag
-can appear briefly during compressor startup, and a DHW-below-target flag can
-appear before normal reheating. These snapshot checks do not by themselves
-prove a fault. The report lists which checks are active; unavailable input data
-must also be considered when interpreting the result.
+can appear briefly during compressor startup. These checks do not by
+themselves prove a fault. The report lists which checks are active;
+unavailable input data must also be considered when interpreting the result.
+
+The hot-water check follows the controller's own charge cycle
+([#713](https://github.com/Xerolux/idm-heatpump-hass/issues/713)): Navigator
+10/2.0/Pro charge on a hysteresis — charging starts at the *Hot water charge
+start temperature* (`dhw_charge_on_temp`) and a completed charge must reach
+the *Hot water charge stop temperature* (`dhw_charge_off_temp`), not the hot
+water setpoint. A resting tank cooling between charges is normal and never
+flags. The check turns on only when a running charge has been stuck for over
+90 minutes without the tank lifting above its start temperature, or when the
+last two completed charges both missed the stop temperature by more than
+1 K and the tank is still below the start temperature. Without the demand
+register the check reports unknown instead of guessing, and plants without
+the charge-hysteresis registers keep the older setpoint comparison.
 
 Temperature inputs whose sensor is not wired answer with uninitialized
 controller memory (about -327 °C on a Navigator 2.0 room-temperature register,

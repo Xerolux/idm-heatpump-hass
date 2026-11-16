@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.27.2 — 2026-11-16
+
+A hot-water field report (#713) from a Navigator 10: the normal charge runs between *Warmwasserladung Einschalttemperatur* (46 °C) and *Warmwasserladung Ausschalttemperatur* (50 °C) and never reaches the 55 °C setpoint — so the health monitor flagged every normal cool-down between charges. The two entities now carry the Navigator's own German names, and *DHW does not reach target* judges the charge cycle: a charge stuck over 90 minutes below the switch-on temperature, or two consecutive charges missing the switch-off temperature. [Health monitor](Smart-Energy-and-Comfort#optional-idm-health-monitor), [Findings](Findings-and-Documentation).
+
 ## v0.27.1 — 2026-11-16
 
 Local request diagnostics add privacy-safe network reason counts alongside unchanged outcome classes. Refusal, timeout, DNS, permissions, unreachable routes and lost connections can be distinguished when the original error chain supplies evidence. No new polling or telemetry. [Troubleshooting](Troubleshooting#per-request-metrics).

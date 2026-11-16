@@ -22,6 +22,9 @@ _STORAGE_SAVE_DELAY: Final = 10.0
 _EVENT_RETENTION: Final = timedelta(days=8)
 _MAX_COMPLETED_CYCLES: Final = 100
 _COMPRESSOR_KEYS: Final = tuple(f"compressor_status_{index}" for index in range(1, 5))
+#: A completed hot-water charge must reach the switch-off temperature; this
+#: tolerance absorbs sampling and sensor offsets when judging it (#713).
+_DHW_CHARGE_TARGET_TOLERANCE_K: Final = 1.0
 _MODE_NAMES: Final = {
     1: "heating",
     2: "cooling",
@@ -113,6 +116,13 @@ class OperationAnalysis:
         self.last_cycle_ended: datetime | None = None
         self.last_defrost_start: datetime | None = None
 
+        # Hot-water charge-cycle tracking (#713): a charge is the observed
+        # dhw_demand on-phase; its outcome compares the highest tank-top
+        # temperature seen during the charge with the configured switch-off
+        # temperature. Only outcomes persist, never the in-flight charge.
+        self.last_dhw_charge_reached_target: bool | None = None
+        self.last_dhw_charge_ended: datetime | None = None
+
         self._compressor_on: bool | None = None
         self._defrost_on: bool | None = None
         self._alarm_on: bool | None = None
@@ -124,6 +134,12 @@ class OperationAnalysis:
         self._mode_reconciled = False
         self._daily_dhw: dict[str, float] = {}
         self._last_save_schedule: float | None = None
+        self._dhw_consecutive_charge_failures = 0
+        self._dhw_demand_on: bool | None = None
+        self._dhw_charge_started: datetime | None = None
+        self._dhw_charge_peak_top: float | None = None
+        self._dhw_last_sample_at: datetime | None = None
+        self._dhw_reconciled = False
 
     @property
     def supports_compressor(self) -> bool:
@@ -195,6 +211,12 @@ class OperationAnalysis:
                 if num is not None:
                     self._daily_dhw[str(day)] = num
 
+        stored_dhw_target = stored.get("last_dhw_charge_reached_target")
+        if isinstance(stored_dhw_target, bool):
+            self.last_dhw_charge_reached_target = stored_dhw_target
+        self.last_dhw_charge_ended = _parse_datetime(stored.get("last_dhw_charge_ended"))
+        self._dhw_consecutive_charge_failures = _non_negative_int(stored.get("dhw_consecutive_charge_failures"))
+
         self._prune_events(_utcnow())
 
     async def async_save(self) -> None:
@@ -225,6 +247,9 @@ class OperationAnalysis:
             "defrost_on": self._defrost_on,
             "alarm_on": self._alarm_on,
             "daily_dhw": dict(self._daily_dhw),
+            "last_dhw_charge_reached_target": self.last_dhw_charge_reached_target,
+            "last_dhw_charge_ended": self._iso(self.last_dhw_charge_ended),
+            "dhw_consecutive_charge_failures": self._dhw_consecutive_charge_failures,
         }
 
     @staticmethod
@@ -263,6 +288,24 @@ class OperationAnalysis:
             return None
         numeric = int(value)
         return numeric if numeric in {0, 1, 2, 4, 8} else None
+
+    @staticmethod
+    def _snapshot_temperature(
+        data: Mapping[str, Any],
+        unused_registers: set[str],
+        key: str,
+    ) -> float | None:
+        """Return one finite plausible temperature reading from a snapshot."""
+        if key not in data or key in unused_registers:
+            return None
+        value = data.get(key)
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return None
+        if not math.isfinite(value) or value <= -1.0:
+            # Negative bands are sentinels or uninitialized sensor memory
+            # (see temperature_plausibility), never a usable reading.
+            return None
+        return float(value)
 
     def process_snapshot(
         self,
@@ -355,9 +398,92 @@ class OperationAnalysis:
             self._last_mode = None
             self._last_sample_at = observed_at
 
+        changed |= self._process_dhw_charge(data, unused_registers, observed_at=observed_at)
         changed |= self._prune_events(observed_at)
         if changed:
             self._schedule_save()
+
+    def _process_dhw_charge(
+        self,
+        data: Mapping[str, Any],
+        unused_registers: set[str],
+        *,
+        observed_at: datetime,
+    ) -> bool:
+        """Track observed hot-water charge cycles from ``dhw_demand`` edges (#713).
+
+        The first valid observation only reconciles persisted and live state,
+        so a Home Assistant restart never invents a charge completion. Snapshots
+        without a usable demand value pause the tracker instead of ending a
+        running charge.
+        """
+        demand_register = self._register_getter("dhw_demand")
+        demand_on: bool | None = None
+        if demand_register is not None and "dhw_demand" in data and "dhw_demand" not in unused_registers:
+            value = data["dhw_demand"]
+            if value is not None:
+                demand_on = binary_value_is_on(demand_register, value)
+        if demand_on is None:
+            return False
+
+        top = self._snapshot_temperature(data, unused_registers, "dhw_temp_top")
+        charge_off = self._snapshot_temperature(data, unused_registers, "dhw_charge_off_temp")
+        changed = False
+
+        if not self._dhw_reconciled:
+            self._dhw_demand_on = demand_on
+            self._dhw_charge_started = observed_at if demand_on else None
+            self._dhw_charge_peak_top = top if demand_on else None
+            self._dhw_reconciled = True
+            self._dhw_last_sample_at = observed_at
+            return True
+
+        gap = (
+            self._dhw_last_sample_at is not None
+            and (observed_at - self._dhw_last_sample_at).total_seconds() > self._max_sample_gap
+        )
+        if gap and demand_on and self._dhw_charge_started is not None:
+            # Missed polling time is never charged to the running charge: a
+            # communication gap must not imply a stuck charge afterwards.
+            self._dhw_charge_started = observed_at
+
+        if demand_on != self._dhw_demand_on:
+            if demand_on:
+                self._dhw_charge_started = observed_at
+                self._dhw_charge_peak_top = top
+            else:
+                self._complete_dhw_charge(top, charge_off, observed_at)
+                self._dhw_charge_started = None
+                self._dhw_charge_peak_top = None
+            self._dhw_demand_on = demand_on
+            changed = True
+        elif demand_on and top is not None and (self._dhw_charge_peak_top is None or top > self._dhw_charge_peak_top):
+            self._dhw_charge_peak_top = top
+
+        self._dhw_last_sample_at = observed_at
+        return changed
+
+    def _complete_dhw_charge(
+        self,
+        top: float | None,
+        charge_off: float | None,
+        observed_at: datetime,
+    ) -> None:
+        """Judge one completed charge against its switch-off temperature."""
+        peak = self._dhw_charge_peak_top
+        if top is not None and (peak is None or top > peak):
+            peak = top
+        if peak is None or charge_off is None or charge_off <= 0.0:
+            # Without an observed peak or configured switch-off temperature
+            # the outcome stays unknown; no failure is invented.
+            return
+        reached = peak >= charge_off - _DHW_CHARGE_TARGET_TOLERANCE_K
+        self.last_dhw_charge_reached_target = reached
+        self.last_dhw_charge_ended = observed_at
+        if reached:
+            self._dhw_consecutive_charge_failures = 0
+        else:
+            self._dhw_consecutive_charge_failures += 1
 
     def _accumulate_previous_mode(self, observed_at: datetime) -> bool:
         """Accumulate only a normal polling interval, never a communication gap."""
@@ -418,6 +544,25 @@ class OperationAnalysis:
         current = (now or _utcnow()).astimezone(UTC)
         local_day = dt_util.as_local(current).date().isoformat()
         return round(self._daily_dhw.get(local_day, 0.0) / 60.0, 1)
+
+    @property
+    def dhw_consecutive_charge_failures(self) -> int:
+        """Return consecutive completed charges that missed their switch-off temperature."""
+        return self._dhw_consecutive_charge_failures
+
+    def dhw_charge_minutes(self, now: datetime | None = None) -> float | None:
+        """Return the duration of the currently observed hot-water charge.
+
+        ``None`` means no demand observation was reconciled yet; ``0.0`` means
+        no charge is running.
+        """
+        if not self._dhw_reconciled:
+            return None
+        if self._dhw_demand_on is not True or self._dhw_charge_started is None:
+            return 0.0
+        current = (now or _utcnow()).astimezone(UTC)
+        elapsed = (current - self._dhw_charge_started).total_seconds()
+        return round(max(0.0, elapsed) / 60.0, 1)
 
     def current_cycle_minutes(self, now: datetime | None = None) -> float | None:
         if not self._compressor_reconciled:

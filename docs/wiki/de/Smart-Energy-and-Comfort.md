@@ -449,11 +449,24 @@ Die acht Prüfungen sind: Kommunikationsfehler, häufige Verdichterstarts,
 niedriger momentaner COP, Warmwasser unter dem Zielwert, unplausible
 Temperaturen, langer Abtauzyklus, kürzer werdende Verdichterzyklen und
 wiederholte Alarmübergänge. Ein Niedrig-COP-Flag kann beim Verdichterstart
-kurz erscheinen, und ein Warmwasser-unter-Ziel-Flag kann vor dem normalen
-Nachheizen erscheinen. Diese Snapshot-Prüfungen belegen für sich allein noch
-keinen Fehler. Der Bericht listet, welche Prüfungen aktiv sind; bei der
-Interpretation des Ergebnisses müssen auch nicht verfügbare Eingangsdaten
-berücksichtigt werden.
+kurz erscheinen. Diese Prüfungen belegen für sich allein noch keinen Fehler.
+Der Bericht listet, welche Prüfungen aktiv sind; bei der Interpretation des
+Ergebnisses müssen auch nicht verfügbare Eingangsdaten berücksichtigt werden.
+
+Die Warmwasser-Prüfung folgt dem Ladezyklus des Reglers selbst
+([#713](https://github.com/Xerolux/idm-heatpump-hass/issues/713)):
+Navigator 10/2.0/Pro laden mit einer Hysterese — die Ladung beginnt bei der
+*Warmwasserladung Einschalttemperatur* (`dhw_charge_on_temp`) und eine
+abgeschlossene Ladung muss die *Warmwasserladung Ausschalttemperatur*
+(`dhw_charge_off_temp`) erreichen, nicht den Warmwasser-Sollwert. Ein
+Speicher, der zwischen zwei Ladungen normal abkühlt, ist kein Befund und
+löst nie aus. Die Prüfung schaltet nur ein, wenn eine laufende Ladung über
+90 Minuten stecken bleibt, ohne dass der Speicher über die
+Einschalttemperatur steigt, oder wenn die letzten zwei abgeschlossenen
+Ladungen die Ausschalttemperatur beide um mehr als 1 K verfehlt haben und
+der Speicher noch unter der Einschalttemperatur liegt. Ohne das
+Anforderungsregister meldet die Prüfung unbekannt, statt zu raten; Anlagen
+ohne die Hysterese-Register behalten den älteren Sollwert-Vergleich.
 
 Temperatur-Eingänge ohne verdrahteten Fühler antworten mit uninitialisiertem
 Controllerspeicher (etwa −327 °C auf einem Navigator-2.0-Raumtemperatur-Register,
