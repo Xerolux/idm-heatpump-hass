@@ -4,6 +4,23 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.27.0 release decision
+
+The stable ships the 0.27.0-b4 line unchanged: after the b4 tag (2026-11-10)
+only wiki documentation landed (PR #706), so the code carries six days of
+field soak across the four published betas with no blocking report filed
+against them. The transport metrics are passive — no additional request — and
+the rebuilt PV zero-power workaround stays off by default and only writes when
+explicitly enabled, so no new plant write path ships enabled. The local full
+suite passed 3,619 tests with 98.52 % integration coverage and 100 %
+config-flow coverage; strict typing passed for 90 modules; 14 real-HA
+lifecycle tests passed against Home Assistant 2026.11.0; runtime pins are
+current (API 2.16.2 unchanged since 0.26.12; the tmodbus 1.1.0 major is held
+for review deliberately). Firmware-orientation restart persistence is covered
+synthetically; the PV heartbeat mechanism is validated by a Navigator 10 live
+series, and no live plant was re-checked for the stable cut itself.
+[Detailed evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.27.0.md)
+
 ## 0.26.13 release decision
 
 The richer notice title is presentation only: the title is a translation
@@ -557,7 +574,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.27.0-b4` and `idm-heatpump-api` `2.16.2` form the current
+Source-tree integration `0.27.0` and `idm-heatpump-api` `2.16.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

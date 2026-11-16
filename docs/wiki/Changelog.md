@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.27.0 — 2026-11-16
+
+The 0.27 *measurability* line goes stable: the transport boundary times every physical Modbus request in a bounded 100-request window — with *Communication diagnostics* enabled, the *Modbus request duration (window)* sensor publishes the median plus outcome classes and per-function-code statistics, and the scan-interval repair offers a measured interval suggestion through *Fix it*. Firmware orientation survives restarts, and the PV zero-power workaround follows the frozen-register mechanism with a 10/20 W heartbeat that also replaces dusk production below the 5 W register resolution. Advisor recommendation titles render German or English. [Per-request metrics](Troubleshooting#per-request-metrics), [PV message 20300](Troubleshooting#pv-not-connected-message-20300-at-zero-production), [Firmware orientation](Telemetry#firmware-orientation), [Predictive Advisor](Predictive-Advisor).
+
 ## v0.27.0-b4 — 2026-11-10
 
 The PV zero-power workaround is rebuilt around the mechanism a live series on a Navigator 10 established: the controller flags a *frozen* pv_production register — any constant substitute re-trips message 20300 after about ten minutes, while any value change clears it in seconds. There is no wattage threshold. The workaround now alternates 10 W and 20 W every minute, and dusk production below the 5 W register resolution (which was written as a real 0 W before) is also replaced. [PV message 20300](Troubleshooting#pv-not-connected-message-20300-at-zero-production).

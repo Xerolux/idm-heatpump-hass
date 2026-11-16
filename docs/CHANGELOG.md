@@ -13,59 +13,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.27.0-b4] - 2026-11-10
+## [0.27.0] - 2026-11-16
 
-The PV zero-power workaround is rebuilt around the real mechanism: a live
-series on a Navigator 10 proved the controller flags a *frozen* pv_production
-register — any constant substitute re-trips message 20300 — so the workaround
-now alternates 10/20 W every minute, and dusk values below the register's
-5 W resolution are finally replaced too.
-
-### ⚠️ Upgrade notes
-
-- **The PV zero-power workaround alternates 10 W and 20 W every minute instead of a constant**, and production below the 5 W register resolution is also replaced. The Navigator latches message 20300 after ten minutes of an *unchanged* register whatever its level; any change clears it. Statistics see an average 15 W; the option stays off and rollback is safe.
-
-### 🐛 Bugfixes
-
-- **Dusk production no longer slips through the PV zero-power workaround**: sources below 5 W were quantized to the register resolution and written as a real 0 W, and message 20300 latched exactly in that window. Every production that rounds to zero is now substituted; readings of 5 W and above pass through unchanged.
-- **The workaround substitute no longer freezes**: a constant value — 10 W like the old substitute or any other level — re-latches the message after roughly ten minutes; the new heartbeat changes the register every minute and kept the message clear through the whole verified window.
-
-## [0.27.0-b3] - 2026-11-10
-
-The firmware orientation survives a restart: the sensor keeps its last server answer instead of going blank, and the repairs notice keeps its acknowledged or dismissed state.
-
-### ⚠️ Upgrade notes
-
-- **Rollback is safe**: returning to 0.27.0-b2 or older restores the previous behavior — the firmware sensor blanks until the next check and an open notice may reappear. One exception: a notice dismissed (not acknowledged) before this update can surface one last time, because older versions erased the dismissal at every restart; dismissing it again sticks.
-- **The first firmware check after a restart now happens within 15 minutes** instead of up to 30. The restored value covers the window, so nothing goes blank while waiting.
-
-### 🐛 Bugfixes
-
-- **The firmware sensor keeps its value across restarts**: the last validated catalog answer is stored locally in the config entry and restored at startup, so *Latest reported firmware* and *Newer firmware observed* no longer show nothing while the delayed startup check waits. A failed check keeps the previous value until the next one succeeds.
-- **The "newer firmware observed" repairs notice no longer returns after every restart**: the persistent notice is now linked to its config entry and survives an unload. Home Assistant preserves a dismissal across restarts; removing the integration entry removes the notice with it, and withdrawing the firmware consent clears the notice and the stored answer.
-
-## [0.27.0-b2] - 2026-11-10
-
-The #493 field data is in: IDM requires register 84 when a battery is used, and the configuration help now says so where the mapping is chosen.
-
-### ⚠️ Upgrade notes
-
-- **Rollback is safe**: this beta adds documentation only — the battery-mapping help texts in the setup and options flows name the requirement, and the wiki documents it. No behavior, entity or setting changes.
-
-### 💼 Maintenance
-
-- **Battery mapping help names the register-84 requirement (#493)**: IDM support confirmed that when a battery is used, register 84 (battery charge/discharge) must be written together with the battery SoC — mapping SoC alone can make the controller's battery display flicker. Both battery fields' setup, options and reconfigure help state this where the sources are chosen, German and English.
-- **The register reference and Findings register carry the evidence with its scope**: register 84 is marked as required with battery, and the Findings page records that IDM did *not* confirm that every other external-power register must be written in every cycle — only register 84 is established.
-
-## [0.27.0-b1] - 2026-11-10
-
-The first prerelease of the 0.27 *measurability* line: the Modbus transport
-boundary now measures itself, so field evidence no longer depends on whole-poll
-aggregates alone.
+The 0.27 line is about measurability: the transport boundary now times every
+physical Modbus request itself, so field evidence no longer depends on
+whole-poll aggregates. Two field findings are built in — IDM's register-84
+requirement when a battery is used, and the frozen-register mechanism behind
+PV message 20300.
 
 ### ⚠️ Upgrade notes
 
 - **One new opt-in diagnostic sensor appears with *Communication diagnostics* enabled**: *Modbus request duration (window)* publishes the median duration of the last 100 physical requests; its attributes carry outcome classes and per-function-code statistics. The option stays off by default, nothing else changes, and rollback is safe — without the option no new entity exists.
+- **The PV zero-power workaround alternates 10 W and 20 W every minute instead of a constant**, and production below the 5 W register resolution is also replaced. The Navigator latches message 20300 after ten minutes of an *unchanged* register whatever its level; any change clears it. Statistics see an average 15 W; the option stays off and rollback is safe.
+- **The first firmware check after a restart now happens within 15 minutes** instead of up to 30. The restored value covers the window, so nothing goes blank while waiting.
+- **Rollback is safe**: the battery-mapping help is documentation only; on 0.26.x the firmware sensor blanks until the next check and an open notice may reappear. A notice dismissed (not acknowledged) before this update can surface one last time — older versions erase the dismissal at every restart; dismissing it again sticks.
 
 ### ✨ New
 
@@ -74,9 +35,23 @@ aggregates alone.
 - **The scan-interval repair becomes fixable with a concrete suggestion** ([#695](https://github.com/Xerolux/idm-heatpump-hass/issues/695)): the coordinator derives a suggested interval from a bounded history of poll durations — p95 divided by the warning ratio, rounded to the next 5 s step, within the 5–300 s bounds. The *Fix it* dialog pre-fills it, validates like the options flow and reloads once; nothing changes unconfirmed.
 - **Advisor recommendation titles are localized** ([#696](https://github.com/Xerolux/idm-heatpump-hass/issues/696)): every producer names a stable title key with pre-formatted values, rendered German or English in the recommendation sensor attributes and local Assist — with German decimal commas. The English `title` stays the documented data field for events, storage and diagnostics; stored recommendations gain `title_localized` additively and legacy records render their stored title unchanged.
 
+### 🐛 Bugfixes
+
+- **The firmware sensor keeps its value across restarts**: the last validated catalog answer is stored locally in the config entry and restored at startup, so *Latest reported firmware* and *Newer firmware observed* no longer show nothing while the delayed startup check waits. A failed check keeps the previous value until the next one succeeds.
+- **The "newer firmware observed" repairs notice no longer returns after every restart**: the persistent notice is now linked to its config entry and survives an unload. Home Assistant preserves a dismissal across restarts; removing the integration entry removes the notice with it, and withdrawing the firmware consent clears the notice and the stored answer.
+- **Dusk production no longer slips through the PV zero-power workaround**: sources below 5 W were quantized to the register resolution and written as a real 0 W, and message 20300 latched exactly in that window. Every production that rounds to zero is now substituted; readings of 5 W and above pass through unchanged.
+- **The workaround substitute no longer freezes**: a constant value — 10 W like the old substitute or any other level — re-latches the message after roughly ten minutes; the new heartbeat changes the register every minute and kept the message clear through the whole verified window.
+
 ### 💼 Maintenance
 
 - **A time-dependent advisor diagnostics regression is pinned to a relative date**: the stage assertion drifted past its 30-day observation boundary on 2026-11-10 (same class as #622); the fixture now pins "ten days ago" instead of a fixed calendar date.
+- **Battery mapping help names the register-84 requirement (#493)**: IDM support confirmed that when a battery is used, register 84 (battery charge/discharge) must be written together with the battery SoC — mapping SoC alone can make the controller's battery display flicker. Both battery fields' setup, options and reconfigure help state this where the sources are chosen, German and English.
+- **The register reference and Findings register carry the evidence with its scope**: register 84 is marked as required with battery, and the Findings page records that IDM did *not* confirm that every other external-power register must be written in every cycle — only register 84 is established.
+- **The hot water station flow finding is documented** ([#706](https://github.com/Xerolux/idm-heatpump-hass/pull/706)): recorder history from a Navigator 10 shows the web flow row follows the potable tapping side — shower draws clustered at 5.5–6.1 L/min, idle reads 0.0 — while heating-side flow stays the separate B2 entity. Both wiki languages carry the evidence, marked as inferred from behaviour.
+
+### ❤️ Thanks
+
+- **Field reports shaped this release**: @x29a's #493 report — a battery display flickering when only SoC was mapped — led to IDM confirming the register-84 requirement and to the help texts naming it.
 
 ## [0.26.13] - 2026-11-09
 
