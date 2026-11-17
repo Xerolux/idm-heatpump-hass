@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.28.0 — 2026-11-17
+
+Das Quality-Scale-Protokoll ist vollständig: Alle 54 Regeln der aktuellen Home-Assistant-Qualitätsskala für Integrationen sind `done` oder berechtigt `exempt` — fünf Ausnahmen, jede mit Begründung — damit steigt die selbst eingeschätzte Stufe im Manifest von Gold auf Platinum. Ein neuer Drift-Test pinnt `quality_scale.yaml` auf das offizielle Regelwerk und leitet die Manifest-Stufe aus den tatsächlich erfüllten Regeln ab: Eine umbenannte oder neue Upstream-Regel bricht den Build, statt unbemerkt durchzurutschen. Das Laufzeitverhalten ändert sich nicht. [Stabilität & Release-Reife](Stability-and-Release-Readiness).
+
 ## v0.27.2 — 2026-11-16
 
 Ein Warmwasser-Feldbericht (#713) von einem Navigator 10: Die normale Ladung läuft zwischen *Warmwasserladung Einschalttemperatur* (46 °C) und *Warmwasserladung Ausschalttemperatur* (50 °C) und erreicht nie den 55-°C-Sollwert — die Gesundheitsprüfung meldete deshalb jedes normale Abkühlen zwischen den Ladungen. Die beiden Entitäten heißen jetzt wie die Navigator-Oberfläche, und *Warmwasser erreicht Sollwert nicht* beurteilt den Ladezyklus: eine Ladung, die über 90 Minuten unter der Einschalttemperatur steckt, oder zwei Ladungen in Folge, die die Ausschalttemperatur verfehlen. [Health Monitor](Smart-Energy-and-Comfort#optionaler-idm-health-monitor), [Erkenntnisse](Findings-and-Documentation).

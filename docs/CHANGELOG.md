@@ -13,6 +13,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.28.0] - 2026-11-17
+
+The quality-scale record is complete: all 54 rules of Home Assistant's current integration quality scale are done or legitimately exempt, the self-assessment rises from Gold to Platinum, and a new drift test pins the record to the official rule set.
+
+### ⚠️ Upgrade notes
+
+- **Nothing changes at runtime**: the quality-scale rating is manifest metadata that Home Assistant displays only for its own core integrations. Rollback to 0.27.2 keeps working.
+
+### 💼 Maintenance
+
+- **The self-assessed quality scale rises from Gold to Platinum**: every rule of the current scale — 20 Bronze, 10 Silver, 21 Gold, 3 Platinum — is `done` or legitimately `exempt` in `quality_scale.yaml`, so the manifest now says `platinum`. Five exemptions stay: no conditions, triggers, reauthentication or discovery protocol apply to a local Modbus TCP integration.
+- **A drift guard pins the quality-scale record**: `tests/test_quality_scale.py` checks that the file lists every official rule exactly once under its tier banner, with a valid status and a written reason, rejects any `todo`, and derives the manifest tier from the rules actually fulfilled — a renamed or new upstream rule fails the build instead of slipping past.
+- **The record itself was trued up**: the header states the self-assessment basis, the `runtime-data` comment admits the recovery watchdog's `hass.data` bookkeeping, the `strict-typing` comment names the shipped minimum instead of the 2026.11 beta, and the core-submission notes point at `docs/CORE_STRATEGY.md`.
+- **The sensitive-data guard scopes itself to committable files**: `scripts/check_sensitive_data.py` now skips files Git ignores — the Docker test bench's bind-mounted Home Assistant volume is ignored by design, and its runtime logs and device backups kept tripping the local guard without ever being committable. Tracked and untracked-but-committable files stay fully scanned, locally and in CI.
+
 ## [0.27.2] - 2026-11-16
 
 A hot-water field report from a Navigator 10 ([#713](https://github.com/Xerolux/idm-heatpump-hass/issues/713)): the normal charge cycles between the two charge temperatures and never sees the setpoint — so the health monitor's setpoint comparison flagged every normal cool-down, and the charge entities carried made-up abbreviations instead of the Navigator's own wording.

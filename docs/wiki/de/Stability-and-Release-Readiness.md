@@ -4,6 +4,24 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.28.0
+
+Nur Dokumentation: kein Laufzeitmodul wurde geändert. Die `quality_scale`-Metadaten
+im Manifest steigen von `gold` auf `platinum` aufgrund des vollständigen
+Selbsteinschätzungsprotokolls; `quality_scale.yaml` benennt seine Grundlage im
+Kopf, und `tests/test_quality_scale.py` pinnt alle 54 Regeln der aktuellen
+offiziellen Skala — Regel-IDs, Tier-Banner, Statuse, schriftliche Begründungen
+und die aus den erfüllten Regeln abgeleitete Manifest-Stufe. Die fünf Ausnahmen
+sind Eigenschaften einer lokalen Modbus-TCP-Integration (keine Conditions,
+Trigger, Reauthentifizierung oder Discovery-Protokoll). Die lokale Suite
+durchlief 3.652 Tests mit 98,45 % Integrationsabdeckung; Strict Typing bestand
+für 90 Module; 14 Real-HA-Lebenszyklustests bestanden gegen Home Assistant
+2026.11.0; die Runtime-Pins bleiben unverändert (API 2.16.2). Der
+Sensitive-Data-Guard beschränkt sich jetzt auf committbare Dateien statt des
+git-ignorierten Laufzeit-Volumes des Testbenchs. Es existiert keine
+Interaktion mit der Anlage, die zu validieren wäre — das Release berührt keinen
+Laufzeitcodepfad.
+
 ## Release-Entscheidung zu 0.27.2
 
 Ein Patch noch am selben Tag für den Warmwasser-Bericht
@@ -639,7 +657,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.27.2` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
+Integration im Quellstand `0.28.0` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
