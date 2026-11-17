@@ -6,7 +6,11 @@ repeat operators) so this test file itself stays clean for the scanner.
 
 from __future__ import annotations
 
+import shutil
+import subprocess
 from pathlib import Path
+
+import pytest
 
 from scripts import check_sensitive_data as guard
 
@@ -117,6 +121,54 @@ class TestDetection:
         path.write_bytes(address.encode() + b"\x00rest")
 
         assert guard.scan_file(path, frozenset(), tmp_path) == []
+
+
+class TestScope:
+    """The guard protects what can be committed, not git-ignored runtime data."""
+
+    _needs_git = pytest.mark.skipif(shutil.which("git") is None, reason="needs a git binary")
+
+    @_needs_git
+    def test_git_ignored_files_are_out_of_scope(self, tmp_path: Path) -> None:
+        """A runtime volume ignored by .gitignore cannot enter a commit."""
+        address = ".".join(["192", "168", "178", "99"])  # noqa: FLY002
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        (tmp_path / ".gitignore").write_text("runtime/\n", encoding="utf-8")
+        (tmp_path / "runtime").mkdir()
+        (tmp_path / "runtime" / "log.txt").write_text(f"ip {address}\n", encoding="utf-8")
+        (tmp_path / "committable.txt").write_text(f"ip {address}\n", encoding="utf-8")
+
+        findings = guard.scan_tree(tmp_path)
+
+        assert [finding.path.as_posix() for finding in findings] == ["committable.txt"]
+
+    @_needs_git
+    def test_tracked_files_stay_in_scope_inside_a_repository(self, tmp_path: Path) -> None:
+        """Force-added (tracked) content is committable and must be flagged."""
+        address = ".".join(["192", "168", "178", "99"])  # noqa: FLY002
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        (tmp_path / ".gitignore").write_text("runtime/\n", encoding="utf-8")
+        (tmp_path / "runtime").mkdir()
+        (tmp_path / "runtime" / "forced.txt").write_text(f"ip {address}\n", encoding="utf-8")
+        subprocess.run(
+            ["git", "add", "--force", "runtime/forced.txt"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        findings = guard.scan_tree(tmp_path)
+
+        assert [finding.path.as_posix() for finding in findings] == ["runtime/forced.txt"]
+
+    def test_without_git_the_guard_scans_everything(self, tmp_path: Path) -> None:
+        """No repository, no ignore rules: the old whole-tree behavior applies."""
+        address = ".".join(["192", "168", "178", "99"])  # noqa: FLY002
+        (tmp_path / "plain.txt").write_text(f"ip {address}\n", encoding="utf-8")
+
+        findings = guard.scan_tree(tmp_path)
+
+        assert [finding.path.as_posix() for finding in findings] == ["plain.txt"]
 
 
 class TestRepositoryIsClean:

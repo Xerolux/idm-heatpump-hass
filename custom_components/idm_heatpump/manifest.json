@@ -13,11 +13,11 @@
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/Xerolux/idm-heatpump-hass/issues",
-  "quality_scale": "gold",
+  "quality_scale": "platinum",
   "requirements": [
     "modbus-connection>=4.12.7",
     "tmodbus[async-serial]>=0.6.2",
     "idm-heatpump-api[web]==2.16.2"
   ],
-  "version": "0.27.2"
+  "version": "0.28.0"
 }

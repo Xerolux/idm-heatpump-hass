@@ -1,13 +1,22 @@
 """Repository guard: refuse real plant credentials, addresses and identifiers.
 
-Scans the whole working tree for data that must never be committed: real
-IP addresses, PINs, myIDM account ids, tokens, session ids, e-mail addresses
+Scans everything that can enter a commit — tracked files and untracked files
+Git has not ignored — for data that must never be committed: real IP
+addresses, PINs, myIDM account ids, tokens, session ids, e-mail addresses
 and non-public vendor hosts. The rules are generic (any private IPv4, any
 numeric PIN, any ``m123456``-style myIDM id, any JWT), so they also catch
 values nobody has thought of yet; everything that is intentionally in the
 repository — documentation addresses, fake fixture credentials — lives in
 ``.github/sensitive-data-allowlist.txt`` and has to be added there
 consciously, in review.
+
+Git-ignored files are out of scope because they cannot be committed through
+``git add .``: the Docker test bench's bind-mounted Home Assistant volume,
+its logs, caches and device backups are ignored by design, and rescanning
+that runtime data turned the local guard red without any repository change.
+A force-added file becomes tracked and is therefore scanned again; when Git
+cannot answer (no repository, no binary), the guard keeps the old behavior
+and scans everything.
 
 Exits with status 1 and one line per finding (``path:line: category``).
 Run locally with ``python scripts/check_sensitive_data.py``; CI runs it on
@@ -247,15 +256,41 @@ def _is_git_tracked(path: Path) -> bool:
         return False
 
 
+def _git_ignored_paths(root: Path) -> frozenset[Path] | None:
+    """Paths Git ignores under ``root``; ``None`` when Git cannot answer.
+
+    Only files that can enter a commit are the guard's scope: a file ignored
+    through any ``.gitignore`` cannot be added by ``git add .``, while a file
+    that is force-added becomes tracked and disappears from this listing —
+    and lands back in the scan.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "ls-files", "--others", "--ignored", "--exclude-standard"],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=root,
+        )
+    except (OSError, FileNotFoundError):
+        return None
+    if proc.returncode != 0:
+        return None
+    return frozenset((root / line).resolve() for line in proc.stdout.splitlines() if line)
+
+
 def scan_tree(root: Path, allowlist_path: Path | None = None) -> list[Finding]:
     """Scan every scannable file under ``root``."""
     if allowlist_path is None:
         allowlist_path = root / ".github" / ALLOWLIST_FILENAME
     allowlist = load_allowlist(allowlist_path)
+    ignored = _git_ignored_paths(root)
 
     findings: list[Finding] = []
     for path in sorted(root.rglob("*")):
         if not path.is_file():
+            continue
+        if ignored is not None and path.resolve() in ignored:
             continue
         if path.name == ".env":
             if _is_git_tracked(path):

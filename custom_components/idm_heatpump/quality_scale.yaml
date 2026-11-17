@@ -1,10 +1,15 @@
-# Home Assistant Integration Quality Scale
+# The rules of Home Assistant's integration quality scale, and where this
+# integration meets each one. Home Assistant grades only its own core
+# integrations and hassfest does not read this file for a custom one, so
+# the rating in manifest.json is this project's own assessment.
+#
 # https://developers.home-assistant.io/docs/core/integration-quality-scale/
 #
-# Current target: Gold readiness for the custom integration
-# HACS compatible: yes
-# This file tracks readiness work only. Official Home Assistant quality-scale
-# status is assigned by Home Assistant after a Core submission and review.
+# Self-assessed tier: platinum. Every rule of the current scale (54 rules:
+# 20 Bronze, 10 Silver, 21 Gold, 3 Platinum) is done or legitimately exempt;
+# the five exemptions below each carry their reason. tests/test_quality_scale.py
+# pins this file to the official rule set and fails the build when either
+# drifts. Requirements for a future Core submission live in docs/CORE_STRATEGY.md.
 
 rules:
 
@@ -114,7 +119,8 @@ rules:
     status: done
     comment: >
       IdmHeatpumpData dataclass is stored in ConfigEntry.runtime_data.
-      No hass.data usage for integration data.
+      The only hass.data use is the recovery watchdog's setup-retry
+      bookkeeping, which must outlive the config entries it watches.
 
   test-before-configure:
     status: done
@@ -169,7 +175,8 @@ rules:
   integration-owner:
     status: done
     comment: >
-      manifest.json codeowners: ["@xerolux"].
+      manifest.json declares "codeowners": ["@xerolux"]; GitHub notifies
+      that owner on every issue and pull request of the repository tracker.
 
   log-when-unavailable:
     status: done
@@ -378,31 +385,13 @@ rules:
     comment: >
       mypy.ini is plain "strict = true": no disabled error code and no relaxed
       strictness flag. The CI matrix runs it against the real runtime (the
-      Home Assistant 2026.11 beta and, once it ships, the stable 2026.11.0,
-      the pinned idm-heatpump-api and the API main branch) - without the
-      runtime installed every Home Assistant import would be Any and the
-      check would pass without checking anything.
+      minimum Home Assistant 2026.11.0, the pinned idm-heatpump-api and the
+      API main branch) - without the runtime installed every Home Assistant
+      import would be Any and the check would pass without checking anything.
       idm-heatpump-api ships py.typed.
-  # ── FOR HA CORE SUBMISSION (additional requirements) ──────────────────────
+  # ── FOR A FUTURE HA CORE SUBMISSION ────────────────────────────────────────
   #
-  # domain-rename:
-  #   status: done
-  #   comment: >
-  #     Domain renamed from idm_heatpump_v2 to idm_heatpump.
-  #
-  # ha-core-docs:
-  #   status: todo
-  #   comment: >
-  #     Integration documentation page must be created at
-  #     homeassistant.io/integrations/idm_heatpump/
-  #
-  # config-flow-test-coverage-100:
-  #   status: done
-  #   comment: >
-  #     100% config flow test coverage achieved (test_config_flow.py).
-  #
-  # test-coverage-95:
-  #   status: done
-  #   comment: >
-  #     Overall test coverage is tracked by the pytest suite and CI rather than
-  #     by manually maintained test counts in this file.
+  # Additional core-side requirements (the homeassistant.io documentation
+  # page, core test conventions, brands PR, HACS-to-Core migration) are
+  # tracked in docs/CORE_STRATEGY.md; none of them apply to the custom
+  # integration this file describes.

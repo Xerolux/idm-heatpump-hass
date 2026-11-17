@@ -4,6 +4,23 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.28.0 release decision
+
+Documentation-only: no runtime module changed. The manifest's `quality_scale`
+metadata rises from `gold` to `platinum` on the strength of the completed
+self-assessment record; `quality_scale.yaml` states its basis in the header,
+and `tests/test_quality_scale.py` pins all 54 rules of the current official
+scale — rule IDs, tier banners, statuses, written reasons, and the manifest
+tier derived from the fulfilled rules. The five exemptions are properties of a
+local Modbus TCP integration (no conditions, triggers, reauthentication or
+discovery protocol). The local suite passed 3,652 tests with 98.45 %
+integration coverage; strict typing passed for 90 modules; 14 real-HA
+lifecycle tests passed against Home Assistant 2026.11.0; runtime pins stay
+unchanged (API 2.16.2). The sensitive-data guard now scopes itself to
+committable files instead of the test bench's git-ignored runtime volume.
+No plant interaction exists to validate — the release touches no runtime
+code path.
+
 ## 0.27.2 release decision
 
 A same-day patch for the hot-water report
@@ -596,7 +613,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.27.2` and `idm-heatpump-api` `2.16.2` form the current
+Source-tree integration `0.28.0` and `idm-heatpump-api` `2.16.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

@@ -23,7 +23,7 @@ ha_platforms:
   - switch
   - water_heater
 ha_integration_type: device
-ha_quality_scale: gold
+ha_quality_scale: platinum
 ha_requirements:
   - modbus-connection>=4.12.7
   - tmodbus[async-serial]>=0.6.2
