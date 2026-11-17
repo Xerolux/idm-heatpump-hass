@@ -15,9 +15,9 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .cloud_scheduler import entry_cloud_scheduler
 from .const import CONF_FIRMWARE_CHECK, CONF_FIRMWARE_CONSENT_AT, CONF_FIRMWARE_POLICY
-from .coordinator import IdmCoordinator, navigator_family
+from .coordinator import IdmCoordinator
 from .firmware_notice import clear_notices, ensure_notice
-from .telemetry import _firmware_series, _label, _number
+from .telemetry import _firmware_identity, _firmware_series, _label, _number, _reported_firmware
 
 FIRMWARE_URL = "https://idmtools.xerolux.de/api/telemetry/firmware"
 FIRMWARE_POLICY = "idm-firmware-v1"
@@ -209,11 +209,13 @@ class FirmwareObservations:
         self._last_firmware_check = time.time()
         self._next_firmware_check = self._last_firmware_check + 21600 + secrets.randbelow(1801)
         coordinator = self._coordinator
+        installed = _reported_firmware(coordinator)
+        family, model = _firmware_identity(coordinator.model_name, installed)
         query = {
-            "navigator": navigator_family(coordinator.model_name),
-            "navigator_model": _label(coordinator.model_name),
+            "navigator": family,
+            "navigator_model": model,
             "heatpump_model": _label(coordinator.web_supplement.heatpump_model) if coordinator.web_supplement else None,
-            "firmware": _label(coordinator.firmware_version),
+            "firmware": installed,
         }
         try:
             async with async_get_clientsession(self._hass).post(

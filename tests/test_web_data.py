@@ -251,6 +251,37 @@ def test_wrong_variant_detection_handles_os_error_subclasses() -> None:
     assert _is_wrong_variant_error(ConnectionResetError("connection reset"))
 
 
+async def test_legacy_web_settings_supply_only_the_firmware(monkeypatch: pytest.MonkeyPatch) -> None:
+    import json
+    from types import SimpleNamespace
+
+    response = json.dumps(
+        [
+            {"items": [{"value": "<b>Navigator Version:&nbsp</b>n1.7z72<br><b>myIDMID:</b>local-only<br>"}]},
+        ]
+    )
+    raw = {"/data/settings.php": response}
+    seen = []
+
+    async def read_data(*, include_raw=False):
+        seen.append(include_raw)
+        return SimpleNamespace(simple_values={}, raw_responses=raw)
+
+    async def close():
+        pass
+
+    client = SimpleNamespace(read_data=read_data, close=close)
+    monkeypatch.setattr("custom_components.idm_heatpump.web_data._create_nav20_client", lambda *_: client)
+    monkeypatch.setattr("custom_components.idm_heatpump.web_data._create_nav10_client", lambda *_: None)
+    supplement = await async_read_web_supplement(
+        "192.0.2.10", "1234", model_hint="Navigator 1.7", preferred_variant="nav20"
+    )
+    assert seen == [True]
+    assert supplement is not None and supplement.legacy_firmware == "n1.7z72"
+    assert not raw
+    assert "local-only" not in str(supplement)
+
+
 async def test_async_read_web_supplement_returns_none_without_pin() -> None:
     assert await async_read_web_supplement("192.0.2.10", None) is None
 

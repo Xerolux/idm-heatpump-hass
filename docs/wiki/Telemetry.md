@@ -118,6 +118,8 @@ The catalog combines authorized telemetry, independent firmware sightings and ex
 
 Matching keeps Navigator/controller, known plant model, firmware prefix/channel and major line separate. Missing plant models match only other missing-type observations in the same controller series. `NAV10_` and `T_NAV10_` never cross-match. NAVIGATOR Pro is individual room control, not another name for Navigator 10. Generic legacy Pro metadata stays marked `unconfirmed_component`: its latest reported version remains visible within that declared group, but `newer_observed` stays unknown and no heat-pump update repair is created. Explicit room-control metadata has its own group. Contradictory family/prefix data does not establish compatibility.
 
+Navigator 1.0 and 1.7 share the legacy Modbus map. A legacy firmware string such as `n1.7z72` identifies the catalog family. Navigator 1.0, Navigator 1.7 and Navigator 10 are separate. Different legacy release letters are compared separately. A shared 1.x Modbus detection or a bare numeric version alone cannot choose a catalog family.
+
 A single matching observation is already the **latest reported firmware**. If it equals the installed version, there is no newer-version notice. This is the newest version observed in this catalog, not a claim about all manufacturer releases. Only iDM or an authorized installer can assess suitability and perform an update. No firmware image is uploaded or installed by this feature. The existing consent revision remains `idm-firmware-v1`; technical behavior and retention are explained in the updated notice.
 
 ## Independent erasure journal on Proxmox

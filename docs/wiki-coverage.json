@@ -97,7 +97,7 @@
         "Navigator-Protocol-Analysis.md",
         "Protocol-Capabilities.md"
       ],
-      "reviewed_source_sha256": "d056d6efa0eca6beda41841bac85cf01fbb65f62bd69aba560017167df5f394d"
+      "reviewed_source_sha256": "aa24ddee321468bb16ddd975859d6c9f0b919d3e371122fdd1dba9a423c3a7b4"
     },
     {
       "feature": "Energy and operating analysis",
@@ -225,7 +225,7 @@
         "Configuration.md",
         "Services.md"
       ],
-      "reviewed_source_sha256": "b9ffe825b19d0def8861dadc9de9d34192be71539ea30d5cb145cbb66798c8c7"
+      "reviewed_source_sha256": "07070befb0dff044a9a7bd33e74e2925be38c48df637698028d9fdc80603b9ad"
     },
     {
       "feature": "Actions and dashboard export",

@@ -67,10 +67,40 @@ def _version(value: object) -> str | None:
     return None
 
 
+_LEGACY_FIRMWARE = re.compile(r"n1\.(0|7)([a-z])\d{1,4}", re.IGNORECASE | re.ASCII)
+
+
+def _reported_firmware(coordinator: IdmCoordinator) -> str | None:
+    supplement = coordinator.web_supplement
+    legacy = _label(getattr(supplement, "legacy_firmware", None))
+    family, _ = _firmware_identity(coordinator.model_name, legacy)
+    if legacy and family in {"navigator_1_0", "navigator_17"}:
+        return legacy
+    return _label(coordinator.firmware_version)
+
+
+def _firmware_identity(model: str | None, firmware: str | None) -> tuple[str | None, str | None]:
+    """Resolve the legacy revision for reporting independently of the coil map."""
+    family = navigator_family(model)
+    label = _label(model)
+    if model is not None and re.fullmatch(r"navigator[ _-]+1[._]0", model.strip(), re.IGNORECASE):
+        if firmware and (match := _LEGACY_FIRMWARE.fullmatch(firmware)) and match[1] != "0":
+            return None, None
+        return "navigator_1_0", "Navigator 1.0"
+    if family == "navigator_17":
+        if not firmware or not (match := _LEGACY_FIRMWARE.fullmatch(firmware)):
+            return None, "Navigator 1.x"
+        minor = match[1]
+        return ("navigator_1_0" if minor == "0" else "navigator_17"), f"Navigator 1.{minor}"
+    return family, label
+
+
 def _firmware_series(value: object) -> str | None:
     """Reject cross-channel/major responses independently of the server."""
     if not isinstance(value, str):
         return None
+    if (legacy := _LEGACY_FIRMWARE.fullmatch(value)) is not None:
+        return f"n1.{legacy[1]}{legacy[2].casefold()}"
     match = re.fullmatch(
         r"(?P<prefix>[A-Za-z][A-Za-z0-9_]*_)?(?P<major>\d{1,4})(?:\.\d{1,4}){1,3}(?:-\d{1,6}(?:-g[0-9a-fA-F]{4,40})?)?(?:\.iup)?",
         value,
@@ -260,6 +290,8 @@ class Telemetry:
             counters = {key: value for key, value in counters.items() if key not in _DURATIONS}
         counters["web_outages"] = self._web_outages
         info = coordinator.model_info
+        firmware = _reported_firmware(coordinator)
+        family, model = _firmware_identity(coordinator.model_name, firmware)
         capabilities = {key: bool(getattr(info, f"has_{key}", False)) for key in ("solar", "pv", "cascade", "isc")}
         return {
             "schema": 1,
@@ -267,10 +299,10 @@ class Telemetry:
             "consent_at": self._entry.options.get(CONF_TELEMETRY_CONSENT_AT, ""),
             "policy": TELEMETRY_POLICY,
             "integration_version": self._version,
-            "navigator": navigator_family(coordinator.model_name),
-            "navigator_model": _label(coordinator.model_name),
+            "navigator": family,
+            "navigator_model": model,
             "heatpump_model": _label(coordinator.web_supplement.heatpump_model) if coordinator.web_supplement else None,
-            "firmware": _label(coordinator.firmware_version),
+            "firmware": firmware,
             "connection_mode": resolve_connection_mode(self._entry.options, self._entry.data),
             "web_variant": coordinator.web_variant if coordinator.web_variant in ("nav10", "nav20") else None,
             "capabilities": capabilities if info is not None else {},
