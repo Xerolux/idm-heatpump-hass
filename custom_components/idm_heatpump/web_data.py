@@ -201,7 +201,7 @@ def _legacy_firmware_from_settings(raw: str) -> str | None:
     except (ValueError, RecursionError):
         payload = raw
     pending = [payload]
-    versions = set()
+    versions: set[str] = set()
     while pending:
         node = pending.pop()
         if isinstance(node, list):
