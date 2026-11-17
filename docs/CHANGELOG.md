@@ -19,7 +19,11 @@ The quality-scale record is complete: all 54 rules of Home Assistant's current i
 
 ### ⚠️ Upgrade notes
 
-- **Nothing changes at runtime**: the quality-scale rating is manifest metadata that Home Assistant displays only for its own core integrations. Rollback to 0.27.2 keeps working.
+- **Firmware sharing stays opt-in.** Existing consent settings still apply. The [firmware guide](wiki/Telemetry.md#independent-firmware-observations) explains which legacy versions can be compared. Rollback to 0.27.2 keeps working.
+
+### 🐛 Bugfixes
+
+- **Legacy firmware sightings use their own catalog families.** Navigator 1.0, 1.7 and 10 are separate. A complete legacy string such as `n1.7z72` identifies its family and comparison channel. A shared 1.x Modbus response alone leaves the exact revision open.
 
 ### 💼 Maintenance
 

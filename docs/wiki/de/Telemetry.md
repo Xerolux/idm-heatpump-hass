@@ -114,6 +114,8 @@ Der Katalog kombiniert freigegebene Telemetrie, unabhängige Firmwaremeldungen u
 
 Navigator/Regler, bekanntes Anlagenmodell, Firmware-Präfix/Kanal und Hauptreihe bleiben getrennt. Fehlende Anlagenmodelle passen nur zu anderen fehlenden Typangaben derselben Reglerreihe. `NAV10_` und `T_NAV10_` werden nie vermischt. NAVIGATOR Pro bezeichnet die Einzelraumregelung und ist kein anderer Name für Navigator 10. Allgemeine alte Pro-Angaben bleiben `unconfirmed_component`: Die neueste gemeldete Version ist innerhalb dieser gemeldeten Gruppe sichtbar, aber `newer_observed` bleibt unbekannt und erzeugt keine Update-Reparatur der Wärmepumpe. Ausdrückliche Einzelraumregelungs-Metadaten bilden eine eigene Gruppe. Widersprüchliche Familie/Präfix-Angaben begründen keine Kompatibilität.
 
+Navigator 1.0 und 1.7 nutzen dieselbe ältere Modbus-Registerkarte. Eine Firmwareangabe wie `n1.7z72` identifiziert die Katalogfamilie. Navigator 1.0, Navigator 1.7 und Navigator 10 werden getrennt verglichen. Auch unterschiedliche Buchstaben im alten Firmwareformat bleiben getrennt. Eine reine 1.x-Modbus-Erkennung oder eine alleinstehende Versionsnummer reicht zur Zuordnung im Katalog nicht aus.
+
 Schon eine einzige passende Sichtung ist die **neueste gemeldete Firmware**. Entspricht sie der installierten Version, entsteht kein Hinweis auf eine neuere Version. Gemeint ist die neueste Version in unserem Katalog, keine Aussage über alle Herstellerstände. Eignung prüfen und installieren darf nur iDM oder ein autorisierter Fachbetrieb. Diese Funktion überträgt oder installiert keine Firmwaredatei. Die bestehende Hinweisfassung `idm-firmware-v1` bleibt gültig; technische Speicherung und Laufzeiten werden im aktualisierten Hinweis erklärt.
 
 ## Lastverteilung

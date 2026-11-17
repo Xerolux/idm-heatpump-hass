@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import ipaddress
+import json
 import logging
 import re
 from collections.abc import Callable, Coroutine
@@ -71,6 +72,7 @@ class IdmWebSupplement:
 
     navigator_version: str | None = None
     software_version: str | None = None
+    legacy_firmware: str | None = None
     heatpump_model: str | None = None
     web_variant: str | None = None
     myidm_id: str | None = None
@@ -185,6 +187,32 @@ def _normalize_sensor_value(value: Any) -> IdmWebSensorValue:
     return IdmWebSensorValue(value=text_value, native_value=text_value, unit=unit)
 
 
+_LEGACY_FIRMWARE_LABEL = re.compile(
+    r"<b>\s*Navigator Version\s*:\s*(?:&nbsp;?)?\s*</b>\s*(n1\.[07][a-z]\d{1,4})\s*<",
+    re.IGNORECASE | re.ASCII,
+)
+
+
+def _legacy_firmware_from_settings(raw: str) -> str | None:
+    if len(raw) > 1024 * 1024:
+        return None
+    try:
+        payload = json.loads(raw)
+    except (ValueError, RecursionError):
+        payload = raw
+    pending = [payload]
+    versions = set()
+    while pending:
+        node = pending.pop()
+        if isinstance(node, list):
+            pending.extend(node)
+        elif isinstance(node, dict):
+            pending.extend(node[key] for key in ("items", "value") if key in node)
+        elif isinstance(node, str):
+            versions.update(match.casefold() for match in _LEGACY_FIRMWARE_LABEL.findall(node))
+    return next(iter(versions)) if len(versions) == 1 else None
+
+
 def _normalize_web_data(data: Any, web_variant: str | None = None) -> IdmWebSupplement:
     simple_values = getattr(data, "simple_values", None)
     values = dict(simple_values) if isinstance(simple_values, dict) else {}
@@ -208,7 +236,14 @@ def _normalize_web_data(data: Any, web_variant: str | None = None) -> IdmWebSupp
         values[name] = value
         sensor_values[name] = IdmWebSensorValue(value=value, native_value=value)
 
+    raw = getattr(data, "raw_responses", None)
+    settings = raw.get("/data/settings.php") if web_variant == "nav20" and isinstance(raw, dict) else None
+    legacy_firmware = _legacy_firmware_from_settings(settings) if isinstance(settings, str) else None
+    if web_variant == "nav20" and isinstance(raw, dict):
+        # The API caches the result. Keep controller metadata, not raw web pages.
+        raw.clear()
     return IdmWebSupplement(
+        legacy_firmware=legacy_firmware,
         navigator_version=_read_str_attr(data, "navigator_version"),
         software_version=_read_str_attr(data, "software_version"),
         heatpump_model=_read_str_attr(data, "heatpump_model"),
@@ -795,7 +830,10 @@ class _SessionReleasingWebClient:
     def __getattr__(self, name: str) -> Any:
         return getattr(self._client, name)
 
-    async def read_data(self) -> Any:
+    async def read_data(self, *, include_raw: bool = False) -> Any:
+        if include_raw:
+            read: Callable[..., Coroutine[Any, Any, Any]] = self._client.read_data
+            return await read(include_raw=True)
         return await self._client.read_data()
 
     async def close(self) -> None:
@@ -1003,7 +1041,7 @@ def _ordered_web_factories(
     return ordered[:1]
 
 
-async def _read_data_bounded(client: _IdmWebClient, timeout: float) -> Any:
+async def _read_data_bounded(client: _IdmWebClient, timeout: float, *, legacy: bool = False) -> Any:
     """Read one snapshot under a hard time limit.
 
     The web client brings its own connect timeout, but nothing bounded the read
@@ -1012,6 +1050,9 @@ async def _read_data_bounded(client: _IdmWebClient, timeout: float) -> Any:
     A timeout is reported as a transport failure, which is what it is.
     """
     async with asyncio.timeout(timeout):
+        read: Callable[..., Coroutine[Any, Any, Any]] = client.read_data
+        if legacy and "include_raw" in inspect.signature(read).parameters:
+            return await read(include_raw=True)
         return await client.read_data()
 
 
@@ -1051,6 +1092,7 @@ async def async_read_web_supplement(
         return None
 
     clean_pin = pin.strip() if pin is not None else ""
+    legacy = model_hint in {"Navigator 1.0", "Navigator 1.7"}
     last_error: Exception | None = None
     last_auth_error: Exception | None = None
 
@@ -1063,7 +1105,10 @@ async def async_read_web_supplement(
             preferred_variant = cached_variant
             allow_variant_fallback = False
             try:
-                supplement = _normalize_web_data(await _read_data_bounded(cached_client, read_timeout), cached_variant)
+                supplement = _normalize_web_data(
+                    await _read_data_bounded(cached_client, read_timeout, legacy=legacy and cached_variant == "nav20"),
+                    cached_variant,
+                )
                 return await _augment_web_supplement(cached_client, supplement)
             except Exception as err:
                 _LOGGER.debug(
@@ -1090,7 +1135,9 @@ async def async_read_web_supplement(
         if client is None:
             continue
         try:
-            supplement = _normalize_web_data(await _read_data_bounded(client, read_timeout), variant_name)
+            supplement = _normalize_web_data(
+                await _read_data_bounded(client, read_timeout, legacy=legacy and variant_name == "nav20"), variant_name
+            )
             _LOGGER.debug(
                 "IDM web supplement succeeded with %s variant at %s",
                 variant_name,

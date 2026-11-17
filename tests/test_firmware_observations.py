@@ -56,7 +56,7 @@ STORED_ANSWER = {
 }
 
 
-def _session_with_answer(query, latest, newer_observed):
+def _session_with_answer(query, latest, newer_observed, *, series="nav10_20"):
     response = MagicMock(status=200)
     response.json = AsyncMock(
         return_value={
@@ -64,7 +64,7 @@ def _session_with_answer(query, latest, newer_observed):
             "source": "community_telemetry",
             "status": "observed",
             "latest_firmware": latest,
-            "series": "nav10_20",
+            "series": series,
             "observations": 3,
             "newer_observed": newer_observed,
             "model_scope": "controller_and_plant_model",
@@ -76,6 +76,32 @@ def _session_with_answer(query, latest, newer_observed):
     session = MagicMock()
     session.post.return_value = context
     return session
+
+
+@pytest.mark.parametrize(
+    ("model", "installed", "latest", "family", "controller"),
+    [
+        ("Navigator 1.7", "n1.7z72", "n1.7z100", "navigator_17", "Navigator 1.7"),
+        ("Navigator 1.7", "n1.0z12", "n1.0z14", "navigator_1_0", "Navigator 1.0"),
+        ("Navigator 1.0", "n1.0z12", "n1.0z14", "navigator_1_0", "Navigator 1.0"),
+    ],
+)
+async def test_legacy_firmware_payload_and_response(model, installed, latest, family, controller):
+    firmware, _, coordinator = make_firmware()
+    coordinator.model_name = model
+    coordinator.firmware_version = "1.7"
+    coordinator.web_supplement.legacy_firmware = installed
+    query = {
+        "navigator": family,
+        "navigator_model": controller,
+        "heatpump_model": "AERO ALM",
+        "firmware": installed,
+    }
+    session = _session_with_answer(query, latest, True, series=installed[:5])
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
+        await firmware.async_refresh_firmware()
+    assert session.post.call_args.kwargs["json"] == query
+    assert firmware.firmware_result["latest_firmware"] == latest
 
 
 async def test_no_firmware_query_without_consent():
