@@ -77,7 +77,7 @@ Pfad nicht vorhanden. Firmware-abhängige Zellen sagen das.
 | Raumsollwert (normal) | R/W (Holding-Block) | R/W | — | R/W | **R/W** (HK\<x\>04, gegen Gerätegrenzen validiert) |
 | Heizkurve / Grenzen / Verschiebung | R/W (Holding-Block) | R/W | — | R/W | W möglich *(Parameter-IDs bekannt, noch nicht gemappt)* |
 | Störungen quittieren | W (Coil c3000, FC05) | W (Register 1999) | — | W (Register 1999) | **W** (`notification/save`) |
-| Einmaliger Warmwasser-Boost | W (Anforderungs-Coil c3003) | W (Boost-Logik) | — | W (Boost-Logik) | **—** *(nur Wochen-Zeitplan, kein Einmal-Befehl)* |
+| Einmaliger Warmwasser-Boost | W (Anforderungs-Coil c3003) | W (Einmal-Anforderung 1713 + Sollwert) | — | W (Einmal-Anforderung 1713 + Sollwert) | **—** *(nur Wochen-Zeitplan, kein Einmal-Befehl)* |
 | GLT-Eingänge (ext. Raumtemperatur, Feuchte, PV-Überschuss) | W (PV-Block 74–88) | W | — | W | **—** *(GLT-Container antwortet auf Ebene 0 leer)* |
 | Zonenmodul-Räume | — (eigene Familie) | R/W *(Register)* | — | R/W | R/W *(room-Controller; noch nicht gemappt)* |
 | KNX-Bridge | Serve *(nur gemeinsame Namen)* | Serve + Kommandos | — | Serve + Kommandos | Serve + Kommandos *(Alltagssteuerung per WS)* |

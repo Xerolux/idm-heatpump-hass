@@ -13,6 +13,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### ⚠️ Upgrade notes
+
+- **The manual DHW boost keeps the system mode on Navigator 2.0/10/Pro.** It triggers the charge through the one-time demand register instead of selecting hot-water-only mode. Rollback to 0.28.2 keeps working.
+
+### 🐛 Bugfixes
+
+- **The manual DHW boost starts an actual charge on Navigator 2.0/10/Pro.** Writing the setpoint and selecting hot-water-only mode stopped heating without starting a charge on a Navigator 10 ([#719](https://github.com/Xerolux/idm-heatpump-hass/issues/719)). Where register 1713 exists, the boost now writes it once and never touches the system mode, like the native app. Controllers without the register keep the previous mode-switch behavior.
+
 ## [0.28.2] - 2026-11-18
 
 ### ⚠️ Upgrade notes

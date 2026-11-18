@@ -247,9 +247,10 @@ data:
 
 ## start_dhw_boost
 
-Starts a time-limited DHW quick heating cycle. The heat pump raises the DHW
-target to maximum and prioritizes hot water until the boost duration expires or
-is cancelled.
+Starts a time-limited DHW quick charge. The integration raises the DHW
+setpoint to the requested target and triggers the charge; when the boost ends
+(target reached, timeout or cancel) the exact previous setpoint — and mode,
+where it was changed — is restored.
 
 **Service:** `idm_heatpump.start_dhw_boost`
 
@@ -257,7 +258,9 @@ is cancelled.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `minutes` | number | Boost duration in minutes (1–1440). Default 60. |
+| `target_temperature` | number | Temporary DHW target in °C (35–65). Default 60. |
+| `timeout_minutes` | number | Maximum runtime in minutes (5–240) before automatic restoration. Default 60. |
+| `entry_id` | string | Required only when multiple IDM heat pumps are loaded. |
 
 **Example:**
 ```yaml
@@ -265,15 +268,32 @@ service: idm_heatpump.start_dhw_boost
 target:
   device_id: abc123def456
 data:
-  minutes: 90
+  target_temperature: 60
+  timeout_minutes: 90
 ```
 
+How the charge is triggered depends on the controller:
+
+- **Navigator 2.0 / 10 / Pro:** the boost writes the GLT one-time DHW
+  demand register (1713, `demand_onetime_dhw`, KNX object 383) exactly once
+  and never touches the system mode — the controller stays in Automatic and
+  room heating continues. This mirrors the native iDM app (issue #719: the
+  previous hot-water-only mode switch stopped heating without starting a
+  charge on a Navigator 10). The command bit is momentary: the integration
+  never writes it back to 0.
+- **Controllers without that register (Navigator 1.x):** the boost selects
+  hot-water-only mode for the runtime and restores the previous mode at the
+  end, as before.
+- **Automatic PV boost:** raises the setpoint only and never changes the
+  system mode on any controller.
+
 The boost is restart-safe: if Home Assistant restarts during a boost, the
-remaining time is restored from the heat pump's active DHW setpoint register.
+snapshot (previous setpoint and mode) is restored from persistent storage.
 
 ## cancel_dhw_boost
 
-Cancels an active DHW boost and restores the previous DHW setpoint.
+Cancels an active DHW boost and restores the previous DHW setpoint — and the
+previous system mode where the boost had changed it.
 
 **Service:** `idm_heatpump.cancel_dhw_boost`
 

@@ -3670,7 +3670,7 @@
     },
     "start_dhw_boost": {
       "name": "Warmwasser-Boost starten",
-      "description": "Priorisiert vorübergehend die Warmwasserbereitung und stellt danach den exakten vorherigen Modus und Sollwert wieder her.",
+      "description": "Priorisiert vorübergehend die Warmwasserbereitung: erhöht den Sollwert, löst – wo der Regler es unterstützt – eine einmalige Ladung aus und stellt danach den exakten vorherigen Modus und Sollwert wieder her.",
       "fields": {
         "entry_id": {
           "name": "Konfigurationseintrag",

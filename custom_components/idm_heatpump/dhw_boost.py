@@ -38,6 +38,14 @@ _MIN_TIMEOUT: Final = 5
 _MAX_TIMEOUT: Final = 240
 _HOT_WATER_ONLY_MODE: Final = 4
 
+#: GLT one-time DHW demand register (1713, KNX object 383), present in the
+#: shared Navigator 2.0/10/Pro register map. One rising write starts a single
+#: DHW charge while the system mode stays untouched — the controller clears
+#: the bit itself, so the boost never writes 0 back (momentary-command rule).
+#: Navigator 1.x maps do not include the register; their one-shot control is
+#: the c3003 Vorrangladung coil served by the button platform (issue #719).
+_ONETIME_DEMAND_REGISTER: Final = "demand_onetime_dhw"
+
 
 class DhwBoostError(RuntimeError):
     """Raised when a DHW boost cannot be started or restored safely.
@@ -116,6 +124,7 @@ class DhwBoostManager:
         self.previous_setpoint: int | None = None
         self.last_reason: str | None = None
         self.preserve_system_mode = False
+        self.uses_onetime_demand = False
 
     @property
     def default_target_temperature(self) -> int:
@@ -134,6 +143,19 @@ class DhwBoostManager:
         if "system_mode" in unused or "dhw_setpoint" in unused or "dhw_temp_top" in unused:
             return False
         return bool(mode and mode.writable and setpoint and setpoint.writable and current)
+
+    def _onetime_demand_available(self) -> bool:
+        """Report whether this controller exposes the one-time DHW demand.
+
+        When register 1713 is in the map, the boost triggers a single charge
+        through it and never switches the system mode: on a Navigator 10 the
+        hot-water-only mode stopped room heating without starting a charge
+        (issue #719). Without the register (Navigator 1.x) the legacy
+        mode-switch strategy remains.
+        """
+        register = self.coordinator.get_register(_ONETIME_DEMAND_REGISTER)
+        unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
+        return bool(register is not None and register.writable and _ONETIME_DEMAND_REGISTER not in unused)
 
     async def async_setup(self) -> None:
         """Load persisted recovery data and subscribe to coordinator updates."""
@@ -160,6 +182,7 @@ class DhwBoostManager:
         self.last_reason = "startup_recovery"
         # Old snapshots describe the manual, hot-water-only boost.
         self.preserve_system_mode = stored.get("preserve_system_mode") is True
+        self.uses_onetime_demand = stored.get("uses_onetime_demand") is True
 
         async with self._lock:
             try:
@@ -228,6 +251,7 @@ class DhwBoostManager:
                 )
 
             now = _utcnow()
+            onetime = self._onetime_demand_available()
             self.active = True
             self.status = "starting"
             self.target_temperature = target
@@ -237,7 +261,10 @@ class DhwBoostManager:
             self.previous_mode = previous_mode
             self.previous_setpoint = previous_setpoint
             self.last_reason = None
-            self.preserve_system_mode = preserve_system_mode
+            self.uses_onetime_demand = onetime
+            # With the one-time demand register the boost never owns the
+            # system mode, so it also never has to give it back.
+            self.preserve_system_mode = preserve_system_mode or onetime
 
             # Persist before the first device write. This is the recovery
             # contract if Home Assistant stops between the two writes.
@@ -246,7 +273,12 @@ class DhwBoostManager:
 
             try:
                 await self._async_write("dhw_setpoint", target)
-                if not self.preserve_system_mode:
+                if onetime:
+                    # Momentary GLT command: one rising write triggers the
+                    # charge. Writing 0 back is forbidden — the controller
+                    # clears the bit itself.
+                    await self._async_write(_ONETIME_DEMAND_REGISTER, True)
+                elif not self.preserve_system_mode:
                     await self._async_write("system_mode", _HOT_WATER_ONLY_MODE)
             except Exception as err:
                 self.status = "start_failed"
@@ -478,6 +510,7 @@ class DhwBoostManager:
                 "previous_setpoint": self.previous_setpoint,
                 "last_reason": self.last_reason,
                 "preserve_system_mode": self.preserve_system_mode,
+                "uses_onetime_demand": self.uses_onetime_demand,
             }
         )
 
@@ -545,10 +578,15 @@ class DhwBoostManager:
             "started_at": self.started_at,
             "deadline": self.deadline,
             "last_reason": self.last_reason,
+            "uses_onetime_demand": self.uses_onetime_demand,
             "priority": (
-                "dhw_setpoint_only_until_end_or_cancel"
-                if self.preserve_system_mode
-                else "dhw_setpoint_and_hot_water_only_until_end_or_cancel"
+                "dhw_setpoint_and_onetime_demand_until_end_or_cancel"
+                if self.uses_onetime_demand
+                else (
+                    "dhw_setpoint_only_until_end_or_cancel"
+                    if self.preserve_system_mode
+                    else "dhw_setpoint_and_hot_water_only_until_end_or_cancel"
+                )
             ),
         }
 
