@@ -216,7 +216,7 @@ set_external_power:
 
 start_dhw_boost:
   name: "Start DHW Boost"
-  description: "Temporarily prioritize domestic hot water and restore the exact previous mode and setpoint afterwards"
+  description: "Trigger a one-time DHW charge and temporarily raise the setpoint; restores the exact previous mode and setpoint afterwards"
   fields:
     entry_id:
       name: "Config Entry ID"

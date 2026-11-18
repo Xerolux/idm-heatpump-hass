@@ -42,7 +42,7 @@ class FakeStore:
 
 
 class FakeCoordinator:
-    def __init__(self, events=None) -> None:
+    def __init__(self, events=None, onetime=False) -> None:
         self.events = events if events is not None else []
         self.config_entry = MagicMock()
         self.config_entry.entry_id = "entry"
@@ -76,6 +76,15 @@ class FakeCoordinator:
                 name="dhw_temp_top",
             ),
         }
+        if onetime:
+            # Navigator 2.0/10/Pro shared map: GLT register 1713.
+            self._registers["demand_onetime_dhw"] = RegisterDef(
+                address=1713,
+                datatype=DataType.BOOL,
+                name="demand_onetime_dhw",
+                writable=True,
+            )
+            self.data["demand_onetime_dhw"] = 0
         self.fail_write_name = None
         self.fail_write_once = False
         self._listener = None
@@ -102,10 +111,10 @@ class FakeCoordinator:
         return None
 
 
-async def _manager(monkeypatch, *, loaded=None, events=None):
+async def _manager(monkeypatch, *, loaded=None, events=None, onetime=False):
     store = FakeStore(loaded=loaded, events=events)
     monkeypatch.setattr(module, "Store", lambda *args, **kwargs: store)
-    coordinator = FakeCoordinator(events=events)
+    coordinator = FakeCoordinator(events=events, onetime=onetime)
     manager = DhwBoostManager(coordinator)
     await manager.async_setup()
     return manager, coordinator, store
@@ -676,6 +685,126 @@ async def test_automatic_boost_start_failure_never_restores_system_mode(monkeypa
     with pytest.raises(DhwBoostError):
         await manager.async_start(target_temperature=60, timeout_minutes=30, preserve_system_mode=True)
     assert not any(event[:2] == ("write", "system_mode") for event in coordinator.events)
+    await manager.async_shutdown()
+
+
+@pytest.mark.parametrize("reason", ["target", "cancel", "timeout", "unload"])
+async def test_onetime_demand_boost_triggers_a_charge_without_mode_switch(monkeypatch, reason):
+    """With register 1713 the boost commands one charge and owns only the setpoint.
+
+    Reported against a Navigator 10 (issue #719): switching to hot-water-only
+    stopped the heating pumps without starting a DHW charge, while the native
+    app triggers a one-time demand and stays in Automatic.
+    """
+    events = []
+    manager, coordinator, store = await _manager(monkeypatch, events=events, onetime=True)
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+    assert ("write", "dhw_setpoint", 60) in events
+    assert ("write", "demand_onetime_dhw", True) in events
+    assert not any(event[:2] == ("write", "system_mode") for event in events)
+    assert coordinator.data["system_mode"] == 1
+    assert store.saved[-1]["uses_onetime_demand"] is True
+    assert store.saved[-1]["preserve_system_mode"] is True
+    assert manager.state_attributes["priority"] == "dhw_setpoint_and_onetime_demand_until_end_or_cancel"
+    assert manager.state_attributes["uses_onetime_demand"] is True
+
+    if reason == "target":
+        coordinator.data["dhw_temp_top"] = 60
+        await manager._async_evaluate()
+    elif reason == "cancel":
+        await manager.async_cancel()
+    elif reason == "timeout":
+        manager.deadline = datetime.now(UTC) - timedelta(seconds=1)
+        await manager._async_evaluate()
+    else:
+        await manager.async_shutdown()
+    assert not manager.active
+    assert coordinator.data["dhw_setpoint"] == 48
+    assert coordinator.data["system_mode"] == 1
+    # The momentary command is never cleared by the integration.
+    assert not any(event[:2] == ("write", "demand_onetime_dhw") and event[2] is False for event in events)
+    assert not any(event[:2] == ("write", "system_mode") for event in events)
+    await manager.async_shutdown()
+
+
+async def test_onetime_demand_boost_enforces_only_the_setpoint(monkeypatch):
+    events = []
+    manager, coordinator, _store = await _manager(monkeypatch, events=events, onetime=True)
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+    events.clear()
+
+    # External changes during the boost: the mode belongs to the controller,
+    # the self-clearing demand bit is not re-triggered, the setpoint is owned.
+    coordinator.data["system_mode"] = 2
+    coordinator.data["dhw_setpoint"] = 48
+    coordinator.data["demand_onetime_dhw"] = 0
+    await manager._async_evaluate()
+
+    assert coordinator.data["dhw_setpoint"] == 60
+    assert coordinator.data["system_mode"] == 2
+    assert ("write", "demand_onetime_dhw", True) not in events
+    await manager.async_shutdown()
+
+
+async def test_onetime_demand_boost_start_failure_never_switches_the_mode(monkeypatch):
+    manager, coordinator, _store = await _manager(monkeypatch, onetime=True)
+    coordinator.fail_write_name = "demand_onetime_dhw"
+    coordinator.fail_write_once = True
+    with pytest.raises(DhwBoostError):
+        await manager.async_start(target_temperature=60, timeout_minutes=30)
+    assert not manager.active
+    assert coordinator.data["dhw_setpoint"] == 48
+    assert coordinator.data["system_mode"] == 1
+    assert not any(event[:2] == ("write", "system_mode") for event in coordinator.events)
+    await manager.async_shutdown()
+
+
+async def test_onetime_demand_boost_recovery_never_writes_mode_or_demand(monkeypatch):
+    loaded = {
+        "active": True,
+        "preserve_system_mode": True,
+        "uses_onetime_demand": True,
+        "previous_mode": 1,
+        "previous_setpoint": 48,
+        "target_temperature": 60,
+        "timeout_minutes": 30,
+    }
+    manager, coordinator, _store = await _manager(monkeypatch, loaded=loaded, onetime=True)
+    assert not manager.active
+    assert coordinator.data["dhw_setpoint"] == 48
+    assert coordinator.data["system_mode"] == 1
+    assert not any(event[:2] == ("write", "system_mode") for event in coordinator.events)
+    assert not any(event[:2] == ("write", "demand_onetime_dhw") for event in coordinator.events)
+    await manager.async_shutdown()
+
+
+@pytest.mark.parametrize(
+    "register_setup",
+    ["not_writable", "unused"],
+)
+async def test_unusable_onetime_register_falls_back_to_the_mode_switch(monkeypatch, register_setup):
+    events = []
+    store = FakeStore(events=events)
+    monkeypatch.setattr(module, "Store", lambda *args, **kwargs: store)
+    coordinator = FakeCoordinator(events=events, onetime=True)
+    if register_setup == "not_writable":
+        register = coordinator.get_register("demand_onetime_dhw")
+        coordinator._registers["demand_onetime_dhw"] = RegisterDef(
+            address=register.address,
+            datatype=DataType.BOOL,
+            name="demand_onetime_dhw",
+        )
+    else:
+        coordinator.unused_registers = frozenset({"demand_onetime_dhw"})
+    manager = DhwBoostManager(coordinator)
+    await manager.async_setup()
+
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+    assert ("write", "system_mode", 4) in events
+    assert not any(event[:2] == ("write", "demand_onetime_dhw") for event in events)
+    assert manager.state_attributes["priority"] == "dhw_setpoint_and_hot_water_only_until_end_or_cancel"
     await manager.async_shutdown()
 
 

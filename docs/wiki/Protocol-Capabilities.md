@@ -66,7 +66,7 @@ their row; where a capability is firmware-dependent it says so.
 | Room setpoint (normal) | R/W (holding block) | R/W | — | R/W | **R/W** (HK\<x\>04, device-range-validated) |
 | Heating curve / limits / shift | R/W (holding block) | R/W | — | R/W | W possible *(parameter ids known, not yet mapped)* |
 | Error acknowledge | W (coil c3000, FC05) | W (register 1999) | — | W (register 1999) | **W** (`notification/save`) |
-| DHW one-shot boost | W (demand coil c3003) | W (boost state machine) | — | W (boost state machine) | **—** *(weekly timetable only, no one-shot command)* |
+| DHW one-shot boost | W (demand coil c3003) | W (one-time demand 1713 + setpoint) | — | W (one-time demand 1713 + setpoint) | **—** *(weekly timetable only, no one-shot command)* |
 | GLT inputs (ext. room temp, humidity, PV surplus) | W (PV supplement 74–88) | W | — | W | **—** *(level-0 GLT container answers empty)* |
 | Zone-module rooms | — (separate family) | R/W *(registers)* | — | R/W | R/W *(room controller; not yet mapped)* |
 | KNX bridge | serve *(shared names only)* | serve + commands | — | serve + commands | serve + commands *(everyday controls via WS)* |

@@ -258,9 +258,10 @@ data:
 
 ## start_dhw_boost
 
-Startet eine zeitlich begrenzte Warmwasser-Schnellladung. Die Wärmepumpe hebt
-das Warmwasser-Ziel auf das Maximum und priorisiert Warmwasser, bis die
-Boost-Dauer abläuft oder abgebrochen wird.
+Startet eine zeitlich begrenzte Warmwasser-Schnellladung. Die Integration hebt
+den Warmwasser-Sollwert auf das gewünschte Ziel und stößt die Ladung an; wenn
+der Boost endet (Ziel erreicht, Timeout oder Abbruch), werden der exakte
+vorherige Sollwert — und der Modus, falls er geändert wurde — wiederhergestellt.
 
 **Aktion:** `idm_heatpump.start_dhw_boost`
 
@@ -268,7 +269,9 @@ Boost-Dauer abläuft oder abgebrochen wird.
 
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
-| `minutes` | number | Boost-Dauer in Minuten (1–1440). Standard 60. |
+| `target_temperature` | number | Temporäres Warmwasser-Ziel in °C (35–65). Standard 60. |
+| `timeout_minutes` | number | Maximale Laufzeit in Minuten (5–240) bis zur automatischen Rückstellung. Standard 60. |
+| `entry_id` | string | Nur nötig, wenn mehrere IDM-Wärmepumpen geladen sind. |
 
 **Beispiel:**
 ```yaml
@@ -276,16 +279,35 @@ service: idm_heatpump.start_dhw_boost
 target:
   device_id: abc123def456
 data:
-  minutes: 90
+  target_temperature: 60
+  timeout_minutes: 90
 ```
 
+Wie die Ladung ausgelöst wird, hängt vom Regler ab:
+
+- **Navigator 2.0 / 10 / Pro:** der Boost schreibt das GLT-Register für die
+  einmalige WW-Anforderung (1713, `demand_onetime_dhw`, KNX-Objekt 383)
+  genau einmal und lässt die Betriebsart unberührt — der Regler bleibt in
+  Automatik, die Raumheizung läuft weiter. Das entspricht der nativen
+  iDM-App (Issue #719: der frühere Wechsel in den Nur-Warmwasser-Modus
+  stoppte die Heizung, ohne eine Ladung zu starten, an einem Navigator 10).
+  Das Bit ist ein einmaliger Befehl: die Integration schreibt es nie auf 0
+  zurück.
+- **Regler ohne dieses Register (Navigator 1.x):** der Boost wählt für die
+  Laufzeit den Nur-Warmwasser-Modus und stellt am Ende die vorherige
+  Betriebsart wieder her, wie bisher.
+- **Automatischer PV-Boost:** erhöht nur den Sollwert und ändert die
+  Betriebsart an keinem Regler.
+
 Der Boost ist neustartsicher: Startet Home Assistant während eines Boosts neu,
-wird die verbleibende Zeit aus dem aktiven Warmwasser-Sollwertregister der
-Wärmepumpe wiederhergestellt.
+wird der Snapshot (vorheriger Sollwert und Modus) aus dem persistenten Speicher
+wiederhergestellt.
 
 ## cancel_dhw_boost
 
-Bricht einen aktiven Warmwasser-Boost ab und stellt den vorherigen Warmwasser-Sollwert wieder her.
+Bricht einen aktiven Warmwasser-Boost ab und stellt den vorherigen
+Warmwasser-Sollwert wieder her — und die vorherige Betriebsart, falls der
+Boost sie geändert hatte.
 
 **Aktion:** `idm_heatpump.cancel_dhw_boost`
 

@@ -14,7 +14,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "6d254be453a5d610c11e46797e2c1aa32e47b7c92380408b755b426e190132e2"
+      "reviewed_source_sha256": "e85ec6892761a32b2dc0d247c5cb24055b92aea416f806a930b9c737b5f94c3b"
     },
     {
       "feature": "Model and register semantics",
@@ -141,7 +141,7 @@
         "Smart-Energy-and-Comfort.md",
         "Services.md"
       ],
-      "reviewed_source_sha256": "8e5d2be9f7ba5a16e11228898d5bd5476693319852a137bf5408006b50e28cc2"
+      "reviewed_source_sha256": "4eeaa635bd5f9ad71dbe430070fa97b980790d97d9e3b868355d34b754e8a1a3"
     },
     {
       "feature": "Predictive evidence and local Assist",
@@ -238,7 +238,7 @@
         "Services.md",
         "Predictive-Advisor.md"
       ],
-      "reviewed_source_sha256": "9c6a27e9c8cbcd2b1fc2fc7a2af536482f62fb6cb6c8124bb6e8a58106e4ad25"
+      "reviewed_source_sha256": "1c330bf879641abb70e9fdd696fd44afca0ecee29e9806ab3d75c6bda4eda594"
     }
   ]
 }

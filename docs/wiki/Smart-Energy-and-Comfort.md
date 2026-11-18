@@ -94,7 +94,10 @@ The **automatic PV surplus DHW charging** option is disabled by default. It
 uses the selected external power sensors and only starts the existing
 transactional DHW boost with a temporary DHW setpoint only. The automatic
 boost leaves the system mode unchanged, so room heating remains available.
-The manual boost still selects hot-water-only mode. Neither path changes the
+On Navigator 2.0/10/Pro both the manual and the automatic boost trigger the
+charge through the one-time DHW demand register (1713) and keep the system
+mode untouched; the manual hot-water-only mode switch remains only on
+controllers without that register (Navigator 1.x). Neither path changes the
 heating curve or the electric heater settings.
 
 Requirements:

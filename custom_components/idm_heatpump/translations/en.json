@@ -3670,7 +3670,7 @@
     },
     "start_dhw_boost": {
       "name": "Start DHW boost",
-      "description": "Temporarily prioritize domestic hot water and restore the exact previous mode and setpoint afterwards.",
+      "description": "Temporarily prioritize domestic hot water: raises the setpoint, triggers a one-time charge where the controller supports it, and restores the exact previous mode and setpoint afterwards.",
       "fields": {
         "entry_id": {
           "name": "Config entry",
