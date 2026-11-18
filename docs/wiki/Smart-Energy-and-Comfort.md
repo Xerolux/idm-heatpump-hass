@@ -420,7 +420,14 @@ flags. The check turns on only when a running charge has been stuck for over
 last two completed charges both missed the stop temperature by more than
 1 K and the tank is still below the start temperature. Without the demand
 register the check reports unknown instead of guessing, and plants without
-the charge-hysteresis registers keep the older setpoint comparison.
+the charge-hysteresis registers keep the older setpoint comparison. A charge
+interrupted by a long polling gap contributes no outcome to the failure streak.
+If demand is still active, the running duration starts again with the first
+valid reading after the gap.
+
+The operating analysis checkpoints its history during continuous polling.
+Observed hot-water runtime crossing local midnight is split between the two
+calendar days.
 
 Temperature inputs whose sensor is not wired answer with uninitialized
 controller memory (about -327 °C on a Navigator 2.0 room-temperature register,

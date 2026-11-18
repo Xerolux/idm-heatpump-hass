@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.28.1 — 2026-11-18
+
+Fast polling no longer postpones operating-history checkpoints. The hot-water check leaves interrupted charge outcomes unknown, and observed hot-water runtime is split at local midnight. [Smart Energy & Comfort](Smart-Energy-and-Comfort).
+
 ## v0.28.0 — 2026-11-17
 
 The quality-scale record is complete: all 54 rules of Home Assistant's current integration quality scale are `done` or legitimately exempt — five exemptions, each with its reason — so the manifest's self-assessed rating rises from Gold to Platinum. A new drift test pins `quality_scale.yaml` to the official rule set and derives the manifest tier from the rules actually fulfilled, so a renamed or new upstream rule fails the build instead of slipping past. Runtime behavior is unchanged. [Stability & release readiness](Stability-and-Release-Readiness).

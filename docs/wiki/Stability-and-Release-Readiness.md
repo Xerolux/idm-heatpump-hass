@@ -4,6 +4,18 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.28.1 release decision
+
+The operating analysis now saves checkpoints during continuous polling,
+skips outcomes for interrupted hot-water charges, and splits observed
+hot-water runtime at local midnight. Regression tests cover all three
+cases; the real Home Assistant store confirms checkpoints are written
+during uninterrupted polling. Existing storage, polling inputs and
+controller write paths are unchanged. The maintainer approved publishing
+the patch without the seven-day observation period once CI and the Home
+Assistant smoke tests pass.
+[Detailed evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.1.md)
+
 ## 0.28.0 release decision
 
 Documentation-only: no runtime module changed. The manifest's `quality_scale`
@@ -613,7 +625,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.28.0` and `idm-heatpump-api` `2.16.2` form the current
+Source-tree integration `0.28.1` and `idm-heatpump-api` `2.16.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

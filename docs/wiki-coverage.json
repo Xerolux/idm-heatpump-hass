@@ -113,7 +113,7 @@
         "Smart-Energy-and-Comfort.md",
         "Entities.md"
       ],
-      "reviewed_source_sha256": "a5fc980eab13e19a76c03a22e3d786a6191149c2d857d512e371f9a69af8ec92"
+      "reviewed_source_sha256": "e40699e2dcf06598a4230207fa2673991f08dba3b1969afb051822b2eb567f63"
     },
     {
       "feature": "External climate and power forwarding",

@@ -4,6 +4,18 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.28.1
+
+Die Betriebsanalyse speichert auch bei kontinuierlicher Abfrage, lässt den
+Ausgang unterbrochener Warmwasserladungen offen und teilt beobachtete
+Warmwasserlaufzeit an der lokalen Mitternacht auf. Regressionstests decken
+alle drei Fälle ab. Der Speicher eines echten Home Assistant bestätigt
+Schreibvorgänge während laufender Abfragen. Speicherformat, abgefragte
+Register und Schreibpfade zum Regler bleiben unverändert. Der Maintainer
+hat die Freigabe ohne siebentägige Beobachtungszeit genehmigt, sobald CI und
+die Home-Assistant-Smoke-Tests erfolgreich sind.
+[Detailnachweis](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.1.md)
+
 ## Release-Entscheidung zu 0.28.0
 
 Nur Dokumentation: kein Laufzeitmodul wurde geändert. Die `quality_scale`-Metadaten
@@ -657,7 +669,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.28.0` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
+Integration im Quellstand `0.28.1` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
