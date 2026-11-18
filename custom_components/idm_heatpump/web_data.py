@@ -10,17 +10,30 @@ import logging
 import re
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field, replace
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Protocol
 
 from homeassistant.helpers.aiohttp_client import async_create_clientsession, async_get_clientsession
+from homeassistant.util import dt as dt_util
 
-from .const import MODEL, WEB_READ_TIMEOUT
+from .const import HEATING_CIRCUITS_OPTIONAL, MODEL, WEB_READ_TIMEOUT
 from .web_demand_reason import async_read_home_detail
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def navigator10_clock_utc(timestamp_ms: object) -> datetime | None:
+    """Interpret the Navigator's epoch-encoded wall time in the plant's HA time zone."""
+    if type(timestamp_ms) is not int:
+        return None
+    try:
+        wall_time = datetime.fromtimestamp(timestamp_ms / 1000, tz=UTC).replace(tzinfo=None)
+        return dt_util.as_utc(wall_time)
+    except (OverflowError, OSError, ValueError):
+        return None
 
 
 class _ClosableSession(Protocol):
@@ -222,6 +235,11 @@ def _normalize_web_data(data: Any, web_variant: str | None = None) -> IdmWebSupp
         if isinstance(raw_values, dict)
         else {str(name): _normalize_sensor_value(value) for name, value in values.items()}
     )
+    pump_key = "hotwater_station_pump_percentage"
+    if (pump := sensor_values.get(pump_key)) is not None and pump.native_value == -1:
+        sensor_values.pop(pump_key)
+        values.pop(pump_key, None)
+
     metadata_values = {
         "navigator_version": _read_str_attr(data, "navigator_version"),
         "software_version": _read_str_attr(data, "software_version"),
@@ -550,7 +568,7 @@ async def _read_optional_heatingcircuits(
     room setpoints with their declared ranges, the room temperature and the
     pump state — the state and bounds of the web-only heating controls. The
     first answer also lists every configured circuit, so the reader walks
-    the plant's own circuit list. Strictly optional.
+    the plant's own circuit list. An explicit absence tries the next circuit.
     """
     if supplement.web_variant != "nav10":
         return supplement
@@ -563,12 +581,21 @@ async def _read_optional_heatingcircuits(
     unavailable: list[str] = []
     try:
         async with asyncio.timeout(WEB_READ_TIMEOUT):
-            try:
-                first = await read_heatingcircuit("A")
-            except IdmWebHeatingCircuitUnavailableError as error:
-                return replace(supplement, unavailable_heating_circuits=(error.hc_id,))
-            circuits.append(first)
-            wanted = [ref.hc_id for ref in first.available_circuits if ref.hc_id != first.hc_id]
+            for candidate in ("A", *(name.upper() for name in HEATING_CIRCUITS_OPTIONAL)):
+                try:
+                    first = await read_heatingcircuit(candidate)
+                except IdmWebHeatingCircuitUnavailableError as error:
+                    unavailable.append(error.hc_id)
+                    continue
+                circuits.append(first)
+                break
+            else:
+                return replace(supplement, unavailable_heating_circuits=tuple(unavailable))
+            wanted = [
+                ref.hc_id
+                for ref in first.available_circuits
+                if ref.hc_id != first.hc_id and ref.hc_id not in unavailable
+            ]
             for hc_id in wanted:
                 try:
                     circuits.append(await read_heatingcircuit(hc_id))

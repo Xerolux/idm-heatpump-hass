@@ -1900,4 +1900,36 @@ async def test_first_circuit_unavailable_never_invents_a_control() -> None:
         SimpleNamespace(read_heatingcircuit=read), IdmWebSupplement(web_variant="nav10")
     )
     assert result.heating_circuits == ()
-    assert result.unavailable_heating_circuits == ("A",)
+    assert result.unavailable_heating_circuits == tuple("ABCDEFG")
+
+
+async def test_circuit_discovery_continues_when_a_is_missing() -> None:
+    from idm_heatpump import IdmWebHeatingCircuit, IdmWebHeatingCircuitRef, IdmWebHeatingCircuitUnavailableError
+
+    requested = []
+
+    async def read(hc_id: str):
+        requested.append(hc_id)
+        if hc_id in "ABC":
+            raise IdmWebHeatingCircuitUnavailableError(hc_id)
+        if hc_id == "E":
+            raise IdmWebHeatingCircuitUnavailableError(hc_id)
+        return IdmWebHeatingCircuit(hc_id=hc_id, available_circuits=(IdmWebHeatingCircuitRef(hc_id="E"),))
+
+    supplement = IdmWebSupplement(web_variant="nav10")
+    result = await web_data._read_optional_heatingcircuits(SimpleNamespace(read_heatingcircuit=read), supplement)
+    assert requested == list("ABCDE")
+    assert [circuit.hc_id for circuit in result.heating_circuits] == ["D"]
+    assert result.unavailable_heating_circuits == tuple("ABCE")
+
+
+@pytest.mark.parametrize(("raw", "expected"), [("-1%", None), ("0%", 0.0), ("42%", 42.0)])
+def test_station_pump_percentage_ignores_only_the_negative_marker(raw: str, expected: float | None) -> None:
+    key = "hotwater_station_pump_percentage"
+    data = SimpleNamespace(simple_values={key: raw}, values={key: raw})
+    supplement = web_data._normalize_web_data(data, "nav10")
+    if expected is None:
+        assert key not in supplement.values
+        assert key not in supplement.sensor_values
+    else:
+        assert supplement.sensor_values[key].native_value == expected

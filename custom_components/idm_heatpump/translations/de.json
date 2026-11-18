@@ -2829,7 +2829,7 @@
         "name": "Regler-Uhrzeit (Web)"
       },
       "web_controller_online_hours": {
-        "name": "Regler Online (Web)"
+        "name": "Regler-Onlinezeit (Web)"
       },
       "web_current_electrical_power": {
         "name": "Aktuelle elektrische Leistung (Web)"

@@ -401,7 +401,7 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "web_cold_water_temperature": ("Cold water temperature (Web)", "Kaltwasser Temperatur (Web)"),
         "web_condenser_pressure": ("Condenser pressure (Web)", "Kondensator Druck (Web)"),
         "web_condenser_temperature": ("Condenser temperature (Web)", "Kondensator Temperatur (Web)"),
-        "web_controller_online_hours": ("Controller online time (Web)", "Regler Online (Web)"),
+        "web_controller_online_hours": ("Controller online time (Web)", "Regler-Onlinezeit (Web)"),
         "web_controller_clock": ("Controller clock (Web)", "Regler-Uhrzeit (Web)"),
         "web_last_success": ("Last web update (Web)", "Letzte Web-Aktualisierung (Web)"),
         "web_dhw_status_info": ("Hot water status info (Web)", "Warmwasser Statusinfo (Web)"),

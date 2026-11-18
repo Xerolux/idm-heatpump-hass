@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
 # IDM Heatpump for Home Assistant
 # © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
 # Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
@@ -31,6 +29,7 @@ from .const import (
 )
 from .service_report import build_service_report
 from .versions import async_runtime_versions
+from .web_data import navigator10_clock_utc
 
 TO_REDACT = {CONF_AI_URL, CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_WEB_HOST, CONF_WEB_PIN}
 # Device identifiers must not leak into diagnostics either.
@@ -54,13 +53,7 @@ def _connection_diagnostics(entry: ConfigEntry, coordinator: Any) -> dict[str, A
     web_pin = str(entry.data.get(CONF_WEB_PIN, "") or "").strip()
     supplement = getattr(coordinator, "web_supplement", None)
     status = getattr(supplement, "status", None) if supplement is not None else None
-    controller_clock: str | None = None
-    timestamp_ms = getattr(status, "timestamp_ms", None)
-    if isinstance(timestamp_ms, int):
-        try:
-            controller_clock = datetime.fromtimestamp(timestamp_ms / 1000, tz=UTC).isoformat()
-        except (OverflowError, OSError, ValueError):
-            controller_clock = None
+    controller_clock = navigator10_clock_utc(getattr(status, "timestamp_ms", None))
     return {
         "mode": mode,
         "modbus_used": mode != CONNECTION_MODE_WEB_ONLY,
@@ -71,7 +64,7 @@ def _connection_diagnostics(entry: ConfigEntry, coordinator: Any) -> dict[str, A
         "firmware_version": coordinator.firmware_version,
         "web_json_version": getattr(status, "json_version", None),
         "web_userlevel": getattr(status, "userlevel", None),
-        "controller_clock": controller_clock,
+        "controller_clock": controller_clock.isoformat() if controller_clock is not None else None,
     }
 
 

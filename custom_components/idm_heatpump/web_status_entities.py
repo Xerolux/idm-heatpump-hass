@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -18,6 +18,7 @@ from idm_heatpump import IdmWebStatus
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
+from .web_data import navigator10_clock_utc
 
 
 def _nav10_status(coordinator: IdmCoordinator) -> IdmWebStatus | None:
@@ -81,12 +82,7 @@ class IdmWebControllerClockSensor(IdmCoordinatorEntityBase, SensorEntity):
     @property
     def native_value(self) -> datetime | None:
         status = self._state()
-        if status is None or status.timestamp_ms is None:
-            return None
-        try:
-            return datetime.fromtimestamp(status.timestamp_ms / 1000, tz=UTC)
-        except (OverflowError, OSError, ValueError):
-            return None
+        return navigator10_clock_utc(status.timestamp_ms) if status is not None else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
