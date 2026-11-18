@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.28.3-b1 — 2026-11-18
+
+Der manuelle Warmwasser-Boost löst die Ladung am Navigator 2.0/10/Pro über das GLT-Register für die einmalige WW-Anforderung 1713 aus und lässt die Betriebsart unberührt — wie die native App; der frühere Wechsel in den Nur-Warmwasser-Modus stoppte die Heizung, ohne eine Ladung zu starten (#719). Regler ohne dieses Register behalten den Modus-Wechsel-Pfad. Die Feldbestätigung an der Anlage des Reporters steht noch aus. [Services](Services), [Erkenntnisse](Findings-and-Documentation).
+
 ## v0.28.2 — 2026-11-18
 
 Die Navigator-10-Regleruhr verwendet die Anlagenzeitzone. Die Web-Erkennung sucht bei fehlendem Heizkreis A weiter. Die Warmwasserstationspumpe meldet bei −1 % einen nicht verfügbaren Wert, und der deutsche Name der Regler-Onlinezeit kennzeichnet den Laufzeitzähler. [Entities](Entities).
