@@ -11,8 +11,9 @@ skips outcomes for interrupted hot-water charges, and splits observed
 hot-water runtime at local midnight. Regression tests cover all three
 cases; the real Home Assistant store confirms checkpoints are written
 during uninterrupted polling. Existing storage, polling inputs and
-controller write paths are unchanged. The release evidence tracks the
-publication decision and hardware validation limits.
+controller write paths are unchanged. The maintainer approved publishing
+the patch without the seven-day observation period once CI and the Home
+Assistant smoke tests pass.
 [Detailed evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.1.md)
 
 ## 0.28.0 release decision

@@ -11,8 +11,9 @@ Ausgang unterbrochener Warmwasserladungen offen und teilt beobachtete
 Warmwasserlaufzeit an der lokalen Mitternacht auf. Regressionstests decken
 alle drei Fälle ab. Der Speicher eines echten Home Assistant bestätigt
 Schreibvorgänge während laufender Abfragen. Speicherformat, abgefragte
-Register und Schreibpfade zum Regler bleiben unverändert. Der Detailnachweis
-hält die Freigabeentscheidung und die Grenzen der Anlagenprüfung fest.
+Register und Schreibpfade zum Regler bleiben unverändert. Der Maintainer
+hat die Freigabe ohne siebentägige Beobachtungszeit genehmigt, sobald CI und
+die Home-Assistant-Smoke-Tests erfolgreich sind.
 [Detailnachweis](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.1.md)
 
 ## Release-Entscheidung zu 0.28.0
