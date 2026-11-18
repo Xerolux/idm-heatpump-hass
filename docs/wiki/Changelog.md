@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.28.3-b1 — 2026-11-18
+
+The manual DHW boost triggers the charge through the GLT one-time demand register 1713 on Navigator 2.0/10/Pro and leaves the system mode untouched, mirroring the native app — the previous hot-water-only switch stopped heating without starting a charge on a Navigator 10 (#719). Controllers without the register keep the mode-switch path. Field confirmation on the reporter's plant is pending. [Services](Services), [Findings](Findings-and-Documentation).
+
 ## v0.28.2 — 2026-11-18
 
 Navigator 10 clock readings use the plant time zone. Web circuit discovery continues after an explicitly absent circuit A. The hot-water station pump reports an unavailable state at −1%, and the German online-time label identifies a duration. [Entities](Entities).
