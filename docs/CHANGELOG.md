@@ -13,6 +13,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.28.1] - 2026-11-18
+
+### ⚠️ Upgrade notes
+
+- **Existing operating history is preserved.** Rollback to 0.28.0 uses the same storage format.
+
+### 🐛 Bugfixes
+
+- **Operating history saves during continuous polling.** Fast scans can no longer defer every checkpoint until polling pauses or Home Assistant shuts down.
+- **Interrupted hot-water charges have an unknown outcome.** A polling gap can hide the temperature peak or a complete charge. Such a cycle no longer changes the failure streak. An ongoing charge resumes with a fresh duration measurement.
+- **Daily hot-water runtime follows the local calendar.** An observed interval across midnight contributes its elapsed seconds to both days.
+
+### 💼 Maintenance
+
+- **Capture failure tests simulate refused connections.** The ZIP and CLI failure paths run consistently without waiting on a routed test address.
+
 ## [0.28.0] - 2026-11-17
 
 The quality-scale record is complete: all 54 rules of Home Assistant's current integration quality scale are done or legitimately exempt, the self-assessment rises from Gold to Platinum, and a new drift test pins the record to the official rule set.

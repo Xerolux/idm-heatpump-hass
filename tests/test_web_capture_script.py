@@ -490,6 +490,23 @@ class TestGuiLaunchRules:
         assert capture.should_launch_gui(["prog"]) is False
 
 
+@pytest.fixture
+def unavailable_controller(monkeypatch: pytest.MonkeyPatch) -> str:
+    """Refuse controller connections without relying on network routing."""
+    host = "192.0.2.99"
+    create_connection = socket.create_connection
+
+    def connect(address, *args, **kwargs):
+        if address[0] == host:
+            raise ConnectionRefusedError("simulated controller connection refusal")
+        return create_connection(address, *args, **kwargs)
+
+    # urllib's HTTP connection and both capture sockets use create_connection.
+    monkeypatch.setattr(socket, "create_connection", connect)
+    monkeypatch.setenv("no_proxy", host)
+    return host
+
+
 class TestGuiContract:
     def test_license_text_carries_the_disclaimer_essentials(self) -> None:
         text = capture.GUI_LICENSE_TEXT
@@ -507,17 +524,17 @@ class TestGuiContract:
         assert capture.CONTACT_EMAIL == "git@xerolux.de"
         assert capture.ISSUE_URL.startswith("https://github.com/Xerolux/idm-heatpump-hass")
 
-    def test_perform_capture_tuple_contract(self, tmp_path: Path) -> None:
+    def test_perform_capture_tuple_contract(self, tmp_path: Path, unavailable_controller: str) -> None:
         lines: list[str] = []
         zip_path, ok, warnings = capture.perform_capture(
-            host="192.0.2.99",
+            host=unavailable_controller,
             pin="1",
             only=None,
             out_dir=str(tmp_path),
             log=lines.append,
         )
         assert zip_path.endswith(".zip")
-        assert ok is False  # nothing listens on 192.0.2.99 — evidence still written
+        assert ok is False  # the controller refuses connections — evidence still written
         assert warnings == []
         assert any("nav20" in line for line in lines)
         assert any("nav10" in line for line in lines)
@@ -665,12 +682,10 @@ class TestModbusSweep:
         assert all(2000 <= e["start"] < 2200 for e in holes)
         assert not [e for e in entries if e.get("status") == "error"]
 
-    def test_perform_capture_includes_modbus_by_default(self, tmp_path: Path) -> None:
-        # Nothing listens on 192.0.2.99: the sweep must be recorded as
+    def test_perform_capture_includes_modbus_by_default(self, tmp_path: Path, unavailable_controller: str) -> None:
+        # The controller refuses connections: the sweep must be recorded as
         # unavailable, the ZIP still written, ok=False only when all legs fail.
-        zip_path, ok, _warnings = capture.perform_capture(
-            host="192.0.2.99", pin="1", out_dir=str(tmp_path), modbus=True
-        )
+        zip_path, ok, _warnings = capture.perform_capture(host=unavailable_controller, pin="1", out_dir=str(tmp_path))
         assert Path(zip_path).exists()
         assert ok is False
         with zipfile.ZipFile(zip_path) as archive:
@@ -678,9 +693,9 @@ class TestModbusSweep:
         assert manifest["variants"]["modbus"]["outcome"] == "unavailable"
         assert manifest["modbus_port"] == 502
 
-    def test_perform_capture_can_skip_modbus(self, tmp_path: Path) -> None:
+    def test_perform_capture_can_skip_modbus(self, tmp_path: Path, unavailable_controller: str) -> None:
         zip_path, _ok, _warnings = capture.perform_capture(
-            host="192.0.2.99", pin="1", out_dir=str(tmp_path), modbus=False
+            host=unavailable_controller, pin="1", out_dir=str(tmp_path), modbus=False
         )
         with zipfile.ZipFile(zip_path) as archive:
             manifest = json.loads(archive.read("manifest.json"))
@@ -690,16 +705,18 @@ class TestModbusSweep:
 
 
 class TestEmptyPinContinues:
-    def test_perform_capture_with_empty_pin_still_sweeps_modbus(self, tmp_path: Path) -> None:
+    def test_perform_capture_with_empty_pin_still_sweeps_modbus(
+        self, tmp_path: Path, unavailable_controller: str
+    ) -> None:
         # A plant without a web interface has no PIN: the web legs fail their
         # login and get recorded, the Modbus sweep still runs — one data
         # source beats none.
         lines: list[str] = []
         zip_path, ok, _warnings = capture.perform_capture(
-            host="192.0.2.99", pin="", out_dir=str(tmp_path), log=lines.append
+            host=unavailable_controller, pin="", out_dir=str(tmp_path), log=lines.append
         )
         assert Path(zip_path).exists()
-        assert ok is False  # nothing answers on 192.0.2.99
+        assert ok is False  # all connection attempts were refused
         assert any("nav20" in line for line in lines)
         assert any("modbus" in line for line in lines)
         with zipfile.ZipFile(zip_path) as archive:
@@ -707,9 +724,11 @@ class TestEmptyPinContinues:
         assert manifest["variants"]["nav20"]["outcome"] == "unavailable"
         assert manifest["variants"]["modbus"]["outcome"] == "unavailable"
 
-    def test_cli_empty_pin_warns_and_continues(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_cli_empty_pin_warns_and_continues(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, unavailable_controller: str
+    ) -> None:
         monkeypatch.setattr(capture.getpass, "getpass", lambda *_a, **_k: "")
-        code = capture.main(["192.0.2.99", "--pin", "", "--out", str(tmp_path)])
+        code = capture.main([unavailable_controller, "--pin", "", "--out", str(tmp_path)])
         assert code == 2  # total failure on the dead host, but no PIN abort
         zips = list(tmp_path.glob("idm_web_capture_*.zip"))
         assert len(zips) == 1

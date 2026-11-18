@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.28.1 — 2026-11-18
+
+Auch bei kurzen Abfrageintervallen wird die Betriebshistorie gespeichert. Bei Abfragelücken bleibt das Ergebnis der Warmwasserladung unbekannt. Beobachtete Warmwasserlaufzeit wird an der lokalen Mitternacht auf beide Tage verteilt. [Smart Energy & Comfort](Smart-Energy-and-Comfort).
+
 ## v0.28.0 — 2026-11-17
 
 Das Quality-Scale-Protokoll ist vollständig: Alle 54 Regeln der aktuellen Home-Assistant-Qualitätsskala für Integrationen sind `done` oder berechtigt `exempt` — fünf Ausnahmen, jede mit Begründung — damit steigt die selbst eingeschätzte Stufe im Manifest von Gold auf Platinum. Ein neuer Drift-Test pinnt `quality_scale.yaml` auf das offizielle Regelwerk und leitet die Manifest-Stufe aus den tatsächlich erfüllten Regeln ab: Eine umbenannte oder neue Upstream-Regel bricht den Build, statt unbemerkt durchzurutschen. Das Laufzeitverhalten ändert sich nicht. [Stabilität & Release-Reife](Stability-and-Release-Readiness).

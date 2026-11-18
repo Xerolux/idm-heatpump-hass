@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any
 
 import pytest
@@ -18,7 +19,12 @@ class FakeStore:
     def __init__(self, loaded: dict[str, Any] | None = None) -> None:
         self.loaded = loaded
         self.saved: dict[str, Any] | None = None
-        self.delayed: dict[str, Any] | None = None
+        self._delayed: Callable[[], dict[str, Any]] | None = None
+        self.scheduled = 0
+
+    @property
+    def delayed(self) -> dict[str, Any] | None:
+        return self._delayed() if self._delayed is not None else None
 
     async def async_load(self) -> dict[str, Any] | None:
         return self.loaded
@@ -28,7 +34,8 @@ class FakeStore:
 
     def async_delay_save(self, data_func, delay: float) -> None:
         assert delay > 0
-        self.delayed = data_func()
+        self.scheduled += 1
+        self._delayed = data_func
 
 
 def _registers() -> dict[str, RegisterDef]:
@@ -611,3 +618,47 @@ async def test_dhw_charge_without_peak_or_target_stays_unknown(monkeypatch) -> N
     analysis.process_snapshot(_dhw_snapshot(demand=0, top=-327.2), set(), now=now + timedelta(minutes=30))
     assert analysis.last_dhw_charge_reached_target is None
     assert analysis.dhw_consecutive_charge_failures == 0
+
+
+def test_continuous_polling_does_not_postpone_storage(monkeypatch) -> None:
+    analysis, store = _analysis(monkeypatch, expected_poll_interval=5)
+    now = datetime(2026, 11, 16, tzinfo=UTC)
+    for seconds in range(0, 31, 5):
+        analysis.process_snapshot(_snapshot(mode=1), set(), now=now + timedelta(seconds=seconds))
+        assert store.scheduled == 1
+    checkpoint = store.delayed
+    assert checkpoint is not None
+    assert checkpoint["mode_durations"]["heating"] == 30
+
+    analysis.process_snapshot(_snapshot(mode=1), set(), now=now + timedelta(seconds=35))
+    assert store.scheduled == 2
+    checkpoint = store.delayed
+    assert checkpoint is not None
+    assert checkpoint["mode_durations"]["heating"] == 35
+
+
+@pytest.mark.parametrize("demand_after_gap", [0, 1])
+def test_dhw_gap_discards_the_interrupted_outcome(monkeypatch, demand_after_gap: int) -> None:
+    analysis, _ = _analysis(monkeypatch)
+    now = datetime(2026, 11, 16, 5, tzinfo=UTC)
+    analysis.process_snapshot(_dhw_snapshot(demand=0), set(), now=now)
+    analysis.process_snapshot(_dhw_snapshot(demand=1, top=46), set(), now=now + timedelta(seconds=10))
+    resumed = now + timedelta(hours=3)
+    analysis.process_snapshot(_dhw_snapshot(demand=demand_after_gap, top=46), set(), now=resumed)
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=47), set(), now=resumed + timedelta(seconds=10))
+    assert analysis.last_dhw_charge_reached_target is None
+    assert analysis.dhw_consecutive_charge_failures == 0
+    analysis.process_snapshot(_dhw_snapshot(demand=1, top=46), set(), now=resumed + timedelta(seconds=20))
+    analysis.process_snapshot(_dhw_snapshot(demand=0, top=47), set(), now=resumed + timedelta(seconds=30))
+    assert analysis.dhw_consecutive_charge_failures == 1
+
+
+def test_dhw_runtime_is_split_at_local_midnight(monkeypatch) -> None:
+    local_zone = timezone(timedelta(hours=1))
+    monkeypatch.setattr(module.dt_util, "as_local", lambda value: value.astimezone(local_zone))
+    analysis, store = _analysis(monkeypatch)
+    before_midnight = datetime(2026, 11, 16, 22, 59, 55, tzinfo=UTC)
+    analysis.process_snapshot(_snapshot(mode=4), set(), now=before_midnight)
+    analysis.process_snapshot(_snapshot(mode=4), set(), now=before_midnight + timedelta(seconds=10))
+    assert store.delayed is not None
+    assert store.delayed["daily_dhw"] == {"2026-11-16": 5.0, "2026-11-17": 5.0}

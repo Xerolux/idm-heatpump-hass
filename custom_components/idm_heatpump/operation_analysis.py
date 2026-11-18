@@ -6,6 +6,7 @@ import logging
 import math
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime, timedelta
+from datetime import time as local_time
 from typing import Any, Final
 
 from homeassistant.core import HomeAssistant
@@ -18,7 +19,7 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 _STORAGE_VERSION: Final = 1
-_STORAGE_SAVE_DELAY: Final = 10.0
+_STORAGE_SAVE_DELAY: Final = 30.0
 _EVENT_RETENTION: Final = timedelta(days=8)
 _MAX_COMPLETED_CYCLES: Final = 100
 _COMPRESSOR_KEYS: Final = tuple(f"compressor_status_{index}" for index in range(1, 5))
@@ -133,11 +134,12 @@ class OperationAnalysis:
         self._defrost_reconciled = False
         self._mode_reconciled = False
         self._daily_dhw: dict[str, float] = {}
-        self._last_save_schedule: float | None = None
+        self._save_scheduled = False
         self._dhw_consecutive_charge_failures = 0
         self._dhw_demand_on: bool | None = None
         self._dhw_charge_started: datetime | None = None
         self._dhw_charge_peak_top: float | None = None
+        self._dhw_charge_interrupted = False
         self._dhw_last_sample_at: datetime | None = None
         self._dhw_reconciled = False
 
@@ -221,11 +223,18 @@ class OperationAnalysis:
 
     async def async_save(self) -> None:
         """Persist observations immediately during config-entry unload."""
-        await self._store.async_save(self._serialize())
+        await self._store.async_save(self._serialize_for_save())
 
     def _schedule_save(self) -> None:
-        """Coalesce normal polling updates into a delayed storage write."""
-        self._store.async_delay_save(self._serialize, _STORAGE_SAVE_DELAY)
+        """Batch changes without postponing an already scheduled checkpoint."""
+        if not self._save_scheduled:
+            self._save_scheduled = True
+            self._store.async_delay_save(self._serialize_for_save, _STORAGE_SAVE_DELAY)
+
+    def _serialize_for_save(self) -> dict[str, Any]:
+        """Release the pending flag when the store snapshots the latest state."""
+        self._save_scheduled = False
+        return self._serialize()
 
     def _serialize(self) -> dict[str, Any]:
         """Return JSON-serializable tracker state."""
@@ -442,17 +451,21 @@ class OperationAnalysis:
             self._dhw_last_sample_at is not None
             and (observed_at - self._dhw_last_sample_at).total_seconds() > self._max_sample_gap
         )
-        if gap and demand_on and self._dhw_charge_started is not None:
-            # Missed polling time is never charged to the running charge: a
-            # communication gap must not imply a stuck charge afterwards.
-            self._dhw_charge_started = observed_at
+        if gap and self._dhw_demand_on:
+            # The missing interval may contain the target temperature or even
+            # another charge. Resume the timer, but discard the outcome.
+            self._dhw_charge_interrupted = True
+            self._dhw_charge_started = observed_at if demand_on else None
+            self._dhw_charge_peak_top = None
 
         if demand_on != self._dhw_demand_on:
             if demand_on:
                 self._dhw_charge_started = observed_at
                 self._dhw_charge_peak_top = top
+                self._dhw_charge_interrupted = False
             else:
-                self._complete_dhw_charge(top, charge_off, observed_at)
+                if not self._dhw_charge_interrupted:
+                    self._complete_dhw_charge(top, charge_off, observed_at)
                 self._dhw_charge_started = None
                 self._dhw_charge_peak_top = None
             self._dhw_demand_on = demand_on
@@ -495,9 +508,23 @@ class OperationAnalysis:
         name = _MODE_NAMES[self._last_mode]
         self.mode_durations[name] += elapsed
         if self._last_mode == 4:
-            local_day = dt_util.as_local(observed_at).date().isoformat()
-            self._daily_dhw[local_day] = self._daily_dhw.get(local_day, 0.0) + elapsed
+            start = self._last_sample_at
+            local_start = dt_util.as_local(start)
+            local_end = dt_util.as_local(observed_at)
+            day = local_start.date()
+            while day < local_end.date():
+                next_day = day + timedelta(days=1)
+                midnight = datetime.combine(next_day, local_time.min, local_start.tzinfo).astimezone(UTC)
+                self._add_daily_dhw(day.isoformat(), (midnight - start).total_seconds())
+                day = next_day
+                start = midnight
+            self._add_daily_dhw(day.isoformat(), (observed_at - start).total_seconds())
         return elapsed > 0
+
+    def _add_daily_dhw(self, day: str, seconds: float) -> None:
+        """Record positive observed DHW time under its local calendar date."""
+        if seconds > 0:
+            self._daily_dhw[day] = self._daily_dhw.get(day, 0.0) + seconds
 
     def _prune_events(self, now: datetime) -> bool:
         """Keep enough event history for day and rolling-window calculations."""

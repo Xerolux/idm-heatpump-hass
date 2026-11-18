@@ -466,7 +466,14 @@ Einschalttemperatur steigt, oder wenn die letzten zwei abgeschlossenen
 Ladungen die Ausschalttemperatur beide um mehr als 1 K verfehlt haben und
 der Speicher noch unter der Einschalttemperatur liegt. Ohne das
 Anforderungsregister meldet die Prüfung unbekannt, statt zu raten; Anlagen
-ohne die Hysterese-Register behalten den älteren Sollwert-Vergleich.
+ohne die Hysterese-Register behalten den älteren Sollwert-Vergleich. Eine
+Ladung mit einer langen Abfragelücke fließt mit unbekanntem Ergebnis nicht
+in die Fehlerfolge ein. Ist die Anforderung weiterhin aktiv, beginnt
+die Laufzeitmessung mit dem ersten gültigen Messwert nach der Lücke erneut.
+
+Die Betriebsanalyse sichert ihre Historie auch bei kontinuierlicher Abfrage.
+Beobachtete Warmwasserlaufzeit über die lokale Mitternacht hinweg wird auf
+beide Kalendertage aufgeteilt.
 
 Temperatur-Eingänge ohne verdrahteten Fühler antworten mit uninitialisiertem
 Controllerspeicher (etwa −327 °C auf einem Navigator-2.0-Raumtemperatur-Register,
