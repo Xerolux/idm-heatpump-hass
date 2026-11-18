@@ -4,6 +4,17 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.28.1 release decision
+
+The operating analysis now saves checkpoints during continuous polling,
+skips outcomes for interrupted hot-water charges, and splits observed
+hot-water runtime at local midnight. Regression tests cover all three
+cases; the real Home Assistant store confirms checkpoints are written
+during uninterrupted polling. Existing storage, polling inputs and
+controller write paths are unchanged. The release evidence tracks the
+publication decision and hardware validation limits.
+[Detailed evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.1.md)
+
 ## 0.28.0 release decision
 
 Documentation-only: no runtime module changed. The manifest's `quality_scale`

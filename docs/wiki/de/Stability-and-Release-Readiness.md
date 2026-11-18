@@ -4,6 +4,17 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.28.1
+
+Die Betriebsanalyse speichert auch bei kontinuierlicher Abfrage, lässt den
+Ausgang unterbrochener Warmwasserladungen offen und teilt beobachtete
+Warmwasserlaufzeit an der lokalen Mitternacht auf. Regressionstests decken
+alle drei Fälle ab. Der Speicher eines echten Home Assistant bestätigt
+Schreibvorgänge während laufender Abfragen. Speicherformat, abgefragte
+Register und Schreibpfade zum Regler bleiben unverändert. Der Detailnachweis
+hält die Freigabeentscheidung und die Grenzen der Anlagenprüfung fest.
+[Detailnachweis](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.1.md)
+
 ## Release-Entscheidung zu 0.28.0
 
 Nur Dokumentation: kein Laufzeitmodul wurde geändert. Die `quality_scale`-Metadaten
