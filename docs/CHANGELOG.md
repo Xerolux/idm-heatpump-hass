@@ -13,7 +13,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.28.2] - 2026-11-18
 
 ### ⚠️ Upgrade notes
 

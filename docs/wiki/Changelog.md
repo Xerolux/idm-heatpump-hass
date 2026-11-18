@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.28.2 — 2026-11-18
+
+Navigator 10 clock readings use the plant time zone. Web circuit discovery continues after an explicitly absent circuit A. The hot-water station pump reports an unavailable state at −1%, and the German online-time label identifies a duration. [Entities](Entities).
+
 ## v0.28.1 — 2026-11-18
 
 Fast polling no longer postpones operating-history checkpoints. The hot-water check leaves interrupted charge outcomes unknown, and observed hot-water runtime is split at local midnight. [Smart Energy & Comfort](Smart-Energy-and-Comfort).

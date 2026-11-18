@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.28.2 — 2026-11-18
+
+Die Navigator-10-Regleruhr verwendet die Anlagenzeitzone. Die Web-Erkennung sucht bei fehlendem Heizkreis A weiter. Die Warmwasserstationspumpe meldet bei −1 % einen nicht verfügbaren Wert, und der deutsche Name der Regler-Onlinezeit kennzeichnet den Laufzeitzähler. [Entities](Entities).
+
 ## v0.28.1 — 2026-11-18
 
 Auch bei kurzen Abfrageintervallen wird die Betriebshistorie gespeichert. Bei Abfragelücken bleibt das Ergebnis der Warmwasserladung unbekannt. Beobachtete Warmwasserlaufzeit wird an der lokalen Mitternacht auf beide Tage verteilt. [Smart Energy & Comfort](Smart-Energy-and-Comfort).
