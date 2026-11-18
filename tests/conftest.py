@@ -6,7 +6,7 @@ import struct
 import sys
 import warnings
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum, IntEnum
 from types import ModuleType
 from typing import Any, ClassVar
@@ -336,6 +336,9 @@ def _stub_homeassistant() -> None:
     ha.util = _make_module("homeassistant.util")
     ha.util.json = _make_module("homeassistant.util.json")
     ha.util.dt = _make_module("homeassistant.util.dt")
+    ha.util.dt.as_utc = lambda value: (
+        value.replace(tzinfo=UTC).astimezone(UTC) if value.tzinfo is None else value.astimezone(UTC)
+    )
     ha.util.dt.now = datetime.now
     ha.util.dt.as_local = lambda value: value.astimezone()
 

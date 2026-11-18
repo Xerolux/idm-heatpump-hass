@@ -279,7 +279,15 @@ ausgewertet (live verifiziert auf Firmware jsonVersion 11, September 2026):
 - **Regler-Uhrzeit (Web)** (`web_controller_clock`): die eigene Uhr des
   Reglers als Zeitstempel-Sensor, mit `jsonVersion`, aktiver Benutzerebene,
   Sprache, Meldungsanzahl, Frostschutz-Flag und Netzwerk-Flag als Attribute.
-  Die Regler-Uhr kann driften — dieser Sensor macht den Drift sichtbar.
+  Sensor und Diagnose interpretieren die lokale Reglerzeit mit der in
+  Home Assistant eingestellten Zeitzone. Sie muss zur Anlage passen.
+- **Warmwasserstation Pumpe (Web)** zeigt die gemeldete Leistung in Prozent.
+  Der beobachtete M22-Wert `-1 %` gilt als nicht verfügbar. `0 %` ist gültig.
+- **Regler-Onlinezeit (Web)** ist ein kumulativer Zähler. Seine bestehende
+  einheitenlose Recorder-Statistik bleibt erhalten.
+
+Meldet der Navigator ausdrücklich, dass Heizkreis A nicht verfügbar ist,
+sucht die Web-Erkennung bei den weiteren Heizkreisen weiter.
 
 #### Verbindungsstatus
 

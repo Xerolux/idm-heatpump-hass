@@ -38,7 +38,7 @@
         "Supported-Devices.md",
         "Protocol-Capabilities.md"
       ],
-      "reviewed_source_sha256": "786158243dddcf59aea7eccc96514383cadd97e938e247812f67a114f2c7c004"
+      "reviewed_source_sha256": "29466c342c701c870b43a576c0a77cc7f7bed7f906b41d6072128c7214414487"
     },
     {
       "feature": "Polling, transport and recovery",
@@ -97,7 +97,7 @@
         "Navigator-Protocol-Analysis.md",
         "Protocol-Capabilities.md"
       ],
-      "reviewed_source_sha256": "aa24ddee321468bb16ddd975859d6c9f0b919d3e371122fdd1dba9a423c3a7b4"
+      "reviewed_source_sha256": "d51518933b5b0cf647e6c5d2f8f48f50370955cd7f588b0cb2811d14899c9fe9"
     },
     {
       "feature": "Energy and operating analysis",
@@ -197,7 +197,7 @@
         "Smart-Energy-and-Comfort.md",
         "Entities.md"
       ],
-      "reviewed_source_sha256": "fcd52c37c49abd57b14e4b6f67ae9a7658b7565d2ce0b4f48bd61fd7ca5ee8c7"
+      "reviewed_source_sha256": "1990e7ddafef5dfda8c1b955a7093ce9fc103e83438794a1062d2b1b4b8a899d"
     },
     {
       "feature": "KNX bridge and catalog",

@@ -13,6 +13,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### ⚠️ Upgrade notes
+
+- **Existing entity IDs and recorder statistics are preserved.**
+
+### 🐛 Bugfixes
+
+- **Navigator 10 clock readings respect the plant time zone.** The clock sensor and diagnostics interpret the Navigator's wall time using Home Assistant's configured time zone, including seasonal offsets.
+- **Web heating circuit discovery continues when circuit A is absent.** An explicit unavailable response advances discovery through the remaining circuit letters.
+- **Warm-water pump output reports unavailable at −1%.** Valid zero and positive values remain visible. The German name of the controller online-time counter now identifies it as a duration.
+
 ## [0.28.1] - 2026-11-18
 
 ### ⚠️ Upgrade notes

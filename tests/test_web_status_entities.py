@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from unittest.mock import MagicMock
+from zoneinfo import ZoneInfo
 
+import pytest
 from idm_heatpump import IdmWebStatus
 
 from custom_components.idm_heatpump import web_status_entities
-from custom_components.idm_heatpump.web_data import IdmWebSupplement
+from custom_components.idm_heatpump.web_data import IdmWebSupplement, dt_util
 from custom_components.idm_heatpump.web_status_entities import web_status_sensor_entities
 
 
@@ -112,3 +114,13 @@ def test_device_info_stays_on_the_main_device() -> None:
     entity = web_status_sensor_entities(coordinator)[0]
 
     assert entity.device_info is coordinator.device_info.return_value
+
+
+@pytest.mark.parametrize(("month", "offset_hours"), [(1, 1), (7, 2)])
+def test_navigator_wall_time_uses_plant_timezone(monkeypatch, month: int, offset_hours: int) -> None:
+    plant_zone = ZoneInfo("Europe/Berlin")
+    monkeypatch.setattr(dt_util, "as_utc", lambda value: value.replace(tzinfo=plant_zone).astimezone(UTC))
+    encoded = datetime(2026, month, 15, 12, tzinfo=UTC)
+    status = IdmWebStatus(timestamp_ms=int(encoded.timestamp() * 1000))
+    entity = web_status_sensor_entities(_coordinator(status))[0]
+    assert entity.native_value == encoded.replace(hour=12 - offset_hours)

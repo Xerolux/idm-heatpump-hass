@@ -376,8 +376,15 @@ Three further read-only WebSocket controllers are evaluated on every web poll
 - **Controller clock (Web)** (`web_controller_clock`): the controller's own
   clock as a timestamp sensor, with `jsonVersion`, active user level,
   language, notification count, frost-protection flag and network flag as
-  attributes. The controller clock can drift — this sensor makes the drift
-  visible.
+  attributes. The Navigator wall time uses the Home Assistant time zone
+  for both the sensor and diagnostics. Set that zone to match the plant.
+- **Hot water station pump (Web)** displays the reported output percentage.
+  The observed M22 value of `-1%` is unavailable. A reported `0%` is valid.
+- **Controller online time (Web)** is a cumulative counter. Its existing
+  unitless recorder statistic is retained.
+
+Web heating circuit discovery tries the next circuit when the Navigator
+explicitly reports that circuit A is unavailable.
 
 #### Connection state
 
