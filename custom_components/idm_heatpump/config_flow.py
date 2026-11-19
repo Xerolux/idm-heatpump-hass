@@ -1623,13 +1623,16 @@ _SEASON_FIELD_PAIRS: tuple[tuple[str, tuple[str, str]], ...] = (
 )
 
 
-def _normalize_room_forwarding_options(submitted_options: dict[str, Any]) -> dict[str, str]:
-    """Fold the room forwarding detail fields; return form errors if any.
+def _normalize_room_forwarding_options(submitted_options: dict[str, Any]) -> None:
+    """Fold the room forwarding detail fields into their stored options.
 
     The per-circuit offset fields collapse into the stored offsets mapping
-    (zero/absent entries drop out), and a season border that was only half
-    filled in (month without day or vice versa) is rejected instead of being
-    silently ignored.
+    (zero/absent entries drop out). A season border that was only half
+    filled in completes to the first of the month (month without day) or to
+    January (day without month) instead of being rejected: the season
+    window is an opt-in convenience, and a half-filled border is a form
+    artifact rather than a configuration the user needs to be protected
+    from. A cleared border must not leave the previous value stored.
     """
     circuits = submitted_options.get(CONF_HEATING_CIRCUITS) or ["a"]
     offsets: dict[str, float] = {}
@@ -1645,17 +1648,17 @@ def _normalize_room_forwarding_options(submitted_options: dict[str, Any]) -> dic
             offsets[str(circuit)] = value
     submitted_options[CONF_ROOM_TEMP_FORWARDING_OFFSETS] = offsets
 
-    errors: dict[str, str] = {}
-    for label, (month_key, day_key) in _SEASON_FIELD_PAIRS:
+    for _label, (month_key, day_key) in _SEASON_FIELD_PAIRS:
         month_set = month_key in submitted_options
         day_set = day_key in submitted_options
-        if month_set != day_set:
-            errors[month_key] = f"room_forwarding_{label}_incomplete"
-            continue
-        # A cleared border must not leave the previous value stored.
-        submitted_options.setdefault(month_key, 0)
-        submitted_options.setdefault(day_key, 0)
-    return errors
+        if month_set and not day_set:
+            submitted_options[day_key] = 1
+        elif day_set and not month_set:
+            submitted_options[month_key] = 1
+        else:
+            # A cleared border must not leave the previous value stored.
+            submitted_options.setdefault(month_key, 0)
+            submitted_options.setdefault(day_key, 0)
 
 
 def _advisor_room_sources_enabled(options: dict[str, Any]) -> bool:
@@ -2145,14 +2148,7 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
             submitted_options = _flatten_options_input(user_input)
             for optional_key in (CONF_DYNAMIC_PRICE_ENTITY, CONF_COMFORT_WINDOWS, CONF_WEATHER_ENTITY):
                 submitted_options.setdefault(optional_key, "")
-            room_forwarding_errors = _normalize_room_forwarding_options(submitted_options)
-            if room_forwarding_errors:
-                return self.async_show_form(
-                    step_id="options",
-                    data_schema=_build_options_schema({**self._options, **submitted_options}),
-                    description_placeholders={"name": self._flow_name_placeholder()},
-                    errors=room_forwarding_errors,
-                )
+            _normalize_room_forwarding_options(submitted_options)
             rows = str(submitted_options.get(CONF_COMFORT_WINDOWS, ""))
             if rows.strip():
                 circuits = {

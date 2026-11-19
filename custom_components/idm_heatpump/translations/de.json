@@ -270,7 +270,7 @@
               "room_temp_forwarding": "Schreibt ausgewählte Home-Assistant-Temperatursensoren an die aktiven Heizkreise.",
               "room_temp_forwarding_interval": "Wie oft die Temperaturen geprüft werden; Zustandsänderungen werden zusätzlich sofort weitergegeben.",
               "room_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat.",
-              "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe.",
+              "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe; eine halb ausgefüllte Grenze vervollständigt zum Ersten des Monats.",
               "room_temp_forwarding_season_end_month": "Ein Zeitraum über den Jahreswechsel (z. B. Oktober bis April) wird unterstützt.",
               "room_temp_forwarding_offset_a": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
               "room_temp_forwarding_offset_b": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
@@ -355,10 +355,6 @@
               "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben."
             }
           }
-        },
-        "error": {
-          "room_forwarding_season_start_incomplete": "Monat und Tag des Saisonbeginns gemeinsam ausfüllen oder beide leer lassen.",
-          "room_forwarding_season_end_incomplete": "Monat und Tag des Saisonendes gemeinsam ausfüllen oder beide leer lassen."
         }
       },
       "zones": {
@@ -1126,7 +1122,7 @@
               "room_temp_forwarding": "Schreibt ausgewählte Home-Assistant-Temperatursensoren an die aktiven Heizkreise.",
               "room_temp_forwarding_interval": "Wie oft die Temperaturen geprüft werden; Zustandsänderungen werden zusätzlich sofort weitergegeben.",
               "room_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat.",
-              "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe.",
+              "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe; eine halb ausgefüllte Grenze vervollständigt zum Ersten des Monats.",
               "room_temp_forwarding_season_end_month": "Ein Zeitraum über den Jahreswechsel (z. B. Oktober bis April) wird unterstützt.",
               "room_temp_forwarding_offset_a": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
               "room_temp_forwarding_offset_b": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
@@ -1211,10 +1207,6 @@
               "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben."
             }
           }
-        },
-        "error": {
-          "room_forwarding_season_start_incomplete": "Monat und Tag des Saisonbeginns gemeinsam ausfüllen oder beide leer lassen.",
-          "room_forwarding_season_end_incomplete": "Monat und Tag des Saisonendes gemeinsam ausfüllen oder beide leer lassen."
         }
       },
       "zones": {

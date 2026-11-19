@@ -28,11 +28,11 @@ from custom_components.idm_heatpump.config_flow import (
     _flatten_options_input,
     _has_duplicate_endpoint,
     _IdmOptionsStepsMixin,
+    _ModbusConnectionStatus,
     _normalize_room_forwarding_options,
     _offset_field_default,
-    _season_field_default,
-    _ModbusConnectionStatus,
     _parse_knx_overrides,
+    _season_field_default,
     _WebSupplementConnectionFailed,
 )
 from custom_components.idm_heatpump.const import (
@@ -343,41 +343,38 @@ class TestForwardingEntityFieldDefaults:
             CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH: 4,
             CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY: 30,
         }
-        errors = _normalize_room_forwarding_options(submitted)
-        assert errors == {}
+        _normalize_room_forwarding_options(submitted)
         assert submitted[CONF_ROOM_TEMP_FORWARDING_OFFSETS] == {"a": 1.5}
         assert "room_temp_forwarding_offset_a" not in submitted
         assert submitted[CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH] == 10
 
     def test_normalize_room_forwarding_options_defaults_a_cleared_season_to_zero(self):
         submitted = {CONF_HEATING_CIRCUITS: ["a"]}
-        assert _normalize_room_forwarding_options(submitted) == {}
+        _normalize_room_forwarding_options(submitted)
         assert submitted[CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH] == 0
         assert submitted[CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY] == 0
         assert submitted[CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH] == 0
         assert submitted[CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY] == 0
 
-    def test_normalize_room_forwarding_options_rejects_half_filled_season(self):
-        for month_key, day_key, expected in (
-            (
-                CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
-                CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY,
-                "room_forwarding_season_start_incomplete",
-            ),
-            (
-                CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH,
-                CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY,
-                "room_forwarding_season_end_incomplete",
-            ),
+    def test_normalize_room_forwarding_options_completes_half_filled_borders(self):
+        for month_key, day_key in (
+            (CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH, CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY),
+            (CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH, CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY),
         ):
+            # Month without day completes to the first of the month.
             submitted = {CONF_HEATING_CIRCUITS: ["a"], month_key: 10}
-            assert _normalize_room_forwarding_options(submitted) == {month_key: expected}
+            _normalize_room_forwarding_options(submitted)
+            assert submitted[month_key] == 10
+            assert submitted[day_key] == 1
+            # Day without month completes to January.
             submitted = {CONF_HEATING_CIRCUITS: ["a"], day_key: 15}
-            assert _normalize_room_forwarding_options(submitted) == {month_key: expected}
+            _normalize_room_forwarding_options(submitted)
+            assert submitted[month_key] == 1
+            assert submitted[day_key] == 15
 
     def test_normalize_room_forwarding_options_skips_unparsable_offsets(self):
         submitted = {CONF_HEATING_CIRCUITS: ["a"], "room_temp_forwarding_offset_a": "warm"}
-        assert _normalize_room_forwarding_options(submitted) == {}
+        _normalize_room_forwarding_options(submitted)
         assert submitted[CONF_ROOM_TEMP_FORWARDING_OFFSETS] == {}
 
     async def test_options_submit_stores_season_window_and_offsets(self):
@@ -411,7 +408,7 @@ class TestForwardingEntityFieldDefaults:
         assert stored[CONF_ROOM_TEMP_FORWARDING_OFFSETS] == {"a": -1.5}
         assert "room_temp_forwarding_offset_a" not in stored
 
-    async def test_options_submit_rejects_incomplete_season_start(self):
+    async def test_options_submit_completes_a_half_filled_season_start(self):
         flow = _make_flow()
         flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
         result = await flow.async_step_options(
@@ -428,11 +425,12 @@ class TestForwardingEntityFieldDefaults:
                 CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH: 10,
             }
         )
+        # A month without a day completes to the first of the month instead
+        # of bouncing the form back.
         assert result["type"] == "form"
-        assert result["step_id"] == "options"
-        assert result["errors"] == {
-            CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH: "room_forwarding_season_start_incomplete"
-        }
+        assert result["step_id"] == "room_temp_forwarding"
+        assert flow._options[CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH] == 10
+        assert flow._options[CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY] == 1
 
     async def test_options_submit_clears_a_previously_stored_season(self):
         flow = _make_flow()

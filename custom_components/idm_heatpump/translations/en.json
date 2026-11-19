@@ -270,7 +270,7 @@
               "room_temp_forwarding": "Writes selected Home Assistant temperature sensors to the active heating circuits.",
               "room_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
               "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
-              "room_temp_forwarding_season_start_month": "Forwarding only runs between season start and season end. Leave all four fields empty for year-round forwarding.",
+              "room_temp_forwarding_season_start_month": "Forwarding only runs between season start and season end. Leave all four fields empty for year-round forwarding; a half-filled border completes to the first of the month.",
               "room_temp_forwarding_season_end_month": "A window that crosses the year end (for example October to April) is supported.",
               "room_temp_forwarding_offset_a": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
               "room_temp_forwarding_offset_b": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
@@ -355,10 +355,6 @@
               "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank."
             }
           }
-        },
-        "error": {
-          "room_forwarding_season_start_incomplete": "Fill in both the month and the day of the season start, or clear both.",
-          "room_forwarding_season_end_incomplete": "Fill in both the month and the day of the season end, or clear both."
         }
       },
       "zones": {
@@ -1126,7 +1122,7 @@
               "room_temp_forwarding": "Writes selected Home Assistant temperature sensors to the active heating circuits.",
               "room_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
               "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
-              "room_temp_forwarding_season_start_month": "Forwarding only runs between season start and season end. Leave all four fields empty for year-round forwarding.",
+              "room_temp_forwarding_season_start_month": "Forwarding only runs between season start and season end. Leave all four fields empty for year-round forwarding; a half-filled border completes to the first of the month.",
               "room_temp_forwarding_season_end_month": "A window that crosses the year end (for example October to April) is supported.",
               "room_temp_forwarding_offset_a": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
               "room_temp_forwarding_offset_b": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
@@ -1211,10 +1207,6 @@
               "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank."
             }
           }
-        },
-        "error": {
-          "room_forwarding_season_start_incomplete": "Fill in both the month and the day of the season start, or clear both.",
-          "room_forwarding_season_end_incomplete": "Fill in both the month and the day of the season end, or clear both."
         }
       },
       "zones": {
