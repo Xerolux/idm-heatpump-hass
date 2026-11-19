@@ -1629,6 +1629,38 @@ class TestSwitchAsyncSetupEntry:
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added) == 1
 
+    async def test_creates_forwarding_control_switches_with_the_forwarder(self):
+        from custom_components.idm_heatpump.room_temp_forwarding import (
+            RoomTempForwarder,
+            RoomTempForwardingConfig,
+        )
+        from custom_components.idm_heatpump.switch import async_setup_entry
+
+        coord = _make_coordinator()
+        coord.switch_descriptions = []
+        forwarder = RoomTempForwarder(
+            MagicMock(),
+            coord,
+            RoomTempForwardingConfig(
+                entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2
+            ),
+            persist_key="idm_heatpump.room_forwarding.platform_test",
+        )
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.runtime_data.room_temp_forwarder = forwarder
+
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await async_setup_entry(MagicMock(), entry, async_add)
+        # Master switch plus one switch per configured source.
+        assert [type(entity).__name__ for entity in added] == [
+            "IdmRoomForwardingMasterSwitch",
+            "IdmRoomForwardingSourceSwitch",
+            "IdmRoomForwardingSourceSwitch",
+        ]
+
     async def test_creates_writable_entity_under_sentinel_when_hide_unused_enabled(self):
         # #172: a writable switch present in the poll dataset is still created
         # when hide_unused is enabled, even if its value is an unset sentinel (255).

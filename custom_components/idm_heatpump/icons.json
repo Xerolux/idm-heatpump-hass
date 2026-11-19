@@ -246,6 +246,12 @@
       },
       "demand_onetime_dhw": {
         "default": "mdi:water-plus"
+      },
+      "room_temp_forwarding_active": {
+        "default": "mdi:home-thermometer"
+      },
+      "room_temp_source": {
+        "default": "mdi:thermometer-lines"
       }
     }
   }

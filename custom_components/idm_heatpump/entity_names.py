@@ -574,6 +574,16 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
     "select": {
         "web_hc_mode": ("Heating circuit {circuit} mode (Web)", "Heizkreis {circuit} Betriebsart (Web)"),
     },
+    "switch": {
+        "room_temp_forwarding_active": (
+            "Room temperature forwarding",
+            "Raumtemperatur-Weiterleitung",
+        ),
+        "room_temp_source": (
+            "Room temperature source {circuit} {source}",
+            "Raumtemperatur-Quelle {circuit} {source}",
+        ),
+    },
     "button": {
         "connection_reload": ("Reload connection", "Verbindung neu laden"),
         "dhw_priority_charge": ("Request DHW priority charge", "Vorrangladung anfordern"),

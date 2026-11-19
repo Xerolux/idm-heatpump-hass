@@ -253,12 +253,32 @@
             "data": {
               "room_temp_forwarding": "Externe Raumtemperaturen weitergeben",
               "room_temp_forwarding_interval": "Prüfintervall",
-              "room_temp_forwarding_tolerance": "Änderungstoleranz"
+              "room_temp_forwarding_tolerance": "Änderungstoleranz",
+              "room_temp_forwarding_season_start_month": "Saisonbeginn (Monat)",
+              "room_temp_forwarding_season_start_day": "Saisonbeginn (Tag)",
+              "room_temp_forwarding_season_end_month": "Saisonende (Monat)",
+              "room_temp_forwarding_season_end_day": "Saisonende (Tag)",
+              "room_temp_forwarding_offset_a": "Offset Heizkreis A",
+              "room_temp_forwarding_offset_b": "Offset Heizkreis B",
+              "room_temp_forwarding_offset_c": "Offset Heizkreis C",
+              "room_temp_forwarding_offset_d": "Offset Heizkreis D",
+              "room_temp_forwarding_offset_e": "Offset Heizkreis E",
+              "room_temp_forwarding_offset_f": "Offset Heizkreis F",
+              "room_temp_forwarding_offset_g": "Offset Heizkreis G"
             },
             "data_description": {
               "room_temp_forwarding": "Schreibt ausgewählte Home-Assistant-Temperatursensoren an die aktiven Heizkreise.",
               "room_temp_forwarding_interval": "Wie oft die Temperaturen geprüft werden; Zustandsänderungen werden zusätzlich sofort weitergegeben.",
-              "room_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat."
+              "room_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat.",
+              "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe.",
+              "room_temp_forwarding_season_end_month": "Ein Zeitraum über den Jahreswechsel (z. B. Oktober bis April) wird unterstützt.",
+              "room_temp_forwarding_offset_a": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
+              "room_temp_forwarding_offset_b": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
+              "room_temp_forwarding_offset_c": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
+              "room_temp_forwarding_offset_d": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
+              "room_temp_forwarding_offset_e": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
+              "room_temp_forwarding_offset_f": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
+              "room_temp_forwarding_offset_g": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen."
             }
           },
           "humidity_forwarding_section": {
@@ -335,6 +355,10 @@
               "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben."
             }
           }
+        },
+        "error": {
+          "room_forwarding_season_start_incomplete": "Monat und Tag des Saisonbeginns gemeinsam ausfüllen oder beide leer lassen.",
+          "room_forwarding_season_end_incomplete": "Monat und Tag des Saisonendes gemeinsam ausfüllen oder beide leer lassen."
         }
       },
       "zones": {
@@ -1085,12 +1109,32 @@
             "data": {
               "room_temp_forwarding": "Externe Raumtemperaturen weitergeben",
               "room_temp_forwarding_interval": "Prüfintervall",
-              "room_temp_forwarding_tolerance": "Änderungstoleranz"
+              "room_temp_forwarding_tolerance": "Änderungstoleranz",
+              "room_temp_forwarding_season_start_month": "Saisonbeginn (Monat)",
+              "room_temp_forwarding_season_start_day": "Saisonbeginn (Tag)",
+              "room_temp_forwarding_season_end_month": "Saisonende (Monat)",
+              "room_temp_forwarding_season_end_day": "Saisonende (Tag)",
+              "room_temp_forwarding_offset_a": "Offset Heizkreis A",
+              "room_temp_forwarding_offset_b": "Offset Heizkreis B",
+              "room_temp_forwarding_offset_c": "Offset Heizkreis C",
+              "room_temp_forwarding_offset_d": "Offset Heizkreis D",
+              "room_temp_forwarding_offset_e": "Offset Heizkreis E",
+              "room_temp_forwarding_offset_f": "Offset Heizkreis F",
+              "room_temp_forwarding_offset_g": "Offset Heizkreis G"
             },
             "data_description": {
               "room_temp_forwarding": "Schreibt ausgewählte Home-Assistant-Temperatursensoren an die aktiven Heizkreise.",
               "room_temp_forwarding_interval": "Wie oft die Temperaturen geprüft werden; Zustandsänderungen werden zusätzlich sofort weitergegeben.",
-              "room_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat."
+              "room_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat.",
+              "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe.",
+              "room_temp_forwarding_season_end_month": "Ein Zeitraum über den Jahreswechsel (z. B. Oktober bis April) wird unterstützt.",
+              "room_temp_forwarding_offset_a": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
+              "room_temp_forwarding_offset_b": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
+              "room_temp_forwarding_offset_c": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
+              "room_temp_forwarding_offset_d": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
+              "room_temp_forwarding_offset_e": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
+              "room_temp_forwarding_offset_f": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen.",
+              "room_temp_forwarding_offset_g": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird. Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung; der Offset ist der reglerseitige Weg, sie zu beeinflussen."
             }
           },
           "humidity_forwarding_section": {
@@ -1167,6 +1211,10 @@
               "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben."
             }
           }
+        },
+        "error": {
+          "room_forwarding_season_start_incomplete": "Monat und Tag des Saisonbeginns gemeinsam ausfüllen oder beide leer lassen.",
+          "room_forwarding_season_end_incomplete": "Monat und Tag des Saisonendes gemeinsam ausfüllen oder beide leer lassen."
         }
       },
       "zones": {
@@ -1225,7 +1273,7 @@
       },
       "room_temp_forwarding": {
         "title": "Externe Raumtemperaturen weitergeben – {name}",
-        "description": "Wähle pro Heizkreis einen Home-Assistant-Temperatursensor aus. Die Integration schreibt diese Werte in die IDM-GLT-Raumtemperaturregister. Leere Heizkreise werden übersprungen.",
+        "description": "Wähle pro Heizkreis einen oder mehrere Home-Assistant-Temperatursensoren aus; ihr Mittelwert wird in das IDM-GLT-Raumtemperaturregister geschrieben. Offsets je Heizkreis und das Saisonfenster liegen in den Integrationsoptionen.",
         "data": {
           "room_temp_forwarding_a": "Temperatursensor Heizkreis A",
           "room_temp_forwarding_b": "Temperatursensor Heizkreis B",
@@ -3075,6 +3123,12 @@
       },
       "demand_onetime_dhw": {
         "name": "Einmalige WW-Anforderung"
+      },
+      "room_temp_forwarding_active": {
+        "name": "Raumtemperatur-Weiterleitung"
+      },
+      "room_temp_source": {
+        "name": "Raumtemperatur-Quelle {circuit} {source}"
       }
     },
     "water_heater": {

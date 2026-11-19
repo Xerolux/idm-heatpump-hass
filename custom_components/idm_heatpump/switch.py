@@ -16,6 +16,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
 from .registers import sort_entity_descriptions
+from .room_forwarding_entities import room_forwarding_switch_entities
+from .room_temp_forwarding import RoomTempForwarder
 
 PARALLEL_UPDATES = 0
 
@@ -26,11 +28,16 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
-    entities = [
+    entities: list[SwitchEntity] = [
         IdmSwitch(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.switch_descriptions)
         if should_add_entity(coordinator, desc_info["register"], as_writable_control=True)
     ]
+    # isinstance (not a truthiness check): runtime data is absent in web-only
+    # mode and mocked wholesale in tests, and neither may grow switches.
+    forwarder = getattr(entry.runtime_data, "room_temp_forwarder", None)
+    if isinstance(forwarder, RoomTempForwarder):
+        entities.extend(room_forwarding_switch_entities(coordinator, forwarder))
     async_add_entities(entities)
 
 

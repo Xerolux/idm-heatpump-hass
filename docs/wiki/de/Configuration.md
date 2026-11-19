@@ -352,17 +352,57 @@ zum Beispiel `hc_a_ext_room_temp`.
 | Raumtemperatur-Weiterleitung | Aktiviert die Weiterleitung für ausgewählte Heizkreise | aus |
 | Weiterleitungsintervall | Periodisches Aktualisierungsintervall für ausgewählte Raumtemperaturen | 300 Sekunden |
 | Weiterleitungstoleranz | Minimale Änderung, bevor ein wiederholter Wert erneut geschrieben wird | 0.2 °C |
-| Sensor je Heizkreis | Home-Assistant-Temperatur-Entität, die weitergeleitet wird | leer |
+| Sensoren je Heizkreis | Eine oder mehrere Home-Assistant-Temperatur-Entitäten; ihr Mittelwert wird weitergeleitet | leer |
+| Offset je Heizkreis | Offset in K, der nach der Mittelung addiert wird | 0 K |
+| Saisonbeginn (Monat/Tag) | Erster Tag der Weiterleitungssaison; für ganzjährige Weiterleitung leer lassen | leer |
+| Saisonende (Monat/Tag) | Letzter Tag der Weiterleitungssaison; ein Zeitraum über den Jahreswechsel (Oktober bis April) wird unterstützt | leer |
 
 **Wichtiges Verhalten:**
 
 - Werte werden bei Zustandsänderungen des Sensors geschrieben und zusätzlich
   periodisch aktualisiert.
+- Mehrere Sensoren je Heizkreis werden gemittelt (auf 0,1 K gerundet);
+  nicht verfügbare oder ungültige Sensoren werden übersprungen, ein einzelner
+  ausgefallener Sensor blockiert also nie einen Heizkreis.
+- Sind alle Quellen eines Heizkreises nicht verfügbar oder abgeschaltet, wird
+  der dokumentierte Kein-Wert-Sentinel des Registers geschrieben, damit der
+  Regler auf seine eigene Regelung zurückfällt, statt einer veralteten
+  Raumtemperatur zu vertrauen.
+- Der Offset je Heizkreis wird nach der Mittelung addiert und auf ±5 K begrenzt.
+  Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung;
+  die verschobene externe Raumtemperatur ist der reglerseitige Weg, die
+  Heizkurve zu beeinflussen (Empfehlung eines iDM-Technikers aus
+  Community-Berichten). Ein Ergebnis außerhalb der Registergrenzen wird nie
+  geschrieben.
 - Ungültige, nicht verfügbare, nicht numerische oder außerhalb des Bereichs
   liegende Werte werden übersprungen.
 - Ein Heizkreis ohne ausgewählten Sensor bleibt unangetastet.
 - Diese Funktion schreibt Modbus-Werte. Verwende Sensoren, die die
   tatsächliche Raumtemperatur abbilden, die die Wärmepumpe sehen soll.
+
+#### Laufzeitsteuerung
+
+Solange die Weiterleitung konfiguriert ist, existieren zwei Arten von
+Schalter-Entitäten. Sie wirken direkt auf den laufenden Forwarder — ohne
+Optionsdialog und ohne Neuladen des Eintrags — und überstehen einen
+Home-Assistant-Neustart über eine lokale Speichersammlung:
+
+- **Raumtemperatur-Weiterleitung** (`switch.<eintrag>_room_temp_forwarding_active`,
+  Konfigurations-Kategorie): der Hauptschalter. Aus pausiert sofort jede
+  Raumtemperatur-Schreiboperation des Eintrags; An führt einen sofortigen
+  Durchlauf aus. Die Attribute zeigen das konfigurierte Saisonfenster
+  (`season_start` / `season_end` als MM-TT), ob heute darin liegt
+  (`in_season`) und ob die Weiterleitung aktuell wirksam ist
+  (`forwarding_active`).
+- **Raumtemperatur-Quelle** (`switch.<eintrag>_room_temp_source_<heizkreis>_<sensor>`,
+  eine je konfigurierter Quelle): nimmt diesen Sensor in den Mittelwert seines
+  Heizkreises auf oder nimmt ihn heraus. Wird die letzte Quelle eines
+  Heizkreises abgeschaltet, wird der Kein-Wert-Sentinel sofort geschrieben.
+
+Solange der Hauptschalter aus ist oder heute außerhalb des Saisonfensters
+liegt, wird nichts geschrieben und auch kein Sentinel gesendet: Pause heißt
+Hände weg — ein reglerseitiger Wert oder ein manuell geschriebenes Register
+übersteht die Pause.
 
 ### Externe Feuchtigkeits-Weiterleitung
 

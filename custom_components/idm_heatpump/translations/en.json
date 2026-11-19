@@ -253,12 +253,32 @@
             "data": {
               "room_temp_forwarding": "Forward external room temperatures",
               "room_temp_forwarding_interval": "Forwarding interval",
-              "room_temp_forwarding_tolerance": "Change tolerance"
+              "room_temp_forwarding_tolerance": "Change tolerance",
+              "room_temp_forwarding_season_start_month": "Season start (month)",
+              "room_temp_forwarding_season_start_day": "Season start (day)",
+              "room_temp_forwarding_season_end_month": "Season end (month)",
+              "room_temp_forwarding_season_end_day": "Season end (day)",
+              "room_temp_forwarding_offset_a": "Heating circuit A offset",
+              "room_temp_forwarding_offset_b": "Heating circuit B offset",
+              "room_temp_forwarding_offset_c": "Heating circuit C offset",
+              "room_temp_forwarding_offset_d": "Heating circuit D offset",
+              "room_temp_forwarding_offset_e": "Heating circuit E offset",
+              "room_temp_forwarding_offset_f": "Heating circuit F offset",
+              "room_temp_forwarding_offset_g": "Heating circuit G offset"
             },
             "data_description": {
               "room_temp_forwarding": "Writes selected Home Assistant temperature sensors to the active heating circuits.",
               "room_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
-              "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount."
+              "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
+              "room_temp_forwarding_season_start_month": "Forwarding only runs between season start and season end. Leave all four fields empty for year-round forwarding.",
+              "room_temp_forwarding_season_end_month": "A window that crosses the year end (for example October to April) is supported.",
+              "room_temp_forwarding_offset_a": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
+              "room_temp_forwarding_offset_b": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
+              "room_temp_forwarding_offset_c": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
+              "room_temp_forwarding_offset_d": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
+              "room_temp_forwarding_offset_e": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
+              "room_temp_forwarding_offset_f": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
+              "room_temp_forwarding_offset_g": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it."
             }
           },
           "humidity_forwarding_section": {
@@ -335,6 +355,10 @@
               "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank."
             }
           }
+        },
+        "error": {
+          "room_forwarding_season_start_incomplete": "Fill in both the month and the day of the season start, or clear both.",
+          "room_forwarding_season_end_incomplete": "Fill in both the month and the day of the season end, or clear both."
         }
       },
       "zones": {
@@ -1085,12 +1109,32 @@
             "data": {
               "room_temp_forwarding": "Forward external room temperatures",
               "room_temp_forwarding_interval": "Forwarding interval",
-              "room_temp_forwarding_tolerance": "Change tolerance"
+              "room_temp_forwarding_tolerance": "Change tolerance",
+              "room_temp_forwarding_season_start_month": "Season start (month)",
+              "room_temp_forwarding_season_start_day": "Season start (day)",
+              "room_temp_forwarding_season_end_month": "Season end (month)",
+              "room_temp_forwarding_season_end_day": "Season end (day)",
+              "room_temp_forwarding_offset_a": "Heating circuit A offset",
+              "room_temp_forwarding_offset_b": "Heating circuit B offset",
+              "room_temp_forwarding_offset_c": "Heating circuit C offset",
+              "room_temp_forwarding_offset_d": "Heating circuit D offset",
+              "room_temp_forwarding_offset_e": "Heating circuit E offset",
+              "room_temp_forwarding_offset_f": "Heating circuit F offset",
+              "room_temp_forwarding_offset_g": "Heating circuit G offset"
             },
             "data_description": {
               "room_temp_forwarding": "Writes selected Home Assistant temperature sensors to the active heating circuits.",
               "room_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
-              "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount."
+              "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
+              "room_temp_forwarding_season_start_month": "Forwarding only runs between season start and season end. Leave all four fields empty for year-round forwarding.",
+              "room_temp_forwarding_season_end_month": "A window that crosses the year end (for example October to April) is supported.",
+              "room_temp_forwarding_offset_a": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
+              "room_temp_forwarding_offset_b": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
+              "room_temp_forwarding_offset_c": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
+              "room_temp_forwarding_offset_d": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
+              "room_temp_forwarding_offset_e": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
+              "room_temp_forwarding_offset_f": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
+              "room_temp_forwarding_offset_g": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it."
             }
           },
           "humidity_forwarding_section": {
@@ -1167,6 +1211,10 @@
               "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank."
             }
           }
+        },
+        "error": {
+          "room_forwarding_season_start_incomplete": "Fill in both the month and the day of the season start, or clear both.",
+          "room_forwarding_season_end_incomplete": "Fill in both the month and the day of the season end, or clear both."
         }
       },
       "zones": {
@@ -1199,7 +1247,7 @@
       },
       "room_temp_forwarding": {
         "title": "External room temperature forwarding – {name}",
-        "description": "Select one Home Assistant temperature sensor per heating circuit. The integration writes these values to the IDM GLT room temperature registers. Leave a circuit empty to skip it.",
+        "description": "Select one or more Home Assistant temperature sensors per heating circuit; their average is written to the IDM GLT room temperature register. Per-circuit offsets and the season window live in the integration options.",
         "data": {
           "room_temp_forwarding_a": "Heating circuit A temperature sensor",
           "room_temp_forwarding_b": "Heating circuit B temperature sensor",
@@ -3075,6 +3123,12 @@
       },
       "demand_onetime_dhw": {
         "name": "One-time hot water demand"
+      },
+      "room_temp_forwarding_active": {
+        "name": "Room temperature forwarding"
+      },
+      "room_temp_source": {
+        "name": "Room temperature source {circuit} {source}"
       }
     },
     "water_heater": {

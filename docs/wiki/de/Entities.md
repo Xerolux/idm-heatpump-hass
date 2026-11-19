@@ -519,6 +519,8 @@ Diese Register sind modellabhängig und standardmäßig deaktiviert. Verwende si
 | `demand_cooling` | 1711 | Externe Kühlanforderung |
 | `demand_dhw_charging` | 1712 | Externe WW-Ladeanforderung |
 | `demand_onetime_dhw` | 1713 | Einmalige WW-Anforderung |
+| `room_temp_forwarding_active` | — | Hauptschalter der externen Raumtemperatur-Weiterleitung: pausiert oder setzt jede Raumtemperatur-Schreiboperation fort, ohne den Eintrag neu zu laden; Attribute zeigen das Saisonfenster und den wirksamen Zustand. Existiert nur, solange die Raumtemperatur-Weiterleitung konfiguriert ist |
+| `room_temp_source` | — | Ein Schalter je konfigurierter Raumtemperatur-Quelle; nimmt diesen Sensor aus dem Mittelwert seines Heizkreises auf oder heraus. Wird die letzte Quelle abgeschaltet, wird der Kein-Wert-Sentinel geschrieben |
 
 ---
 
