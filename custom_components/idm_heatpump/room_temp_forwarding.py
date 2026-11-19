@@ -418,9 +418,7 @@ class RoomTempForwarder:
             return
 
         sources = [
-            source
-            for source in self._sources.get(circuit, [])
-            if (circuit, source) not in self._disabled_sources
+            source for source in self._sources.get(circuit, []) if (circuit, source) not in self._disabled_sources
         ]
         values: list[float] = []
         for source in sources:
@@ -646,18 +644,14 @@ class RoomTempForwarder:
         try:
             stored = await self._store.async_load()
         except Exception:
-            _LOGGER.warning(
-                "Could not load persisted IDM %s forwarding controls", self._value_label, exc_info=True
-            )
+            _LOGGER.warning("Could not load persisted IDM %s forwarding controls", self._value_label, exc_info=True)
             return
         if not isinstance(stored, dict):
             return
         self._master_enabled = stored.get("master") is not False
         disabled = stored.get("disabled_sources")
         if isinstance(disabled, list):
-            configured = {
-                (circuit, source) for circuit, sources in self._sources.items() for source in sources
-            }
+            configured = {(circuit, source) for circuit, sources in self._sources.items() for source in sources}
             for entry in disabled:
                 if isinstance(entry, (list, tuple)) and len(entry) == 2:
                     key = (str(entry[0]), str(entry[1]))
@@ -675,9 +669,7 @@ class RoomTempForwarder:
                 }
             )
         except Exception:
-            _LOGGER.warning(
-                "Could not persist IDM %s forwarding controls", self._value_label, exc_info=True
-            )
+            _LOGGER.warning("Could not persist IDM %s forwarding controls", self._value_label, exc_info=True)
 
 
 @dataclass(frozen=True)

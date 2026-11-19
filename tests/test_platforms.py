@@ -1641,9 +1641,7 @@ class TestSwitchAsyncSetupEntry:
         forwarder = RoomTempForwarder(
             MagicMock(),
             coord,
-            RoomTempForwardingConfig(
-                entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2
-            ),
+            RoomTempForwardingConfig(entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2),
             persist_key="idm_heatpump.room_forwarding.platform_test",
         )
 

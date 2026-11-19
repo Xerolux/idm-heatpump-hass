@@ -308,16 +308,17 @@ class TestForwardingEntityFieldDefaults:
             CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
         ) == {"default": 11}
         # Non-numeric junk must not crash the schema build.
-        assert _season_field_default(
-            {CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH: "soon"},
-            CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
-        ) == {}
+        assert (
+            _season_field_default(
+                {CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH: "soon"},
+                CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
+            )
+            == {}
+        )
 
     def test_offset_field_default_omits_the_neutral_zero(self):
         assert _offset_field_default({}, "a") == {}
-        assert _offset_field_default({CONF_ROOM_TEMP_FORWARDING_OFFSETS: {"a": 1.5}}, "a") == {
-            "default": 1.5
-        }
+        assert _offset_field_default({CONF_ROOM_TEMP_FORWARDING_OFFSETS: {"a": 1.5}}, "a") == {"default": 1.5}
         assert _offset_field_default({CONF_ROOM_TEMP_FORWARDING_OFFSETS: {"a": 0.0}}, "a") == {}
         # A non-mapping stored option or junk values degrade to no default.
         assert _offset_field_default({CONF_ROOM_TEMP_FORWARDING_OFFSETS: "junk"}, "a") == {}

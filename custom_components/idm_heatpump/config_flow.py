@@ -1121,12 +1121,8 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         ),
                         vol.Optional(
                             CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
-                            default=_season_field_default(
-                                options, CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH
-                            ),
-                        ): NumberSelector(
-                            NumberSelectorConfig(min=1, max=12, mode=NumberSelectorMode.BOX)
-                        ),
+                            default=_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH),
+                        ): NumberSelector(NumberSelectorConfig(min=1, max=12, mode=NumberSelectorMode.BOX)),
                         vol.Optional(
                             CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY,
                             default=_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY),
@@ -1134,9 +1130,7 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         vol.Optional(
                             CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH,
                             default=_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH),
-                        ): NumberSelector(
-                            NumberSelectorConfig(min=1, max=12, mode=NumberSelectorMode.BOX)
-                        ),
+                        ): NumberSelector(NumberSelectorConfig(min=1, max=12, mode=NumberSelectorMode.BOX)),
                         vol.Optional(
                             CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY,
                             default=_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY),

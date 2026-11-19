@@ -1229,9 +1229,7 @@ class TestForwardingControls:
         forwarder = RoomTempForwarder(
             hass,
             coord,
-            RoomTempForwardingConfig(
-                entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2
-            ),
+            RoomTempForwardingConfig(entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2),
             persist_key="idm_heatpump.room_forwarding.persist_test",
         )
         await forwarder.async_set_master_enabled(False)
@@ -1240,9 +1238,7 @@ class TestForwardingControls:
         restored = RoomTempForwarder(
             hass,
             coord,
-            RoomTempForwardingConfig(
-                entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2
-            ),
+            RoomTempForwardingConfig(entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2),
             persist_key="idm_heatpump.room_forwarding.persist_test",
         )
         # The storage stub keeps its data per Store instance; simulate the
@@ -1260,9 +1256,7 @@ class TestForwardingControls:
         original = RoomTempForwarder(
             hass,
             coord,
-            RoomTempForwardingConfig(
-                entities={"a": ["sensor.old"], "b": ["sensor.keep"]}, interval=300, tolerance=0.2
-            ),
+            RoomTempForwardingConfig(entities={"a": ["sensor.old"], "b": ["sensor.keep"]}, interval=300, tolerance=0.2),
             persist_key="idm_heatpump.room_forwarding.prune_test",
         )
         original._disabled_sources = {("a", "sensor.old"), ("b", "sensor.keep")}
@@ -1323,9 +1317,7 @@ class TestRoomForwardingEntities:
         return RoomTempForwarder(
             _multi_source_hass({"sensor.one": "21.0", "sensor.two": "22.0"}),
             coord,
-            RoomTempForwardingConfig(
-                entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2
-            ),
+            RoomTempForwardingConfig(entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2),
             persist_key="idm_heatpump.room_forwarding.entity_test",
         )
 
