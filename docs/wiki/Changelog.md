@@ -7,7 +7,7 @@ This page only summarizes recent milestones.
 
 ## v0.28.3-b2 — 2026-11-19
 
-External room temperature forwarding becomes a resilient control layer: several sensors per heating circuit are averaged, a per-circuit offset (±5 K) biases the value because the Navigator offers no Modbus register for the room-influence weighting, and a season window gates writes by date. A restart-safe master switch and one switch per source pause or reshape forwarding without an entry reload; circuits whose sources are all dead receive the documented "no value" sentinel instead of a stale room temperature. [Configuration](Configuration#room-temperature-forwarding), [Entities](Entities), [Findings](Findings-and-Documentation).
+External room temperature forwarding becomes a resilient control layer: several sensors per heating circuit are averaged, an optional per-circuit offset (±5 K) biases the value, and a season window gates writes by date. A restart-safe master switch and one switch per source pause or reshape forwarding without an entry reload; circuits whose sources are all dead receive the documented "no value" sentinel instead of a stale room temperature. [Configuration](Configuration#room-temperature-forwarding), [Entities](Entities), [Findings](Findings-and-Documentation).
 
 ## v0.28.3-b1 — 2026-11-18
 

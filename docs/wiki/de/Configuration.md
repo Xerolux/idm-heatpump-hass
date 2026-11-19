@@ -368,11 +368,8 @@ zum Beispiel `hc_a_ext_room_temp`.
   der dokumentierte Kein-Wert-Sentinel des Registers geschrieben, damit der
   Regler auf seine eigene Regelung zurückfällt, statt einer veralteten
   Raumtemperatur zu vertrauen.
-- Der Offset je Heizkreis wird nach der Mittelung addiert und auf ±5 K begrenzt.
-  Der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung;
-  die verschobene externe Raumtemperatur ist der reglerseitige Weg, die
-  Heizkurve zu beeinflussen (Empfehlung eines iDM-Technikers aus
-  Community-Berichten). Ein Ergebnis außerhalb der Registergrenzen wird nie
+- Der optionale Offset je Heizkreis wird nach der Mittelung addiert und auf
+  ±5 K begrenzt; ein Ergebnis außerhalb der Registergrenzen wird nie
   geschrieben.
 - Ungültige, nicht verfügbare, nicht numerische oder außerhalb des Bereichs
   liegende Werte werden übersprungen.

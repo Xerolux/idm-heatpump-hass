@@ -272,13 +272,13 @@
               "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
               "room_temp_forwarding_season_start_month": "Forwarding only runs between season start and season end. Leave all four fields empty for year-round forwarding; a half-filled border completes to the first of the month.",
               "room_temp_forwarding_season_end_month": "A window that crosses the year end (for example October to April) is supported.",
-              "room_temp_forwarding_offset_a": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
-              "room_temp_forwarding_offset_b": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
-              "room_temp_forwarding_offset_c": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
-              "room_temp_forwarding_offset_d": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
-              "room_temp_forwarding_offset_e": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
-              "room_temp_forwarding_offset_f": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
-              "room_temp_forwarding_offset_g": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it."
+              "room_temp_forwarding_offset_a": "Added to the averaged room temperature before the write; a result outside the register range is never written.",
+              "room_temp_forwarding_offset_b": "Added to the averaged room temperature before the write; a result outside the register range is never written.",
+              "room_temp_forwarding_offset_c": "Added to the averaged room temperature before the write; a result outside the register range is never written.",
+              "room_temp_forwarding_offset_d": "Added to the averaged room temperature before the write; a result outside the register range is never written.",
+              "room_temp_forwarding_offset_e": "Added to the averaged room temperature before the write; a result outside the register range is never written.",
+              "room_temp_forwarding_offset_f": "Added to the averaged room temperature before the write; a result outside the register range is never written.",
+              "room_temp_forwarding_offset_g": "Added to the averaged room temperature before the write; a result outside the register range is never written."
             }
           },
           "humidity_forwarding_section": {
@@ -1124,13 +1124,13 @@
               "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
               "room_temp_forwarding_season_start_month": "Forwarding only runs between season start and season end. Leave all four fields empty for year-round forwarding; a half-filled border completes to the first of the month.",
               "room_temp_forwarding_season_end_month": "A window that crosses the year end (for example October to April) is supported.",
-              "room_temp_forwarding_offset_a": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
-              "room_temp_forwarding_offset_b": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
-              "room_temp_forwarding_offset_c": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
-              "room_temp_forwarding_offset_d": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
-              "room_temp_forwarding_offset_e": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
-              "room_temp_forwarding_offset_f": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it.",
-              "room_temp_forwarding_offset_g": "Added to the averaged room temperature before the write. The Navigator offers no Modbus register for the room-influence weighting; the offset is the controller-side way to bias it."
+              "room_temp_forwarding_offset_a": "Added to the averaged room temperature before the write; a result outside the register range is never written.",
+              "room_temp_forwarding_offset_b": "Added to the averaged room temperature before the write; a result outside the register range is never written.",
+              "room_temp_forwarding_offset_c": "Added to the averaged room temperature before the write; a result outside the register range is never written.",
+              "room_temp_forwarding_offset_d": "Added to the averaged room temperature before the write; a result outside the register range is never written.",
+              "room_temp_forwarding_offset_e": "Added to the averaged room temperature before the write; a result outside the register range is never written.",
+              "room_temp_forwarding_offset_f": "Added to the averaged room temperature before the write; a result outside the register range is never written.",
+              "room_temp_forwarding_offset_g": "Added to the averaged room temperature before the write; a result outside the register range is never written."
             }
           },
           "humidity_forwarding_section": {

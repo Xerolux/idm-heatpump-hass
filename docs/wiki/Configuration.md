@@ -335,11 +335,8 @@ Important behavior:
 - When every source of a circuit is unavailable or switched off, the register's
   documented "no value" sentinel is written so the controller falls back to its
   own regulation instead of trusting a stale room temperature.
-- The per-circuit offset is added after averaging and bounded to ±5 K. The
-  Navigator offers no Modbus register for the room-influence weighting; a
-  shifted external room temperature is the controller-side way to bias the
-  heating curve (an iDM technician's recommendation picked up from community
-  reports). A result outside the register bounds is never written.
+- The optional per-circuit offset is added after averaging and bounded to
+  ±5 K; a result outside the register bounds is never written.
 - Invalid, unavailable, non-numeric or out-of-range values are skipped.
 - Leaving a circuit without a selected sensor keeps that circuit untouched.
 - This feature writes Modbus values. Use sensors that represent the actual room

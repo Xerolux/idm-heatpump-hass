@@ -23,7 +23,7 @@ All notable changes to this project will be documented in this file.
 ### ✨ New
 
 - **Room temperature forwarding accepts several sensors per heating circuit.** Their readings are averaged to 0.1 K, unavailable sensors are skipped, and every source has its own switch to drop it from the average. Stored configurations with a single entity keep working and normalize to a one-source list.
-- **A per-circuit offset biases the forwarded room temperature (±5 K).** The Navigator offers no Modbus register for the room-influence weighting; the offset is added after averaging, bounded to the register range, and configured per circuit in the options.
+- **An optional per-circuit offset biases the forwarded room temperature (±5 K).** The offset is added after averaging, bounded to the register range, and configured per circuit in the options.
 - **A season window and a master switch pause forwarding without reloading.** The window (month/day, year-end wrap supported) gates writes by date; the restart-safe master switch pauses or resumes immediately, with attributes showing the window and the effective state.
 
 ## [0.28.3-b1] - 2026-11-18

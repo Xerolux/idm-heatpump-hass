@@ -53,10 +53,9 @@ CONF_ROOM_TEMP_FORWARDING: str = "room_temp_forwarding"
 CONF_ROOM_TEMP_FORWARDING_INTERVAL: str = "room_temp_forwarding_interval"
 CONF_ROOM_TEMP_FORWARDING_TOLERANCE: str = "room_temp_forwarding_tolerance"
 CONF_ROOM_TEMP_FORWARDING_ENTITIES: str = "room_temp_forwarding_entities"
-# Per-circuit offset (°C) added to the averaged source value before the
-# write. The Navigator offers no Modbus register for the room-influence
-# weighting, so a shifted external room temperature is the controller-side
-# way to bias the heating curve (see wiki, Configuration).
+# Optional per-circuit offset (°C) added to the averaged source value
+# before the write; results outside the register range are never written
+# (see wiki, Configuration).
 CONF_ROOM_TEMP_FORWARDING_OFFSETS: str = "room_temp_forwarding_offsets"
 # Season window (month/day as ints, 0 = unset) during which forwarding is
 # active. A window that wraps the year end (e.g. October to April) is
@@ -232,9 +231,9 @@ WEB_SETUP_READ_TIMEOUT: float = 8.0
 DEFAULT_ROOM_TEMP_FORWARDING: bool = False
 DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL: int = 300
 DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE: float = 0.2
-# Offset bounds mirror what an iDM technician would apply by hand when
-# biasing the external room temperature; anything beyond ±5 K should be a
-# change to the heating curve, not to the reported room.
+# Offset bounds keep the forwarded room temperature plausible; anything
+# beyond ±5 K should be a change to the heating curve, not to the
+# reported room.
 MIN_ROOM_TEMP_FORWARDING_OFFSET: float = -5.0
 MAX_ROOM_TEMP_FORWARDING_OFFSET: float = 5.0
 DEFAULT_ROOM_TEMP_FORWARDING_OFFSET: float = 0.0

@@ -7,7 +7,7 @@ Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
 ## v0.28.3-b2 — 2026-11-19
 
-Die externe Raumtemperatur-Weiterleitung wird zu einer robusten Steuerschicht: Mehrere Sensoren je Heizkreis werden gemittelt, ein Offset je Heizkreis (±5 K) beeinflusst den Wert — der Navigator bietet kein Modbus-Register für die Raumeinfluss-Gewichtung — und ein Saisonfenster begrenzt die Schreibvorgänge nach Datum. Ein Restart-sicherer Hauptschalter und ein Schalter je Quelle pausieren oder formen die Weiterleitung ohne Neuladen des Eintrags; Heizkreise ohne nutzbare Quelle erhalten den dokumentierten Kein-Wert-Sentinel statt einer veralteten Raumtemperatur. [Konfiguration](/docs/de/Configuration/#raumtemperatur-weiterleitung), [Entities](/docs/de/Entities), [Erkenntnisse](Findings-and-Documentation).
+Die externe Raumtemperatur-Weiterleitung wird zu einer robusten Steuerschicht: Mehrere Sensoren je Heizkreis werden gemittelt, ein optionaler Offset je Heizkreis (±5 K) beeinflusst den Wert, und ein Saisonfenster begrenzt die Schreibvorgänge nach Datum. Ein Restart-sicherer Hauptschalter und ein Schalter je Quelle pausieren oder formen die Weiterleitung ohne Neuladen des Eintrags; Heizkreise ohne nutzbare Quelle erhalten den dokumentierten Kein-Wert-Sentinel statt einer veralteten Raumtemperatur. [Konfiguration](/docs/de/Configuration/#raumtemperatur-weiterleitung), [Entities](/docs/de/Entities), [Erkenntnisse](Findings-and-Documentation).
 
 ## v0.28.3-b1 — 2026-11-18
 
