@@ -87,3 +87,13 @@ invalid, unavailable, non-numeric or out-of-range values.
 Forwarding is disabled by default and only starts after at least one heating
 circuit has a selected Home Assistant temperature entity in the integration
 options.
+
+Each circuit accepts several source entities; the forwarder averages them
+(rounded to 0.1 K), adds the circuit's configured offset and writes the result.
+When every source of a circuit is unavailable or switched off, the register's
+documented "no value" sentinel is written instead, so the controller falls back
+to its own regulation rather than trusting a stale room temperature. A runtime
+master switch and one switch per source pause or reshape the forwarding
+without reloading the entry; a configured season window additionally gates the
+writes by date. See [Configuration](Configuration#room-temperature-forwarding)
+for the options and the runtime controls.

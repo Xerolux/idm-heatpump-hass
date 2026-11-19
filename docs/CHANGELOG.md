@@ -13,6 +13,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.28.3-b2] - 2026-11-19
+
+### ⚠️ Upgrade notes
+
+- **New runtime switches appear when room temperature forwarding is configured.** A master switch and one switch per configured source are added under the configuration category; existing forwarding keeps running unchanged, and rollback simply removes the switches again.
+- **Circuits whose sources are all unavailable now receive the "no value" sentinel.** The controller falls back to its own regulation instead of trusting a stale room temperature. Rolling back restores the previous keep-last-value behavior.
+
+### ✨ New
+
+- **Room temperature forwarding accepts several sensors per heating circuit.** Their readings are averaged to 0.1 K, unavailable sensors are skipped, and every source has its own switch to drop it from the average. Stored configurations with a single entity keep working and normalize to a one-source list.
+- **An optional per-circuit offset biases the forwarded room temperature (±5 K).** The offset is added after averaging, bounded to the register range, and configured per circuit in the options.
+- **A season window and a master switch pause forwarding without reloading.** The window (month/day, year-end wrap supported) gates writes by date; the restart-safe master switch pauses or resumes immediately, with attributes showing the window and the effective state.
+
 ## [0.28.3-b1] - 2026-11-18
 
 ### ⚠️ Upgrade notes

@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.28.3-b2 — 2026-11-19
+
+Die externe Raumtemperatur-Weiterleitung wird zu einer robusten Steuerschicht: Mehrere Sensoren je Heizkreis werden gemittelt, ein optionaler Offset je Heizkreis (±5 K) beeinflusst den Wert, und ein Saisonfenster begrenzt die Schreibvorgänge nach Datum. Ein Restart-sicherer Hauptschalter und ein Schalter je Quelle pausieren oder formen die Weiterleitung ohne Neuladen des Eintrags; Heizkreise ohne nutzbare Quelle erhalten den dokumentierten Kein-Wert-Sentinel statt einer veralteten Raumtemperatur. [Konfiguration](/docs/de/Configuration/#raumtemperatur-weiterleitung), [Entities](/docs/de/Entities), [Erkenntnisse](Findings-and-Documentation).
+
 ## v0.28.3-b1 — 2026-11-18
 
 Der manuelle Warmwasser-Boost löst die Ladung am Navigator 2.0/10/Pro über das GLT-Register für die einmalige WW-Anforderung 1713 aus und lässt die Betriebsart unberührt — wie die native App; der frühere Wechsel in den Nur-Warmwasser-Modus stoppte die Heizung, ohne eine Ladung zu starten (#719). Regler ohne dieses Register behalten den Modus-Wechsel-Pfad. Die Feldbestätigung an der Anlage des Reporters steht noch aus. [Services](Services), [Erkenntnisse](Findings-and-Documentation).

@@ -626,6 +626,8 @@ These registers are model-dependent and disabled by default. Do not use them for
 | `demand_cooling` | 1711 | External cooling demand |
 | `demand_dhw_charging` | 1712 | External DHW charge demand |
 | `demand_onetime_dhw` | 1713 | One-time DHW charge |
+| `room_temp_forwarding_active` | — | Master switch of external room temperature forwarding: pauses or resumes every room temperature write without reloading the entry; attributes expose the season window and the effective state. Exists only while room temperature forwarding is configured |
+| `room_temp_source` | — | One switch per configured room temperature source; excludes that sensor from its heating circuit's average. Switching the last source off writes the "no value" sentinel |
 
 ---
 

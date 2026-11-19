@@ -231,7 +231,10 @@ from .room_temp_forwarding import (
     HumidityForwardingConfig,
     RoomTempForwarder,
     RoomTempForwardingConfig,
+    normalize_sources,
+    offsets_from_options,
     register_for_storage_temp_key,
+    season_window_from_options,
 )
 from .telemetry import Telemetry
 from .versions import async_runtime_versions
@@ -301,6 +304,7 @@ class IdmHeatpumpData:
     comfort_scheduler: ComfortScheduler | None = None
     comfort_schedulers: tuple[ComfortScheduler, ...] = ()
     knx_bridge: KnxBridge | None = None
+    room_temp_forwarder: RoomTempForwarder | None = None
     operation_analysis: OperationAnalysis | None = None
     predictive_advisor: PredictiveAdvisor | None = None
     advisor_analytics: AdvisorAnalytics | None = None
@@ -1247,21 +1251,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
             )
 
         if room_temp_forwarding_enabled and isinstance(room_temp_forwarding_entities, dict):
-            forwarding_entities = {
-                str(circuit): str(entity_id)
+            # Both storage shapes are accepted: the legacy single entity id
+            # per circuit and the multi-source list (averaged per circuit).
+            room_sources: dict[str, str | list[str]] = {
+                str(circuit): normalize_sources(entity_id)
                 for circuit, entity_id in room_temp_forwarding_entities.items()
-                if str(entity_id).strip()
+                if normalize_sources(entity_id)
             }
-            if forwarding_entities:
+            if room_sources:
                 forwarder = RoomTempForwarder(
                     hass,
                     coordinator,
                     RoomTempForwardingConfig(
-                        entities=forwarding_entities,
+                        entities=room_sources,
                         interval=room_temp_forwarding_interval,
                         tolerance=room_temp_forwarding_tolerance,
+                        offsets=offsets_from_options(entry.options),
+                        season=season_window_from_options(entry.options),
                     ),
+                    persist_key=f"{DOMAIN}.room_forwarding.{entry.entry_id}",
                 )
+                # Load the persisted switch states before the task starts so
+                # the control entities render the restored state immediately.
+                await forwarder.async_load_controls()
+                entry.runtime_data.room_temp_forwarder = forwarder
                 entry.runtime_data.room_temp_forwarding_task = _create_entry_background_task(
                     hass,
                     entry,
@@ -1287,7 +1300,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
             )
 
         if storage_temp_forwarding_enabled and isinstance(storage_temp_forwarding_entities, dict):
-            storage_forwarding_entities = {
+            storage_forwarding_entities: dict[str, str | list[str]] = {
                 str(key): str(entity_id)
                 for key, entity_id in storage_temp_forwarding_entities.items()
                 if str(entity_id).strip()

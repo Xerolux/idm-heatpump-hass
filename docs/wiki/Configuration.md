@@ -322,15 +322,47 @@ example `hc_a_ext_room_temp`.
 | Room temperature forwarding | Enables forwarding for selected circuits | off |
 | Forwarding interval | Periodic refresh interval for selected room temperatures | 300 seconds |
 | Forwarding tolerance | Minimum change before a repeated value is written again | 0.2 °C |
-| Sensor per heating circuit | Home Assistant temperature entity to forward | empty |
+| Sensors per heating circuit | One or more Home Assistant temperature entities; their average is forwarded | empty |
+| Offset per heating circuit | Offset in K added to the averaged value before the write | 0 K |
+| Season start (month/day) | First day of the forwarding season; leave empty for year-round forwarding | empty |
+| Season end (month/day) | Last day of the forwarding season; a window crossing the year end (October to April) is supported | empty |
 
 Important behavior:
 
 - Values are written on sensor state changes and also refreshed periodically.
+- Several sensors per circuit are averaged (rounded to 0.1 K); unavailable or
+  invalid sensors are skipped, so a single dead sensor never stalls a circuit.
+- When every source of a circuit is unavailable or switched off, the register's
+  documented "no value" sentinel is written so the controller falls back to its
+  own regulation instead of trusting a stale room temperature.
+- The optional per-circuit offset is added after averaging and bounded to
+  ±5 K; a result outside the register bounds is never written.
 - Invalid, unavailable, non-numeric or out-of-range values are skipped.
 - Leaving a circuit without a selected sensor keeps that circuit untouched.
 - This feature writes Modbus values. Use sensors that represent the actual room
   temperature you want the heat pump to see.
+
+#### Runtime controls
+
+Two kinds of switch entities exist while forwarding is configured. They act on
+the running forwarder directly — no options round trip, no entry reload — and
+their state survives Home Assistant restarts through a local storage
+collection:
+
+- **Room temperature forwarding** (`switch.<entry>_room_temp_forwarding_active`,
+  configuration category): the master switch. Off pauses every room temperature
+  write of the entry immediately; on resumes with one immediate pass. The
+  attributes show the configured season window (`season_start` / `season_end`
+  as MM-DD), whether today lies inside it (`in_season`) and whether forwarding
+  is currently effective (`forwarding_active`).
+- **Room temperature source** (`switch.<entry>_room_temp_source_<circuit>_<sensor>`,
+  one per configured source): include or exclude that sensor from its circuit's
+  average. Switching the last source of a circuit off writes the "no value"
+  sentinel right away.
+
+While the master switch is off or today lies outside the season window,
+nothing is written and no sentinel is sent: paused means hands off, so a
+controller-side value or a manually written register survives the pause.
 
 ### External Humidity Forwarding
 

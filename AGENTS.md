@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.28.3-b1` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
+- **Current Version**: `0.28.3-b2` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Platinum (self-assessed against Home Assistant's integration quality scale: every rule done or legitimately exempt, pinned by `tests/test_quality_scale.py`)
 - **License**: MIT
 - **Min HA Version**: 2026.11.0 (the 2026.8.1–2026.10 line stays on integration 0.24.x)
@@ -76,6 +76,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── web_demand_reason.py          # Demand-reason extraction from the Nav 10 WebSocket home/detail frame
 │   ├── web_demand_reason_entities.py # Entities publishing the controller demand reason / PV flag
 │   ├── room_temp_forwarding.py       # Forward HA room temperatures (per circuit) and humidity (global) to GLT registers
+│   ├── room_forwarding_entities.py  # Runtime switches for room temperature forwarding: master pause, per-source toggles
 │   ├── external_power_forwarding.py  # Optional PV, consumption and battery forwarding to IDM GLT registers
 │   ├── knx_catalog.py                # IDM KNX communication objects (from the ETS example project) + group address arithmetic
 │   ├── temperature_plausibility.py   # Re-export of the API's uninitialized-temperature band (≤ -300 °C = sensor not present)
@@ -597,8 +598,9 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Self-healing Modbus outages | `recovery_watchdog.py`, `coordinator.py` | Calm auto-clearing repair notice while web data flows; background watchdog reloads entries stuck in HA's setup-retry backoff once the endpoint answers again (only runs while an entry waits) |
 | tmodbus transport | `modbus_client.py`, `modbus_transport.py`, `modbus_shared_transport.py` | Shared central connection (`modbus.async_get_unit`, timeout/pacing negotiated per unit); private per-entry socket as fallback and for the config-flow probe |
 | KNX bridge | `knx_bridge.py`, `knx_catalog.py` | Optional. Serves the 654 IDM KNX communication objects through the **Home Assistant `knx` integration** (`knx.send`, `knx.event_register`, `knx_event`) so the Weinzierl BAOS gateway module is not needed. Never implement a KNX stack here — tunnelling, routing and KNX Secure belong to the `knx` integration. Group addresses are `base + object number`, with per-register overrides |
-| Room temp forwarding | `room_temp_forwarding.py` | Forwards HA room sensor temps (per heating circuit) to GLT registers |
+| Room temp forwarding | `room_temp_forwarding.py` | Forwards HA room sensor temps (per heating circuit) to GLT registers. Several sensors per circuit are averaged; an optional per-circuit offset biases the value, a season window gates forwarding by date, and circuits whose sources are all dead receive the documented "no value" sentinel |
 | Humidity forwarding | `room_temp_forwarding.py` | Forwards one HA humidity sensor (global `ext_humidity`) to the GLT humidity register |
+| Forwarding runtime controls | `room_forwarding_entities.py` | Master switch (pause/resume without an entry reload, restart-safe via storage) plus one switch per configured source sensor; both act on the running `RoomTempForwarder` (`entry.runtime_data.room_temp_forwarder`) |
 | Climate entities | `climate.py` | Heating-circuit + zone-module room climates; routes writes through `coordinator.async_write_register` |
 | Water heater entity | `water_heater.py` | DHW target setpoint; only set up when both `dhw_temp_top` and `dhw_setpoint` exist |
 | Action buttons | `button.py` | One-shot buttons writing momentary command coils exactly once: acknowledge errors (c3000) and the Navigator 1.x Vorrangladung request (`dhw_priority_charge`, c3003 via FC05). No switch is offered by design — writing 0 to a momentary command bit is forbidden |

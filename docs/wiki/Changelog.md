@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.28.3-b2 — 2026-11-19
+
+External room temperature forwarding becomes a resilient control layer: several sensors per heating circuit are averaged, an optional per-circuit offset (±5 K) biases the value, and a season window gates writes by date. A restart-safe master switch and one switch per source pause or reshape forwarding without an entry reload; circuits whose sources are all dead receive the documented "no value" sentinel instead of a stale room temperature. [Configuration](Configuration#room-temperature-forwarding), [Entities](Entities), [Findings](Findings-and-Documentation).
+
 ## v0.28.3-b1 — 2026-11-18
 
 The manual DHW boost triggers the charge through the GLT one-time demand register 1713 on Navigator 2.0/10/Pro and leaves the system mode untouched, mirroring the native app — the previous hot-water-only switch stopped heating without starting a charge on a Navigator 10 (#719). Controllers without the register keep the mode-switch path. Field confirmation on the reporter's plant is pending. [Services](Services), [Findings](Findings-and-Documentation).

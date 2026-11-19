@@ -2740,6 +2740,7 @@ class TestOptionalFeatureStartup:
         def _make_forwarder(*args, **kwargs):
             constructed.append((args, kwargs))
             instance = MagicMock()
+            instance.async_load_controls = AsyncMock()
             forwarders.append(instance)
             return instance
 
@@ -2749,9 +2750,13 @@ class TestOptionalFeatureStartup:
 
         assert result is None
         assert entry.runtime_data.room_temp_forwarding_task is task
+        # The forwarder itself is exposed for the runtime control entities.
+        assert entry.runtime_data.room_temp_forwarder is forwarders[0]
+        forwarders[0].async_load_controls.assert_awaited_once_with()
         config = constructed[0][0][2]
-        # Blank entity ids are filtered before the forwarder is built.
-        assert config.entities == {"a": "sensor.living_room"}
+        # Blank entity ids are filtered before the forwarder is built, and the
+        # legacy single-entity storage shape normalizes to a one-entry list.
+        assert config.entities == {"a": ["sensor.living_room"]}
         assert config.interval == 120
         assert config.tolerance == 0.5
         forwarders[0].async_run.assert_called_once_with()

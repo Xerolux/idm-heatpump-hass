@@ -14,7 +14,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "e85ec6892761a32b2dc0d247c5cb24055b92aea416f806a930b9c737b5f94c3b"
+      "reviewed_source_sha256": "f37d63bf3760fedc4f6f87fc5f4ae2fa66fde735cd8f715ed500c07e729368ad"
     },
     {
       "feature": "Model and register semantics",
@@ -38,7 +38,7 @@
         "Supported-Devices.md",
         "Protocol-Capabilities.md"
       ],
-      "reviewed_source_sha256": "29466c342c701c870b43a576c0a77cc7f7bed7f906b41d6072128c7214414487"
+      "reviewed_source_sha256": "00ecbefcabaaa1fd3ad717c926af07ed05e4e1074f95e6c11aa9fc8633995fbe"
     },
     {
       "feature": "Polling, transport and recovery",
@@ -78,7 +78,7 @@
         "Entities.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "53de0fb24e35053526f5049399d4c4c44d489a6dbbf33a8ad8c7ed6a2206a83b"
+      "reviewed_source_sha256": "9dfe9eeebcf6d9768747c000fd02e99b740a9611c729d0d3bd9181312995326c"
     },
     {
       "feature": "Local Navigator supplement and controls",
@@ -119,14 +119,16 @@
       "feature": "External climate and power forwarding",
       "sources": [
         "custom_components/idm_heatpump/external_power_forwarding.py",
-        "custom_components/idm_heatpump/room_temp_forwarding.py"
+        "custom_components/idm_heatpump/room_temp_forwarding.py",
+        "custom_components/idm_heatpump/room_forwarding_entities.py"
       ],
       "pages": [
         "Configuration.md",
+        "Entities.md",
         "Installation-and-Setup.md",
         "Smart-Energy-and-Comfort.md"
       ],
-      "reviewed_source_sha256": "7079895799c99292f6062e2dc7e0c0da4aed564fd96b5e507718d3f59aa726d0"
+      "reviewed_source_sha256": "f5bb3ea03596469f02f6560c4c7f9830b9a04f82813e1546dfe6f5cf150f6743"
     },
     {
       "feature": "Comfort and hot water automation",

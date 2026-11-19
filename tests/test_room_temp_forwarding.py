@@ -873,3 +873,524 @@ async def test_write_cooldown_is_logged_at_debug_for_room_temp_and_humidity(capl
     warnings = [r for r in caplog.records if r.levelname == "WARNING"]
     assert warnings == []
     assert any("write cooldown active" in r.getMessage() for r in caplog.records)
+
+
+# ---------------------------------------------------------------------------
+# Multi-source averaging, offsets, sentinel, season window and controls
+# ---------------------------------------------------------------------------
+
+
+def _make_coordinator_with_sentinel(*, sentinel=(-1.0,)):
+    reg = RegisterDef(
+        1650,
+        DataType.FLOAT,
+        "hc_a_ext_room_temp",
+        unit="°C",
+        writable=True,
+        min_val=15,
+        max_val=30,
+        sentinel_values=sentinel,
+    )
+    coord = MagicMock()
+    coord.get_register = MagicMock(side_effect=lambda name: reg if name == reg.name else None)
+    coord.async_write_register = AsyncMock()
+    return coord, reg
+
+
+def _multi_source_hass(states: dict[str, str]):
+    hass = MagicMock()
+
+    def get(entity_id):
+        state = states.get(entity_id)
+        if state is None:
+            return None
+        return SimpleNamespace(state=state, attributes={})
+
+    hass.states.get = MagicMock(side_effect=get)
+    return hass
+
+
+class TestSeasonWindow:
+    def test_no_window_is_always_in_season(self):
+        from datetime import date
+
+        from custom_components.idm_heatpump.room_temp_forwarding import date_in_season
+
+        assert date_in_season(date(2026, 7, 1), None) is True
+
+    def test_regular_window(self):
+        from datetime import date
+
+        from custom_components.idm_heatpump.room_temp_forwarding import SeasonWindow, date_in_season
+
+        window = SeasonWindow((10, 1), (4, 30))
+        assert date_in_season(date(2026, 11, 19), window) is True
+        assert date_in_season(date(2026, 10, 1), window) is True
+        assert date_in_season(date(2026, 4, 30), window) is True
+        assert date_in_season(date(2026, 7, 1), window) is False
+
+    def test_wrapping_window_covers_both_sides_of_the_year_end(self):
+        from datetime import date
+
+        from custom_components.idm_heatpump.room_temp_forwarding import SeasonWindow, date_in_season
+
+        window = SeasonWindow((10, 1), (4, 30))
+        assert date_in_season(date(2026, 2, 15), window) is True
+        assert date_in_season(date(2026, 12, 31), window) is True
+        assert date_in_season(date(2026, 1, 1), window) is True
+        assert date_in_season(date(2026, 9, 30), window) is False
+        assert date_in_season(date(2026, 5, 1), window) is False
+
+    def test_single_day_window(self):
+        from datetime import date
+
+        from custom_components.idm_heatpump.room_temp_forwarding import SeasonWindow, date_in_season
+
+        window = SeasonWindow((3, 15), (3, 15))
+        assert date_in_season(date(2026, 3, 15), window) is True
+        assert date_in_season(date(2026, 3, 14), window) is False
+        assert date_in_season(date(2026, 3, 16), window) is False
+
+    def test_from_options_requires_month_and_day(self):
+        from custom_components.idm_heatpump.const import (
+            CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY,
+            CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH,
+            CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY,
+            CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
+        )
+        from custom_components.idm_heatpump.room_temp_forwarding import season_window_from_options
+
+        keys = (
+            CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
+            CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY,
+            CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH,
+            CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY,
+        )
+        assert season_window_from_options({}) is None
+        assert season_window_from_options(dict.fromkeys(keys, 0)) is None
+        assert season_window_from_options({keys[0]: 13, keys[1]: 1, keys[2]: 4, keys[3]: 30}) is None
+        assert season_window_from_options({keys[0]: 10, keys[1]: 32, keys[2]: 4, keys[3]: 30}) is None
+        window = season_window_from_options({keys[0]: 10, keys[1]: 1, keys[2]: 4, keys[3]: 30})
+        assert window is not None
+        assert window.start == (10, 1)
+        assert window.end == (4, 30)
+
+    def test_from_options_clamps_february_30(self):
+        from datetime import date
+
+        from custom_components.idm_heatpump.const import (
+            CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY,
+            CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH,
+            CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY,
+            CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
+        )
+        from custom_components.idm_heatpump.room_temp_forwarding import date_in_season, season_window_from_options
+
+        window = season_window_from_options(
+            {
+                CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH: 2,
+                CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY: 30,
+                CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH: 3,
+                CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY: 10,
+            }
+        )
+        assert window is not None
+        assert window.start[0] == 2
+        assert window.start[1] <= 29
+        assert date_in_season(date(2026, 2, 28), window) is True
+
+
+class TestNormalizeSourcesAndOffsets:
+    def test_normalize_sources_accepts_all_shapes(self):
+        from custom_components.idm_heatpump.room_temp_forwarding import normalize_sources
+
+        assert normalize_sources("sensor.one") == ["sensor.one"]
+        assert normalize_sources("  sensor.one  ") == ["sensor.one"]
+        assert normalize_sources(["sensor.one", "sensor.two"]) == ["sensor.one", "sensor.two"]
+        assert normalize_sources(("sensor.one", " sensor.one ", "")) == ["sensor.one"]
+        assert normalize_sources("") == []
+        assert normalize_sources([]) == []
+        assert normalize_sources(None) == []
+        assert normalize_sources(5) == []
+
+    def test_offsets_from_options_clamps_and_skips_junk(self):
+        from custom_components.idm_heatpump.const import CONF_ROOM_TEMP_FORWARDING_OFFSETS
+        from custom_components.idm_heatpump.room_temp_forwarding import offsets_from_options
+
+        assert offsets_from_options({}) == {}
+        assert offsets_from_options({CONF_ROOM_TEMP_FORWARDING_OFFSETS: "junk"}) == {}
+        assert offsets_from_options({CONF_ROOM_TEMP_FORWARDING_OFFSETS: {"a": 1.5, "b": 0.0}}) == {"a": 1.5}
+        clamped = offsets_from_options({CONF_ROOM_TEMP_FORWARDING_OFFSETS: {"a": 99.0, "b": -99.0}})
+        assert clamped == {"a": 5.0, "b": -5.0}
+        assert offsets_from_options({CONF_ROOM_TEMP_FORWARDING_OFFSETS: {"a": "warm", "b": "2"}}) == {"b": 2.0}
+        assert offsets_from_options({CONF_ROOM_TEMP_FORWARDING_OFFSETS: {"a": float("nan")}}) == {}
+
+
+class TestMultiSourceAveraging:
+    async def test_two_sensors_are_averaged_and_rounded(self):
+        coord, reg = _make_coordinator()
+        hass = _multi_source_hass({"sensor.one": "21.54", "sensor.two": "22.33"})
+        forwarder = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2),
+        )
+        await forwarder.async_forward_all()
+        coord.async_write_register.assert_awaited_once_with(reg, 21.9)
+
+    async def test_offset_is_added_after_averaging(self):
+        coord, reg = _make_coordinator()
+        hass = _multi_source_hass({"sensor.one": "20.0", "sensor.two": "21.0"})
+        forwarder = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(
+                entities={"a": ["sensor.one", "sensor.two"]},
+                interval=300,
+                tolerance=0.2,
+                offsets={"a": -1.5},
+            ),
+        )
+        await forwarder.async_forward_all()
+        # (20.0 + 21.0) / 2 = 20.5, then the -1.5 K offset applies.
+        coord.async_write_register.assert_awaited_once_with(reg, 19.0)
+
+    async def test_offset_pushing_out_of_bounds_is_skipped_with_a_warning(self, caplog):
+        coord, _reg = _make_coordinator()
+        hass = _multi_source_hass({"sensor.one": "29.5"})
+        forwarder = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(
+                entities={"a": ["sensor.one"]},
+                interval=300,
+                tolerance=0.2,
+                offsets={"a": 5.0},
+            ),
+        )
+        with caplog.at_level("WARNING"):
+            await forwarder.async_forward_all()
+        coord.async_write_register.assert_not_awaited()
+        assert any("is above" in record.getMessage() for record in caplog.records)
+
+    async def test_legacy_single_entity_string_still_forwards(self):
+        coord, reg = _make_coordinator()
+        hass = _multi_source_hass({"sensor.one": "21.5"})
+        forwarder = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"a": "sensor.one"}, interval=300, tolerance=0.2),
+        )
+        await forwarder.async_forward_all()
+        coord.async_write_register.assert_awaited_once_with(reg, 21.5)
+
+    async def test_unavailable_sources_are_excluded_from_the_average(self):
+        coord, reg = _make_coordinator()
+        hass = _multi_source_hass({"sensor.one": "21.0", "sensor.two": "unknown"})
+        forwarder = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2),
+        )
+        await forwarder.async_forward_all()
+        coord.async_write_register.assert_awaited_once_with(reg, 21.0)
+
+    async def test_all_sources_unavailable_writes_the_documented_sentinel(self):
+        coord, reg = _make_coordinator_with_sentinel()
+        hass = _multi_source_hass({"sensor.one": "unavailable", "sensor.two": None})
+        forwarder = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2),
+        )
+        await forwarder.async_forward_all()
+        coord.async_write_register.assert_awaited_once_with(reg, -1.0)
+        assert forwarder._last_written["a"] == -1.0
+
+    async def test_no_sentinel_documented_means_no_write(self):
+        coord, _reg = _make_coordinator_with_sentinel(sentinel=None)
+        hass = _multi_source_hass({"sensor.one": "unavailable"})
+        forwarder = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"a": ["sensor.one"]}, interval=300, tolerance=0.2),
+        )
+        await forwarder.async_forward_all()
+        coord.async_write_register.assert_not_awaited()
+
+    async def test_recovery_from_sentinel_rewrites_the_value(self):
+        coord, reg = _make_coordinator_with_sentinel()
+        hass = _multi_source_hass({"sensor.one": "unavailable"})
+        forwarder = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"a": ["sensor.one"]}, interval=300, tolerance=0.2),
+        )
+        await forwarder.async_forward_all()
+        assert coord.async_write_register.await_args.args == (reg, -1.0)
+
+        _multi_source_hass({"sensor.one": "22.0"})
+        forwarder._hass = _multi_source_hass({"sensor.one": "22.0"})
+        await forwarder.async_forward_all()
+        assert coord.async_write_register.await_args.args == (reg, 22.0)
+
+    async def test_disabled_source_is_excluded_from_the_average(self):
+        coord, reg = _make_coordinator()
+        hass = _multi_source_hass({"sensor.one": "30.0", "sensor.two": "20.0"})
+        forwarder = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2),
+        )
+        # Disabling one side of a 30/20 average re-forwards the circuit at
+        # once; only sensor.two contributes.
+        await forwarder.async_set_source_enabled("a", "sensor.one", False)
+        coord.async_write_register.assert_awaited_once_with(reg, 20.0)
+
+    async def test_switching_the_last_source_off_writes_the_sentinel(self):
+        coord, reg = _make_coordinator_with_sentinel()
+        hass = _multi_source_hass({"sensor.one": "21.0"})
+        forwarder = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"a": ["sensor.one"]}, interval=300, tolerance=0.2),
+        )
+        coord.async_write_register.reset_mock()
+        await forwarder.async_set_source_enabled("a", "sensor.one", False)
+        coord.async_write_register.assert_awaited_once_with(reg, -1.0)
+
+
+class TestForwardingControls:
+    def _forwarder(self, hass, coord, **config_kwargs):
+        return RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"a": ["sensor.one"]}, interval=300, tolerance=0.2, **config_kwargs),
+            persist_key="idm_heatpump.room_forwarding.test",
+        )
+
+    async def test_master_switch_off_stops_writes_and_on_resumes_immediately(self):
+        coord, _reg = _make_coordinator()
+        hass = _multi_source_hass({"sensor.one": "21.5"})
+        forwarder = self._forwarder(hass, coord)
+        assert forwarder.master_enabled is True
+        assert forwarder.forwarding_active is True
+
+        await forwarder.async_set_master_enabled(False)
+        coord.async_write_register.reset_mock()
+        await forwarder.async_forward_all()
+        coord.async_write_register.assert_not_awaited()
+        assert forwarder.forwarding_active is False
+
+        coord.async_write_register.reset_mock()
+        await forwarder.async_set_master_enabled(True)
+        coord.async_write_register.assert_awaited_once()
+
+    async def test_out_of_season_writes_nothing_even_with_master_on(self, monkeypatch):
+        from datetime import date
+
+        from custom_components.idm_heatpump import room_temp_forwarding as module
+        from custom_components.idm_heatpump.room_temp_forwarding import SeasonWindow
+
+        class _FixedDate(date):
+            @classmethod
+            def today(cls):
+                return cls(2026, 12, 24)
+
+        monkeypatch.setattr(module, "date", _FixedDate)
+        coord, _reg = _make_coordinator()
+        hass = _multi_source_hass({"sensor.one": "21.5"})
+        forwarder = self._forwarder(hass, coord, season=SeasonWindow((7, 1), (8, 31)))
+        coord.async_write_register.reset_mock()
+        await forwarder.async_forward_all()
+        coord.async_write_register.assert_not_awaited()
+        assert forwarder.master_enabled is True
+        assert forwarder.forwarding_active is False
+        assert forwarder.season_active(date(2026, 7, 15)) is True
+
+    async def test_explicit_date_respects_the_season_window(self):
+        from datetime import date
+
+        from custom_components.idm_heatpump.room_temp_forwarding import SeasonWindow
+
+        coord, _reg = _make_coordinator()
+        hass = _multi_source_hass({"sensor.one": "21.5"})
+        forwarder = self._forwarder(hass, coord, season=SeasonWindow((1, 1), (12, 31)))
+        assert forwarder.season_active(date(2026, 6, 1)) is True
+        narrow = self._forwarder(hass, coord, season=SeasonWindow((6, 1), (6, 30)))
+        assert narrow.season_active(date(2026, 6, 15)) is True
+        assert narrow.season_active(date(2026, 7, 15)) is False
+
+    async def test_controls_persist_and_restore(self):
+        from homeassistant.helpers.storage import Store
+
+        coord, _reg = _make_coordinator()
+        hass = _multi_source_hass({"sensor.one": "21.5", "sensor.two": "22.5"})
+        forwarder = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2),
+            persist_key="idm_heatpump.room_forwarding.persist_test",
+        )
+        await forwarder.async_set_master_enabled(False)
+        await forwarder.async_set_source_enabled("a", "sensor.two", False)
+
+        restored = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2),
+            persist_key="idm_heatpump.room_forwarding.persist_test",
+        )
+        # The storage stub keeps its data per Store instance; simulate the
+        # on-disk persistence by handing the saved document to the new store.
+        restored._store.data = forwarder._store.data
+        await restored.async_load_controls()
+        assert restored.master_enabled is False
+        assert restored.source_enabled("a", "sensor.one") is True
+        assert restored.source_enabled("a", "sensor.two") is False
+        assert isinstance(restored._store, Store)
+
+    async def test_load_controls_drops_sources_that_are_no_longer_configured(self):
+        coord, _reg = _make_coordinator()
+        hass = _multi_source_hass({})
+        original = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"a": ["sensor.old"], "b": ["sensor.keep"]}, interval=300, tolerance=0.2),
+            persist_key="idm_heatpump.room_forwarding.prune_test",
+        )
+        original._disabled_sources = {("a", "sensor.old"), ("b", "sensor.keep")}
+        await original._async_save_controls()
+
+        changed = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"b": ["sensor.keep"]}, interval=300, tolerance=0.2),
+            persist_key="idm_heatpump.room_forwarding.prune_test",
+        )
+        changed._store.data = original._store.data
+        await changed.async_load_controls()
+        assert changed._disabled_sources == {("b", "sensor.keep")}
+
+    async def test_load_controls_without_a_store_is_a_noop(self):
+        coord, _reg = _make_coordinator()
+        forwarder = RoomTempForwarder(
+            _multi_source_hass({"sensor.one": "21.5"}),
+            coord,
+            RoomTempForwardingConfig(entities={"a": ["sensor.one"]}, interval=300, tolerance=0.2),
+        )
+        await forwarder.async_load_controls()
+        assert forwarder.master_enabled is True
+
+    async def test_load_controls_survives_a_broken_store(self, caplog):
+        coord, _reg = _make_coordinator()
+        forwarder = self._forwarder(_multi_source_hass({}), coord)
+        forwarder._store.async_load = AsyncMock(side_effect=RuntimeError("boom"))
+        with caplog.at_level("WARNING"):
+            await forwarder.async_load_controls()
+        assert forwarder.master_enabled is True
+        assert any("Could not load persisted" in record.getMessage() for record in caplog.records)
+
+    async def test_save_controls_survives_a_broken_store(self, caplog):
+        coord, _reg = _make_coordinator()
+        forwarder = self._forwarder(_multi_source_hass({}), coord)
+        forwarder._store.async_save = AsyncMock(side_effect=RuntimeError("boom"))
+        with caplog.at_level("WARNING"):
+            await forwarder.async_set_master_enabled(False)
+        assert forwarder.master_enabled is False
+        assert any("Could not persist" in record.getMessage() for record in caplog.records)
+
+    async def test_unknown_source_switch_is_ignored(self):
+        coord, _reg = _make_coordinator()
+        forwarder = self._forwarder(_multi_source_hass({}), coord)
+        await forwarder.async_set_source_enabled("a", "sensor.unknown", False)
+        assert forwarder.source_enabled("a", "sensor.unknown") is True
+
+
+class TestRoomForwardingEntities:
+    def _coordinator_with_entry(self):
+        coord, _reg = _make_coordinator()
+        coord.config_entry = SimpleNamespace(entry_id="test_entry")
+        return coord
+
+    def _forwarder(self, coord):
+        return RoomTempForwarder(
+            _multi_source_hass({"sensor.one": "21.0", "sensor.two": "22.0"}),
+            coord,
+            RoomTempForwardingConfig(entities={"a": ["sensor.one", "sensor.two"]}, interval=300, tolerance=0.2),
+            persist_key="idm_heatpump.room_forwarding.entity_test",
+        )
+
+    def test_factory_builds_master_and_source_switches(self):
+        from custom_components.idm_heatpump.room_forwarding_entities import (
+            room_forwarding_switch_entities,
+        )
+
+        coord = self._coordinator_with_entry()
+        entities = room_forwarding_switch_entities(coord, self._forwarder(coord))
+        keys = [type(entity).__name__ for entity in entities]
+        assert keys.count("IdmRoomForwardingMasterSwitch") == 1
+        assert keys.count("IdmRoomForwardingSourceSwitch") == 2
+
+    async def test_master_switch_reflects_and_drives_the_forwarder(self):
+        from custom_components.idm_heatpump.room_forwarding_entities import (
+            IdmRoomForwardingMasterSwitch,
+        )
+
+        coord = self._coordinator_with_entry()
+        forwarder = self._forwarder(coord)
+        switch = IdmRoomForwardingMasterSwitch(coord, forwarder)
+        assert switch.is_on is True
+        assert switch.available is True
+        assert switch._attr_unique_id.endswith("room_temp_forwarding_active")
+        assert switch.extra_state_attributes["season_start"] is None
+        assert switch.extra_state_attributes["in_season"] is True
+        assert switch.extra_state_attributes["forwarding_active"] is True
+
+        await switch.async_turn_off()
+        assert forwarder.master_enabled is False
+        assert switch.extra_state_attributes["forwarding_active"] is False
+        await switch.async_turn_on()
+        assert forwarder.master_enabled is True
+
+    async def test_master_switch_attributes_render_the_season_window(self):
+        from custom_components.idm_heatpump.room_forwarding_entities import (
+            IdmRoomForwardingMasterSwitch,
+        )
+        from custom_components.idm_heatpump.room_temp_forwarding import SeasonWindow
+
+        coord = self._coordinator_with_entry()
+        forwarder = RoomTempForwarder(
+            _multi_source_hass({"sensor.one": "21.0"}),
+            coord,
+            RoomTempForwardingConfig(
+                entities={"a": ["sensor.one"]},
+                interval=300,
+                tolerance=0.2,
+                season=SeasonWindow((10, 1), (4, 30)),
+            ),
+            persist_key="idm_heatpump.room_forwarding.entity_test",
+        )
+        switch = IdmRoomForwardingMasterSwitch(coord, forwarder)
+        attributes = switch.extra_state_attributes
+        assert attributes["season_start"] == "10-01"
+        assert attributes["season_end"] == "04-30"
+        assert attributes["in_season"] in (True, False)  # today decides; labels are asserted above
+
+    async def test_source_switch_reflects_and_drives_the_forwarder(self):
+        from custom_components.idm_heatpump.room_forwarding_entities import (
+            IdmRoomForwardingSourceSwitch,
+        )
+
+        coord = self._coordinator_with_entry()
+        forwarder = self._forwarder(coord)
+        switch = IdmRoomForwardingSourceSwitch(coord, forwarder, "a", "sensor.one")
+        assert switch.is_on is True
+        assert switch.available is True
+        assert switch._attr_translation_placeholders == {"circuit": "A", "source": "sensor.one"}
+        assert switch._attr_unique_id.endswith("room_temp_source_a_sensor_one")
+
+        await switch.async_turn_off()
+        assert forwarder.source_enabled("a", "sensor.one") is False
+        await switch.async_turn_on()
+        assert forwarder.source_enabled("a", "sensor.one") is True

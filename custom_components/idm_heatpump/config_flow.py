@@ -127,6 +127,11 @@ from .const import (
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
+    CONF_ROOM_TEMP_FORWARDING_OFFSETS,
+    CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY,
+    CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH,
+    CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY,
+    CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
     CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
     CONF_SCAN_INTERVAL,
     CONF_SETUP_LEVEL,
@@ -228,6 +233,7 @@ from .const import (
     MAX_MODBUS_TIMEOUT,
     MAX_POLLING_JITTER,
     MAX_ROOM_COUNT,
+    MAX_ROOM_TEMP_FORWARDING_OFFSET,
     MAX_WRITE_COOLDOWN,
     MAX_ZONE_COUNT,
     MIN_EEPROM_WRITE_INTERVAL,
@@ -239,6 +245,7 @@ from .const import (
     MIN_MODBUS_MESSAGE_SPACING,
     MIN_MODBUS_TIMEOUT,
     MIN_POLLING_JITTER,
+    MIN_ROOM_TEMP_FORWARDING_OFFSET,
     MIN_WRITE_COOLDOWN,
     MODEL_OVERRIDE_OPTIONS,
     REGISTER_ADDRESS_CONNECTION_PROBE,
@@ -265,6 +272,7 @@ from .network_scan import (
     async_scan_modbus_tcp_hosts,
 )
 from .registers import normalize_zone_rooms
+from .room_temp_forwarding import normalize_sources
 from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
 
 _LOGGER = logging.getLogger(__name__)
@@ -385,6 +393,17 @@ _ROOM_TEMPERATURE_SELECTOR = EntitySelector(
     EntitySelectorConfig(
         domain="sensor",
         device_class="temperature",
+    )
+)
+
+# Multi-source variant for room temperature forwarding: several sensors per
+# heating circuit are averaged (see room_temp_forwarding.py), so the options
+# step picks a list per circuit instead of a single entity.
+_ROOM_TEMPERATURE_MULTI_SELECTOR = EntitySelector(
+    EntitySelectorConfig(
+        domain="sensor",
+        device_class="temperature",
+        multiple=True,
     )
 )
 
@@ -565,6 +584,11 @@ def _default_options() -> dict[str, Any]:
         CONF_ROOM_TEMP_FORWARDING_ENTITIES: {},
         CONF_ROOM_TEMP_FORWARDING_INTERVAL: DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
         CONF_ROOM_TEMP_FORWARDING_TOLERANCE: DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
+        CONF_ROOM_TEMP_FORWARDING_OFFSETS: {},
+        CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH: 0,
+        CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY: 0,
+        CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH: 0,
+        CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY: 0,
         CONF_HUMIDITY_FORWARDING: DEFAULT_HUMIDITY_FORWARDING,
         CONF_HUMIDITY_FORWARDING_ENTITY: "",
         CONF_HUMIDITY_FORWARDING_INTERVAL: DEFAULT_HUMIDITY_FORWARDING_INTERVAL,
@@ -1095,6 +1119,37 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                                 unit_of_measurement="°C",
                             )
                         ),
+                        vol.Optional(
+                            CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
+                            default=_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH),
+                        ): NumberSelector(NumberSelectorConfig(min=1, max=12, mode=NumberSelectorMode.BOX)),
+                        vol.Optional(
+                            CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY,
+                            default=_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY),
+                        ): NumberSelector(NumberSelectorConfig(min=1, max=31, mode=NumberSelectorMode.BOX)),
+                        vol.Optional(
+                            CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH,
+                            default=_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH),
+                        ): NumberSelector(NumberSelectorConfig(min=1, max=12, mode=NumberSelectorMode.BOX)),
+                        vol.Optional(
+                            CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY,
+                            default=_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY),
+                        ): NumberSelector(NumberSelectorConfig(min=1, max=31, mode=NumberSelectorMode.BOX)),
+                        **{
+                            vol.Optional(
+                                f"room_temp_forwarding_offset_{circuit}",
+                                default=_offset_field_default(options, circuit),
+                            ): NumberSelector(
+                                NumberSelectorConfig(
+                                    min=MIN_ROOM_TEMP_FORWARDING_OFFSET,
+                                    max=MAX_ROOM_TEMP_FORWARDING_OFFSET,
+                                    step=0.5,
+                                    mode=NumberSelectorMode.BOX,
+                                    unit_of_measurement="°C",
+                                )
+                            )
+                            for circuit in options.get(CONF_HEATING_CIRCUITS, ["a"])
+                        },
                     }
                 ),
                 {"collapsed": True},
@@ -1515,13 +1570,89 @@ def _build_room_temp_forwarding_schema(options: dict[str, Any]) -> vol.Schema:
     circuits = options.get(CONF_HEATING_CIRCUITS, ["a"])
     schema_dict: dict[Any, Any] = {}
     for circuit in circuits:
+        # Stored values may be the legacy single entity id or a list; both
+        # shapes preselect the multi-entity picker.
+        current = normalize_sources(configured_entities.get(circuit, []))
         schema_dict[
             vol.Optional(
                 f"room_temp_forwarding_{circuit}",
-                **_entity_field_default(str(configured_entities.get(circuit, ""))),
+                **({"default": current} if current else {}),
             )
-        ] = _ROOM_TEMPERATURE_SELECTOR
+        ] = _ROOM_TEMPERATURE_MULTI_SELECTOR
     return vol.Schema(schema_dict)
+
+
+def _store_room_temp_forwarding_entities(options: dict[str, Any], user_input: dict[str, Any]) -> None:
+    circuits = options.get(CONF_HEATING_CIRCUITS, ["a"])
+    stored: dict[str, list[str]] = {}
+    for circuit in circuits:
+        sources = normalize_sources(user_input.get(f"room_temp_forwarding_{circuit}", []))
+        if sources:
+            stored[circuit] = sources
+    options[CONF_ROOM_TEMP_FORWARDING_ENTITIES] = stored
+
+
+def _season_field_default(options: dict[str, Any], key: str) -> dict[str, int]:
+    """Default kwargs for a season number field, omitting the unset zero."""
+    try:
+        value = int(options.get(key, 0) or 0)
+    except (TypeError, ValueError):
+        return {}
+    return {"default": value} if value else {}
+
+
+def _offset_field_default(options: dict[str, Any], circuit: str) -> dict[str, float]:
+    """Default kwargs for a per-circuit offset field, omitting the neutral 0."""
+    stored = options.get(CONF_ROOM_TEMP_FORWARDING_OFFSETS, {})
+    try:
+        value = float(stored.get(circuit, 0.0)) if isinstance(stored, dict) else 0.0
+    except (TypeError, ValueError):
+        return {}
+    return {"default": value} if value else {}
+
+
+_SEASON_FIELD_PAIRS: tuple[tuple[str, tuple[str, str]], ...] = (
+    ("season_start", (CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH, CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY)),
+    ("season_end", (CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH, CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY)),
+)
+
+
+def _normalize_room_forwarding_options(submitted_options: dict[str, Any]) -> None:
+    """Fold the room forwarding detail fields into their stored options.
+
+    The per-circuit offset fields collapse into the stored offsets mapping
+    (zero/absent entries drop out). A season border that was only half
+    filled in completes to the first of the month (month without day) or to
+    January (day without month) instead of being rejected: the season
+    window is an opt-in convenience, and a half-filled border is a form
+    artifact rather than a configuration the user needs to be protected
+    from. A cleared border must not leave the previous value stored.
+    """
+    circuits = submitted_options.get(CONF_HEATING_CIRCUITS) or ["a"]
+    offsets: dict[str, float] = {}
+    for circuit in circuits:
+        raw = submitted_options.pop(f"room_temp_forwarding_offset_{circuit}", None)
+        if raw is None:
+            continue
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if value:
+            offsets[str(circuit)] = value
+    submitted_options[CONF_ROOM_TEMP_FORWARDING_OFFSETS] = offsets
+
+    for _label, (month_key, day_key) in _SEASON_FIELD_PAIRS:
+        month_set = month_key in submitted_options
+        day_set = day_key in submitted_options
+        if month_set and not day_set:
+            submitted_options[day_key] = 1
+        elif day_set and not month_set:
+            submitted_options[month_key] = 1
+        else:
+            # A cleared border must not leave the previous value stored.
+            submitted_options.setdefault(month_key, 0)
+            submitted_options.setdefault(day_key, 0)
 
 
 def _advisor_room_sources_enabled(options: dict[str, Any]) -> bool:
@@ -1551,15 +1682,6 @@ def _store_advisor_room_temp_entities(options: dict[str, Any], user_input: dict[
         circuit: str(user_input.get(f"advisor_room_temp_{circuit}", "")).strip()
         for circuit in circuits
         if str(user_input.get(f"advisor_room_temp_{circuit}", "")).strip()
-    }
-
-
-def _store_room_temp_forwarding_entities(options: dict[str, Any], user_input: dict[str, Any]) -> None:
-    circuits = options.get(CONF_HEATING_CIRCUITS, ["a"])
-    options[CONF_ROOM_TEMP_FORWARDING_ENTITIES] = {
-        circuit: str(user_input.get(f"room_temp_forwarding_{circuit}", "")).strip()
-        for circuit in circuits
-        if str(user_input.get(f"room_temp_forwarding_{circuit}", "")).strip()
     }
 
 
@@ -2020,6 +2142,7 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
             submitted_options = _flatten_options_input(user_input)
             for optional_key in (CONF_DYNAMIC_PRICE_ENTITY, CONF_COMFORT_WINDOWS, CONF_WEATHER_ENTITY):
                 submitted_options.setdefault(optional_key, "")
+            _normalize_room_forwarding_options(submitted_options)
             rows = str(submitted_options.get(CONF_COMFORT_WINDOWS, ""))
             if rows.strip():
                 circuits = {
