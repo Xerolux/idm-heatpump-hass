@@ -105,8 +105,8 @@ GERMAN_DOCUMENTATION_PAGES: dict[str, dict[str, str]] = {
         "description": "Sensoren, Binärsensoren, Zahlen, Auswahlen, Schalter, Klima- und Warmwasser-Entitäten der Integration entdecken.",
     },
     "supported-devices": {
-        "title": "Unterstützte Geräte",
-        "description": "Unterstützung für IDM Navigator 2.0, Navigator 10 und Navigator Pro vor der Installation der Integration prüfen.",
+        "title": "iDM-Wärmepumpenmodelle",
+        "description": "iDM AERO ALM, AERO SLM, TERRA und iPUMP mit Home Assistant: Modell, Navigator, Modbus TCP und bestätigte Kombinationen prüfen.",
     },
     "compatibility-matrix": {
         "title": "Kompatibilitätsmatrix",
@@ -230,8 +230,8 @@ DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
         "slug": "supported-devices",
         "file": "Supported-Devices.md",
         "group": "entities",
-        "title": "Supported IDM Heat Pumps",
-        "description": "Check support for IDM Navigator 2.0, Navigator 10 and Navigator Pro heat pumps before installing the Home Assistant integration.",
+        "title": "iDM Heat Pump Models",
+        "description": "iDM AERO ALM, AERO SLM, TERRA and iPUMP with Home Assistant: check the model, Navigator, Modbus TCP and field-tested combinations.",
     },
     {
         "slug": "compatibility-matrix",
@@ -834,6 +834,8 @@ def _english_homepage(german_homepage: str) -> str:
         'href="styles.css"': 'href="../styles.css"',
         'src="script.js"': 'src="../script.js"',
         'href="docs/de/': 'href="../docs/',
+        "iDM AERO ALM, AERO SLM, TERRA und iPUMP mit Home Assistant": "iDM AERO ALM, AERO SLM, TERRA and iPUMP with Home Assistant",
+        "Modell und Navigator-Kompatibilität prüfen.": "Check model and Navigator compatibility.",
         'href="docs/': 'href="../docs/',
         # German anchors on the mapped-back English targets revert to the
         # English heading slugs (the English pages keep English headings).
@@ -989,9 +991,7 @@ def _build_documentation_page(template: str, current_page: DocumentationPage, la
         f"{'de/' if language == 'de' else ''}{current_page['file']}",
     )
     structured_data = _documentation_structured_data(current_page, canonical_url, language)
-    page = page.replace(
-        "</head>", f"    {_language_alternates(current_page)}    {structured_data}\n  </head>", 1
-    )
+    page = page.replace("</head>", f"    {_language_alternates(current_page)}    {structured_data}\n  </head>", 1)
     return page
 
 
