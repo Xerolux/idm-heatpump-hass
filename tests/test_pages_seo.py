@@ -178,6 +178,8 @@ def test_documentation_pages_are_static_unique_and_indexable(built_public_dir: P
         assert f'<link rel="canonical" href="{docs_url}" />' in documentation
         german_url = f"{SITE_URL}docs/de/" if page["slug"] == "home" else f"{SITE_URL}docs/de/{page['slug']}/"
         assert f'<link rel="alternate" hreflang="de" href="{german_url}" />' in documentation
+        assert f'<link rel="alternate" hreflang="en" href="{docs_url}" />' in documentation
+        assert f'<link rel="alternate" hreflang="x-default" href="{docs_url}" />' in documentation
         assert f'<meta property="og:url" content="{docs_url}" />' in documentation
         assert f'<link rel="icon" href="{SITE_URL}assets/favicon.svg" type="image/svg+xml" />' in documentation
         assert f'data-rendered-slug="{page["slug"]}"' in documentation
@@ -229,6 +231,8 @@ def test_german_documentation_pages_exist_and_are_indexable(built_public_dir: Pa
         )
         assert f'<link rel="canonical" href="{docs_url}" />' in documentation
         assert f'<link rel="alternate" hreflang="en" href="{english_url}" />' in documentation
+        assert f'<link rel="alternate" hreflang="de" href="{docs_url}" />' in documentation
+        assert f'<link rel="alternate" hreflang="x-default" href="{english_url}" />' in documentation
         assert f'<meta property="og:url" content="{docs_url}" />' in documentation
         if page["slug"] == "home":
             assert 'data-rendered-slug="home"' in documentation
