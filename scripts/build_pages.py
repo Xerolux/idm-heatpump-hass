@@ -867,18 +867,14 @@ def _documentation_canonical_url(slug: str, language: str) -> str:
     return f"{SITE_URL}docs/" if slug == "home" else f"{SITE_URL}docs/{slug}/"
 
 
-def _language_alternates(current_page: DocumentationPage, language: str) -> str:
+def _language_alternates(current_page: DocumentationPage) -> str:
     """hreflang links between the English and German versions of one page."""
     if not _german_page_available(current_page):
         return ""
     english_url = _documentation_canonical_url(current_page["slug"], "en")
     german_url = _documentation_canonical_url(current_page["slug"], "de")
-    if language == "de":
-        return (
-            f'    <link rel="alternate" hreflang="en" href="{english_url}" />\n'
-            f'    <link rel="alternate" hreflang="x-default" href="{english_url}" />\n'
-        )
     return (
+        f'    <link rel="alternate" hreflang="en" href="{english_url}" />\n'
         f'    <link rel="alternate" hreflang="de" href="{german_url}" />\n'
         f'    <link rel="alternate" hreflang="x-default" href="{english_url}" />\n'
     )
@@ -994,7 +990,7 @@ def _build_documentation_page(template: str, current_page: DocumentationPage, la
     )
     structured_data = _documentation_structured_data(current_page, canonical_url, language)
     page = page.replace(
-        "</head>", f"    {_language_alternates(current_page, language)}    {structured_data}\n  </head>", 1
+        "</head>", f"    {_language_alternates(current_page)}    {structured_data}\n  </head>", 1
     )
     return page
 
