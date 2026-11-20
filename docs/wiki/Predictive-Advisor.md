@@ -210,6 +210,34 @@ aggregates cannot distinguish space heating from DHW. Those sensors remain
 unavailable until enough new heating samples exist. Other analytics, including
 daily baselines, COP data and cooldown observations, are preserved.
 
+### Why the four building sensors can be unavailable
+
+The Advisor status and confidence describe overall observation coverage and
+input quality. Each building sensor has its own requirements.
+
+| Sensor | What it needs |
+| --- | --- |
+| Building Heat Loss | An active heating circuit with a valid room temperature, a valid outdoor temperature and measured thermal output above 0.5 kW during space heating. The fitted output must rise as the indoor–outdoor temperature difference grows. |
+| Optimal Flow Temperature | An active heating circuit with measured flow temperature, outdoor temperature and room temperature within 0.6 °C of the normal heating room setpoint during space heating. The fitted flow temperature must fall as the outdoor temperature rises. A current outdoor temperature is also required to evaluate the curve. |
+| Thermal Inertia | At least three qualifying cooldown observations and a plausible heat-capacity estimate based on the learned heat loss. A qualifying observation needs at least three hours after compressor operation, a room-temperature drop of at least 0.2 °C and an indoor–outdoor difference of at least 1 °C. |
+| 24h Heat Demand | A learned heat-loss value and 24 consecutive hourly temperature forecasts starting in the current or next hour. Select a Home Assistant weather entity with hourly forecasts in the Advisor options. The calculation uses the measured room temperature when available and 21 °C otherwise. |
+
+Each of the two fits needs at least 60 qualifying samples, 12 weighted hours
+of observations and variation in its input temperatures. The weighted hours
+count eligible observations, so learning can take considerably longer than
+12 hours on the calendar. If a circuit lacks a usable room reading, see
+[Room temperature without a wired sensor](#room-temperature-without-a-wired-sensor)
+for the external room sensor option.
+
+In Home Assistant, open **Developer Tools → States** and inspect the attributes
+of **Building Heat Loss** or **Thermal Inertia** once either sensor has a
+value. They expose `heat_fit_samples`, `flow_curve_samples` and
+`cooldown_episodes`. For missing or rejected inputs, download the IDM config
+entry diagnostics from **Settings → Devices & Services → IDM Heatpump** and
+look at `predictive_advisor.data_quality`. A growing sample count shows that
+the model receives observations. It can take longer to see a value if the
+observations cover too narrow a temperature range or the fit is implausible.
+
 ## What the advisor will never do
 
 - Change setpoints, heating curves, modes, schedules or power limits
