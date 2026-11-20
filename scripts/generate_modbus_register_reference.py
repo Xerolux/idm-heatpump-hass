@@ -137,7 +137,26 @@ def _notes(register: RegisterDef, navigator_10_only: set[str], *, lang: str = "e
     if register.name in navigator_10_only:
         notes.append("Navigator 10")
     if register.enum_options:
-        notes.append("Enum")
+        notes.append(
+            " · ".join(f"`{code}` = {_escape(label)}" for code, label in sorted(register.enum_options.items()))
+        )
+    if register.sentinel_values:
+        label = "Nicht verfügbar" if lang == "de" else "Unavailable"
+        values = " / ".join(f"`{_escape(value)}`" for value in register.sentinel_values)
+        notes.append(f"{label}: {values}")
+    if register.exclude_from_write:
+        label = "Nicht schreibbar" if lang == "de" else "Excluded from writes"
+        codes = " / ".join(f"`{code}`" for code in sorted(register.exclude_from_write))
+        notes.append(f"{label}: {codes}")
+    if register.writable and (register.min_val is not None or register.max_val is not None):
+        bounds = [
+            f"{name} {value:g}"
+            for name, value in (("min", register.min_val), ("max", register.max_val))
+            if value is not None
+        ]
+        notes.append(f"API {' / '.join(bounds)}")
+    if register.multiplier != 1:
+        notes.append(f"× {register.multiplier:g}")
     if register.binary:
         notes.append("Binär" if lang == "de" else "Binary")
     if not register.enabled_by_default:
@@ -360,7 +379,9 @@ def _navigator_17_section(pinned_version: str, display_name: object, *, lang: st
     pv_note = "PV-Supplement" if lang == "de" else "PV supplement"
     for register in ordered17:
         unit = register.unit or "—"
-        note = pv_note if register.name in pv_names else ""
+        note = _notes(register, set(), lang=lang)
+        if register.name in pv_names:
+            note = pv_note if note == "—" else f"{pv_note}, {note}"
         section.append(
             "| "
             + " | ".join(

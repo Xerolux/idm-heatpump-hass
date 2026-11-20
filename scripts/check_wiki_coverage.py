@@ -13,6 +13,43 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = "docs/wiki-coverage.json"
 SOURCE = "custom_components/idm_heatpump"
+ENTITY_INDEX_START = "<!-- BEGIN GENERATED ENTITY KEY INDEX -->"
+ENTITY_INDEX_END = "<!-- END GENERATED ENTITY KEY INDEX -->"
+
+
+def entity_key_index(root: Path, language: int) -> str:
+    """Render the translated, non-register entity keys in source order."""
+    tree = ast.parse((root / SOURCE / "entity_names.py").read_text(encoding="utf-8"))
+    names = next(
+        ast.literal_eval(node.value)
+        for node in tree.body
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id == "DERIVED_NAMES"
+    )
+    header = "| Plattform | Schlüssel | Anzeigename |" if language else "| Platform | Key | Display name |"
+    rows = [
+        f"| `{platform}` | `{key}` | {labels[language].replace('|', r'\|')} |"
+        for platform, entries in names.items()
+        for key, labels in entries.items()
+    ]
+    return "\n".join((ENTITY_INDEX_START, header, "| --- | --- | --- |", *rows, ENTITY_INDEX_END))
+
+
+def check_entity_key_indexes(root: Path, *, update: bool = False) -> list[str]:
+    """Keep the published EN/DE lookup tables aligned with the entity names."""
+    findings = []
+    for language, relative in enumerate(("Entities.md", "de/Entities.md")):
+        path = root / "docs/wiki" / relative
+        content = path.read_text(encoding="utf-8")
+        index = entity_key_index(root, language)
+        if index in content:
+            continue
+        before, start, rest = content.partition(ENTITY_INDEX_START)
+        _, end, after = rest.partition(ENTITY_INDEX_END)
+        if update and start and end:
+            path.write_text(before + index + after, encoding="utf-8", newline="\n")
+        else:
+            findings.append(f"{relative}: entity key index is stale; run --update-entity-index")
+    return findings
 
 
 def source_digest(root: Path, sources: list[str]) -> str:
@@ -108,8 +145,10 @@ def check(root: Path = ROOT, *, update: bool = False) -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--update", action="store_true", help="acknowledge source reviewed against EN/DE prose")
+    parser.add_argument("--update-entity-index", action="store_true", help="refresh the entity lookup tables")
     args = parser.parse_args(argv)
     findings = check(update=args.update)
+    findings.extend(check_entity_key_indexes(ROOT, update=args.update_entity_index))
     for finding in findings:
         print(finding)
     if not findings:

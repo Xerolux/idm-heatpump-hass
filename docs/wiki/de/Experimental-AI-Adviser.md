@@ -288,6 +288,23 @@ ab. Die gespeicherte numerische Historie bleibt lokal verfügbar, wenn sie
 innerhalb ihres Aufbewahrungszeitraums erneut aktiviert wird. Die Wärmepumpe läuft
 unabhängig vom KI-Server weiter.
 
+## KI-Entitäten richtig lesen
+
+| Entitätsschlüssel | Was der Wert misst oder anzeigt |
+| --- | --- |
+| `ai_report` | Letzter Berichtstext und Berichtsattribute. Einen Bericht erzeugen oder auf einen aktivierten Zeitplan warten. |
+| `ai_learning_status` | Zeigt, ob der lokale Vergleich deaktiviert ist oder wie weit die Referenzdaten aufgebaut sind. Attribute nennen den Grund, beobachtete Tage und Stunden sowie die Mindestwerte für den Vergleich. |
+| `ai_storage_used` | Vom Anlagenberater gemeldeter Speicherverbrauch in MiB. |
+| `ai_coverage` | Anteil der letzten 24 Stunden mit brauchbaren Energiezählerdaten in Prozent. Bei lückenhafter Abdeckung sind die Summen nur begrenzt aussagekräftig. |
+| `ai_observed_cop` | Beobachtete Wärmeenergie geteilt durch beobachtete elektrische Energie in denselben 24 Stunden. Der Wert setzt eine positive beobachtete elektrische Energiemenge voraus. |
+
+Beispiel: 18 kWh beobachtete Wärme und 6 kWh beobachtete elektrische Energie
+ergeben einen COP von 3,0 für das ausgewertete Fenster. Lies den COP zusammen
+mit der Datenabdeckung. Ein Wochenbericht wertet seinen eigenen
+Sieben-Tage-Zeitraum aus. Für den jeweiligen Zeitraum nutzen die eingebaute
+Vorlage und die optionale Modellerklärung dieselben Messdaten. Fehlende
+Messwerte bleiben als Lücken sichtbar.
+
 ## Fehlerbehebung
 
 Wenn kein Bericht erscheint, prüfe den Funktions-Schalter, die Erreichbarkeit von
