@@ -5,13 +5,9 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
-## v0.28.3-b2 — 2026-11-19
+## v0.28.3 — 2026-11-20
 
-Die externe Raumtemperatur-Weiterleitung wird zu einer robusten Steuerschicht: Mehrere Sensoren je Heizkreis werden gemittelt, ein optionaler Offset je Heizkreis (±5 K) beeinflusst den Wert, und ein Saisonfenster begrenzt die Schreibvorgänge nach Datum. Ein Restart-sicherer Hauptschalter und ein Schalter je Quelle pausieren oder formen die Weiterleitung ohne Neuladen des Eintrags; Heizkreise ohne nutzbare Quelle erhalten den dokumentierten Kein-Wert-Sentinel statt einer veralteten Raumtemperatur. [Konfiguration](/docs/de/Configuration/#raumtemperatur-weiterleitung), [Entities](/docs/de/Entities), [Erkenntnisse](Findings-and-Documentation).
-
-## v0.28.3-b1 — 2026-11-18
-
-Der manuelle Warmwasser-Boost löst die Ladung am Navigator 2.0/10/Pro über das GLT-Register für die einmalige WW-Anforderung 1713 aus und lässt die Betriebsart unberührt — wie die native App; der frühere Wechsel in den Nur-Warmwasser-Modus stoppte die Heizung, ohne eine Ladung zu starten (#719). Regler ohne dieses Register behalten den Modus-Wechsel-Pfad. Die Feldbestätigung an der Anlage des Reporters steht noch aus. [Services](Services), [Erkenntnisse](Findings-and-Documentation).
+Die Raumtemperatur-Weiterleitung unterstützt mehrere gemittelte Sensoren je Heizkreis, einen Offset, ein Saisonfenster und Schalter zur Laufzeit. Ohne nutzbare Quelle erhält der Regler den dokumentierten Kein-Wert-Sentinel. Beim Navigator 2.0/10/Pro schreibt der manuelle Warmwasser-Boost die einmalige Anforderung in Register 1713 und behält die Betriebsart bei. Auf der Navigator-10-Referenzanlage war die Anforderung lesbar, während beider Fünf-Minuten-Tests startete aber keine Ladung. Navigator 1.x behält den bisherigen Moduswechsel. Die Wiki enthält jetzt ein zweisprachiges Entitätenverzeichnis, mehr Registerdetails, Advisor-Voraussetzungen und die Modellübersicht. [Konfiguration](Configuration) · [Boost-Aktion](Services#start-dhw-boost) · [Modellübersicht](Supported-Devices).
 
 ## v0.28.2 — 2026-11-18
 

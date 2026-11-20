@@ -292,7 +292,10 @@ Wie die Ladung ausgelöst wird, hängt vom Regler ab:
   iDM-App (Issue #719: der frühere Wechsel in den Nur-Warmwasser-Modus
   stoppte die Heizung, ohne eine Ladung zu starten, an einem Navigator 10).
   Das Bit ist ein einmaliger Befehl: die Integration schreibt es nie auf 0
-  zurück.
+  zurück. Beim Navigator 10 der Referenzanlage war die Anforderung in zwei
+  Fünf-Minuten-Tests lesbar, aber es startete keine Ladung. Automatik blieb
+  aktiv und der ursprüngliche Sollwert wurde wiederhergestellt. Prüfe, ob
+  dein Regler tatsächlich lädt, bevor du dich auf diese Aktion verlässt.
 - **Regler ohne dieses Register (Navigator 1.x):** der Boost wählt für die
   Laufzeit den Nur-Warmwasser-Modus und stellt am Ende die vorherige
   Betriebsart wieder her, wie bisher.

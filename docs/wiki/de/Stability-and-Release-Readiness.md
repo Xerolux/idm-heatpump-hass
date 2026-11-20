@@ -4,6 +4,18 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.28.3
+
+Der Maintainer hat die Veröffentlichung mit einer Ausnahme für die
+siebentägige Beobachtung und die Neuinstallation an echter Hardware
+freigegeben. Das Laufzeitverhalten entspricht dem veröffentlichten Kandidaten
+0.28.3-b2. Dessen ZIP und Prüfsumme wurden verifiziert. Am Navigator 10
+schrieb der manuelle Warmwasser-Boost die einmalige Anforderung und stellte
+den Sollwert wieder her. Automatik blieb aktiv. In beiden Fünf-Minuten-Tests
+startete keine Warmwasserladung. Prüfe den tatsächlichen Ladestart an deinem
+Regler, bevor du dich auf die Aktion verlässt.
+[Nachweis zum Kandidaten](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.3-b2.md)
+
 ## Release-Entscheidung zu 0.28.2
 
 Der Patch veröffentlicht die bereits in PR #722 zusammengeführten Korrekturen lesender Funktionen. Regressionstests decken Sommer- und Winterzeit, Heizkreiserkennung ohne A und den beobachteten negativen Pumpenwert ab. Der Patch erscheint am selben Tag als stabile Version. Neue Schreibpfade oder Abhängigkeitsänderungen gibt es nicht.
@@ -673,7 +685,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.28.3-b2` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
+Integration im Quellstand `0.28.3` und `idm-heatpump-api` `2.16.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

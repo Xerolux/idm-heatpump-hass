@@ -13,10 +13,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.28.3-b2] - 2026-11-19
+## [0.28.3] - 2026-11-20
 
 ### ⚠️ Upgrade notes
 
+- **The manual DHW boost keeps the system mode on Navigator 2.0/10/Pro.** It submits a one-time demand. The reference Navigator 10 accepted the command but did not start a charge in two five-minute tests. Verify the actual charge before relying on the boost. Rollback to 0.28.2 keeps working.
 - **New runtime switches appear when room temperature forwarding is configured.** A master switch and one switch per configured source are added under the configuration category; existing forwarding keeps running unchanged, and rollback simply removes the switches again.
 - **Circuits whose sources are all unavailable now receive the "no value" sentinel.** The controller falls back to its own regulation instead of trusting a stale room temperature. Rolling back restores the previous keep-last-value behavior.
 
@@ -26,15 +27,9 @@ All notable changes to this project will be documented in this file.
 - **An optional per-circuit offset biases the forwarded room temperature (±5 K).** The offset is added after averaging, bounded to the register range, and configured per circuit in the options.
 - **A season window and a master switch pause forwarding without reloading.** The window (month/day, year-end wrap supported) gates writes by date; the restart-safe master switch pauses or resumes immediately, with attributes showing the window and the effective state.
 
-## [0.28.3-b1] - 2026-11-18
-
-### ⚠️ Upgrade notes
-
-- **The manual DHW boost keeps the system mode on Navigator 2.0/10/Pro.** It triggers the charge through the one-time demand register instead of selecting hot-water-only mode. Rollback to 0.28.2 keeps working.
-
 ### 🐛 Bugfixes
 
-- **The manual DHW boost starts an actual charge on Navigator 2.0/10/Pro.** Writing the setpoint and selecting hot-water-only mode stopped heating without starting a charge on a Navigator 10 ([#719](https://github.com/Xerolux/idm-heatpump-hass/issues/719)). Where register 1713 exists, the boost now writes it once and never touches the system mode, like the native app. Controllers without the register keep the previous mode-switch behavior.
+- **The manual DHW boost preserves the selected operating mode on Navigator 2.0/10/Pro.** Where register 1713 is available, the integration writes it once and restores the original setpoint when the boost ends. Controllers without the register retain their previous mode-switch behavior. See [#719](https://github.com/Xerolux/idm-heatpump-hass/issues/719).
 
 ## [0.28.2] - 2026-11-18
 
