@@ -139,6 +139,30 @@ and [#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493).
 Always use the generated entity or library register definition when writing.
 The advanced raw-write action cannot infer the correct datatype from an address.
 
+## Interpret a register on your installation
+
+Search the catalog by technical key or address, then compare the result with
+the **per-register read report** in the integration diagnostics. The table
+describes the API's register definitions. The configured circuit or module,
+controller family, firmware, and received values determine whether a
+definition has a usable Home Assistant entity on your plant.
+
+| Example | What the value means |
+| --- | --- |
+| `hp_flow_temp` and `hp_return_temp` | Actual temperatures at the heat pump. Their difference is the heat pump spread. Circuit flow is measured separately and can differ after the mixer. |
+| `hc_a_setpoint_flow_temp` | The controller's current flow request for circuit A. Compare it with `hc_a_flow_temp` from the same circuit. Zero means no current flow request. |
+| `dhw_temp_top`, `dhw_setpoint`, `dhw_charge_on_temp` and `dhw_charge_off_temp` | Actual top-of-tank temperature, target, and controller switch-on and switch-off temperatures. These describe different parts of the charging cycle. |
+| `power_consumption_hp` and `thermal_power_flow_sensor` | Instantaneous electrical input and thermal output in kW. Check the measurement source before comparing them or using them for COP. |
+| `energy_heating`, `energy_dhw` and `energy_cooling` | Controller energy counters by operating purpose, in kWh. A period total comes from a valid counter increase over the same period. |
+| `system_mode` and `hp_operating_mode` | User-selected operating program and current heat pump activity. The selected program alone cannot tell you whether the compressor is running. |
+
+The notes show the numeric codes and labels defined by the API, any declared
+unavailable values, excluded write codes, and the API's numeric bounds and
+non-default scaling where supplied. Home Assistant can translate the labels
+and restrict writes further. Missing metadata leaves the corresponding note
+blank. For field observations and device-dependent behavior, see
+[Entities](Entities) and [Findings and Documentation](Findings-and-Documentation).
+
 <!-- BEGIN GENERATED REGISTER REFERENCE -->
 ## Complete register catalog
 
@@ -159,9 +183,9 @@ The German description is intended for identification; the code-form register na
 | 78–79 | PV Produktion | `pv_production` | FLOAT | kW | RW | — |
 | 82–83 | Hausverbrauch | `house_consumption` | FLOAT | kW | RW | — |
 | 84–85 | Batterie Entladung | `battery_discharge` | FLOAT | kW | RW | — |
-| 86 | Batterie SOC | `battery_soc` | INT16 | % | RW | — |
+| 86 | Batterie SOC | `battery_soc` | INT16 | % | RW | Unavailable: `-1`, API min 0 / max 100 |
 | 88–89 | PV Zielwert | `pv_target_value` | FLOAT | kW | RW | — |
-| 90 | Smart Grid Status | `smart_grid_status` | UCHAR | — | R | Enum |
+| 90 | Smart Grid Status | `smart_grid_status` | UCHAR | — | R | `0` = Red · `1` = Yellow · `2` = Green · `4` = Supergreen |
 
 ### 1000–1199 · System & heat pump (64)
 
@@ -170,16 +194,16 @@ The German description is intended for identification; the code-form register na
 | 1000–1001 | Außentemperatur | `outdoor_temp` | FLOAT | °C | R | — |
 | 1002–1003 | Gemittelte Außentemperatur | `outdoor_temp_avg` | FLOAT | °C | R | — |
 | 1004 | Interne Meldung | `internal_message` | UINT16 | — | R | — |
-| 1005 | Systembetriebsart | `system_mode` | UCHAR | — | RW · EEPROM | Enum |
-| 1006 | Variabler Eingang | `variable_input` | UCHAR | — | R | Enum |
+| 1005 | Systembetriebsart | `system_mode` | UCHAR | — | RW · EEPROM | `0` = Standby · `1` = Automatic · `2` = Absent · `3` = Holiday · `4` = Hot Water Only · `5` = Heating/Cooling Only, API min 0 / max 5 |
+| 1006 | Variabler Eingang | `variable_input` | UCHAR | — | R | `0` = Not configured · `1` = External DHW Charging · `2` = PV / Digital Input · `3` = External Heat/Cool Switch, Unavailable: `255` |
 | 1008–1009 | Wärmespeichertemperatur | `storage_temp` | FLOAT | °C | R | — |
 | 1010–1011 | Kältespeichertemperatur | `cold_storage_temp` | FLOAT | °C | R | — |
 | 1012–1013 | Trinkwassererwärmer unten | `dhw_temp_bottom` | FLOAT | °C | R | — |
 | 1014–1015 | Trinkwassererwärmer oben | `dhw_temp_top` | FLOAT | °C | R | — |
 | 1030–1031 | Warmwasser Zapftemperatur | `dhw_tapping_temp` | FLOAT | °C | R | — |
-| 1032 | Warmwasser Sollwert | `dhw_setpoint` | UCHAR | °C | RW · EEPROM | — |
-| 1033 | Warmwasserladung Einschalttemperatur | `dhw_charge_on_temp` | UCHAR | °C | RW · EEPROM | — |
-| 1034 | Warmwasserladung Ausschalttemperatur | `dhw_charge_off_temp` | UCHAR | °C | RW · EEPROM | — |
+| 1032 | Warmwasser Sollwert | `dhw_setpoint` | UCHAR | °C | RW · EEPROM | API min 35 / max 95 |
+| 1033 | Warmwasserladung Einschalttemperatur | `dhw_charge_on_temp` | UCHAR | °C | RW · EEPROM | API min 30 / max 50 |
+| 1034 | Warmwasserladung Ausschalttemperatur | `dhw_charge_off_temp` | UCHAR | °C | RW · EEPROM | API min 46 / max 67 |
 | 1048–1049 | Aktueller Strompreis | `current_electricity_price` | FLOAT | €/MWh | R | — |
 | 1050–1051 | Wärmepumpen Vorlauftemperatur | `hp_flow_temp` | FLOAT | °C | R | — |
 | 1052–1053 | Wärmepumpen Rücklauftemperatur | `hp_return_temp` | FLOAT | °C | R | — |
@@ -193,25 +217,25 @@ The German description is intended for identification; the code-form register na
 | 1068–1069 | Rücklauftemperatur Wärmesenke | `heat_sink_return_temp` | FLOAT | °C | R | Navigator 10 |
 | 1070–1071 | Vorlauftemperatur Wärmesenke | `heat_sink_flow_temp` | FLOAT | °C | R | Navigator 10 |
 | 1072–1073 | Durchfluss Wärmesenke (B2) | `heat_sink_flow_rate` | FLOAT | L/min | R | Navigator 10 |
-| 1074 | Ladepumpe Wärmesenke | `heat_sink_charging_pump_signal` | INT16 | % | R | Navigator 10 |
+| 1074 | Ladepumpe Wärmesenke | `heat_sink_charging_pump_signal` | INT16 | % | R | Navigator 10, Unavailable: `-32768` / `65535` / `255` |
 | 1086–1087 | Grundwassereintrittstemperatur 1 | `groundwater_inlet_temp_1` | FLOAT | °C | R | Navigator 10 |
 | 1088–1089 | Grundwassereintrittstemperatur 2 | `groundwater_inlet_temp_2` | FLOAT | °C | R | Navigator 10 |
-| 1090 | Wärmepumpen Betriebsart | `hp_operating_mode` | UCHAR | — | R | Enum |
+| 1090 | Wärmepumpen Betriebsart | `hp_operating_mode` | UCHAR | — | R | `0` = Standby · `1` = Heating · `2` = Cooling · `4` = DHW · `8` = Defrost |
 | 1091 | Heizanforderung | `heating_demand` | UCHAR | — | R | Binary |
 | 1092 | Kühlanforderung | `cooling_demand` | UCHAR | — | R | Binary |
 | 1093 | Warmwasseranforderung | `dhw_demand` | UCHAR | — | R | Binary |
-| 1098 | EVU Sperre | `evu_lock` | UCHAR | — | R | Enum |
+| 1098 | EVU Sperre | `evu_lock` | UCHAR | — | R | `0` = Locked · `1` = Not Locked |
 | 1099 | Summenstörung | `hp_sum_alarm` | UCHAR | — | R | Binary |
 | 1100 | Verdichter 1 | `compressor_status_1` | UCHAR | — | R | Binary |
 | 1101 | Verdichter 2 | `compressor_status_2` | UCHAR | — | R | Binary |
 | 1102 | Verdichter 3 | `compressor_status_3` | UCHAR | — | R | Binary |
 | 1103 | Verdichter 4 | `compressor_status_4` | UCHAR | — | R | Binary |
-| 1104 | Ladepumpe M73 | `charging_pump_status` | INT16 | % | R | — |
-| 1105 | Sole-/Zwischenkreispumpe | `brine_pump_status` | INT16 | % | R | — |
-| 1106 | Wärmequellenpumpe M15 | `heat_source_pump_status` | INT16 | % | R | — |
-| 1108 | ISC Kältespeicherpumpe M84 | `isc_cold_storage_pump_status` | INT16 | % | R | — |
-| 1109 | ISC Rückkühlpumpe M17 | `isc_recooling_pump_status` | INT16 | % | R | — |
-| 1110 | Umschaltventil Heizkreis Heizen/Kühlen | `valve_hc_heat_cool` | UINT16 | — | R | Enum |
+| 1104 | Ladepumpe M73 | `charging_pump_status` | INT16 | % | R | Unavailable: `-32768` / `65535` / `255` |
+| 1105 | Sole-/Zwischenkreispumpe | `brine_pump_status` | INT16 | % | R | Unavailable: `-32768` / `65535` / `255` |
+| 1106 | Wärmequellenpumpe M15 | `heat_source_pump_status` | INT16 | % | R | Unavailable: `-32768` / `65535` / `255` |
+| 1108 | ISC Kältespeicherpumpe M84 | `isc_cold_storage_pump_status` | INT16 | % | R | Unavailable: `-32768` / `65535` / `255` |
+| 1109 | ISC Rückkühlpumpe M17 | `isc_recooling_pump_status` | INT16 | % | R | Unavailable: `-32768` / `65535` / `255` |
+| 1110 | Umschaltventil Heizkreis Heizen/Kühlen | `valve_hc_heat_cool` | UINT16 | — | R | `0` = Heating · `1` = Cooling, Unavailable: `65535` |
 | 1111 | Umschaltventil Speicher Heizen/Kühlen | `valve_storage_heat_cool` | UINT16 | — | R | — |
 | 1112 | Umschaltventil Heizen/Warmwasser | `valve_heat_dhw` | UINT16 | — | R | — |
 | 1113 | Wärmequelle Umschaltventil | `valve_heat_source_heat_cool` | UINT16 | — | R | — |
@@ -220,12 +244,12 @@ The German description is intended for identification; the code-form register na
 | 1116 | ISC Umschaltventil | `valve_isc_heat_source_cold_storage` | UINT16 | — | R | — |
 | 1117 | Umschaltventil ISC Speicher/Bypass | `valve_isc_storage_bypass` | UINT16 | — | R | — |
 | 1118 | Zirkulationspumpe M64 | `circulation_pump` | UINT16 | — | R | — |
-| 1120 | Bivalenzpunkt 1 (2. WE) | `bivalence_point_1_2nd_gen` | INT16 | °C | RW · EEPROM | — |
-| 1121 | Bivalenzpunkt 2 (2. WE) | `bivalence_point_2_2nd_gen` | INT16 | °C | RW · EEPROM | — |
-| 1122 | Bivalenzpunkt 1 (3. WE) | `bivalence_point_1_3rd_gen` | INT16 | °C | RW · EEPROM | — |
-| 1123 | Bivalenzpunkt 2 (3. WE) | `bivalence_point_2_3rd_gen` | INT16 | °C | RW · EEPROM | — |
-| 1124 | Bivalenz Betriebszustand | `bivalence_state` | UCHAR | — | R | Enum |
-| 1147 | Kaskade verfügbar Heizen | `cascade_available_heating` | UCHAR | — | R | — |
+| 1120 | Bivalenzpunkt 1 (2. WE) | `bivalence_point_1_2nd_gen` | INT16 | °C | RW · EEPROM | API min -40 / max 40 |
+| 1121 | Bivalenzpunkt 2 (2. WE) | `bivalence_point_2_2nd_gen` | INT16 | °C | RW · EEPROM | API min -40 / max 40 |
+| 1122 | Bivalenzpunkt 1 (3. WE) | `bivalence_point_1_3rd_gen` | INT16 | °C | RW · EEPROM | API min -40 / max 40 |
+| 1123 | Bivalenzpunkt 2 (3. WE) | `bivalence_point_2_3rd_gen` | INT16 | °C | RW · EEPROM | API min -40 / max 40 |
+| 1124 | Bivalenz Betriebszustand | `bivalence_state` | UCHAR | — | R | `0` = Off · `1` = Bivalence 1 Active · `2` = Bivalence 2 Active · `3` = Bivalence 1+2 Active, Unavailable: `255` |
+| 1147 | Kaskade verfügbar Heizen | `cascade_available_heating` | UCHAR | — | R | Unavailable: `255` |
 | 1148 | Kaskade verfügbar Kühlen | `cascade_available_cooling` | UCHAR | — | R | — |
 | 1149 | Kaskade verfügbar Warmwasser | `cascade_available_dhw` | UCHAR | — | R | — |
 | 1150 | Kaskade in Betrieb Heizen | `cascade_running_heating` | UCHAR | — | R | — |
@@ -242,18 +266,18 @@ The German description is intended for identification; the code-form register na
 | 1206–1207 | Kaskade Gemittelte VL-Temp Heizen | `cascade_avg_flow_heating` | FLOAT | °C | R | — |
 | 1208–1209 | Kaskade Gemittelte VL-Temp Kühlen | `cascade_avg_flow_cooling` | FLOAT | °C | R | — |
 | 1210–1211 | Kaskade Gemittelte VL-Temp Warmwasser | `cascade_avg_flow_dhw` | FLOAT | °C | R | — |
-| 1220 | Kaskade Mindestleistung Heizen | `cascade_min_power_heating` | UCHAR | % | RW | — |
-| 1221 | Kaskade Maximalleistung Heizen | `cascade_max_power_heating` | UCHAR | % | RW | — |
-| 1222 | Kaskade Mindestleistung Kühlen | `cascade_min_power_cooling` | UCHAR | % | RW | — |
-| 1223 | Kaskade Maximalleistung Kühlen | `cascade_max_power_cooling` | UCHAR | % | RW | — |
-| 1224 | Kaskade Mindestleistung Warmwasser | `cascade_min_power_dhw` | UCHAR | % | RW | — |
-| 1225 | Kaskade Maximalleistung Warmwasser | `cascade_max_power_dhw` | UCHAR | % | RW | — |
-| 1226 | Kaskade Bivalenz Heizen Parallel | `cascade_bivalence_heating_parallel` | INT16 | °C | RW | — |
-| 1227 | Kaskade Bivalenz Heizen Alternativ | `cascade_bivalence_heating_alternative` | INT16 | °C | RW | — |
-| 1228 | Kaskade Bivalenz Kühlen Parallel | `cascade_bivalence_cooling_parallel` | INT16 | °C | RW | — |
-| 1229 | Kaskade Bivalenz Kühlen Alternativ | `cascade_bivalence_cooling_alternative` | INT16 | °C | RW | — |
-| 1230 | Kaskade Bivalenz WW Parallel | `cascade_bivalence_dhw_parallel` | INT16 | °C | RW | — |
-| 1231 | Kaskade Bivalenz WW Alternativ | `cascade_bivalence_dhw_alternative` | INT16 | °C | RW | — |
+| 1220 | Kaskade Mindestleistung Heizen | `cascade_min_power_heating` | UCHAR | % | RW | API min 0 / max 100 |
+| 1221 | Kaskade Maximalleistung Heizen | `cascade_max_power_heating` | UCHAR | % | RW | API min 0 / max 100 |
+| 1222 | Kaskade Mindestleistung Kühlen | `cascade_min_power_cooling` | UCHAR | % | RW | API min 0 / max 100 |
+| 1223 | Kaskade Maximalleistung Kühlen | `cascade_max_power_cooling` | UCHAR | % | RW | API min 0 / max 100 |
+| 1224 | Kaskade Mindestleistung Warmwasser | `cascade_min_power_dhw` | UCHAR | % | RW | API min 0 / max 100 |
+| 1225 | Kaskade Maximalleistung Warmwasser | `cascade_max_power_dhw` | UCHAR | % | RW | API min 0 / max 100 |
+| 1226 | Kaskade Bivalenz Heizen Parallel | `cascade_bivalence_heating_parallel` | INT16 | °C | RW | API min -40 / max 40 |
+| 1227 | Kaskade Bivalenz Heizen Alternativ | `cascade_bivalence_heating_alternative` | INT16 | °C | RW | API min -40 / max 40 |
+| 1228 | Kaskade Bivalenz Kühlen Parallel | `cascade_bivalence_cooling_parallel` | INT16 | °C | RW | API min -40 / max 40 |
+| 1229 | Kaskade Bivalenz Kühlen Alternativ | `cascade_bivalence_cooling_alternative` | INT16 | °C | RW | API min -40 / max 40 |
+| 1230 | Kaskade Bivalenz WW Parallel | `cascade_bivalence_dhw_parallel` | INT16 | °C | RW | API min -40 / max 40 |
+| 1231 | Kaskade Bivalenz WW Alternativ | `cascade_bivalence_dhw_alternative` | INT16 | °C | RW | API min -40 / max 40 |
 
 ### 1350–1699 · Heating circuits & demands (123)
 
@@ -280,106 +304,106 @@ The German description is intended for identification; the code-form register na
 | 1386–1387 | Sollvorlauftemperatur HK E | `hc_e_setpoint_flow_temp` | FLOAT | °C | R | — |
 | 1388–1389 | Sollvorlauftemperatur HK F | `hc_f_setpoint_flow_temp` | FLOAT | °C | R | — |
 | 1390–1391 | Sollvorlauftemperatur HK G | `hc_g_setpoint_flow_temp` | FLOAT | °C | R | — |
-| 1392–1393 | Feuchtesensor | `humidity_sensor` | FLOAT | % | R | — |
-| 1393 | Betriebsart HK A | `hc_a_mode` | UCHAR | — | RW · EEPROM | Enum |
-| 1394 | Betriebsart HK B | `hc_b_mode` | UCHAR | — | RW · EEPROM | Enum |
-| 1395 | Betriebsart HK C | `hc_c_mode` | UCHAR | — | RW · EEPROM | Enum |
-| 1396 | Betriebsart HK D | `hc_d_mode` | UCHAR | — | RW · EEPROM | Enum |
-| 1397 | Betriebsart HK E | `hc_e_mode` | UCHAR | — | RW · EEPROM | Enum |
-| 1398 | Betriebsart HK F | `hc_f_mode` | UCHAR | — | RW · EEPROM | Enum |
-| 1399 | Betriebsart HK G | `hc_g_mode` | UCHAR | — | RW · EEPROM | Enum |
-| 1401–1402 | Raumsoll Heizen Normal HK A | `hc_a_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1403–1404 | Raumsoll Heizen Normal HK B | `hc_b_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1405–1406 | Raumsoll Heizen Normal HK C | `hc_c_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1407–1408 | Raumsoll Heizen Normal HK D | `hc_d_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1409–1410 | Raumsoll Heizen Normal HK E | `hc_e_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1411–1412 | Raumsoll Heizen Normal HK F | `hc_f_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1413–1414 | Raumsoll Heizen Normal HK G | `hc_g_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1415–1416 | Raumsoll Heizen Eco HK A | `hc_a_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1417–1418 | Raumsoll Heizen Eco HK B | `hc_b_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1419–1420 | Raumsoll Heizen Eco HK C | `hc_c_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1421–1422 | Raumsoll Heizen Eco HK D | `hc_d_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1423–1424 | Raumsoll Heizen Eco HK E | `hc_e_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1425–1426 | Raumsoll Heizen Eco HK F | `hc_f_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1427–1428 | Raumsoll Heizen Eco HK G | `hc_g_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1429–1430 | Heizkurve HK A | `hc_a_heating_curve` | FLOAT | — | RW · EEPROM | — |
-| 1431–1432 | Heizkurve HK B | `hc_b_heating_curve` | FLOAT | — | RW · EEPROM | — |
-| 1433–1434 | Heizkurve HK C | `hc_c_heating_curve` | FLOAT | — | RW · EEPROM | — |
-| 1435–1436 | Heizkurve HK D | `hc_d_heating_curve` | FLOAT | — | RW · EEPROM | — |
-| 1437–1438 | Heizkurve HK E | `hc_e_heating_curve` | FLOAT | — | RW · EEPROM | — |
-| 1439–1440 | Heizkurve HK F | `hc_f_heating_curve` | FLOAT | — | RW · EEPROM | — |
-| 1441–1442 | Heizkurve HK G | `hc_g_heating_curve` | FLOAT | — | RW · EEPROM | — |
-| 1442 | Heizgrenze HK A | `hc_a_heating_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1443 | Heizgrenze HK B | `hc_b_heating_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1444 | Heizgrenze HK C | `hc_c_heating_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1445 | Heizgrenze HK D | `hc_d_heating_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1446 | Heizgrenze HK E | `hc_e_heating_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1447 | Heizgrenze HK F | `hc_f_heating_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1448 | Heizgrenze HK G | `hc_g_heating_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1449 | Festwertvorlauf HK A | `hc_a_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | — |
-| 1450 | Festwertvorlauf HK B | `hc_b_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | — |
-| 1451 | Festwertvorlauf HK C | `hc_c_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | — |
-| 1452 | Festwertvorlauf HK D | `hc_d_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | — |
-| 1453 | Festwertvorlauf HK E | `hc_e_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | — |
-| 1454 | Festwertvorlauf HK F | `hc_f_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | — |
-| 1455 | Festwertvorlauf HK G | `hc_g_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | — |
-| 1457–1458 | Raumsoll Kühlen Normal HK A | `hc_a_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1459–1460 | Raumsoll Kühlen Normal HK B | `hc_b_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1461–1462 | Raumsoll Kühlen Normal HK C | `hc_c_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1463–1464 | Raumsoll Kühlen Normal HK D | `hc_d_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1465–1466 | Raumsoll Kühlen Normal HK E | `hc_e_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1467–1468 | Raumsoll Kühlen Normal HK F | `hc_f_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1469–1470 | Raumsoll Kühlen Normal HK G | `hc_g_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | — |
-| 1471–1472 | Raumsoll Kühlen Eco HK A | `hc_a_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1473–1474 | Raumsoll Kühlen Eco HK B | `hc_b_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1475–1476 | Raumsoll Kühlen Eco HK C | `hc_c_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1477–1478 | Raumsoll Kühlen Eco HK D | `hc_d_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1479–1480 | Raumsoll Kühlen Eco HK E | `hc_e_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1481–1482 | Raumsoll Kühlen Eco HK F | `hc_f_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1483–1484 | Raumsoll Kühlen Eco HK G | `hc_g_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | — |
-| 1484 | Kühlgrenze HK A | `hc_a_cooling_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1485 | Kühlgrenze HK B | `hc_b_cooling_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1486 | Kühlgrenze HK C | `hc_c_cooling_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1487 | Kühlgrenze HK D | `hc_d_cooling_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1488 | Kühlgrenze HK E | `hc_e_cooling_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1489 | Kühlgrenze HK F | `hc_f_cooling_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1490 | Kühlgrenze HK G | `hc_g_cooling_limit` | UCHAR | °C | RW · EEPROM | — |
-| 1491 | Kühlvorlauf HK A | `hc_a_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | — |
-| 1492 | Kühlvorlauf HK B | `hc_b_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | — |
-| 1493 | Kühlvorlauf HK C | `hc_c_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | — |
-| 1494 | Kühlvorlauf HK D | `hc_d_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | — |
-| 1495 | Kühlvorlauf HK E | `hc_e_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | — |
-| 1496 | Kühlvorlauf HK F | `hc_f_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | — |
-| 1497 | Kühlvorlauf HK G | `hc_g_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | — |
-| 1498 | Aktive Betriebsart HK A | `hc_a_active_mode` | UCHAR | — | R | Enum |
-| 1499 | Aktive Betriebsart HK B | `hc_b_active_mode` | UCHAR | — | R | Enum |
-| 1500 | Aktive Betriebsart HK C | `hc_c_active_mode` | UCHAR | — | R | Enum |
-| 1501 | Aktive Betriebsart HK D | `hc_d_active_mode` | UCHAR | — | R | Enum |
-| 1502 | Aktive Betriebsart HK E | `hc_e_active_mode` | UCHAR | — | R | Enum |
-| 1503 | Aktive Betriebsart HK F | `hc_f_active_mode` | UCHAR | — | R | Enum |
-| 1504 | Aktive Betriebsart HK G | `hc_g_active_mode` | UCHAR | — | R | Enum |
-| 1505 | Parallelverschiebung HK A | `hc_a_parallel_shift` | UCHAR | °C | RW · EEPROM | — |
-| 1506 | Parallelverschiebung HK B | `hc_b_parallel_shift` | UCHAR | °C | RW · EEPROM | — |
-| 1507 | Parallelverschiebung HK C | `hc_c_parallel_shift` | UCHAR | °C | RW · EEPROM | — |
-| 1508 | Parallelverschiebung HK D | `hc_d_parallel_shift` | UCHAR | °C | RW · EEPROM | — |
-| 1509 | Parallelverschiebung HK E | `hc_e_parallel_shift` | UCHAR | °C | RW · EEPROM | — |
-| 1510 | Parallelverschiebung HK F | `hc_f_parallel_shift` | UCHAR | °C | RW · EEPROM | — |
-| 1511 | Parallelverschiebung HK G | `hc_g_parallel_shift` | UCHAR | °C | RW · EEPROM | — |
-| 1650–1651 | Externe Raumtemperatur HK A | `hc_a_ext_room_temp` | FLOAT | °C | RW | — |
-| 1652–1653 | Externe Raumtemperatur HK B | `hc_b_ext_room_temp` | FLOAT | °C | RW | — |
-| 1654–1655 | Externe Raumtemperatur HK C | `hc_c_ext_room_temp` | FLOAT | °C | RW | — |
-| 1656–1657 | Externe Raumtemperatur HK D | `hc_d_ext_room_temp` | FLOAT | °C | RW | — |
-| 1658–1659 | Externe Raumtemperatur HK E | `hc_e_ext_room_temp` | FLOAT | °C | RW | — |
-| 1660–1661 | Externe Raumtemperatur HK F | `hc_f_ext_room_temp` | FLOAT | °C | RW | — |
-| 1662–1663 | Externe Raumtemperatur HK G | `hc_g_ext_room_temp` | FLOAT | °C | RW | — |
+| 1392–1393 | Feuchtesensor | `humidity_sensor` | FLOAT | % | R | Unavailable: `-1.0` |
+| 1393 | Betriebsart HK A | `hc_a_mode` | UCHAR | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = Eco · `4` = Manual Heat · `5` = Manual Cool · `255` = Not configured / Unavailable, Excluded from writes: `255`, API min 0 / max 5 |
+| 1394 | Betriebsart HK B | `hc_b_mode` | UCHAR | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = Eco · `4` = Manual Heat · `5` = Manual Cool · `255` = Not configured / Unavailable, Excluded from writes: `255`, API min 0 / max 5 |
+| 1395 | Betriebsart HK C | `hc_c_mode` | UCHAR | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = Eco · `4` = Manual Heat · `5` = Manual Cool · `255` = Not configured / Unavailable, Excluded from writes: `255`, API min 0 / max 5 |
+| 1396 | Betriebsart HK D | `hc_d_mode` | UCHAR | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = Eco · `4` = Manual Heat · `5` = Manual Cool · `255` = Not configured / Unavailable, Excluded from writes: `255`, API min 0 / max 5 |
+| 1397 | Betriebsart HK E | `hc_e_mode` | UCHAR | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = Eco · `4` = Manual Heat · `5` = Manual Cool · `255` = Not configured / Unavailable, Excluded from writes: `255`, API min 0 / max 5 |
+| 1398 | Betriebsart HK F | `hc_f_mode` | UCHAR | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = Eco · `4` = Manual Heat · `5` = Manual Cool · `255` = Not configured / Unavailable, Excluded from writes: `255`, API min 0 / max 5 |
+| 1399 | Betriebsart HK G | `hc_g_mode` | UCHAR | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = Eco · `4` = Manual Heat · `5` = Manual Cool · `255` = Not configured / Unavailable, Excluded from writes: `255`, API min 0 / max 5 |
+| 1401–1402 | Raumsoll Heizen Normal HK A | `hc_a_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 1403–1404 | Raumsoll Heizen Normal HK B | `hc_b_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 1405–1406 | Raumsoll Heizen Normal HK C | `hc_c_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 1407–1408 | Raumsoll Heizen Normal HK D | `hc_d_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 1409–1410 | Raumsoll Heizen Normal HK E | `hc_e_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 1411–1412 | Raumsoll Heizen Normal HK F | `hc_f_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 1413–1414 | Raumsoll Heizen Normal HK G | `hc_g_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 1415–1416 | Raumsoll Heizen Eco HK A | `hc_a_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 1417–1418 | Raumsoll Heizen Eco HK B | `hc_b_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 1419–1420 | Raumsoll Heizen Eco HK C | `hc_c_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 1421–1422 | Raumsoll Heizen Eco HK D | `hc_d_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 1423–1424 | Raumsoll Heizen Eco HK E | `hc_e_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 1425–1426 | Raumsoll Heizen Eco HK F | `hc_f_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 1427–1428 | Raumsoll Heizen Eco HK G | `hc_g_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 1429–1430 | Heizkurve HK A | `hc_a_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 1431–1432 | Heizkurve HK B | `hc_b_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 1433–1434 | Heizkurve HK C | `hc_c_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 1435–1436 | Heizkurve HK D | `hc_d_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 1437–1438 | Heizkurve HK E | `hc_e_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 1439–1440 | Heizkurve HK F | `hc_f_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 1441–1442 | Heizkurve HK G | `hc_g_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 1442 | Heizgrenze HK A | `hc_a_heating_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 50 |
+| 1443 | Heizgrenze HK B | `hc_b_heating_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 50 |
+| 1444 | Heizgrenze HK C | `hc_c_heating_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 50 |
+| 1445 | Heizgrenze HK D | `hc_d_heating_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 50 |
+| 1446 | Heizgrenze HK E | `hc_e_heating_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 50 |
+| 1447 | Heizgrenze HK F | `hc_f_heating_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 50 |
+| 1448 | Heizgrenze HK G | `hc_g_heating_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 50 |
+| 1449 | Festwertvorlauf HK A | `hc_a_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | API min 20 / max 90 |
+| 1450 | Festwertvorlauf HK B | `hc_b_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | API min 20 / max 90 |
+| 1451 | Festwertvorlauf HK C | `hc_c_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | API min 20 / max 90 |
+| 1452 | Festwertvorlauf HK D | `hc_d_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | API min 20 / max 90 |
+| 1453 | Festwertvorlauf HK E | `hc_e_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | API min 20 / max 90 |
+| 1454 | Festwertvorlauf HK F | `hc_f_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | API min 20 / max 90 |
+| 1455 | Festwertvorlauf HK G | `hc_g_setpoint_flow_constant` | UCHAR | °C | RW · EEPROM | API min 20 / max 90 |
+| 1457–1458 | Raumsoll Kühlen Normal HK A | `hc_a_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1459–1460 | Raumsoll Kühlen Normal HK B | `hc_b_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1461–1462 | Raumsoll Kühlen Normal HK C | `hc_c_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1463–1464 | Raumsoll Kühlen Normal HK D | `hc_d_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1465–1466 | Raumsoll Kühlen Normal HK E | `hc_e_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1467–1468 | Raumsoll Kühlen Normal HK F | `hc_f_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1469–1470 | Raumsoll Kühlen Normal HK G | `hc_g_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1471–1472 | Raumsoll Kühlen Eco HK A | `hc_a_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1473–1474 | Raumsoll Kühlen Eco HK B | `hc_b_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1475–1476 | Raumsoll Kühlen Eco HK C | `hc_c_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1477–1478 | Raumsoll Kühlen Eco HK D | `hc_d_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1479–1480 | Raumsoll Kühlen Eco HK E | `hc_e_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1481–1482 | Raumsoll Kühlen Eco HK F | `hc_f_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1483–1484 | Raumsoll Kühlen Eco HK G | `hc_g_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | Unavailable: `0.0`, API min 15 / max 30 |
+| 1484 | Kühlgrenze HK A | `hc_a_cooling_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 36 |
+| 1485 | Kühlgrenze HK B | `hc_b_cooling_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 36 |
+| 1486 | Kühlgrenze HK C | `hc_c_cooling_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 36 |
+| 1487 | Kühlgrenze HK D | `hc_d_cooling_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 36 |
+| 1488 | Kühlgrenze HK E | `hc_e_cooling_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 36 |
+| 1489 | Kühlgrenze HK F | `hc_f_cooling_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 36 |
+| 1490 | Kühlgrenze HK G | `hc_g_cooling_limit` | UCHAR | °C | RW · EEPROM | API min 0 / max 36 |
+| 1491 | Kühlvorlauf HK A | `hc_a_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | API min 8 / max 30 |
+| 1492 | Kühlvorlauf HK B | `hc_b_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | API min 8 / max 30 |
+| 1493 | Kühlvorlauf HK C | `hc_c_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | API min 8 / max 30 |
+| 1494 | Kühlvorlauf HK D | `hc_d_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | API min 8 / max 30 |
+| 1495 | Kühlvorlauf HK E | `hc_e_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | API min 8 / max 30 |
+| 1496 | Kühlvorlauf HK F | `hc_f_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | API min 8 / max 30 |
+| 1497 | Kühlvorlauf HK G | `hc_g_setpoint_flow_cooling` | UCHAR | °C | RW · EEPROM | API min 8 / max 30 |
+| 1498 | Aktive Betriebsart HK A | `hc_a_active_mode` | UCHAR | — | R | `0` = Off · `1` = Heating · `2` = Cooling · `255` = Not configured / Unavailable |
+| 1499 | Aktive Betriebsart HK B | `hc_b_active_mode` | UCHAR | — | R | `0` = Off · `1` = Heating · `2` = Cooling · `255` = Not configured / Unavailable |
+| 1500 | Aktive Betriebsart HK C | `hc_c_active_mode` | UCHAR | — | R | `0` = Off · `1` = Heating · `2` = Cooling · `255` = Not configured / Unavailable |
+| 1501 | Aktive Betriebsart HK D | `hc_d_active_mode` | UCHAR | — | R | `0` = Off · `1` = Heating · `2` = Cooling · `255` = Not configured / Unavailable |
+| 1502 | Aktive Betriebsart HK E | `hc_e_active_mode` | UCHAR | — | R | `0` = Off · `1` = Heating · `2` = Cooling · `255` = Not configured / Unavailable |
+| 1503 | Aktive Betriebsart HK F | `hc_f_active_mode` | UCHAR | — | R | `0` = Off · `1` = Heating · `2` = Cooling · `255` = Not configured / Unavailable |
+| 1504 | Aktive Betriebsart HK G | `hc_g_active_mode` | UCHAR | — | R | `0` = Off · `1` = Heating · `2` = Cooling · `255` = Not configured / Unavailable |
+| 1505 | Parallelverschiebung HK A | `hc_a_parallel_shift` | UCHAR | °C | RW · EEPROM | API min 0 / max 30 |
+| 1506 | Parallelverschiebung HK B | `hc_b_parallel_shift` | UCHAR | °C | RW · EEPROM | API min 0 / max 30 |
+| 1507 | Parallelverschiebung HK C | `hc_c_parallel_shift` | UCHAR | °C | RW · EEPROM | API min 0 / max 30 |
+| 1508 | Parallelverschiebung HK D | `hc_d_parallel_shift` | UCHAR | °C | RW · EEPROM | API min 0 / max 30 |
+| 1509 | Parallelverschiebung HK E | `hc_e_parallel_shift` | UCHAR | °C | RW · EEPROM | API min 0 / max 30 |
+| 1510 | Parallelverschiebung HK F | `hc_f_parallel_shift` | UCHAR | °C | RW · EEPROM | API min 0 / max 30 |
+| 1511 | Parallelverschiebung HK G | `hc_g_parallel_shift` | UCHAR | °C | RW · EEPROM | API min 0 / max 30 |
+| 1650–1651 | Externe Raumtemperatur HK A | `hc_a_ext_room_temp` | FLOAT | °C | RW | Unavailable: `-1.0`, API min 15 / max 30 |
+| 1652–1653 | Externe Raumtemperatur HK B | `hc_b_ext_room_temp` | FLOAT | °C | RW | Unavailable: `-1.0`, API min 15 / max 30 |
+| 1654–1655 | Externe Raumtemperatur HK C | `hc_c_ext_room_temp` | FLOAT | °C | RW | Unavailable: `-1.0`, API min 15 / max 30 |
+| 1656–1657 | Externe Raumtemperatur HK D | `hc_d_ext_room_temp` | FLOAT | °C | RW | Unavailable: `-1.0`, API min 15 / max 30 |
+| 1658–1659 | Externe Raumtemperatur HK E | `hc_e_ext_room_temp` | FLOAT | °C | RW | Unavailable: `-1.0`, API min 15 / max 30 |
+| 1660–1661 | Externe Raumtemperatur HK F | `hc_f_ext_room_temp` | FLOAT | °C | RW | Unavailable: `-1.0`, API min 15 / max 30 |
+| 1662–1663 | Externe Raumtemperatur HK G | `hc_g_ext_room_temp` | FLOAT | °C | RW | Unavailable: `-1.0`, API min 15 / max 30 |
 | 1680 | Störung Wärmequellenkreis | `fault_heat_source_circuit` | UCHAR | — | R | Navigator 10, Binary |
 | 1681 | Störung Druckschalter Wärmequellenkreis | `fault_heat_source_pressure_switch` | UCHAR | — | R | Navigator 10 |
 | 1682 | Störung Ladepumpe 1 Zwischenkreis | `fault_charging_pump_1_intermediate` | UCHAR | — | R | Navigator 10 |
 | 1683 | Störung Ladepumpe 2 Zwischenkreis | `fault_charging_pump_2_intermediate` | UCHAR | — | R | Navigator 10 |
 | 1690–1691 | Externe Außentemperatur (GLT) | `ext_outdoor_temp` | FLOAT | °C | RW | — |
-| 1692–1693 | Externe Feuchte (GLT) | `ext_humidity` | FLOAT | % | RW | — |
-| 1694 | Externe Anforderungstemperatur Heizen | `ext_demand_temp_heating` | UCHAR | °C | RW · EEPROM | — |
-| 1695 | Externe Anforderungstemperatur Kühlen | `ext_demand_temp_cooling` | UCHAR | °C | RW · EEPROM | — |
+| 1692–1693 | Externe Feuchte (GLT) | `ext_humidity` | FLOAT | % | RW | Unavailable: `-1.0`, API min 0 / max 100 |
+| 1694 | Externe Anforderungstemperatur Heizen | `ext_demand_temp_heating` | UCHAR | °C | RW · EEPROM | Unavailable: `0`, API min 20 / max 65 |
+| 1695 | Externe Anforderungstemperatur Kühlen | `ext_demand_temp_cooling` | UCHAR | °C | RW · EEPROM | Unavailable: `0`, API min 10 / max 25 |
 | 1696–1697 | GLT Temperaturanforderung Heizen | `glt_temp_demand_heating` | FLOAT | °C | RW · cyclic | — |
 | 1698–1699 | GLT Temperaturanforderung Kühlen | `glt_temp_demand_cooling` | FLOAT | °C | RW · cyclic | — |
 
@@ -391,8 +415,8 @@ The German description is intended for identification; the code-form register na
 | 1711 | Externe Kühlanforderung | `demand_cooling` | BOOL | — | RW | — |
 | 1712 | Externe WW-Ladeanforderung | `demand_dhw_charging` | BOOL | — | RW | — |
 | 1713 | Einmalige WW-Anforderung | `demand_onetime_dhw` | BOOL | — | RW | — |
-| 1714 | Externe Anforderung Grundwasserpumpe M15 | `ext_demand_groundwater_pump_m15` | UCHAR | % | RW | Navigator 10 |
-| 1715 | Externe Anforderung Grundwasserpumpe M15 (SW max) | `ext_demand_groundwater_pump_m15_sw_max` | UCHAR | % | RW | Navigator 10 |
+| 1714 | Externe Anforderung Grundwasserpumpe M15 | `ext_demand_groundwater_pump_m15` | UCHAR | % | RW | Navigator 10, Unavailable: `254`, API min 0 / max 100 |
+| 1715 | Externe Anforderung Grundwasserpumpe M15 (SW max) | `ext_demand_groundwater_pump_m15_sw_max` | UCHAR | % | RW | Navigator 10, Unavailable: `254`, API min 0 / max 100 |
 | 1716–1717 | GLT Wärmespeichertemperatur | `glt_heat_storage_temp` | FLOAT | °C | RW | — |
 | 1718–1719 | GLT Kältespeichertemperatur | `glt_cold_storage_temp` | FLOAT | °C | RW | — |
 | 1720–1721 | GLT Warmwasser unten | `glt_dhw_temp_bottom` | FLOAT | °C | RW | — |
@@ -410,459 +434,459 @@ The German description is intended for identification; the code-form register na
 | 1850–1851 | Solar Kollektortemperatur | `solar_collector_temp` | FLOAT | °C | R | — |
 | 1852–1853 | Solar Rücklauftemperatur | `solar_return_temp` | FLOAT | °C | R | — |
 | 1854–1855 | Solar Ladetemperatur | `solar_charging_temp` | FLOAT | °C | R | — |
-| 1856 | Solar Betriebsart | `solar_mode` | UCHAR | — | RW · EEPROM | Enum |
+| 1856 | Solar Betriebsart | `solar_mode` | UCHAR | — | RW · EEPROM | `0` = Automatic · `1` = DHW · `2` = Heating · `3` = DHW + Heating · `4` = Heat Source / Pool, Unavailable: `255`, API min 0 / max 4 |
 | 1857–1858 | Solar WQ-Referenztemperatur/Pooltemperatur | `solar_wq_pool_temp` | FLOAT | °C | R | — |
 | 1870–1871 | ISC Ladetemperatur Kühlen | `isc_charging_temp_cooling` | FLOAT | °C | R | — |
 | 1872–1873 | ISC Rückkühltemperatur | `isc_recooling_temp` | FLOAT | °C | R | — |
-| 1874 | ISC Modus | `isc_mode` | UCHAR | — | R | Enum |
+| 1874 | ISC Modus | `isc_mode` | UCHAR | — | R | `0` = No Waste Heat · `1` = Heating · `4` = DHW · `8` = Heat Source · `255` = Not configured / Unavailable |
 | 1999 | Fehlerquittierung | `error_acknowledge` | UCHAR | — | W · write-only | — |
 
 ### 2000–2999 · Zone modules (420)
 
 | Address(es) | Description (DE) | Register name | Type | Unit | Access | Note |
 |-------------|------------------|---------------|------|------|--------|------|
-| 2000 | Zone 1 Betriebsart Heizen/Kühlen | `zm1_mode_heat_cool` | UCHAR | — | R | Enum |
+| 2000 | Zone 1 Betriebsart Heizen/Kühlen | `zm1_mode_heat_cool` | UCHAR | — | R | `0` = Cooling · `1` = Heating |
 | 2001 | Zone 1 Entfeuchtung | `zm1_dehumidification` | UCHAR | — | R | — |
-| 2002–2003 | Zone 1 Raum 1 Raumtemperatur | `zm1_room1_temp` | FLOAT | °C | RW | — |
+| 2002–2003 | Zone 1 Raum 1 Raumtemperatur | `zm1_room1_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2004–2005 | Zone 1 Raum 1 Raumsolltemperatur | `zm1_room1_setpoint` | FLOAT | °C | RW | — |
-| 2006 | Zone 1 Raum 1 Raumfeuchte | `zm1_room1_humidity` | UCHAR | % | RW | — |
-| 2007 | Zone 1 Raum 1 Raumbetriebsart | `zm1_room1_mode` | UCHAR | — | RW | Enum |
+| 2006 | Zone 1 Raum 1 Raumfeuchte | `zm1_room1_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2007 | Zone 1 Raum 1 Raumbetriebsart | `zm1_room1_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2008 | Zone 1 Raum 1 Relais | `zm1_room1_relay` | UCHAR | — | R | Binary |
-| 2009–2010 | Zone 1 Raum 2 Raumtemperatur | `zm1_room2_temp` | FLOAT | °C | RW | — |
+| 2009–2010 | Zone 1 Raum 2 Raumtemperatur | `zm1_room2_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2011–2012 | Zone 1 Raum 2 Raumsolltemperatur | `zm1_room2_setpoint` | FLOAT | °C | RW | — |
-| 2013 | Zone 1 Raum 2 Raumfeuchte | `zm1_room2_humidity` | UCHAR | % | RW | — |
-| 2014 | Zone 1 Raum 2 Raumbetriebsart | `zm1_room2_mode` | UCHAR | — | RW | Enum |
+| 2013 | Zone 1 Raum 2 Raumfeuchte | `zm1_room2_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2014 | Zone 1 Raum 2 Raumbetriebsart | `zm1_room2_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2015 | Zone 1 Raum 2 Relais | `zm1_room2_relay` | UCHAR | — | R | Binary |
-| 2016–2017 | Zone 1 Raum 3 Raumtemperatur | `zm1_room3_temp` | FLOAT | °C | RW | — |
+| 2016–2017 | Zone 1 Raum 3 Raumtemperatur | `zm1_room3_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2018–2019 | Zone 1 Raum 3 Raumsolltemperatur | `zm1_room3_setpoint` | FLOAT | °C | RW | — |
-| 2020 | Zone 1 Raum 3 Raumfeuchte | `zm1_room3_humidity` | UCHAR | % | RW | — |
-| 2021 | Zone 1 Raum 3 Raumbetriebsart | `zm1_room3_mode` | UCHAR | — | RW | Enum |
+| 2020 | Zone 1 Raum 3 Raumfeuchte | `zm1_room3_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2021 | Zone 1 Raum 3 Raumbetriebsart | `zm1_room3_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2022 | Zone 1 Raum 3 Relais | `zm1_room3_relay` | UCHAR | — | R | Binary |
-| 2023–2024 | Zone 1 Raum 4 Raumtemperatur | `zm1_room4_temp` | FLOAT | °C | RW | — |
+| 2023–2024 | Zone 1 Raum 4 Raumtemperatur | `zm1_room4_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2025–2026 | Zone 1 Raum 4 Raumsolltemperatur | `zm1_room4_setpoint` | FLOAT | °C | RW | — |
-| 2027 | Zone 1 Raum 4 Raumfeuchte | `zm1_room4_humidity` | UCHAR | % | RW | — |
-| 2028 | Zone 1 Raum 4 Raumbetriebsart | `zm1_room4_mode` | UCHAR | — | RW | Enum |
+| 2027 | Zone 1 Raum 4 Raumfeuchte | `zm1_room4_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2028 | Zone 1 Raum 4 Raumbetriebsart | `zm1_room4_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2029 | Zone 1 Raum 4 Relais | `zm1_room4_relay` | UCHAR | — | R | Binary |
-| 2030–2031 | Zone 1 Raum 5 Raumtemperatur | `zm1_room5_temp` | FLOAT | °C | RW | — |
+| 2030–2031 | Zone 1 Raum 5 Raumtemperatur | `zm1_room5_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2032–2033 | Zone 1 Raum 5 Raumsolltemperatur | `zm1_room5_setpoint` | FLOAT | °C | RW | — |
-| 2034 | Zone 1 Raum 5 Raumfeuchte | `zm1_room5_humidity` | UCHAR | % | RW | — |
-| 2035 | Zone 1 Raum 5 Raumbetriebsart | `zm1_room5_mode` | UCHAR | — | RW | Enum |
+| 2034 | Zone 1 Raum 5 Raumfeuchte | `zm1_room5_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2035 | Zone 1 Raum 5 Raumbetriebsart | `zm1_room5_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2036 | Zone 1 Raum 5 Relais | `zm1_room5_relay` | UCHAR | — | R | Binary |
-| 2037–2038 | Zone 1 Raum 6 Raumtemperatur | `zm1_room6_temp` | FLOAT | °C | RW | — |
+| 2037–2038 | Zone 1 Raum 6 Raumtemperatur | `zm1_room6_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2039–2040 | Zone 1 Raum 6 Raumsolltemperatur | `zm1_room6_setpoint` | FLOAT | °C | RW | — |
-| 2041 | Zone 1 Raum 6 Raumfeuchte | `zm1_room6_humidity` | UCHAR | % | RW | — |
-| 2042 | Zone 1 Raum 6 Raumbetriebsart | `zm1_room6_mode` | UCHAR | — | RW | Enum |
+| 2041 | Zone 1 Raum 6 Raumfeuchte | `zm1_room6_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2042 | Zone 1 Raum 6 Raumbetriebsart | `zm1_room6_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2043 | Zone 1 Raum 6 Relais | `zm1_room6_relay` | UCHAR | — | R | Binary |
-| 2044–2045 | Zone 1 Raum 7 Raumtemperatur | `zm1_room7_temp` | FLOAT | °C | RW | — |
+| 2044–2045 | Zone 1 Raum 7 Raumtemperatur | `zm1_room7_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2046–2047 | Zone 1 Raum 7 Raumsolltemperatur | `zm1_room7_setpoint` | FLOAT | °C | RW | — |
-| 2048 | Zone 1 Raum 7 Raumfeuchte | `zm1_room7_humidity` | UCHAR | % | RW | — |
-| 2049 | Zone 1 Raum 7 Raumbetriebsart | `zm1_room7_mode` | UCHAR | — | RW | Enum |
+| 2048 | Zone 1 Raum 7 Raumfeuchte | `zm1_room7_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2049 | Zone 1 Raum 7 Raumbetriebsart | `zm1_room7_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2050 | Zone 1 Raum 7 Relais | `zm1_room7_relay` | UCHAR | — | R | Binary |
-| 2051–2052 | Zone 1 Raum 8 Raumtemperatur | `zm1_room8_temp` | FLOAT | °C | RW | — |
+| 2051–2052 | Zone 1 Raum 8 Raumtemperatur | `zm1_room8_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2053–2054 | Zone 1 Raum 8 Raumsolltemperatur | `zm1_room8_setpoint` | FLOAT | °C | RW | — |
-| 2055 | Zone 1 Raum 8 Raumfeuchte | `zm1_room8_humidity` | UCHAR | % | RW | — |
-| 2056 | Zone 1 Raum 8 Raumbetriebsart | `zm1_room8_mode` | UCHAR | — | RW | Enum |
+| 2055 | Zone 1 Raum 8 Raumfeuchte | `zm1_room8_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2056 | Zone 1 Raum 8 Raumbetriebsart | `zm1_room8_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2057 | Zone 1 Raum 8 Relais | `zm1_room8_relay` | UCHAR | — | R | Binary |
-| 2065 | Zone 2 Betriebsart Heizen/Kühlen | `zm2_mode_heat_cool` | UCHAR | — | R | Enum |
+| 2065 | Zone 2 Betriebsart Heizen/Kühlen | `zm2_mode_heat_cool` | UCHAR | — | R | `0` = Cooling · `1` = Heating |
 | 2066 | Zone 2 Entfeuchtung | `zm2_dehumidification` | UCHAR | — | R | — |
-| 2067–2068 | Zone 2 Raum 1 Raumtemperatur | `zm2_room1_temp` | FLOAT | °C | RW | — |
+| 2067–2068 | Zone 2 Raum 1 Raumtemperatur | `zm2_room1_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2069–2070 | Zone 2 Raum 1 Raumsolltemperatur | `zm2_room1_setpoint` | FLOAT | °C | RW | — |
-| 2071 | Zone 2 Raum 1 Raumfeuchte | `zm2_room1_humidity` | UCHAR | % | RW | — |
-| 2072 | Zone 2 Raum 1 Raumbetriebsart | `zm2_room1_mode` | UCHAR | — | RW | Enum |
+| 2071 | Zone 2 Raum 1 Raumfeuchte | `zm2_room1_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2072 | Zone 2 Raum 1 Raumbetriebsart | `zm2_room1_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2073 | Zone 2 Raum 1 Relais | `zm2_room1_relay` | UCHAR | — | R | Binary |
-| 2074–2075 | Zone 2 Raum 2 Raumtemperatur | `zm2_room2_temp` | FLOAT | °C | RW | — |
+| 2074–2075 | Zone 2 Raum 2 Raumtemperatur | `zm2_room2_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2076–2077 | Zone 2 Raum 2 Raumsolltemperatur | `zm2_room2_setpoint` | FLOAT | °C | RW | — |
-| 2078 | Zone 2 Raum 2 Raumfeuchte | `zm2_room2_humidity` | UCHAR | % | RW | — |
-| 2079 | Zone 2 Raum 2 Raumbetriebsart | `zm2_room2_mode` | UCHAR | — | RW | Enum |
+| 2078 | Zone 2 Raum 2 Raumfeuchte | `zm2_room2_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2079 | Zone 2 Raum 2 Raumbetriebsart | `zm2_room2_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2080 | Zone 2 Raum 2 Relais | `zm2_room2_relay` | UCHAR | — | R | Binary |
-| 2081–2082 | Zone 2 Raum 3 Raumtemperatur | `zm2_room3_temp` | FLOAT | °C | RW | — |
+| 2081–2082 | Zone 2 Raum 3 Raumtemperatur | `zm2_room3_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2083–2084 | Zone 2 Raum 3 Raumsolltemperatur | `zm2_room3_setpoint` | FLOAT | °C | RW | — |
-| 2085 | Zone 2 Raum 3 Raumfeuchte | `zm2_room3_humidity` | UCHAR | % | RW | — |
-| 2086 | Zone 2 Raum 3 Raumbetriebsart | `zm2_room3_mode` | UCHAR | — | RW | Enum |
+| 2085 | Zone 2 Raum 3 Raumfeuchte | `zm2_room3_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2086 | Zone 2 Raum 3 Raumbetriebsart | `zm2_room3_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2087 | Zone 2 Raum 3 Relais | `zm2_room3_relay` | UCHAR | — | R | Binary |
-| 2088–2089 | Zone 2 Raum 4 Raumtemperatur | `zm2_room4_temp` | FLOAT | °C | RW | — |
+| 2088–2089 | Zone 2 Raum 4 Raumtemperatur | `zm2_room4_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2090–2091 | Zone 2 Raum 4 Raumsolltemperatur | `zm2_room4_setpoint` | FLOAT | °C | RW | — |
-| 2092 | Zone 2 Raum 4 Raumfeuchte | `zm2_room4_humidity` | UCHAR | % | RW | — |
-| 2093 | Zone 2 Raum 4 Raumbetriebsart | `zm2_room4_mode` | UCHAR | — | RW | Enum |
+| 2092 | Zone 2 Raum 4 Raumfeuchte | `zm2_room4_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2093 | Zone 2 Raum 4 Raumbetriebsart | `zm2_room4_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2094 | Zone 2 Raum 4 Relais | `zm2_room4_relay` | UCHAR | — | R | Binary |
-| 2095–2096 | Zone 2 Raum 5 Raumtemperatur | `zm2_room5_temp` | FLOAT | °C | RW | — |
+| 2095–2096 | Zone 2 Raum 5 Raumtemperatur | `zm2_room5_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2097–2098 | Zone 2 Raum 5 Raumsolltemperatur | `zm2_room5_setpoint` | FLOAT | °C | RW | — |
-| 2099 | Zone 2 Raum 5 Raumfeuchte | `zm2_room5_humidity` | UCHAR | % | RW | — |
-| 2100 | Zone 2 Raum 5 Raumbetriebsart | `zm2_room5_mode` | UCHAR | — | RW | Enum |
+| 2099 | Zone 2 Raum 5 Raumfeuchte | `zm2_room5_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2100 | Zone 2 Raum 5 Raumbetriebsart | `zm2_room5_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2101 | Zone 2 Raum 5 Relais | `zm2_room5_relay` | UCHAR | — | R | Binary |
-| 2102–2103 | Zone 2 Raum 6 Raumtemperatur | `zm2_room6_temp` | FLOAT | °C | RW | — |
+| 2102–2103 | Zone 2 Raum 6 Raumtemperatur | `zm2_room6_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2104–2105 | Zone 2 Raum 6 Raumsolltemperatur | `zm2_room6_setpoint` | FLOAT | °C | RW | — |
-| 2106 | Zone 2 Raum 6 Raumfeuchte | `zm2_room6_humidity` | UCHAR | % | RW | — |
-| 2107 | Zone 2 Raum 6 Raumbetriebsart | `zm2_room6_mode` | UCHAR | — | RW | Enum |
+| 2106 | Zone 2 Raum 6 Raumfeuchte | `zm2_room6_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2107 | Zone 2 Raum 6 Raumbetriebsart | `zm2_room6_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2108 | Zone 2 Raum 6 Relais | `zm2_room6_relay` | UCHAR | — | R | Binary |
-| 2109–2110 | Zone 2 Raum 7 Raumtemperatur | `zm2_room7_temp` | FLOAT | °C | RW | — |
+| 2109–2110 | Zone 2 Raum 7 Raumtemperatur | `zm2_room7_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2111–2112 | Zone 2 Raum 7 Raumsolltemperatur | `zm2_room7_setpoint` | FLOAT | °C | RW | — |
-| 2113 | Zone 2 Raum 7 Raumfeuchte | `zm2_room7_humidity` | UCHAR | % | RW | — |
-| 2114 | Zone 2 Raum 7 Raumbetriebsart | `zm2_room7_mode` | UCHAR | — | RW | Enum |
+| 2113 | Zone 2 Raum 7 Raumfeuchte | `zm2_room7_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2114 | Zone 2 Raum 7 Raumbetriebsart | `zm2_room7_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2115 | Zone 2 Raum 7 Relais | `zm2_room7_relay` | UCHAR | — | R | Binary |
-| 2116–2117 | Zone 2 Raum 8 Raumtemperatur | `zm2_room8_temp` | FLOAT | °C | RW | — |
+| 2116–2117 | Zone 2 Raum 8 Raumtemperatur | `zm2_room8_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2118–2119 | Zone 2 Raum 8 Raumsolltemperatur | `zm2_room8_setpoint` | FLOAT | °C | RW | — |
-| 2120 | Zone 2 Raum 8 Raumfeuchte | `zm2_room8_humidity` | UCHAR | % | RW | — |
-| 2121 | Zone 2 Raum 8 Raumbetriebsart | `zm2_room8_mode` | UCHAR | — | RW | Enum |
+| 2120 | Zone 2 Raum 8 Raumfeuchte | `zm2_room8_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2121 | Zone 2 Raum 8 Raumbetriebsart | `zm2_room8_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2122 | Zone 2 Raum 8 Relais | `zm2_room8_relay` | UCHAR | — | R | Binary |
-| 2130 | Zone 3 Betriebsart Heizen/Kühlen | `zm3_mode_heat_cool` | UCHAR | — | R | Enum |
+| 2130 | Zone 3 Betriebsart Heizen/Kühlen | `zm3_mode_heat_cool` | UCHAR | — | R | `0` = Cooling · `1` = Heating |
 | 2131 | Zone 3 Entfeuchtung | `zm3_dehumidification` | UCHAR | — | R | — |
-| 2132–2133 | Zone 3 Raum 1 Raumtemperatur | `zm3_room1_temp` | FLOAT | °C | RW | — |
+| 2132–2133 | Zone 3 Raum 1 Raumtemperatur | `zm3_room1_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2134–2135 | Zone 3 Raum 1 Raumsolltemperatur | `zm3_room1_setpoint` | FLOAT | °C | RW | — |
-| 2136 | Zone 3 Raum 1 Raumfeuchte | `zm3_room1_humidity` | UCHAR | % | RW | — |
-| 2137 | Zone 3 Raum 1 Raumbetriebsart | `zm3_room1_mode` | UCHAR | — | RW | Enum |
+| 2136 | Zone 3 Raum 1 Raumfeuchte | `zm3_room1_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2137 | Zone 3 Raum 1 Raumbetriebsart | `zm3_room1_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2138 | Zone 3 Raum 1 Relais | `zm3_room1_relay` | UCHAR | — | R | Binary |
-| 2139–2140 | Zone 3 Raum 2 Raumtemperatur | `zm3_room2_temp` | FLOAT | °C | RW | — |
+| 2139–2140 | Zone 3 Raum 2 Raumtemperatur | `zm3_room2_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2141–2142 | Zone 3 Raum 2 Raumsolltemperatur | `zm3_room2_setpoint` | FLOAT | °C | RW | — |
-| 2143 | Zone 3 Raum 2 Raumfeuchte | `zm3_room2_humidity` | UCHAR | % | RW | — |
-| 2144 | Zone 3 Raum 2 Raumbetriebsart | `zm3_room2_mode` | UCHAR | — | RW | Enum |
+| 2143 | Zone 3 Raum 2 Raumfeuchte | `zm3_room2_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2144 | Zone 3 Raum 2 Raumbetriebsart | `zm3_room2_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2145 | Zone 3 Raum 2 Relais | `zm3_room2_relay` | UCHAR | — | R | Binary |
-| 2146–2147 | Zone 3 Raum 3 Raumtemperatur | `zm3_room3_temp` | FLOAT | °C | RW | — |
+| 2146–2147 | Zone 3 Raum 3 Raumtemperatur | `zm3_room3_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2148–2149 | Zone 3 Raum 3 Raumsolltemperatur | `zm3_room3_setpoint` | FLOAT | °C | RW | — |
-| 2150 | Zone 3 Raum 3 Raumfeuchte | `zm3_room3_humidity` | UCHAR | % | RW | — |
-| 2151 | Zone 3 Raum 3 Raumbetriebsart | `zm3_room3_mode` | UCHAR | — | RW | Enum |
+| 2150 | Zone 3 Raum 3 Raumfeuchte | `zm3_room3_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2151 | Zone 3 Raum 3 Raumbetriebsart | `zm3_room3_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2152 | Zone 3 Raum 3 Relais | `zm3_room3_relay` | UCHAR | — | R | Binary |
-| 2153–2154 | Zone 3 Raum 4 Raumtemperatur | `zm3_room4_temp` | FLOAT | °C | RW | — |
+| 2153–2154 | Zone 3 Raum 4 Raumtemperatur | `zm3_room4_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2155–2156 | Zone 3 Raum 4 Raumsolltemperatur | `zm3_room4_setpoint` | FLOAT | °C | RW | — |
-| 2157 | Zone 3 Raum 4 Raumfeuchte | `zm3_room4_humidity` | UCHAR | % | RW | — |
-| 2158 | Zone 3 Raum 4 Raumbetriebsart | `zm3_room4_mode` | UCHAR | — | RW | Enum |
+| 2157 | Zone 3 Raum 4 Raumfeuchte | `zm3_room4_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2158 | Zone 3 Raum 4 Raumbetriebsart | `zm3_room4_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2159 | Zone 3 Raum 4 Relais | `zm3_room4_relay` | UCHAR | — | R | Binary |
-| 2160–2161 | Zone 3 Raum 5 Raumtemperatur | `zm3_room5_temp` | FLOAT | °C | RW | — |
+| 2160–2161 | Zone 3 Raum 5 Raumtemperatur | `zm3_room5_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2162–2163 | Zone 3 Raum 5 Raumsolltemperatur | `zm3_room5_setpoint` | FLOAT | °C | RW | — |
-| 2164 | Zone 3 Raum 5 Raumfeuchte | `zm3_room5_humidity` | UCHAR | % | RW | — |
-| 2165 | Zone 3 Raum 5 Raumbetriebsart | `zm3_room5_mode` | UCHAR | — | RW | Enum |
+| 2164 | Zone 3 Raum 5 Raumfeuchte | `zm3_room5_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2165 | Zone 3 Raum 5 Raumbetriebsart | `zm3_room5_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2166 | Zone 3 Raum 5 Relais | `zm3_room5_relay` | UCHAR | — | R | Binary |
-| 2167–2168 | Zone 3 Raum 6 Raumtemperatur | `zm3_room6_temp` | FLOAT | °C | RW | — |
+| 2167–2168 | Zone 3 Raum 6 Raumtemperatur | `zm3_room6_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2169–2170 | Zone 3 Raum 6 Raumsolltemperatur | `zm3_room6_setpoint` | FLOAT | °C | RW | — |
-| 2171 | Zone 3 Raum 6 Raumfeuchte | `zm3_room6_humidity` | UCHAR | % | RW | — |
-| 2172 | Zone 3 Raum 6 Raumbetriebsart | `zm3_room6_mode` | UCHAR | — | RW | Enum |
+| 2171 | Zone 3 Raum 6 Raumfeuchte | `zm3_room6_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2172 | Zone 3 Raum 6 Raumbetriebsart | `zm3_room6_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2173 | Zone 3 Raum 6 Relais | `zm3_room6_relay` | UCHAR | — | R | Binary |
-| 2174–2175 | Zone 3 Raum 7 Raumtemperatur | `zm3_room7_temp` | FLOAT | °C | RW | — |
+| 2174–2175 | Zone 3 Raum 7 Raumtemperatur | `zm3_room7_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2176–2177 | Zone 3 Raum 7 Raumsolltemperatur | `zm3_room7_setpoint` | FLOAT | °C | RW | — |
-| 2178 | Zone 3 Raum 7 Raumfeuchte | `zm3_room7_humidity` | UCHAR | % | RW | — |
-| 2179 | Zone 3 Raum 7 Raumbetriebsart | `zm3_room7_mode` | UCHAR | — | RW | Enum |
+| 2178 | Zone 3 Raum 7 Raumfeuchte | `zm3_room7_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2179 | Zone 3 Raum 7 Raumbetriebsart | `zm3_room7_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2180 | Zone 3 Raum 7 Relais | `zm3_room7_relay` | UCHAR | — | R | Binary |
-| 2181–2182 | Zone 3 Raum 8 Raumtemperatur | `zm3_room8_temp` | FLOAT | °C | RW | — |
+| 2181–2182 | Zone 3 Raum 8 Raumtemperatur | `zm3_room8_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2183–2184 | Zone 3 Raum 8 Raumsolltemperatur | `zm3_room8_setpoint` | FLOAT | °C | RW | — |
-| 2185 | Zone 3 Raum 8 Raumfeuchte | `zm3_room8_humidity` | UCHAR | % | RW | — |
-| 2186 | Zone 3 Raum 8 Raumbetriebsart | `zm3_room8_mode` | UCHAR | — | RW | Enum |
+| 2185 | Zone 3 Raum 8 Raumfeuchte | `zm3_room8_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2186 | Zone 3 Raum 8 Raumbetriebsart | `zm3_room8_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2187 | Zone 3 Raum 8 Relais | `zm3_room8_relay` | UCHAR | — | R | Binary |
-| 2195 | Zone 4 Betriebsart Heizen/Kühlen | `zm4_mode_heat_cool` | UCHAR | — | R | Enum |
+| 2195 | Zone 4 Betriebsart Heizen/Kühlen | `zm4_mode_heat_cool` | UCHAR | — | R | `0` = Cooling · `1` = Heating |
 | 2196 | Zone 4 Entfeuchtung | `zm4_dehumidification` | UCHAR | — | R | — |
-| 2197–2198 | Zone 4 Raum 1 Raumtemperatur | `zm4_room1_temp` | FLOAT | °C | RW | — |
+| 2197–2198 | Zone 4 Raum 1 Raumtemperatur | `zm4_room1_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2199–2200 | Zone 4 Raum 1 Raumsolltemperatur | `zm4_room1_setpoint` | FLOAT | °C | RW | — |
-| 2201 | Zone 4 Raum 1 Raumfeuchte | `zm4_room1_humidity` | UCHAR | % | RW | — |
-| 2202 | Zone 4 Raum 1 Raumbetriebsart | `zm4_room1_mode` | UCHAR | — | RW | Enum |
+| 2201 | Zone 4 Raum 1 Raumfeuchte | `zm4_room1_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2202 | Zone 4 Raum 1 Raumbetriebsart | `zm4_room1_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2203 | Zone 4 Raum 1 Relais | `zm4_room1_relay` | UCHAR | — | R | Binary |
-| 2204–2205 | Zone 4 Raum 2 Raumtemperatur | `zm4_room2_temp` | FLOAT | °C | RW | — |
+| 2204–2205 | Zone 4 Raum 2 Raumtemperatur | `zm4_room2_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2206–2207 | Zone 4 Raum 2 Raumsolltemperatur | `zm4_room2_setpoint` | FLOAT | °C | RW | — |
-| 2208 | Zone 4 Raum 2 Raumfeuchte | `zm4_room2_humidity` | UCHAR | % | RW | — |
-| 2209 | Zone 4 Raum 2 Raumbetriebsart | `zm4_room2_mode` | UCHAR | — | RW | Enum |
+| 2208 | Zone 4 Raum 2 Raumfeuchte | `zm4_room2_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2209 | Zone 4 Raum 2 Raumbetriebsart | `zm4_room2_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2210 | Zone 4 Raum 2 Relais | `zm4_room2_relay` | UCHAR | — | R | Binary |
-| 2211–2212 | Zone 4 Raum 3 Raumtemperatur | `zm4_room3_temp` | FLOAT | °C | RW | — |
+| 2211–2212 | Zone 4 Raum 3 Raumtemperatur | `zm4_room3_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2213–2214 | Zone 4 Raum 3 Raumsolltemperatur | `zm4_room3_setpoint` | FLOAT | °C | RW | — |
-| 2215 | Zone 4 Raum 3 Raumfeuchte | `zm4_room3_humidity` | UCHAR | % | RW | — |
-| 2216 | Zone 4 Raum 3 Raumbetriebsart | `zm4_room3_mode` | UCHAR | — | RW | Enum |
+| 2215 | Zone 4 Raum 3 Raumfeuchte | `zm4_room3_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2216 | Zone 4 Raum 3 Raumbetriebsart | `zm4_room3_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2217 | Zone 4 Raum 3 Relais | `zm4_room3_relay` | UCHAR | — | R | Binary |
-| 2218–2219 | Zone 4 Raum 4 Raumtemperatur | `zm4_room4_temp` | FLOAT | °C | RW | — |
+| 2218–2219 | Zone 4 Raum 4 Raumtemperatur | `zm4_room4_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2220–2221 | Zone 4 Raum 4 Raumsolltemperatur | `zm4_room4_setpoint` | FLOAT | °C | RW | — |
-| 2222 | Zone 4 Raum 4 Raumfeuchte | `zm4_room4_humidity` | UCHAR | % | RW | — |
-| 2223 | Zone 4 Raum 4 Raumbetriebsart | `zm4_room4_mode` | UCHAR | — | RW | Enum |
+| 2222 | Zone 4 Raum 4 Raumfeuchte | `zm4_room4_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2223 | Zone 4 Raum 4 Raumbetriebsart | `zm4_room4_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2224 | Zone 4 Raum 4 Relais | `zm4_room4_relay` | UCHAR | — | R | Binary |
-| 2225–2226 | Zone 4 Raum 5 Raumtemperatur | `zm4_room5_temp` | FLOAT | °C | RW | — |
+| 2225–2226 | Zone 4 Raum 5 Raumtemperatur | `zm4_room5_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2227–2228 | Zone 4 Raum 5 Raumsolltemperatur | `zm4_room5_setpoint` | FLOAT | °C | RW | — |
-| 2229 | Zone 4 Raum 5 Raumfeuchte | `zm4_room5_humidity` | UCHAR | % | RW | — |
-| 2230 | Zone 4 Raum 5 Raumbetriebsart | `zm4_room5_mode` | UCHAR | — | RW | Enum |
+| 2229 | Zone 4 Raum 5 Raumfeuchte | `zm4_room5_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2230 | Zone 4 Raum 5 Raumbetriebsart | `zm4_room5_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2231 | Zone 4 Raum 5 Relais | `zm4_room5_relay` | UCHAR | — | R | Binary |
-| 2232–2233 | Zone 4 Raum 6 Raumtemperatur | `zm4_room6_temp` | FLOAT | °C | RW | — |
+| 2232–2233 | Zone 4 Raum 6 Raumtemperatur | `zm4_room6_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2234–2235 | Zone 4 Raum 6 Raumsolltemperatur | `zm4_room6_setpoint` | FLOAT | °C | RW | — |
-| 2236 | Zone 4 Raum 6 Raumfeuchte | `zm4_room6_humidity` | UCHAR | % | RW | — |
-| 2237 | Zone 4 Raum 6 Raumbetriebsart | `zm4_room6_mode` | UCHAR | — | RW | Enum |
+| 2236 | Zone 4 Raum 6 Raumfeuchte | `zm4_room6_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2237 | Zone 4 Raum 6 Raumbetriebsart | `zm4_room6_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2238 | Zone 4 Raum 6 Relais | `zm4_room6_relay` | UCHAR | — | R | Binary |
-| 2239–2240 | Zone 4 Raum 7 Raumtemperatur | `zm4_room7_temp` | FLOAT | °C | RW | — |
+| 2239–2240 | Zone 4 Raum 7 Raumtemperatur | `zm4_room7_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2241–2242 | Zone 4 Raum 7 Raumsolltemperatur | `zm4_room7_setpoint` | FLOAT | °C | RW | — |
-| 2243 | Zone 4 Raum 7 Raumfeuchte | `zm4_room7_humidity` | UCHAR | % | RW | — |
-| 2244 | Zone 4 Raum 7 Raumbetriebsart | `zm4_room7_mode` | UCHAR | — | RW | Enum |
+| 2243 | Zone 4 Raum 7 Raumfeuchte | `zm4_room7_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2244 | Zone 4 Raum 7 Raumbetriebsart | `zm4_room7_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2245 | Zone 4 Raum 7 Relais | `zm4_room7_relay` | UCHAR | — | R | Binary |
-| 2246–2247 | Zone 4 Raum 8 Raumtemperatur | `zm4_room8_temp` | FLOAT | °C | RW | — |
+| 2246–2247 | Zone 4 Raum 8 Raumtemperatur | `zm4_room8_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2248–2249 | Zone 4 Raum 8 Raumsolltemperatur | `zm4_room8_setpoint` | FLOAT | °C | RW | — |
-| 2250 | Zone 4 Raum 8 Raumfeuchte | `zm4_room8_humidity` | UCHAR | % | RW | — |
-| 2251 | Zone 4 Raum 8 Raumbetriebsart | `zm4_room8_mode` | UCHAR | — | RW | Enum |
+| 2250 | Zone 4 Raum 8 Raumfeuchte | `zm4_room8_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2251 | Zone 4 Raum 8 Raumbetriebsart | `zm4_room8_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2252 | Zone 4 Raum 8 Relais | `zm4_room8_relay` | UCHAR | — | R | Binary |
-| 2260 | Zone 5 Betriebsart Heizen/Kühlen | `zm5_mode_heat_cool` | UCHAR | — | R | Enum |
+| 2260 | Zone 5 Betriebsart Heizen/Kühlen | `zm5_mode_heat_cool` | UCHAR | — | R | `0` = Cooling · `1` = Heating |
 | 2261 | Zone 5 Entfeuchtung | `zm5_dehumidification` | UCHAR | — | R | — |
-| 2262–2263 | Zone 5 Raum 1 Raumtemperatur | `zm5_room1_temp` | FLOAT | °C | RW | — |
+| 2262–2263 | Zone 5 Raum 1 Raumtemperatur | `zm5_room1_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2264–2265 | Zone 5 Raum 1 Raumsolltemperatur | `zm5_room1_setpoint` | FLOAT | °C | RW | — |
-| 2266 | Zone 5 Raum 1 Raumfeuchte | `zm5_room1_humidity` | UCHAR | % | RW | — |
-| 2267 | Zone 5 Raum 1 Raumbetriebsart | `zm5_room1_mode` | UCHAR | — | RW | Enum |
+| 2266 | Zone 5 Raum 1 Raumfeuchte | `zm5_room1_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2267 | Zone 5 Raum 1 Raumbetriebsart | `zm5_room1_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2268 | Zone 5 Raum 1 Relais | `zm5_room1_relay` | UCHAR | — | R | Binary |
-| 2269–2270 | Zone 5 Raum 2 Raumtemperatur | `zm5_room2_temp` | FLOAT | °C | RW | — |
+| 2269–2270 | Zone 5 Raum 2 Raumtemperatur | `zm5_room2_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2271–2272 | Zone 5 Raum 2 Raumsolltemperatur | `zm5_room2_setpoint` | FLOAT | °C | RW | — |
-| 2273 | Zone 5 Raum 2 Raumfeuchte | `zm5_room2_humidity` | UCHAR | % | RW | — |
-| 2274 | Zone 5 Raum 2 Raumbetriebsart | `zm5_room2_mode` | UCHAR | — | RW | Enum |
+| 2273 | Zone 5 Raum 2 Raumfeuchte | `zm5_room2_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2274 | Zone 5 Raum 2 Raumbetriebsart | `zm5_room2_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2275 | Zone 5 Raum 2 Relais | `zm5_room2_relay` | UCHAR | — | R | Binary |
-| 2276–2277 | Zone 5 Raum 3 Raumtemperatur | `zm5_room3_temp` | FLOAT | °C | RW | — |
+| 2276–2277 | Zone 5 Raum 3 Raumtemperatur | `zm5_room3_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2278–2279 | Zone 5 Raum 3 Raumsolltemperatur | `zm5_room3_setpoint` | FLOAT | °C | RW | — |
-| 2280 | Zone 5 Raum 3 Raumfeuchte | `zm5_room3_humidity` | UCHAR | % | RW | — |
-| 2281 | Zone 5 Raum 3 Raumbetriebsart | `zm5_room3_mode` | UCHAR | — | RW | Enum |
+| 2280 | Zone 5 Raum 3 Raumfeuchte | `zm5_room3_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2281 | Zone 5 Raum 3 Raumbetriebsart | `zm5_room3_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2282 | Zone 5 Raum 3 Relais | `zm5_room3_relay` | UCHAR | — | R | Binary |
-| 2283–2284 | Zone 5 Raum 4 Raumtemperatur | `zm5_room4_temp` | FLOAT | °C | RW | — |
+| 2283–2284 | Zone 5 Raum 4 Raumtemperatur | `zm5_room4_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2285–2286 | Zone 5 Raum 4 Raumsolltemperatur | `zm5_room4_setpoint` | FLOAT | °C | RW | — |
-| 2287 | Zone 5 Raum 4 Raumfeuchte | `zm5_room4_humidity` | UCHAR | % | RW | — |
-| 2288 | Zone 5 Raum 4 Raumbetriebsart | `zm5_room4_mode` | UCHAR | — | RW | Enum |
+| 2287 | Zone 5 Raum 4 Raumfeuchte | `zm5_room4_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2288 | Zone 5 Raum 4 Raumbetriebsart | `zm5_room4_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2289 | Zone 5 Raum 4 Relais | `zm5_room4_relay` | UCHAR | — | R | Binary |
-| 2290–2291 | Zone 5 Raum 5 Raumtemperatur | `zm5_room5_temp` | FLOAT | °C | RW | — |
+| 2290–2291 | Zone 5 Raum 5 Raumtemperatur | `zm5_room5_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2292–2293 | Zone 5 Raum 5 Raumsolltemperatur | `zm5_room5_setpoint` | FLOAT | °C | RW | — |
-| 2294 | Zone 5 Raum 5 Raumfeuchte | `zm5_room5_humidity` | UCHAR | % | RW | — |
-| 2295 | Zone 5 Raum 5 Raumbetriebsart | `zm5_room5_mode` | UCHAR | — | RW | Enum |
+| 2294 | Zone 5 Raum 5 Raumfeuchte | `zm5_room5_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2295 | Zone 5 Raum 5 Raumbetriebsart | `zm5_room5_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2296 | Zone 5 Raum 5 Relais | `zm5_room5_relay` | UCHAR | — | R | Binary |
-| 2297–2298 | Zone 5 Raum 6 Raumtemperatur | `zm5_room6_temp` | FLOAT | °C | RW | — |
+| 2297–2298 | Zone 5 Raum 6 Raumtemperatur | `zm5_room6_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2299–2300 | Zone 5 Raum 6 Raumsolltemperatur | `zm5_room6_setpoint` | FLOAT | °C | RW | — |
-| 2301 | Zone 5 Raum 6 Raumfeuchte | `zm5_room6_humidity` | UCHAR | % | RW | — |
-| 2302 | Zone 5 Raum 6 Raumbetriebsart | `zm5_room6_mode` | UCHAR | — | RW | Enum |
+| 2301 | Zone 5 Raum 6 Raumfeuchte | `zm5_room6_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2302 | Zone 5 Raum 6 Raumbetriebsart | `zm5_room6_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2303 | Zone 5 Raum 6 Relais | `zm5_room6_relay` | UCHAR | — | R | Binary |
-| 2304–2305 | Zone 5 Raum 7 Raumtemperatur | `zm5_room7_temp` | FLOAT | °C | RW | — |
+| 2304–2305 | Zone 5 Raum 7 Raumtemperatur | `zm5_room7_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2306–2307 | Zone 5 Raum 7 Raumsolltemperatur | `zm5_room7_setpoint` | FLOAT | °C | RW | — |
-| 2308 | Zone 5 Raum 7 Raumfeuchte | `zm5_room7_humidity` | UCHAR | % | RW | — |
-| 2309 | Zone 5 Raum 7 Raumbetriebsart | `zm5_room7_mode` | UCHAR | — | RW | Enum |
+| 2308 | Zone 5 Raum 7 Raumfeuchte | `zm5_room7_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2309 | Zone 5 Raum 7 Raumbetriebsart | `zm5_room7_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2310 | Zone 5 Raum 7 Relais | `zm5_room7_relay` | UCHAR | — | R | Binary |
-| 2311–2312 | Zone 5 Raum 8 Raumtemperatur | `zm5_room8_temp` | FLOAT | °C | RW | — |
+| 2311–2312 | Zone 5 Raum 8 Raumtemperatur | `zm5_room8_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2313–2314 | Zone 5 Raum 8 Raumsolltemperatur | `zm5_room8_setpoint` | FLOAT | °C | RW | — |
-| 2315 | Zone 5 Raum 8 Raumfeuchte | `zm5_room8_humidity` | UCHAR | % | RW | — |
-| 2316 | Zone 5 Raum 8 Raumbetriebsart | `zm5_room8_mode` | UCHAR | — | RW | Enum |
+| 2315 | Zone 5 Raum 8 Raumfeuchte | `zm5_room8_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2316 | Zone 5 Raum 8 Raumbetriebsart | `zm5_room8_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2317 | Zone 5 Raum 8 Relais | `zm5_room8_relay` | UCHAR | — | R | Binary |
-| 2325 | Zone 6 Betriebsart Heizen/Kühlen | `zm6_mode_heat_cool` | UCHAR | — | R | Enum |
+| 2325 | Zone 6 Betriebsart Heizen/Kühlen | `zm6_mode_heat_cool` | UCHAR | — | R | `0` = Cooling · `1` = Heating |
 | 2326 | Zone 6 Entfeuchtung | `zm6_dehumidification` | UCHAR | — | R | — |
-| 2327–2328 | Zone 6 Raum 1 Raumtemperatur | `zm6_room1_temp` | FLOAT | °C | RW | — |
+| 2327–2328 | Zone 6 Raum 1 Raumtemperatur | `zm6_room1_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2329–2330 | Zone 6 Raum 1 Raumsolltemperatur | `zm6_room1_setpoint` | FLOAT | °C | RW | — |
-| 2331 | Zone 6 Raum 1 Raumfeuchte | `zm6_room1_humidity` | UCHAR | % | RW | — |
-| 2332 | Zone 6 Raum 1 Raumbetriebsart | `zm6_room1_mode` | UCHAR | — | RW | Enum |
+| 2331 | Zone 6 Raum 1 Raumfeuchte | `zm6_room1_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2332 | Zone 6 Raum 1 Raumbetriebsart | `zm6_room1_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2333 | Zone 6 Raum 1 Relais | `zm6_room1_relay` | UCHAR | — | R | Binary |
-| 2334–2335 | Zone 6 Raum 2 Raumtemperatur | `zm6_room2_temp` | FLOAT | °C | RW | — |
+| 2334–2335 | Zone 6 Raum 2 Raumtemperatur | `zm6_room2_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2336–2337 | Zone 6 Raum 2 Raumsolltemperatur | `zm6_room2_setpoint` | FLOAT | °C | RW | — |
-| 2338 | Zone 6 Raum 2 Raumfeuchte | `zm6_room2_humidity` | UCHAR | % | RW | — |
-| 2339 | Zone 6 Raum 2 Raumbetriebsart | `zm6_room2_mode` | UCHAR | — | RW | Enum |
+| 2338 | Zone 6 Raum 2 Raumfeuchte | `zm6_room2_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2339 | Zone 6 Raum 2 Raumbetriebsart | `zm6_room2_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2340 | Zone 6 Raum 2 Relais | `zm6_room2_relay` | UCHAR | — | R | Binary |
-| 2341–2342 | Zone 6 Raum 3 Raumtemperatur | `zm6_room3_temp` | FLOAT | °C | RW | — |
+| 2341–2342 | Zone 6 Raum 3 Raumtemperatur | `zm6_room3_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2343–2344 | Zone 6 Raum 3 Raumsolltemperatur | `zm6_room3_setpoint` | FLOAT | °C | RW | — |
-| 2345 | Zone 6 Raum 3 Raumfeuchte | `zm6_room3_humidity` | UCHAR | % | RW | — |
-| 2346 | Zone 6 Raum 3 Raumbetriebsart | `zm6_room3_mode` | UCHAR | — | RW | Enum |
+| 2345 | Zone 6 Raum 3 Raumfeuchte | `zm6_room3_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2346 | Zone 6 Raum 3 Raumbetriebsart | `zm6_room3_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2347 | Zone 6 Raum 3 Relais | `zm6_room3_relay` | UCHAR | — | R | Binary |
-| 2348–2349 | Zone 6 Raum 4 Raumtemperatur | `zm6_room4_temp` | FLOAT | °C | RW | — |
+| 2348–2349 | Zone 6 Raum 4 Raumtemperatur | `zm6_room4_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2350–2351 | Zone 6 Raum 4 Raumsolltemperatur | `zm6_room4_setpoint` | FLOAT | °C | RW | — |
-| 2352 | Zone 6 Raum 4 Raumfeuchte | `zm6_room4_humidity` | UCHAR | % | RW | — |
-| 2353 | Zone 6 Raum 4 Raumbetriebsart | `zm6_room4_mode` | UCHAR | — | RW | Enum |
+| 2352 | Zone 6 Raum 4 Raumfeuchte | `zm6_room4_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2353 | Zone 6 Raum 4 Raumbetriebsart | `zm6_room4_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2354 | Zone 6 Raum 4 Relais | `zm6_room4_relay` | UCHAR | — | R | Binary |
-| 2355–2356 | Zone 6 Raum 5 Raumtemperatur | `zm6_room5_temp` | FLOAT | °C | RW | — |
+| 2355–2356 | Zone 6 Raum 5 Raumtemperatur | `zm6_room5_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2357–2358 | Zone 6 Raum 5 Raumsolltemperatur | `zm6_room5_setpoint` | FLOAT | °C | RW | — |
-| 2359 | Zone 6 Raum 5 Raumfeuchte | `zm6_room5_humidity` | UCHAR | % | RW | — |
-| 2360 | Zone 6 Raum 5 Raumbetriebsart | `zm6_room5_mode` | UCHAR | — | RW | Enum |
+| 2359 | Zone 6 Raum 5 Raumfeuchte | `zm6_room5_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2360 | Zone 6 Raum 5 Raumbetriebsart | `zm6_room5_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2361 | Zone 6 Raum 5 Relais | `zm6_room5_relay` | UCHAR | — | R | Binary |
-| 2362–2363 | Zone 6 Raum 6 Raumtemperatur | `zm6_room6_temp` | FLOAT | °C | RW | — |
+| 2362–2363 | Zone 6 Raum 6 Raumtemperatur | `zm6_room6_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2364–2365 | Zone 6 Raum 6 Raumsolltemperatur | `zm6_room6_setpoint` | FLOAT | °C | RW | — |
-| 2366 | Zone 6 Raum 6 Raumfeuchte | `zm6_room6_humidity` | UCHAR | % | RW | — |
-| 2367 | Zone 6 Raum 6 Raumbetriebsart | `zm6_room6_mode` | UCHAR | — | RW | Enum |
+| 2366 | Zone 6 Raum 6 Raumfeuchte | `zm6_room6_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2367 | Zone 6 Raum 6 Raumbetriebsart | `zm6_room6_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2368 | Zone 6 Raum 6 Relais | `zm6_room6_relay` | UCHAR | — | R | Binary |
-| 2369–2370 | Zone 6 Raum 7 Raumtemperatur | `zm6_room7_temp` | FLOAT | °C | RW | — |
+| 2369–2370 | Zone 6 Raum 7 Raumtemperatur | `zm6_room7_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2371–2372 | Zone 6 Raum 7 Raumsolltemperatur | `zm6_room7_setpoint` | FLOAT | °C | RW | — |
-| 2373 | Zone 6 Raum 7 Raumfeuchte | `zm6_room7_humidity` | UCHAR | % | RW | — |
-| 2374 | Zone 6 Raum 7 Raumbetriebsart | `zm6_room7_mode` | UCHAR | — | RW | Enum |
+| 2373 | Zone 6 Raum 7 Raumfeuchte | `zm6_room7_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2374 | Zone 6 Raum 7 Raumbetriebsart | `zm6_room7_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2375 | Zone 6 Raum 7 Relais | `zm6_room7_relay` | UCHAR | — | R | Binary |
-| 2376–2377 | Zone 6 Raum 8 Raumtemperatur | `zm6_room8_temp` | FLOAT | °C | RW | — |
+| 2376–2377 | Zone 6 Raum 8 Raumtemperatur | `zm6_room8_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2378–2379 | Zone 6 Raum 8 Raumsolltemperatur | `zm6_room8_setpoint` | FLOAT | °C | RW | — |
-| 2380 | Zone 6 Raum 8 Raumfeuchte | `zm6_room8_humidity` | UCHAR | % | RW | — |
-| 2381 | Zone 6 Raum 8 Raumbetriebsart | `zm6_room8_mode` | UCHAR | — | RW | Enum |
+| 2380 | Zone 6 Raum 8 Raumfeuchte | `zm6_room8_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2381 | Zone 6 Raum 8 Raumbetriebsart | `zm6_room8_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2382 | Zone 6 Raum 8 Relais | `zm6_room8_relay` | UCHAR | — | R | Binary |
-| 2390 | Zone 7 Betriebsart Heizen/Kühlen | `zm7_mode_heat_cool` | UCHAR | — | R | Enum |
+| 2390 | Zone 7 Betriebsart Heizen/Kühlen | `zm7_mode_heat_cool` | UCHAR | — | R | `0` = Cooling · `1` = Heating |
 | 2391 | Zone 7 Entfeuchtung | `zm7_dehumidification` | UCHAR | — | R | — |
-| 2392–2393 | Zone 7 Raum 1 Raumtemperatur | `zm7_room1_temp` | FLOAT | °C | RW | — |
+| 2392–2393 | Zone 7 Raum 1 Raumtemperatur | `zm7_room1_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2394–2395 | Zone 7 Raum 1 Raumsolltemperatur | `zm7_room1_setpoint` | FLOAT | °C | RW | — |
-| 2396 | Zone 7 Raum 1 Raumfeuchte | `zm7_room1_humidity` | UCHAR | % | RW | — |
-| 2397 | Zone 7 Raum 1 Raumbetriebsart | `zm7_room1_mode` | UCHAR | — | RW | Enum |
+| 2396 | Zone 7 Raum 1 Raumfeuchte | `zm7_room1_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2397 | Zone 7 Raum 1 Raumbetriebsart | `zm7_room1_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2398 | Zone 7 Raum 1 Relais | `zm7_room1_relay` | UCHAR | — | R | Binary |
-| 2399–2400 | Zone 7 Raum 2 Raumtemperatur | `zm7_room2_temp` | FLOAT | °C | RW | — |
+| 2399–2400 | Zone 7 Raum 2 Raumtemperatur | `zm7_room2_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2401–2402 | Zone 7 Raum 2 Raumsolltemperatur | `zm7_room2_setpoint` | FLOAT | °C | RW | — |
-| 2403 | Zone 7 Raum 2 Raumfeuchte | `zm7_room2_humidity` | UCHAR | % | RW | — |
-| 2404 | Zone 7 Raum 2 Raumbetriebsart | `zm7_room2_mode` | UCHAR | — | RW | Enum |
+| 2403 | Zone 7 Raum 2 Raumfeuchte | `zm7_room2_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2404 | Zone 7 Raum 2 Raumbetriebsart | `zm7_room2_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2405 | Zone 7 Raum 2 Relais | `zm7_room2_relay` | UCHAR | — | R | Binary |
-| 2406–2407 | Zone 7 Raum 3 Raumtemperatur | `zm7_room3_temp` | FLOAT | °C | RW | — |
+| 2406–2407 | Zone 7 Raum 3 Raumtemperatur | `zm7_room3_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2408–2409 | Zone 7 Raum 3 Raumsolltemperatur | `zm7_room3_setpoint` | FLOAT | °C | RW | — |
-| 2410 | Zone 7 Raum 3 Raumfeuchte | `zm7_room3_humidity` | UCHAR | % | RW | — |
-| 2411 | Zone 7 Raum 3 Raumbetriebsart | `zm7_room3_mode` | UCHAR | — | RW | Enum |
+| 2410 | Zone 7 Raum 3 Raumfeuchte | `zm7_room3_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2411 | Zone 7 Raum 3 Raumbetriebsart | `zm7_room3_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2412 | Zone 7 Raum 3 Relais | `zm7_room3_relay` | UCHAR | — | R | Binary |
-| 2413–2414 | Zone 7 Raum 4 Raumtemperatur | `zm7_room4_temp` | FLOAT | °C | RW | — |
+| 2413–2414 | Zone 7 Raum 4 Raumtemperatur | `zm7_room4_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2415–2416 | Zone 7 Raum 4 Raumsolltemperatur | `zm7_room4_setpoint` | FLOAT | °C | RW | — |
-| 2417 | Zone 7 Raum 4 Raumfeuchte | `zm7_room4_humidity` | UCHAR | % | RW | — |
-| 2418 | Zone 7 Raum 4 Raumbetriebsart | `zm7_room4_mode` | UCHAR | — | RW | Enum |
+| 2417 | Zone 7 Raum 4 Raumfeuchte | `zm7_room4_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2418 | Zone 7 Raum 4 Raumbetriebsart | `zm7_room4_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2419 | Zone 7 Raum 4 Relais | `zm7_room4_relay` | UCHAR | — | R | Binary |
-| 2420–2421 | Zone 7 Raum 5 Raumtemperatur | `zm7_room5_temp` | FLOAT | °C | RW | — |
+| 2420–2421 | Zone 7 Raum 5 Raumtemperatur | `zm7_room5_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2422–2423 | Zone 7 Raum 5 Raumsolltemperatur | `zm7_room5_setpoint` | FLOAT | °C | RW | — |
-| 2424 | Zone 7 Raum 5 Raumfeuchte | `zm7_room5_humidity` | UCHAR | % | RW | — |
-| 2425 | Zone 7 Raum 5 Raumbetriebsart | `zm7_room5_mode` | UCHAR | — | RW | Enum |
+| 2424 | Zone 7 Raum 5 Raumfeuchte | `zm7_room5_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2425 | Zone 7 Raum 5 Raumbetriebsart | `zm7_room5_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2426 | Zone 7 Raum 5 Relais | `zm7_room5_relay` | UCHAR | — | R | Binary |
-| 2427–2428 | Zone 7 Raum 6 Raumtemperatur | `zm7_room6_temp` | FLOAT | °C | RW | — |
+| 2427–2428 | Zone 7 Raum 6 Raumtemperatur | `zm7_room6_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2429–2430 | Zone 7 Raum 6 Raumsolltemperatur | `zm7_room6_setpoint` | FLOAT | °C | RW | — |
-| 2431 | Zone 7 Raum 6 Raumfeuchte | `zm7_room6_humidity` | UCHAR | % | RW | — |
-| 2432 | Zone 7 Raum 6 Raumbetriebsart | `zm7_room6_mode` | UCHAR | — | RW | Enum |
+| 2431 | Zone 7 Raum 6 Raumfeuchte | `zm7_room6_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2432 | Zone 7 Raum 6 Raumbetriebsart | `zm7_room6_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2433 | Zone 7 Raum 6 Relais | `zm7_room6_relay` | UCHAR | — | R | Binary |
-| 2434–2435 | Zone 7 Raum 7 Raumtemperatur | `zm7_room7_temp` | FLOAT | °C | RW | — |
+| 2434–2435 | Zone 7 Raum 7 Raumtemperatur | `zm7_room7_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2436–2437 | Zone 7 Raum 7 Raumsolltemperatur | `zm7_room7_setpoint` | FLOAT | °C | RW | — |
-| 2438 | Zone 7 Raum 7 Raumfeuchte | `zm7_room7_humidity` | UCHAR | % | RW | — |
-| 2439 | Zone 7 Raum 7 Raumbetriebsart | `zm7_room7_mode` | UCHAR | — | RW | Enum |
+| 2438 | Zone 7 Raum 7 Raumfeuchte | `zm7_room7_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2439 | Zone 7 Raum 7 Raumbetriebsart | `zm7_room7_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2440 | Zone 7 Raum 7 Relais | `zm7_room7_relay` | UCHAR | — | R | Binary |
-| 2441–2442 | Zone 7 Raum 8 Raumtemperatur | `zm7_room8_temp` | FLOAT | °C | RW | — |
+| 2441–2442 | Zone 7 Raum 8 Raumtemperatur | `zm7_room8_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2443–2444 | Zone 7 Raum 8 Raumsolltemperatur | `zm7_room8_setpoint` | FLOAT | °C | RW | — |
-| 2445 | Zone 7 Raum 8 Raumfeuchte | `zm7_room8_humidity` | UCHAR | % | RW | — |
-| 2446 | Zone 7 Raum 8 Raumbetriebsart | `zm7_room8_mode` | UCHAR | — | RW | Enum |
+| 2445 | Zone 7 Raum 8 Raumfeuchte | `zm7_room8_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2446 | Zone 7 Raum 8 Raumbetriebsart | `zm7_room8_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2447 | Zone 7 Raum 8 Relais | `zm7_room8_relay` | UCHAR | — | R | Binary |
-| 2455 | Zone 8 Betriebsart Heizen/Kühlen | `zm8_mode_heat_cool` | UCHAR | — | R | Enum |
+| 2455 | Zone 8 Betriebsart Heizen/Kühlen | `zm8_mode_heat_cool` | UCHAR | — | R | `0` = Cooling · `1` = Heating |
 | 2456 | Zone 8 Entfeuchtung | `zm8_dehumidification` | UCHAR | — | R | — |
-| 2457–2458 | Zone 8 Raum 1 Raumtemperatur | `zm8_room1_temp` | FLOAT | °C | RW | — |
+| 2457–2458 | Zone 8 Raum 1 Raumtemperatur | `zm8_room1_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2459–2460 | Zone 8 Raum 1 Raumsolltemperatur | `zm8_room1_setpoint` | FLOAT | °C | RW | — |
-| 2461 | Zone 8 Raum 1 Raumfeuchte | `zm8_room1_humidity` | UCHAR | % | RW | — |
-| 2462 | Zone 8 Raum 1 Raumbetriebsart | `zm8_room1_mode` | UCHAR | — | RW | Enum |
+| 2461 | Zone 8 Raum 1 Raumfeuchte | `zm8_room1_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2462 | Zone 8 Raum 1 Raumbetriebsart | `zm8_room1_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2463 | Zone 8 Raum 1 Relais | `zm8_room1_relay` | UCHAR | — | R | Binary |
-| 2464–2465 | Zone 8 Raum 2 Raumtemperatur | `zm8_room2_temp` | FLOAT | °C | RW | — |
+| 2464–2465 | Zone 8 Raum 2 Raumtemperatur | `zm8_room2_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2466–2467 | Zone 8 Raum 2 Raumsolltemperatur | `zm8_room2_setpoint` | FLOAT | °C | RW | — |
-| 2468 | Zone 8 Raum 2 Raumfeuchte | `zm8_room2_humidity` | UCHAR | % | RW | — |
-| 2469 | Zone 8 Raum 2 Raumbetriebsart | `zm8_room2_mode` | UCHAR | — | RW | Enum |
+| 2468 | Zone 8 Raum 2 Raumfeuchte | `zm8_room2_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2469 | Zone 8 Raum 2 Raumbetriebsart | `zm8_room2_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2470 | Zone 8 Raum 2 Relais | `zm8_room2_relay` | UCHAR | — | R | Binary |
-| 2471–2472 | Zone 8 Raum 3 Raumtemperatur | `zm8_room3_temp` | FLOAT | °C | RW | — |
+| 2471–2472 | Zone 8 Raum 3 Raumtemperatur | `zm8_room3_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2473–2474 | Zone 8 Raum 3 Raumsolltemperatur | `zm8_room3_setpoint` | FLOAT | °C | RW | — |
-| 2475 | Zone 8 Raum 3 Raumfeuchte | `zm8_room3_humidity` | UCHAR | % | RW | — |
-| 2476 | Zone 8 Raum 3 Raumbetriebsart | `zm8_room3_mode` | UCHAR | — | RW | Enum |
+| 2475 | Zone 8 Raum 3 Raumfeuchte | `zm8_room3_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2476 | Zone 8 Raum 3 Raumbetriebsart | `zm8_room3_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2477 | Zone 8 Raum 3 Relais | `zm8_room3_relay` | UCHAR | — | R | Binary |
-| 2478–2479 | Zone 8 Raum 4 Raumtemperatur | `zm8_room4_temp` | FLOAT | °C | RW | — |
+| 2478–2479 | Zone 8 Raum 4 Raumtemperatur | `zm8_room4_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2480–2481 | Zone 8 Raum 4 Raumsolltemperatur | `zm8_room4_setpoint` | FLOAT | °C | RW | — |
-| 2482 | Zone 8 Raum 4 Raumfeuchte | `zm8_room4_humidity` | UCHAR | % | RW | — |
-| 2483 | Zone 8 Raum 4 Raumbetriebsart | `zm8_room4_mode` | UCHAR | — | RW | Enum |
+| 2482 | Zone 8 Raum 4 Raumfeuchte | `zm8_room4_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2483 | Zone 8 Raum 4 Raumbetriebsart | `zm8_room4_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2484 | Zone 8 Raum 4 Relais | `zm8_room4_relay` | UCHAR | — | R | Binary |
-| 2485–2486 | Zone 8 Raum 5 Raumtemperatur | `zm8_room5_temp` | FLOAT | °C | RW | — |
+| 2485–2486 | Zone 8 Raum 5 Raumtemperatur | `zm8_room5_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2487–2488 | Zone 8 Raum 5 Raumsolltemperatur | `zm8_room5_setpoint` | FLOAT | °C | RW | — |
-| 2489 | Zone 8 Raum 5 Raumfeuchte | `zm8_room5_humidity` | UCHAR | % | RW | — |
-| 2490 | Zone 8 Raum 5 Raumbetriebsart | `zm8_room5_mode` | UCHAR | — | RW | Enum |
+| 2489 | Zone 8 Raum 5 Raumfeuchte | `zm8_room5_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2490 | Zone 8 Raum 5 Raumbetriebsart | `zm8_room5_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2491 | Zone 8 Raum 5 Relais | `zm8_room5_relay` | UCHAR | — | R | Binary |
-| 2492–2493 | Zone 8 Raum 6 Raumtemperatur | `zm8_room6_temp` | FLOAT | °C | RW | — |
+| 2492–2493 | Zone 8 Raum 6 Raumtemperatur | `zm8_room6_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2494–2495 | Zone 8 Raum 6 Raumsolltemperatur | `zm8_room6_setpoint` | FLOAT | °C | RW | — |
-| 2496 | Zone 8 Raum 6 Raumfeuchte | `zm8_room6_humidity` | UCHAR | % | RW | — |
-| 2497 | Zone 8 Raum 6 Raumbetriebsart | `zm8_room6_mode` | UCHAR | — | RW | Enum |
+| 2496 | Zone 8 Raum 6 Raumfeuchte | `zm8_room6_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2497 | Zone 8 Raum 6 Raumbetriebsart | `zm8_room6_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2498 | Zone 8 Raum 6 Relais | `zm8_room6_relay` | UCHAR | — | R | Binary |
-| 2499–2500 | Zone 8 Raum 7 Raumtemperatur | `zm8_room7_temp` | FLOAT | °C | RW | — |
+| 2499–2500 | Zone 8 Raum 7 Raumtemperatur | `zm8_room7_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2501–2502 | Zone 8 Raum 7 Raumsolltemperatur | `zm8_room7_setpoint` | FLOAT | °C | RW | — |
-| 2503 | Zone 8 Raum 7 Raumfeuchte | `zm8_room7_humidity` | UCHAR | % | RW | — |
-| 2504 | Zone 8 Raum 7 Raumbetriebsart | `zm8_room7_mode` | UCHAR | — | RW | Enum |
+| 2503 | Zone 8 Raum 7 Raumfeuchte | `zm8_room7_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2504 | Zone 8 Raum 7 Raumbetriebsart | `zm8_room7_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2505 | Zone 8 Raum 7 Relais | `zm8_room7_relay` | UCHAR | — | R | Binary |
-| 2506–2507 | Zone 8 Raum 8 Raumtemperatur | `zm8_room8_temp` | FLOAT | °C | RW | — |
+| 2506–2507 | Zone 8 Raum 8 Raumtemperatur | `zm8_room8_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2508–2509 | Zone 8 Raum 8 Raumsolltemperatur | `zm8_room8_setpoint` | FLOAT | °C | RW | — |
-| 2510 | Zone 8 Raum 8 Raumfeuchte | `zm8_room8_humidity` | UCHAR | % | RW | — |
-| 2511 | Zone 8 Raum 8 Raumbetriebsart | `zm8_room8_mode` | UCHAR | — | RW | Enum |
+| 2510 | Zone 8 Raum 8 Raumfeuchte | `zm8_room8_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2511 | Zone 8 Raum 8 Raumbetriebsart | `zm8_room8_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2512 | Zone 8 Raum 8 Relais | `zm8_room8_relay` | UCHAR | — | R | Binary |
-| 2520 | Zone 9 Betriebsart Heizen/Kühlen | `zm9_mode_heat_cool` | UCHAR | — | R | Enum |
+| 2520 | Zone 9 Betriebsart Heizen/Kühlen | `zm9_mode_heat_cool` | UCHAR | — | R | `0` = Cooling · `1` = Heating |
 | 2521 | Zone 9 Entfeuchtung | `zm9_dehumidification` | UCHAR | — | R | — |
-| 2522–2523 | Zone 9 Raum 1 Raumtemperatur | `zm9_room1_temp` | FLOAT | °C | RW | — |
+| 2522–2523 | Zone 9 Raum 1 Raumtemperatur | `zm9_room1_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2524–2525 | Zone 9 Raum 1 Raumsolltemperatur | `zm9_room1_setpoint` | FLOAT | °C | RW | — |
-| 2526 | Zone 9 Raum 1 Raumfeuchte | `zm9_room1_humidity` | UCHAR | % | RW | — |
-| 2527 | Zone 9 Raum 1 Raumbetriebsart | `zm9_room1_mode` | UCHAR | — | RW | Enum |
+| 2526 | Zone 9 Raum 1 Raumfeuchte | `zm9_room1_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2527 | Zone 9 Raum 1 Raumbetriebsart | `zm9_room1_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2528 | Zone 9 Raum 1 Relais | `zm9_room1_relay` | UCHAR | — | R | Binary |
-| 2529–2530 | Zone 9 Raum 2 Raumtemperatur | `zm9_room2_temp` | FLOAT | °C | RW | — |
+| 2529–2530 | Zone 9 Raum 2 Raumtemperatur | `zm9_room2_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2531–2532 | Zone 9 Raum 2 Raumsolltemperatur | `zm9_room2_setpoint` | FLOAT | °C | RW | — |
-| 2533 | Zone 9 Raum 2 Raumfeuchte | `zm9_room2_humidity` | UCHAR | % | RW | — |
-| 2534 | Zone 9 Raum 2 Raumbetriebsart | `zm9_room2_mode` | UCHAR | — | RW | Enum |
+| 2533 | Zone 9 Raum 2 Raumfeuchte | `zm9_room2_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2534 | Zone 9 Raum 2 Raumbetriebsart | `zm9_room2_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2535 | Zone 9 Raum 2 Relais | `zm9_room2_relay` | UCHAR | — | R | Binary |
-| 2536–2537 | Zone 9 Raum 3 Raumtemperatur | `zm9_room3_temp` | FLOAT | °C | RW | — |
+| 2536–2537 | Zone 9 Raum 3 Raumtemperatur | `zm9_room3_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2538–2539 | Zone 9 Raum 3 Raumsolltemperatur | `zm9_room3_setpoint` | FLOAT | °C | RW | — |
-| 2540 | Zone 9 Raum 3 Raumfeuchte | `zm9_room3_humidity` | UCHAR | % | RW | — |
-| 2541 | Zone 9 Raum 3 Raumbetriebsart | `zm9_room3_mode` | UCHAR | — | RW | Enum |
+| 2540 | Zone 9 Raum 3 Raumfeuchte | `zm9_room3_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2541 | Zone 9 Raum 3 Raumbetriebsart | `zm9_room3_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2542 | Zone 9 Raum 3 Relais | `zm9_room3_relay` | UCHAR | — | R | Binary |
-| 2543–2544 | Zone 9 Raum 4 Raumtemperatur | `zm9_room4_temp` | FLOAT | °C | RW | — |
+| 2543–2544 | Zone 9 Raum 4 Raumtemperatur | `zm9_room4_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2545–2546 | Zone 9 Raum 4 Raumsolltemperatur | `zm9_room4_setpoint` | FLOAT | °C | RW | — |
-| 2547 | Zone 9 Raum 4 Raumfeuchte | `zm9_room4_humidity` | UCHAR | % | RW | — |
-| 2548 | Zone 9 Raum 4 Raumbetriebsart | `zm9_room4_mode` | UCHAR | — | RW | Enum |
+| 2547 | Zone 9 Raum 4 Raumfeuchte | `zm9_room4_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2548 | Zone 9 Raum 4 Raumbetriebsart | `zm9_room4_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2549 | Zone 9 Raum 4 Relais | `zm9_room4_relay` | UCHAR | — | R | Binary |
-| 2550–2551 | Zone 9 Raum 5 Raumtemperatur | `zm9_room5_temp` | FLOAT | °C | RW | — |
+| 2550–2551 | Zone 9 Raum 5 Raumtemperatur | `zm9_room5_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2552–2553 | Zone 9 Raum 5 Raumsolltemperatur | `zm9_room5_setpoint` | FLOAT | °C | RW | — |
-| 2554 | Zone 9 Raum 5 Raumfeuchte | `zm9_room5_humidity` | UCHAR | % | RW | — |
-| 2555 | Zone 9 Raum 5 Raumbetriebsart | `zm9_room5_mode` | UCHAR | — | RW | Enum |
+| 2554 | Zone 9 Raum 5 Raumfeuchte | `zm9_room5_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2555 | Zone 9 Raum 5 Raumbetriebsart | `zm9_room5_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2556 | Zone 9 Raum 5 Relais | `zm9_room5_relay` | UCHAR | — | R | Binary |
-| 2557–2558 | Zone 9 Raum 6 Raumtemperatur | `zm9_room6_temp` | FLOAT | °C | RW | — |
+| 2557–2558 | Zone 9 Raum 6 Raumtemperatur | `zm9_room6_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2559–2560 | Zone 9 Raum 6 Raumsolltemperatur | `zm9_room6_setpoint` | FLOAT | °C | RW | — |
-| 2561 | Zone 9 Raum 6 Raumfeuchte | `zm9_room6_humidity` | UCHAR | % | RW | — |
-| 2562 | Zone 9 Raum 6 Raumbetriebsart | `zm9_room6_mode` | UCHAR | — | RW | Enum |
+| 2561 | Zone 9 Raum 6 Raumfeuchte | `zm9_room6_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2562 | Zone 9 Raum 6 Raumbetriebsart | `zm9_room6_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2563 | Zone 9 Raum 6 Relais | `zm9_room6_relay` | UCHAR | — | R | Binary |
-| 2564–2565 | Zone 9 Raum 7 Raumtemperatur | `zm9_room7_temp` | FLOAT | °C | RW | — |
+| 2564–2565 | Zone 9 Raum 7 Raumtemperatur | `zm9_room7_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2566–2567 | Zone 9 Raum 7 Raumsolltemperatur | `zm9_room7_setpoint` | FLOAT | °C | RW | — |
-| 2568 | Zone 9 Raum 7 Raumfeuchte | `zm9_room7_humidity` | UCHAR | % | RW | — |
-| 2569 | Zone 9 Raum 7 Raumbetriebsart | `zm9_room7_mode` | UCHAR | — | RW | Enum |
+| 2568 | Zone 9 Raum 7 Raumfeuchte | `zm9_room7_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2569 | Zone 9 Raum 7 Raumbetriebsart | `zm9_room7_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2570 | Zone 9 Raum 7 Relais | `zm9_room7_relay` | UCHAR | — | R | Binary |
-| 2571–2572 | Zone 9 Raum 8 Raumtemperatur | `zm9_room8_temp` | FLOAT | °C | RW | — |
+| 2571–2572 | Zone 9 Raum 8 Raumtemperatur | `zm9_room8_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2573–2574 | Zone 9 Raum 8 Raumsolltemperatur | `zm9_room8_setpoint` | FLOAT | °C | RW | — |
-| 2575 | Zone 9 Raum 8 Raumfeuchte | `zm9_room8_humidity` | UCHAR | % | RW | — |
-| 2576 | Zone 9 Raum 8 Raumbetriebsart | `zm9_room8_mode` | UCHAR | — | RW | Enum |
+| 2575 | Zone 9 Raum 8 Raumfeuchte | `zm9_room8_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2576 | Zone 9 Raum 8 Raumbetriebsart | `zm9_room8_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2577 | Zone 9 Raum 8 Relais | `zm9_room8_relay` | UCHAR | — | R | Binary |
-| 2585 | Zone 10 Betriebsart Heizen/Kühlen | `zm10_mode_heat_cool` | UCHAR | — | R | Enum |
+| 2585 | Zone 10 Betriebsart Heizen/Kühlen | `zm10_mode_heat_cool` | UCHAR | — | R | `0` = Cooling · `1` = Heating |
 | 2586 | Zone 10 Entfeuchtung | `zm10_dehumidification` | UCHAR | — | R | — |
-| 2587–2588 | Zone 10 Raum 1 Raumtemperatur | `zm10_room1_temp` | FLOAT | °C | RW | — |
+| 2587–2588 | Zone 10 Raum 1 Raumtemperatur | `zm10_room1_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2589–2590 | Zone 10 Raum 1 Raumsolltemperatur | `zm10_room1_setpoint` | FLOAT | °C | RW | — |
-| 2591 | Zone 10 Raum 1 Raumfeuchte | `zm10_room1_humidity` | UCHAR | % | RW | — |
-| 2592 | Zone 10 Raum 1 Raumbetriebsart | `zm10_room1_mode` | UCHAR | — | RW | Enum |
+| 2591 | Zone 10 Raum 1 Raumfeuchte | `zm10_room1_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2592 | Zone 10 Raum 1 Raumbetriebsart | `zm10_room1_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2593 | Zone 10 Raum 1 Relais | `zm10_room1_relay` | UCHAR | — | R | Binary |
-| 2594–2595 | Zone 10 Raum 2 Raumtemperatur | `zm10_room2_temp` | FLOAT | °C | RW | — |
+| 2594–2595 | Zone 10 Raum 2 Raumtemperatur | `zm10_room2_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2596–2597 | Zone 10 Raum 2 Raumsolltemperatur | `zm10_room2_setpoint` | FLOAT | °C | RW | — |
-| 2598 | Zone 10 Raum 2 Raumfeuchte | `zm10_room2_humidity` | UCHAR | % | RW | — |
-| 2599 | Zone 10 Raum 2 Raumbetriebsart | `zm10_room2_mode` | UCHAR | — | RW | Enum |
+| 2598 | Zone 10 Raum 2 Raumfeuchte | `zm10_room2_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2599 | Zone 10 Raum 2 Raumbetriebsart | `zm10_room2_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2600 | Zone 10 Raum 2 Relais | `zm10_room2_relay` | UCHAR | — | R | Binary |
-| 2601–2602 | Zone 10 Raum 3 Raumtemperatur | `zm10_room3_temp` | FLOAT | °C | RW | — |
+| 2601–2602 | Zone 10 Raum 3 Raumtemperatur | `zm10_room3_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2603–2604 | Zone 10 Raum 3 Raumsolltemperatur | `zm10_room3_setpoint` | FLOAT | °C | RW | — |
-| 2605 | Zone 10 Raum 3 Raumfeuchte | `zm10_room3_humidity` | UCHAR | % | RW | — |
-| 2606 | Zone 10 Raum 3 Raumbetriebsart | `zm10_room3_mode` | UCHAR | — | RW | Enum |
+| 2605 | Zone 10 Raum 3 Raumfeuchte | `zm10_room3_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2606 | Zone 10 Raum 3 Raumbetriebsart | `zm10_room3_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2607 | Zone 10 Raum 3 Relais | `zm10_room3_relay` | UCHAR | — | R | Binary |
-| 2608–2609 | Zone 10 Raum 4 Raumtemperatur | `zm10_room4_temp` | FLOAT | °C | RW | — |
+| 2608–2609 | Zone 10 Raum 4 Raumtemperatur | `zm10_room4_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2610–2611 | Zone 10 Raum 4 Raumsolltemperatur | `zm10_room4_setpoint` | FLOAT | °C | RW | — |
-| 2612 | Zone 10 Raum 4 Raumfeuchte | `zm10_room4_humidity` | UCHAR | % | RW | — |
-| 2613 | Zone 10 Raum 4 Raumbetriebsart | `zm10_room4_mode` | UCHAR | — | RW | Enum |
+| 2612 | Zone 10 Raum 4 Raumfeuchte | `zm10_room4_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2613 | Zone 10 Raum 4 Raumbetriebsart | `zm10_room4_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2614 | Zone 10 Raum 4 Relais | `zm10_room4_relay` | UCHAR | — | R | Binary |
-| 2615–2616 | Zone 10 Raum 5 Raumtemperatur | `zm10_room5_temp` | FLOAT | °C | RW | — |
+| 2615–2616 | Zone 10 Raum 5 Raumtemperatur | `zm10_room5_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2617–2618 | Zone 10 Raum 5 Raumsolltemperatur | `zm10_room5_setpoint` | FLOAT | °C | RW | — |
-| 2619 | Zone 10 Raum 5 Raumfeuchte | `zm10_room5_humidity` | UCHAR | % | RW | — |
-| 2620 | Zone 10 Raum 5 Raumbetriebsart | `zm10_room5_mode` | UCHAR | — | RW | Enum |
+| 2619 | Zone 10 Raum 5 Raumfeuchte | `zm10_room5_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2620 | Zone 10 Raum 5 Raumbetriebsart | `zm10_room5_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2621 | Zone 10 Raum 5 Relais | `zm10_room5_relay` | UCHAR | — | R | Binary |
-| 2622–2623 | Zone 10 Raum 6 Raumtemperatur | `zm10_room6_temp` | FLOAT | °C | RW | — |
+| 2622–2623 | Zone 10 Raum 6 Raumtemperatur | `zm10_room6_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2624–2625 | Zone 10 Raum 6 Raumsolltemperatur | `zm10_room6_setpoint` | FLOAT | °C | RW | — |
-| 2626 | Zone 10 Raum 6 Raumfeuchte | `zm10_room6_humidity` | UCHAR | % | RW | — |
-| 2627 | Zone 10 Raum 6 Raumbetriebsart | `zm10_room6_mode` | UCHAR | — | RW | Enum |
+| 2626 | Zone 10 Raum 6 Raumfeuchte | `zm10_room6_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2627 | Zone 10 Raum 6 Raumbetriebsart | `zm10_room6_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2628 | Zone 10 Raum 6 Relais | `zm10_room6_relay` | UCHAR | — | R | Binary |
-| 2629–2630 | Zone 10 Raum 7 Raumtemperatur | `zm10_room7_temp` | FLOAT | °C | RW | — |
+| 2629–2630 | Zone 10 Raum 7 Raumtemperatur | `zm10_room7_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2631–2632 | Zone 10 Raum 7 Raumsolltemperatur | `zm10_room7_setpoint` | FLOAT | °C | RW | — |
-| 2633 | Zone 10 Raum 7 Raumfeuchte | `zm10_room7_humidity` | UCHAR | % | RW | — |
-| 2634 | Zone 10 Raum 7 Raumbetriebsart | `zm10_room7_mode` | UCHAR | — | RW | Enum |
+| 2633 | Zone 10 Raum 7 Raumfeuchte | `zm10_room7_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2634 | Zone 10 Raum 7 Raumbetriebsart | `zm10_room7_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2635 | Zone 10 Raum 7 Relais | `zm10_room7_relay` | UCHAR | — | R | Binary |
-| 2636–2637 | Zone 10 Raum 8 Raumtemperatur | `zm10_room8_temp` | FLOAT | °C | RW | — |
+| 2636–2637 | Zone 10 Raum 8 Raumtemperatur | `zm10_room8_temp` | FLOAT | °C | RW | API min 15 / max 30 |
 | 2638–2639 | Zone 10 Raum 8 Raumsolltemperatur | `zm10_room8_setpoint` | FLOAT | °C | RW | — |
-| 2640 | Zone 10 Raum 8 Raumfeuchte | `zm10_room8_humidity` | UCHAR | % | RW | — |
-| 2641 | Zone 10 Raum 8 Raumbetriebsart | `zm10_room8_mode` | UCHAR | — | RW | Enum |
+| 2640 | Zone 10 Raum 8 Raumfeuchte | `zm10_room8_humidity` | UCHAR | % | RW | API min 0 / max 100 |
+| 2641 | Zone 10 Raum 8 Raumbetriebsart | `zm10_room8_mode` | UCHAR | — | RW | `0` = Off · `1` = Automatic · `2` = Eco · `3` = Normal · `4` = Comfort, API min 0 / max 4 |
 | 2642 | Zone 10 Raum 8 Relais | `zm10_room8_relay` | UCHAR | — | R | Binary |
 
 ### 4000+ · Navigator 10 extensions (25)
 
 | Address(es) | Description (DE) | Register name | Type | Unit | Access | Note |
 |-------------|------------------|---------------|------|------|--------|------|
-| 4001 | Booster Störung | `booster_fault` | UCHAR | — | R | Navigator 10, Enum |
+| 4001 | Booster Störung | `booster_fault` | UCHAR | — | R | Navigator 10, `0` = No fault · `1` = Booster A fault · `2` = Booster B fault · `3` = Booster A + B fault, Unavailable: `255` |
 | 4002 | Booster Verriegelung | `booster_interlock` | UCHAR | — | R | Navigator 10 |
 | 4010–4011 | Booster A Wärmequelleneintritt | `booster_a_source_inlet_temp` | FLOAT | °C | R | Navigator 10 |
 | 4012–4013 | Booster A Wärmequellenaustritt | `booster_a_source_outlet_temp` | FLOAT | °C | R | Navigator 10 |
 | 4014–4015 | Booster A Speichertemperatur | `booster_a_storage_temp` | FLOAT | °C | R | Navigator 10 |
 | 4016–4017 | Booster A Vorlauftemperatur | `booster_a_flow_temp` | FLOAT | °C | R | Navigator 10 |
 | 4018–4019 | Booster A Rücklauftemperatur | `booster_a_return_temp` | FLOAT | °C | R | Navigator 10 |
-| 4020 | Booster A Wärmequellenpumpe | `booster_a_source_pump` | INT16 | % | R | Navigator 10 |
-| 4021 | Booster A Ladepumpe | `booster_a_charging_pump` | INT16 | % | R | Navigator 10 |
+| 4020 | Booster A Wärmequellenpumpe | `booster_a_source_pump` | INT16 | % | R | Navigator 10, Unavailable: `-32768` / `65535` / `255` |
+| 4021 | Booster A Ladepumpe | `booster_a_charging_pump` | INT16 | % | R | Navigator 10, Unavailable: `-32768` / `65535` / `255` |
 | 4022 | Booster A Verdichter | `booster_a_compressor` | UCHAR | — | R | Navigator 10 |
 | 4040–4041 | Booster B Wärmequelleneintritt | `booster_b_source_inlet_temp` | FLOAT | °C | R | Navigator 10 |
 | 4042–4043 | Booster B Wärmequellenaustritt | `booster_b_source_outlet_temp` | FLOAT | °C | R | Navigator 10 |
 | 4044–4045 | Booster B Speichertemperatur | `booster_b_storage_temp` | FLOAT | °C | R | Navigator 10 |
 | 4046–4047 | Booster B Vorlauftemperatur | `booster_b_flow_temp` | FLOAT | °C | R | Navigator 10 |
 | 4048–4049 | Booster B Rücklauftemperatur | `booster_b_return_temp` | FLOAT | °C | R | Navigator 10 |
-| 4050 | Booster B Wärmequellenpumpe | `booster_b_source_pump` | INT16 | % | R | Navigator 10 |
-| 4051 | Booster B Ladepumpe | `booster_b_charging_pump` | INT16 | % | R | Navigator 10 |
+| 4050 | Booster B Wärmequellenpumpe | `booster_b_source_pump` | INT16 | % | R | Navigator 10, Unavailable: `-32768` / `65535` / `255` |
+| 4051 | Booster B Ladepumpe | `booster_b_charging_pump` | INT16 | % | R | Navigator 10, Unavailable: `-32768` / `65535` / `255` |
 | 4052 | Booster B Verdichter | `booster_b_compressor` | UCHAR | — | R | Navigator 10 |
 | 4108–4109 | Leistungsbegrenzung Wärmepumpe | `power_limit_hp` | FLOAT | kW | RW | Navigator 10 |
 | 4112–4113 | Leistungsbegrenzung Kaskade | `power_limit_cascade` | FLOAT | kW | RW | Navigator 10 |
@@ -884,155 +908,155 @@ The Navigator 1.0/1.7 controllers use a different register layout: the same addr
 | 76–77 | E-Heizstab Leistung | `electric_heater_power` | FLOAT | kW | RW | PV supplement |
 | 78–79 | PV Produktion | `pv_production` | FLOAT | kW | RW | PV supplement |
 | 82–83 | Hausverbrauch | `house_consumption` | FLOAT | kW | RW | PV supplement |
-| 1000–1001 | Außentemperatur | `outdoor_temp` | FLOAT | °C | R |  |
-| 1002–1003 | Wärmepumpen Vorlauftemperatur | `hp_flow_temp` | FLOAT | °C | R |  |
-| 1004–1005 | HGL Vorlauftemperatur B35 | `hgl_flow_temp` | FLOAT | °C | R |  |
-| 1006–1007 | Wärmequellenaustritt | `heat_source_outlet_temp` | FLOAT | °C | R |  |
-| 1008–1009 | Wärmespeichertemperatur | `storage_temp` | FLOAT | °C | R |  |
-| 1010–1011 | Kältespeichertemperatur | `cold_storage_temp` | FLOAT | °C | R |  |
-| 1012–1013 | Trinkwassererwärmer | `dhw_temp` | FLOAT | °C | R |  |
-| 1014–1015 | Warmwasser Zapftemperatur | `dhw_tapping_temp` | FLOAT | °C | R |  |
-| 1016–1017 | Vorlauftemperatur HK A | `hc_a_flow_temp` | FLOAT | °C | R |  |
-| 1018–1019 | Vorlauftemperatur HK B | `hc_b_flow_temp` | FLOAT | °C | R |  |
-| 1020–1021 | Vorlauftemperatur HK C | `hc_c_flow_temp` | FLOAT | °C | R |  |
-| 1022–1023 | Vorlauftemperatur HK D | `hc_d_flow_temp` | FLOAT | °C | R |  |
-| 1024–1025 | Vorlauftemperatur HK E | `hc_e_flow_temp` | FLOAT | °C | R |  |
-| 1026–1027 | Vorlauftemperatur HK F | `hc_f_flow_temp` | FLOAT | °C | R |  |
-| 1028–1029 | Vorlauftemperatur HK G | `hc_g_flow_temp` | FLOAT | °C | R |  |
-| 1030–1031 | Raumgerätetemperatur HK A | `hc_a_room_device_temp` | FLOAT | °C | R |  |
-| 1032–1033 | Raumgerätetemperatur HK B | `hc_b_room_device_temp` | FLOAT | °C | R |  |
-| 1034–1035 | Raumgerätetemperatur HK C | `hc_c_room_device_temp` | FLOAT | °C | R |  |
-| 1036–1037 | Raumgerätetemperatur HK D | `hc_d_room_device_temp` | FLOAT | °C | R |  |
-| 1038–1039 | Raumgerätetemperatur HK E | `hc_e_room_device_temp` | FLOAT | °C | R |  |
-| 1040–1041 | Raumgerätetemperatur HK F | `hc_f_room_device_temp` | FLOAT | °C | R |  |
-| 1042–1043 | Raumgerätetemperatur HK G | `hc_g_room_device_temp` | FLOAT | °C | R |  |
-| 1044–1045 | Heißgastemperatur | `hot_gas_temp` | FLOAT | °C | R |  |
-| 1046–1047 | Feuchtesensor | `humidity_sensor` | FLOAT | % | R |  |
-| 1048–1049 | Luftansaugtemperatur | `air_intake_temp` | FLOAT | °C | R |  |
-| 1050–1051 | Luftwärmetauscher Temperatur | `air_heat_exchanger_temp` | FLOAT | °C | R |  |
-| 1052–1053 | Solar Kollektortemperatur | `solar_collector_temp` | FLOAT | °C | R |  |
-| 1054–1055 | Solar Ladetemperatur | `solar_charging_temp` | FLOAT | °C | R |  |
-| 1056–1057 | Solar Kollektorrücklauftemperatur | `solar_collector_return_temp` | FLOAT | °C | R |  |
-| 1058–1059 | Solar Pool / Wärmequellenreferenz | `solar_pool_temp` | FLOAT | °C | R |  |
-| 1060–1061 | Gemittelte Außentemperatur | `outdoor_temp_avg` | FLOAT | °C | R |  |
-| 1062–1063 | Wärmequelleneintritt | `heat_source_inlet_temp` | FLOAT | °C | R |  |
-| 1064–1065 | ISC Ladefühler Kühlen | `isc_cooling_charge_temp` | FLOAT | °C | R |  |
-| 1066–1067 | ISC Rückkühltemperatur | `isc_recooling_temp` | FLOAT | °C | R |  |
-| 1068–1069 | Thermische Leistung WP-Vorlauf | `thermal_power_hp_flow` | FLOAT | kW | R |  |
-| 1070–1071 | Thermische Leistung HGL-Vorlauf | `thermal_power_hgl_flow` | FLOAT | kW | R |  |
-| 1072–1073 | Thermische Gesamtleistung | `thermal_power_total` | FLOAT | kW | R |  |
-| 1074–1075 | Thermische Solarleistung | `thermal_power_solar` | FLOAT | kW | R |  |
-| 1076–1077 | Wärmemenge Gesamt | `energy_total` | FLOAT | kWh | R |  |
-| 1078–1079 | Wärmemenge Heizen | `energy_heating` | FLOAT | kWh | R |  |
-| 1080–1081 | Wärmemenge HGL | `energy_hgl` | FLOAT | kWh | R |  |
-| 1082–1083 | Wärmemenge Kühlen | `energy_cooling` | FLOAT | kWh | R |  |
-| 1084–1085 | Wärmemenge Solar | `energy_solar` | FLOAT | kWh | R |  |
-| 1086–1087 | Grundwasserpumpe Durchflusszähler | `groundwater_pump_flow_total` | FLOAT | — | R |  |
-| 1088–1089 | Betriebsstunden Wärmequellenpumpe | `heat_source_pump_operating_hours` | FLOAT | h | R |  |
-| 1500 | Störungsnummer | `error_number` | UINT16 | — | R |  |
-| 1501 | Wärmepumpen Betriebsart | `hp_operating_mode` | UCHAR | — | R |  |
-| 1502 | Status HK A | `hc_a_status` | UINT16 | — | R |  |
-| 1503 | Status HK B | `hc_b_status` | UINT16 | — | R |  |
-| 1504 | Status HK C | `hc_c_status` | UINT16 | — | R |  |
-| 1505 | Status HK D | `hc_d_status` | UINT16 | — | R |  |
-| 1506 | Status HK E | `hc_e_status` | UINT16 | — | R |  |
-| 1507 | Status HK F | `hc_f_status` | UINT16 | — | R |  |
-| 1508 | Status HK G | `hc_g_status` | UINT16 | — | R |  |
-| 1509 | Verdichter 1 | `compressor_status_1` | UINT16 | — | R |  |
-| 1510 | Verdichter 2 | `compressor_status_2` | UINT16 | — | R |  |
-| 1511 | Verdichter 3 | `compressor_status_3` | UINT16 | — | R |  |
-| 1512 | Verdichter 4 | `compressor_status_4` | UINT16 | — | R |  |
-| 1513 | Ladepumpe M73 | `charging_pump_status` | UINT16 | — | R |  |
-| 1514 | Wärmequellenpumpe M15 | `heat_source_pump_status` | UINT16 | — | R |  |
-| 1515 | Zwischenkreispumpe Status | `intermediate_circuit_pump_status` | UINT16 | — | R |  |
-| 1516 | ISC Kältespeicherpumpe M84 | `isc_cold_storage_pump_status` | UINT16 | — | R |  |
-| 1517 | ISC Rückkühlpumpe M17 | `isc_recooling_pump_status` | UINT16 | — | R |  |
-| 1518 | Verdichterstufen Heizen | `compressor_stages_heating` | UINT16 | — | R |  |
-| 1519 | Verdichterstufen Kühlen | `compressor_stages_cooling` | UINT16 | — | R |  |
-| 1520 | Verdichterstufen Warmwasser | `compressor_stages_dhw` | UINT16 | — | R |  |
-| 1521 | Betriebsart Kaskade | `cascade_mode` | UINT16 | — | R |  |
-| 1522 | Solar Betriebsart | `solar_mode` | UINT16 | — | R |  |
-| 1523 | Smart Grid Status | `smart_grid_status` | UINT16 | — | R |  |
-| 1524 | ISC Modus | `isc_mode` | UINT16 | — | R |  |
-| 2000 | Betriebsart System | `system_mode_17` | UINT16 | — | RW · EEPROM |  |
-| 2002 | Betriebsart HK A | `hc_a_operating_mode` | UINT16 | — | RW · EEPROM |  |
-| 2004 | Betriebsart HK B | `hc_b_operating_mode` | UINT16 | — | RW · EEPROM |  |
-| 2006 | Betriebsart HK C | `hc_c_operating_mode` | UINT16 | — | RW · EEPROM |  |
-| 2008 | Betriebsart HK D | `hc_d_operating_mode` | UINT16 | — | RW · EEPROM |  |
-| 2010 | Betriebsart HK E | `hc_e_operating_mode` | UINT16 | — | RW · EEPROM |  |
-| 2012 | Betriebsart HK F | `hc_f_operating_mode` | UINT16 | — | RW · EEPROM |  |
-| 2014 | Betriebsart HK G | `hc_g_operating_mode` | UINT16 | — | RW · EEPROM |  |
-| 2016–2017 | Raumsoll Heizen Normal HK A | `hc_a_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2018–2019 | Raumsoll Heizen Normal HK B | `hc_b_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2020–2021 | Raumsoll Heizen Normal HK C | `hc_c_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2022–2023 | Raumsoll Heizen Normal HK D | `hc_d_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2024–2025 | Raumsoll Heizen Normal HK E | `hc_e_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2026–2027 | Raumsoll Heizen Normal HK F | `hc_f_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2028–2029 | Raumsoll Heizen Normal HK G | `hc_g_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2030–2031 | Raumsoll Heizen Eco HK A | `hc_a_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2032–2033 | Raumsoll Heizen Eco HK B | `hc_b_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2034–2035 | Raumsoll Heizen Eco HK C | `hc_c_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2036–2037 | Raumsoll Heizen Eco HK D | `hc_d_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2038–2039 | Raumsoll Heizen Eco HK E | `hc_e_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2040–2041 | Raumsoll Heizen Eco HK F | `hc_f_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2042–2043 | Raumsoll Heizen Eco HK G | `hc_g_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2044–2045 | Heizkurve HK A | `hc_a_heating_curve` | FLOAT | — | RW · EEPROM |  |
-| 2046–2047 | Heizkurve HK B | `hc_b_heating_curve` | FLOAT | — | RW · EEPROM |  |
-| 2048–2049 | Heizkurve HK C | `hc_c_heating_curve` | FLOAT | — | RW · EEPROM |  |
-| 2050–2051 | Heizkurve HK D | `hc_d_heating_curve` | FLOAT | — | RW · EEPROM |  |
-| 2052–2053 | Heizkurve HK E | `hc_e_heating_curve` | FLOAT | — | RW · EEPROM |  |
-| 2054–2055 | Heizkurve HK F | `hc_f_heating_curve` | FLOAT | — | RW · EEPROM |  |
-| 2056–2057 | Heizkurve HK G | `hc_g_heating_curve` | FLOAT | — | RW · EEPROM |  |
-| 2058 | Heizgrenze HK A | `hc_a_heating_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2060 | Heizgrenze HK B | `hc_b_heating_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2062 | Heizgrenze HK C | `hc_c_heating_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2064 | Heizgrenze HK D | `hc_d_heating_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2066 | Heizgrenze HK E | `hc_e_heating_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2068 | Heizgrenze HK F | `hc_f_heating_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2070 | Heizgrenze HK G | `hc_g_heating_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2072 | Festwertvorlauf HK A | `hc_a_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
-| 2074 | Festwertvorlauf HK B | `hc_b_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
-| 2076 | Festwertvorlauf HK C | `hc_c_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
-| 2078 | Festwertvorlauf HK D | `hc_d_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
-| 2080 | Festwertvorlauf HK E | `hc_e_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
-| 2082 | Festwertvorlauf HK F | `hc_f_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
-| 2084 | Festwertvorlauf HK G | `hc_g_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
-| 2086–2087 | Raumsoll Kühlen Normal HK A | `hc_a_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2088–2089 | Raumsoll Kühlen Normal HK B | `hc_b_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2090–2091 | Raumsoll Kühlen Normal HK C | `hc_c_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2092–2093 | Raumsoll Kühlen Normal HK D | `hc_d_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2094–2095 | Raumsoll Kühlen Normal HK E | `hc_e_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2096–2097 | Raumsoll Kühlen Normal HK F | `hc_f_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2098–2099 | Raumsoll Kühlen Normal HK G | `hc_g_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
-| 2100–2101 | Raumsoll Kühlen Eco HK A | `hc_a_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2102–2103 | Raumsoll Kühlen Eco HK B | `hc_b_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2104–2105 | Raumsoll Kühlen Eco HK C | `hc_c_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2106–2107 | Raumsoll Kühlen Eco HK D | `hc_d_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2108–2109 | Raumsoll Kühlen Eco HK E | `hc_e_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2110–2111 | Raumsoll Kühlen Eco HK F | `hc_f_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2112–2113 | Raumsoll Kühlen Eco HK G | `hc_g_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
-| 2114 | Kühlgrenze HK A | `hc_a_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2116 | Kühlgrenze HK B | `hc_b_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2118 | Kühlgrenze HK C | `hc_c_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2120 | Kühlgrenze HK D | `hc_d_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2122 | Kühlgrenze HK E | `hc_e_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2124 | Kühlgrenze HK F | `hc_f_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2126 | Kühlgrenze HK G | `hc_g_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
-| 2128 | Kühlvorlauf HK A | `hc_a_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
-| 2130 | Kühlvorlauf HK B | `hc_b_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
-| 2132 | Kühlvorlauf HK C | `hc_c_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
-| 2134 | Kühlvorlauf HK D | `hc_d_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
-| 2136 | Kühlvorlauf HK E | `hc_e_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
-| 2138 | Kühlvorlauf HK F | `hc_f_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
-| 2140 | Kühlvorlauf HK G | `hc_g_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
-| 2142 | Externe Anforderungstemperatur Heizen | `external_demand_temp_heating` | UINT16 | °C | RW · EEPROM |  |
-| 2144 | Externe Anforderungstemperatur Kühlen | `external_demand_temp_cooling` | UINT16 | °C | RW · EEPROM |  |
-| 2146 | Bivalenzpunkt 1 | `bivalence_point_1_17` | INT16 | °C | RW · EEPROM |  |
-| 2148 | Bivalenzpunkt 2 | `bivalence_point_2_17` | INT16 | °C | RW · EEPROM |  |
-| 2150 | Betriebsart Solar | `solar_operating_mode_17` | UINT16 | — | RW · EEPROM |  |
-| 2152–2153 | Warmwasser Sollwert | `dhw_setpoint` | FLOAT | °C | RW · EEPROM |  |
-| 3000 | Fehlerquittierung | `error_acknowledge` | BOOL | — | W · write-only |  |
-| 3003 | Anforderung Vorrangladung | `demand_dhw_17` | BOOL | — | W · write-only |  |
+| 1000–1001 | Außentemperatur | `outdoor_temp` | FLOAT | °C | R | — |
+| 1002–1003 | Wärmepumpen Vorlauftemperatur | `hp_flow_temp` | FLOAT | °C | R | — |
+| 1004–1005 | HGL Vorlauftemperatur B35 | `hgl_flow_temp` | FLOAT | °C | R | — |
+| 1006–1007 | Wärmequellenaustritt | `heat_source_outlet_temp` | FLOAT | °C | R | — |
+| 1008–1009 | Wärmespeichertemperatur | `storage_temp` | FLOAT | °C | R | — |
+| 1010–1011 | Kältespeichertemperatur | `cold_storage_temp` | FLOAT | °C | R | — |
+| 1012–1013 | Trinkwassererwärmer | `dhw_temp` | FLOAT | °C | R | — |
+| 1014–1015 | Warmwasser Zapftemperatur | `dhw_tapping_temp` | FLOAT | °C | R | — |
+| 1016–1017 | Vorlauftemperatur HK A | `hc_a_flow_temp` | FLOAT | °C | R | — |
+| 1018–1019 | Vorlauftemperatur HK B | `hc_b_flow_temp` | FLOAT | °C | R | — |
+| 1020–1021 | Vorlauftemperatur HK C | `hc_c_flow_temp` | FLOAT | °C | R | — |
+| 1022–1023 | Vorlauftemperatur HK D | `hc_d_flow_temp` | FLOAT | °C | R | — |
+| 1024–1025 | Vorlauftemperatur HK E | `hc_e_flow_temp` | FLOAT | °C | R | — |
+| 1026–1027 | Vorlauftemperatur HK F | `hc_f_flow_temp` | FLOAT | °C | R | — |
+| 1028–1029 | Vorlauftemperatur HK G | `hc_g_flow_temp` | FLOAT | °C | R | — |
+| 1030–1031 | Raumgerätetemperatur HK A | `hc_a_room_device_temp` | FLOAT | °C | R | — |
+| 1032–1033 | Raumgerätetemperatur HK B | `hc_b_room_device_temp` | FLOAT | °C | R | — |
+| 1034–1035 | Raumgerätetemperatur HK C | `hc_c_room_device_temp` | FLOAT | °C | R | — |
+| 1036–1037 | Raumgerätetemperatur HK D | `hc_d_room_device_temp` | FLOAT | °C | R | — |
+| 1038–1039 | Raumgerätetemperatur HK E | `hc_e_room_device_temp` | FLOAT | °C | R | — |
+| 1040–1041 | Raumgerätetemperatur HK F | `hc_f_room_device_temp` | FLOAT | °C | R | — |
+| 1042–1043 | Raumgerätetemperatur HK G | `hc_g_room_device_temp` | FLOAT | °C | R | — |
+| 1044–1045 | Heißgastemperatur | `hot_gas_temp` | FLOAT | °C | R | — |
+| 1046–1047 | Feuchtesensor | `humidity_sensor` | FLOAT | % | R | — |
+| 1048–1049 | Luftansaugtemperatur | `air_intake_temp` | FLOAT | °C | R | — |
+| 1050–1051 | Luftwärmetauscher Temperatur | `air_heat_exchanger_temp` | FLOAT | °C | R | — |
+| 1052–1053 | Solar Kollektortemperatur | `solar_collector_temp` | FLOAT | °C | R | — |
+| 1054–1055 | Solar Ladetemperatur | `solar_charging_temp` | FLOAT | °C | R | — |
+| 1056–1057 | Solar Kollektorrücklauftemperatur | `solar_collector_return_temp` | FLOAT | °C | R | — |
+| 1058–1059 | Solar Pool / Wärmequellenreferenz | `solar_pool_temp` | FLOAT | °C | R | — |
+| 1060–1061 | Gemittelte Außentemperatur | `outdoor_temp_avg` | FLOAT | °C | R | — |
+| 1062–1063 | Wärmequelleneintritt | `heat_source_inlet_temp` | FLOAT | °C | R | — |
+| 1064–1065 | ISC Ladefühler Kühlen | `isc_cooling_charge_temp` | FLOAT | °C | R | — |
+| 1066–1067 | ISC Rückkühltemperatur | `isc_recooling_temp` | FLOAT | °C | R | — |
+| 1068–1069 | Thermische Leistung WP-Vorlauf | `thermal_power_hp_flow` | FLOAT | kW | R | — |
+| 1070–1071 | Thermische Leistung HGL-Vorlauf | `thermal_power_hgl_flow` | FLOAT | kW | R | — |
+| 1072–1073 | Thermische Gesamtleistung | `thermal_power_total` | FLOAT | kW | R | — |
+| 1074–1075 | Thermische Solarleistung | `thermal_power_solar` | FLOAT | kW | R | — |
+| 1076–1077 | Wärmemenge Gesamt | `energy_total` | FLOAT | kWh | R | — |
+| 1078–1079 | Wärmemenge Heizen | `energy_heating` | FLOAT | kWh | R | — |
+| 1080–1081 | Wärmemenge HGL | `energy_hgl` | FLOAT | kWh | R | — |
+| 1082–1083 | Wärmemenge Kühlen | `energy_cooling` | FLOAT | kWh | R | — |
+| 1084–1085 | Wärmemenge Solar | `energy_solar` | FLOAT | kWh | R | — |
+| 1086–1087 | Grundwasserpumpe Durchflusszähler | `groundwater_pump_flow_total` | FLOAT | — | R | — |
+| 1088–1089 | Betriebsstunden Wärmequellenpumpe | `heat_source_pump_operating_hours` | FLOAT | h | R | — |
+| 1500 | Störungsnummer | `error_number` | UINT16 | — | R | — |
+| 1501 | Wärmepumpen Betriebsart | `hp_operating_mode` | UCHAR | — | R | `0` = Standby · `1` = Heating · `2` = Cooling · `4` = DHW · `8` = Defrost |
+| 1502 | Status HK A | `hc_a_status` | UINT16 | — | R | — |
+| 1503 | Status HK B | `hc_b_status` | UINT16 | — | R | — |
+| 1504 | Status HK C | `hc_c_status` | UINT16 | — | R | — |
+| 1505 | Status HK D | `hc_d_status` | UINT16 | — | R | — |
+| 1506 | Status HK E | `hc_e_status` | UINT16 | — | R | — |
+| 1507 | Status HK F | `hc_f_status` | UINT16 | — | R | — |
+| 1508 | Status HK G | `hc_g_status` | UINT16 | — | R | — |
+| 1509 | Verdichter 1 | `compressor_status_1` | UINT16 | — | R | Binary |
+| 1510 | Verdichter 2 | `compressor_status_2` | UINT16 | — | R | Binary |
+| 1511 | Verdichter 3 | `compressor_status_3` | UINT16 | — | R | Binary |
+| 1512 | Verdichter 4 | `compressor_status_4` | UINT16 | — | R | Binary |
+| 1513 | Ladepumpe M73 | `charging_pump_status` | UINT16 | — | R | `0` = Off · `1` = Running · `2` = Fault |
+| 1514 | Wärmequellenpumpe M15 | `heat_source_pump_status` | UINT16 | — | R | `0` = Off · `1` = Running · `2` = Fault |
+| 1515 | Zwischenkreispumpe Status | `intermediate_circuit_pump_status` | UINT16 | — | R | `0` = Off · `1` = Running · `2` = Fault |
+| 1516 | ISC Kältespeicherpumpe M84 | `isc_cold_storage_pump_status` | UINT16 | — | R | `0` = Off · `1` = Running · `2` = Fault |
+| 1517 | ISC Rückkühlpumpe M17 | `isc_recooling_pump_status` | UINT16 | — | R | `0` = Off · `1` = Running · `2` = Fault |
+| 1518 | Verdichterstufen Heizen | `compressor_stages_heating` | UINT16 | — | R | — |
+| 1519 | Verdichterstufen Kühlen | `compressor_stages_cooling` | UINT16 | — | R | — |
+| 1520 | Verdichterstufen Warmwasser | `compressor_stages_dhw` | UINT16 | — | R | — |
+| 1521 | Betriebsart Kaskade | `cascade_mode` | UINT16 | — | R | — |
+| 1522 | Solar Betriebsart | `solar_mode` | UINT16 | — | R | — |
+| 1523 | Smart Grid Status | `smart_grid_status` | UINT16 | — | R | — |
+| 1524 | ISC Modus | `isc_mode` | UINT16 | — | R | — |
+| 2000 | Betriebsart System | `system_mode_17` | UINT16 | — | RW · EEPROM | `0` = Standby · `1` = Automatic · `2` = Hot Water · `3` = Hot Water Once, API min 0 / max 3 |
+| 2002 | Betriebsart HK A | `hc_a_operating_mode` | UINT16 | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = ECO · `4` = Heating Only, API min 0 / max 4 |
+| 2004 | Betriebsart HK B | `hc_b_operating_mode` | UINT16 | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = ECO · `4` = Heating Only, API min 0 / max 4 |
+| 2006 | Betriebsart HK C | `hc_c_operating_mode` | UINT16 | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = ECO · `4` = Heating Only, API min 0 / max 4 |
+| 2008 | Betriebsart HK D | `hc_d_operating_mode` | UINT16 | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = ECO · `4` = Heating Only, API min 0 / max 4 |
+| 2010 | Betriebsart HK E | `hc_e_operating_mode` | UINT16 | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = ECO · `4` = Heating Only, API min 0 / max 4 |
+| 2012 | Betriebsart HK F | `hc_f_operating_mode` | UINT16 | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = ECO · `4` = Heating Only, API min 0 / max 4 |
+| 2014 | Betriebsart HK G | `hc_g_operating_mode` | UINT16 | — | RW · EEPROM | `0` = Off · `1` = Time Program · `2` = Normal · `3` = ECO · `4` = Heating Only, API min 0 / max 4 |
+| 2016–2017 | Raumsoll Heizen Normal HK A | `hc_a_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2018–2019 | Raumsoll Heizen Normal HK B | `hc_b_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2020–2021 | Raumsoll Heizen Normal HK C | `hc_c_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2022–2023 | Raumsoll Heizen Normal HK D | `hc_d_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2024–2025 | Raumsoll Heizen Normal HK E | `hc_e_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2026–2027 | Raumsoll Heizen Normal HK F | `hc_f_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2028–2029 | Raumsoll Heizen Normal HK G | `hc_g_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2030–2031 | Raumsoll Heizen Eco HK A | `hc_a_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 2032–2033 | Raumsoll Heizen Eco HK B | `hc_b_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 2034–2035 | Raumsoll Heizen Eco HK C | `hc_c_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 2036–2037 | Raumsoll Heizen Eco HK D | `hc_d_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 2038–2039 | Raumsoll Heizen Eco HK E | `hc_e_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 2040–2041 | Raumsoll Heizen Eco HK F | `hc_f_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 2042–2043 | Raumsoll Heizen Eco HK G | `hc_g_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM | API min 10 / max 25 |
+| 2044–2045 | Heizkurve HK A | `hc_a_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 2046–2047 | Heizkurve HK B | `hc_b_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 2048–2049 | Heizkurve HK C | `hc_c_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 2050–2051 | Heizkurve HK D | `hc_d_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 2052–2053 | Heizkurve HK E | `hc_e_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 2054–2055 | Heizkurve HK F | `hc_f_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 2056–2057 | Heizkurve HK G | `hc_g_heating_curve` | FLOAT | — | RW · EEPROM | API min 0.1 / max 3.5 |
+| 2058 | Heizgrenze HK A | `hc_a_heating_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 50 |
+| 2060 | Heizgrenze HK B | `hc_b_heating_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 50 |
+| 2062 | Heizgrenze HK C | `hc_c_heating_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 50 |
+| 2064 | Heizgrenze HK D | `hc_d_heating_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 50 |
+| 2066 | Heizgrenze HK E | `hc_e_heating_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 50 |
+| 2068 | Heizgrenze HK F | `hc_f_heating_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 50 |
+| 2070 | Heizgrenze HK G | `hc_g_heating_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 50 |
+| 2072 | Festwertvorlauf HK A | `hc_a_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM | API min 20 / max 90 |
+| 2074 | Festwertvorlauf HK B | `hc_b_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM | API min 20 / max 90 |
+| 2076 | Festwertvorlauf HK C | `hc_c_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM | API min 20 / max 90 |
+| 2078 | Festwertvorlauf HK D | `hc_d_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM | API min 20 / max 90 |
+| 2080 | Festwertvorlauf HK E | `hc_e_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM | API min 20 / max 90 |
+| 2082 | Festwertvorlauf HK F | `hc_f_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM | API min 20 / max 90 |
+| 2084 | Festwertvorlauf HK G | `hc_g_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM | API min 20 / max 90 |
+| 2086–2087 | Raumsoll Kühlen Normal HK A | `hc_a_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2088–2089 | Raumsoll Kühlen Normal HK B | `hc_b_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2090–2091 | Raumsoll Kühlen Normal HK C | `hc_c_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2092–2093 | Raumsoll Kühlen Normal HK D | `hc_d_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2094–2095 | Raumsoll Kühlen Normal HK E | `hc_e_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2096–2097 | Raumsoll Kühlen Normal HK F | `hc_f_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2098–2099 | Raumsoll Kühlen Normal HK G | `hc_g_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2100–2101 | Raumsoll Kühlen Eco HK A | `hc_a_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2102–2103 | Raumsoll Kühlen Eco HK B | `hc_b_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2104–2105 | Raumsoll Kühlen Eco HK C | `hc_c_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2106–2107 | Raumsoll Kühlen Eco HK D | `hc_d_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2108–2109 | Raumsoll Kühlen Eco HK E | `hc_e_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2110–2111 | Raumsoll Kühlen Eco HK F | `hc_f_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2112–2113 | Raumsoll Kühlen Eco HK G | `hc_g_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM | API min 15 / max 30 |
+| 2114 | Kühlgrenze HK A | `hc_a_cooling_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 36 |
+| 2116 | Kühlgrenze HK B | `hc_b_cooling_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 36 |
+| 2118 | Kühlgrenze HK C | `hc_c_cooling_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 36 |
+| 2120 | Kühlgrenze HK D | `hc_d_cooling_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 36 |
+| 2122 | Kühlgrenze HK E | `hc_e_cooling_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 36 |
+| 2124 | Kühlgrenze HK F | `hc_f_cooling_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 36 |
+| 2126 | Kühlgrenze HK G | `hc_g_cooling_limit` | UINT16 | °C | RW · EEPROM | API min 0 / max 36 |
+| 2128 | Kühlvorlauf HK A | `hc_a_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM | API min 8 / max 30 |
+| 2130 | Kühlvorlauf HK B | `hc_b_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM | API min 8 / max 30 |
+| 2132 | Kühlvorlauf HK C | `hc_c_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM | API min 8 / max 30 |
+| 2134 | Kühlvorlauf HK D | `hc_d_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM | API min 8 / max 30 |
+| 2136 | Kühlvorlauf HK E | `hc_e_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM | API min 8 / max 30 |
+| 2138 | Kühlvorlauf HK F | `hc_f_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM | API min 8 / max 30 |
+| 2140 | Kühlvorlauf HK G | `hc_g_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM | API min 8 / max 30 |
+| 2142 | Externe Anforderungstemperatur Heizen | `external_demand_temp_heating` | UINT16 | °C | RW · EEPROM | API min 20 / max 65 |
+| 2144 | Externe Anforderungstemperatur Kühlen | `external_demand_temp_cooling` | UINT16 | °C | RW · EEPROM | API min 10 / max 25 |
+| 2146 | Bivalenzpunkt 1 | `bivalence_point_1_17` | INT16 | °C | RW · EEPROM | API min -20 / max 20 |
+| 2148 | Bivalenzpunkt 2 | `bivalence_point_2_17` | INT16 | °C | RW · EEPROM | API min -20 / max 20 |
+| 2150 | Betriebsart Solar | `solar_operating_mode_17` | UINT16 | — | RW · EEPROM | `0` = Automatic · `1` = Domestic Water · `2` = Heat Storage · `3` = Domestic Water + Heat Storage · `4` = Heat Source / Pool, API min 0 / max 4 |
+| 2152–2153 | Warmwasser Sollwert | `dhw_setpoint` | FLOAT | °C | RW · EEPROM | API min 35 / max 60 |
+| 3000 | Fehlerquittierung | `error_acknowledge` | BOOL | — | W · write-only | Binary |
+| 3003 | Anforderung Vorrangladung | `demand_dhw_17` | BOOL | — | W · write-only | Binary |
 | 4122–4123 | Elektrische Leistungsaufnahme Wärmepumpe | `power_consumption_hp` | FLOAT | kW | R | PV supplement |
 
 <!-- END GENERATED REGISTER REFERENCE -->

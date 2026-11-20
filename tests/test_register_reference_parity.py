@@ -44,6 +44,8 @@ TRANSLATIONS = (
     ("· write-only", "· nur schreibend"),
     ("disabled by default", "standardmäßig deaktiviert"),
     ("PV supplement", "PV-Supplement"),
+    ("Unavailable:", "Nicht verfügbar:"),
+    ("Excluded from writes:", "Nicht schreibbar:"),
 )
 
 

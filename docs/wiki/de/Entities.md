@@ -187,6 +187,25 @@ Die Integration bemerkt es auch von selbst: Wenn jedes Solarregister einen ganze
 | `hc_{x}_setpoint_flow_temp` | Aktueller Vorlauf-Sollwert |
 | `hc_{x}_active_mode` | Aktiver Betriebsmodus |
 
+### Entität finden und Wert einordnen
+
+Unter **Einstellungen → Geräte & Dienste → IDM Heatpump → Entitäten** findest
+du die Entität deiner Anlage. In **Entwicklerwerkzeuge → Zustände** stehen
+Einheit, Zustand und Attribute. Die Referenz nennt technische Schlüssel, damit
+du Werte auch nach einer Umbenennung oder in einer anderen Sprache findest.
+
+| Anzeige | Bedeutung |
+| --- | --- |
+| Entität fehlt in der Liste | Prüfe, ob Funktion, Heizkreis oder Modul eingerichtet sind und ob dein Navigator die Plattform unterstützt. Für Registerwerte hilft der Lesebericht in der Integrationsdiagnose. |
+| Entität ist deaktiviert | Bei Bedarf in den Entitätseinstellungen aktivieren. Entitätsprofil und Diagnose-Standardeinstellungen bestimmen, welche optionalen Entitäten anfangs aktiv sind. |
+| `unavailable` oder `unknown` | Die Quelle kann fehlen, veraltet sein, nicht unterstützt werden oder noch zu wenig gültige Daten liefern. Prüfe die Voraussetzungen im passenden Abschnitt unten. |
+| Null | Der Betriebszustand entscheidet. Durchfluss null kann Stillstand bedeuten. Vorlaufsollwert null bedeutet, dass der Heizkreis gerade keinen Vorlauf anfordert. Ein plausibler Nullwert und ein fehlender Fühler sind unterschiedliche Zustände. |
+| Leistung in kW und Energie in kWh | Leistung ist ein Momentanwert. Energie summiert sich über die Zeit. Für Zeiträume einen passenden Energiezähler verwenden und zwischen Stromaufnahme und abgegebener Wärme unterscheiden. |
+
+Rohwerte stehen im [Modbus-Registerkatalog](Modbus-Register).
+Firmwareabhängige Web-Werte stehen im Abschnitt unten und im
+[Leitfaden zur lokalen Web-Schnittstelle](Local-Web-Interface).
+
 ### Berechnete Sensoren
 
 Diese Sensoren werden aus Registerwerten desselben Schnappschusses abgeleitet. Nichts wird geschätzt: Jeder Operand ist ein dekodierter Registerwert, und der Sensor meldet lieber gar keinen Wert als eine Vermutung, wenn seine Quellen nicht aussagekräftig sind.
@@ -196,9 +215,10 @@ Diese Sensoren werden aus Registerwerten desselben Schnappschusses abgeleitet. N
 | `calculated_hp_temperature_delta` | Spreizung der Wärmepumpe (Vorlauf minus Rücklauf) |
 | `calculated_heat_source_temperature_delta` | Spreizung der Wärmequelle (Eintritt minus Austritt) |
 | `calculated_dhw_setpoint_deviation` | Warmwasser Ist minus Soll |
-| `calculated_cop` | Momentaner COP (thermische Leistung / elektrische Leistung) |
+| `calculated_cop` | Momentaner COP ohne Einheit. Nutzt positive `thermal_power_flow_sensor` oder ersatzweise `current_power`, geteilt durch `power_consumption_hp`. Erfordert positive Wärmeleistung und mindestens 0,05 kW Stromaufnahme. Für den COP über einen Zeitraum die Energiestatistik verwenden. |
 | `calculated_hc_{x}_flow_deviation` | Vorlauf-Abweichung je Heizkreis |
-| `calculated_hp_flow_deviation` | Vorlauf-Abweichung der Wärmepumpe (nur im Heizbetrieb) |
+| `calculated_hp_flow_deviation` | Wärmepumpenvorlauf minus höchster aktiver Heizkreis-Vorlaufsollwert, nur im reinen Heizbetrieb. |
+| `hc_{x}_temperature_difference` | Nur Differenztemperatur-Heizkreis. Referenztemperatur minus Speichertemperatur in K. Beide Heizkreiswerte sind erforderlich. |
 
 Die **Vorlauf-Abweichung je Heizkreis** vergleicht die gemessene Vorlauftemperatur eines Heizkreises (`hc_{x}_flow_temp`) mit dem Vorlauf-Sollwert, den der Regler für diesen Heizkreis aktuell anfordert (`hc_{x}_setpoint_flow_temp`):
 
@@ -865,3 +885,181 @@ Diagnose-Entitäten am Anlagengerät. Unique-IDs und Entitätshistorie bleiben
 erhalten. Eine passende neuere Beobachtung kann einen Reparaturhinweis auslösen;
 die Bestätigung wird je Gerät/Version gespeichert.
 Siehe [Aktivierung und Einordnung](Telemetry#firmware-orientierung).
+
+## Verzeichnis der Entitätsschlüssel
+
+Das Verzeichnis listet die Namensvorlagen der integrationsspezifischen Entitäten. `{circuit}` und `{source}` stehen für die jeweilige Instanz einer Vorlage. Suche hier nach Schlüssel oder Anzeigename. Quelle, Voraussetzungen und Bedeutung findest du in den Funktionsabschnitten oben. Modbus-Schlüssel stehen im [Registerkatalog](Modbus-Register).
+
+<!-- BEGIN GENERATED ENTITY KEY INDEX -->
+| Plattform | Schlüssel | Anzeigename |
+| --- | --- | --- |
+| `sensor` | `telemetry_latest_firmware` | Neueste gemeldete Firmware |
+| `sensor` | `telemetry_report_status` | Telemetrie-Berichtsstatus |
+| `sensor` | `hc_storage_temp` | Speichertemperatur HK {circuit} |
+| `sensor` | `hc_reference_temp` | Referenztemperatur HK {circuit} |
+| `sensor` | `hc_temperature_difference` | Temperaturdifferenz HK {circuit} |
+| `sensor` | `hc_differential_status` | Status Differenztemperaturregelung HK {circuit} |
+| `sensor` | `ai_learning_status` | KI-Lernstatus |
+| `sensor` | `ai_storage_used` | KI-Speicherverbrauch |
+| `sensor` | `ai_coverage` | KI-Datenabdeckung |
+| `sensor` | `ai_observed_cop` | KI-Beobachtungs-COP |
+| `sensor` | `ai_report` | KI-Bericht (experimentell) |
+| `sensor` | `advisor_status` | Advisor-Status |
+| `sensor` | `advisor_recommendations` | Advisor-Empfehlungen |
+| `sensor` | `advisor_confidence` | Advisor-Konfidenz |
+| `sensor` | `advisor_operation_reason` | Advisor-Anforderungsgrund |
+| `sensor` | `advisor_health_score` | Advisor-Anlagenzustand |
+| `sensor` | `advisor_efficiency_score` | Advisor-Effizienzwert |
+| `sensor` | `advisor_expected_cop` | Advisor-Erwartungs-COP |
+| `sensor` | `advisor_building_heat_loss` | Advisor-Gebäudewärmeverlust |
+| `sensor` | `advisor_building_thermal_inertia` | Advisor-Thermische Trägheit |
+| `sensor` | `advisor_optimal_flow_temp` | Advisor-Optimale Vorlauftemperatur |
+| `sensor` | `advisor_curve_recommendation` | Advisor-Heizkurve {circuit} Empfehlung |
+| `sensor` | `advisor_dhw_recommendation` | Advisor-Warmwasser-Empfehlung |
+| `sensor` | `advisor_predicted_heat_demand` | Advisor-Wärmebedarf 24 h |
+| `sensor` | `advisor_next_24h` | Advisor-24-Stunden-Plan |
+| `sensor` | `advisor_changes` | Advisor-Veränderungen |
+| `sensor` | `advisor_optimization_review` | Advisor-Optimierungsbewertung |
+| `sensor` | `calculated_hp_temperature_delta` | Wärmepumpen-Spreizung |
+| `sensor` | `calculated_heat_source_temperature_delta` | Wärmequellen-Spreizung |
+| `sensor` | `calculated_dhw_setpoint_deviation` | Warmwasser-Abweichung Ist zu Soll |
+| `sensor` | `calculated_cop` | Jahresarbeitszahl (COP, momentan) |
+| `sensor` | `calculated_hc_flow_deviation` | Heizkreis {circuit} Vorlauf-Abweichung |
+| `sensor` | `calculated_hp_flow_deviation` | Wärmepumpen Vorlauf-Abweichung |
+| `sensor` | `analysis_heat_pump_cycles_recorded` | Wärmepumpentakte erfasst |
+| `sensor` | `analysis_heat_pump_cycles_today` | Wärmepumpentakte heute |
+| `sensor` | `analysis_heat_pump_cycles_2h` | Wärmepumpentakte letzte 2 Stunden |
+| `sensor` | `analysis_heat_pump_cycles_4h` | Wärmepumpentakte letzte 4 Stunden |
+| `sensor` | `analysis_current_cycle_duration` | Aktuelle Taktlaufzeit |
+| `sensor` | `analysis_average_cycle_duration` | Durchschnittliche Taktlaufzeit |
+| `sensor` | `analysis_last_compressor_start` | Letzter Verdichterstart |
+| `sensor` | `analysis_last_cycle_duration` | Letzte Taktlaufzeit |
+| `sensor` | `analysis_defrost_starts_recorded` | Abtauvorgänge erfasst |
+| `sensor` | `analysis_defrost_starts_today` | Abtauvorgänge heute |
+| `sensor` | `analysis_last_defrost_start` | Letzter Abtaustart |
+| `sensor` | `analysis_time_since_last_defrost` | Zeit seit letztem Abtaustart |
+| `sensor` | `analysis_operating_share_heating` | Betriebsanteil Heizen |
+| `sensor` | `analysis_operating_share_dhw` | Betriebsanteil Warmwasser |
+| `sensor` | `analysis_operating_share_cooling` | Betriebsanteil Kühlen |
+| `sensor` | `analysis_operating_share_defrost` | Betriebsanteil Abtauen |
+| `sensor` | `web_4way_valve_circuit1` | 4-Wege-Ventil Kreis 1 (Web) |
+| `sensor` | `web_airsource_temperature` | Luftquellen Temperatur (Web) |
+| `sensor` | `web_battery_voltage_central_unit` | Batteriespannung Zentraleinheit (Web) |
+| `sensor` | `web_board_temperature` | Platinentemperatur (Web) |
+| `sensor` | `web_cold_water_temperature` | Kaltwasser Temperatur (Web) |
+| `sensor` | `web_condenser_pressure` | Kondensator Druck (Web) |
+| `sensor` | `web_condenser_temperature` | Kondensator Temperatur (Web) |
+| `sensor` | `web_controller_online_hours` | Regler-Onlinezeit (Web) |
+| `sensor` | `web_controller_clock` | Regler-Uhrzeit (Web) |
+| `sensor` | `web_last_success` | Letzte Web-Aktualisierung (Web) |
+| `sensor` | `web_dhw_status_info` | Warmwasser Statusinfo (Web) |
+| `sensor` | `connection_mode` | Verbindungsmodus |
+| `sensor` | `web_energyflow_grid` | Netzleistung (Web) |
+| `sensor` | `web_energyflow_pv` | PV-Leistung (Web) |
+| `sensor` | `web_heat_quantity_heating_today` | Wärmemenge Heizen heute (Web) |
+| `sensor` | `web_heat_quantity_heating_total` | Wärmemenge Heizen gesamt (Web) |
+| `sensor` | `web_heat_quantity_hotwater_today` | Wärmemenge Warmwasser heute (Web) |
+| `sensor` | `web_heat_quantity_hotwater_total` | Wärmemenge Warmwasser gesamt (Web) |
+| `sensor` | `web_current_electrical_power` | Aktuelle elektrische Leistung (Web) |
+| `sensor` | `web_current_expected_power_cooling` | Momentane/prognostizierte Leistung Kühlen (Web) |
+| `sensor` | `web_current_expected_power_heating` | Momentane/prognostizierte Leistung Heizen (Web) |
+| `sensor` | `web_current_expected_power_hotwater` | Momentane/prognostizierte Leistung Warmwasser (Web) |
+| `sensor` | `web_evaporation_temperature` | Verdampfungstemperatur (Web) |
+| `sensor` | `web_evaporator_outlet_temperature` | Verdampfer Austrittstemperatur (Web) |
+| `sensor` | `web_ext_switch_heating_cooling` | Externe Umschaltung Heizen/Kühlen (Web) |
+| `sensor` | `web_flow_pump_output` | Durchflusspumpe Ausgang (Web) |
+| `sensor` | `web_flow_pump_percentage` | Durchflusspumpe Signal (Web) |
+| `sensor` | `web_flow_temp_hc` | Vorlauftemperatur HK {circuit} (Web) |
+| `sensor` | `web_flow_temperature` | Vorlauftemperatur (Web) |
+| `sensor` | `web_flowmeter` | Durchflussmesser (Web) |
+| `sensor` | `web_demand_reason` | Anforderungsgrund (Web) |
+| `sensor` | `web_heat_sink_intermediate_circuit_pump_signal` | Wärmesenke Zwischenkreispumpe Signal (Web) |
+| `sensor` | `web_intermediate_flow_temperature` | Vorlauftemperatur Zwischenkreis (Web) |
+| `sensor` | `web_intermediate_return_temperature` | Rücklauftemperatur Zwischenkreis (Web) |
+| `sensor` | `web_heating_water_outlet_temperature` | Heizwasser Austrittstemperatur (Web) |
+| `sensor` | `web_heatstore_temperature` | Wärmespeichertemperatur (Web) |
+| `sensor` | `web_hotgas_temperature` | Heißgastemperatur (Web) |
+| `sensor` | `web_hotwater_circulation_heat_quantity` | Wärmemenge Zirkulation (Web) |
+| `sensor` | `web_hotwater_station_flowmeter` | Warmwasserstation Durchfluss (Web) |
+| `sensor` | `web_hotwater_station_pump_percentage` | Warmwasserstation Pumpe (Web) |
+| `sensor` | `web_hotwater_tapping_heat_quantity` | Wärmemenge Zapfung (Web) |
+| `sensor` | `web_hp_power_consumption` | Wärmepumpen-Verbrauchsleistung (Web) |
+| `sensor` | `web_hp_power_environment` | Wärmepumpen-Umgebungsleistung (Web) |
+| `sensor` | `web_hotwater_temperature` | Warmwassertemperatur (Web) |
+| `sensor` | `web_infosystem_notification_count` | Infosystem Meldungen Anzahl (Web) |
+| `sensor` | `web_infosystem_notifications` | Infosystem Meldungen (Web) |
+| `sensor` | `web_stat_runtime_total_heating` | Laufzeit Heizen, gesamt (Web 2.0) |
+| `sensor` | `web_stat_runtime_total_cooling` | Laufzeit Kühlen, gesamt (Web 2.0) |
+| `sensor` | `web_stat_runtime_total_hotwater` | Laufzeit Warmwasser, gesamt (Web 2.0) |
+| `sensor` | `web_stat_runtime_total_defrost` | Laufzeit Abtauen, gesamt (Web 2.0) |
+| `sensor` | `web_stat_genheat_total_heating` | Wärmemenge Heizen, gesamt (Web 2.0) |
+| `sensor` | `web_stat_genheat_total_cooling` | Wärmemenge Kühlen, gesamt (Web 2.0) |
+| `sensor` | `web_stat_genheat_total_hotwater` | Wärmemenge Warmwasser, gesamt (Web 2.0) |
+| `sensor` | `web_stat_genheat_total_defrost` | Wärmemenge Abtauen, gesamt (Web 2.0) |
+| `sensor` | `web_stat_elcons_total_heating` | Elektrische Energie Heizen, gesamt (Web 2.0) |
+| `sensor` | `web_stat_elcons_total_cooling` | Elektrische Energie Kühlen, gesamt (Web 2.0) |
+| `sensor` | `web_stat_elcons_total_hotwater` | Elektrische Energie Warmwasser, gesamt (Web 2.0) |
+| `sensor` | `web_stat_elcons_total_defrost` | Elektrische Energie Abtauen, gesamt (Web 2.0) |
+| `sensor` | `web_liquid_line_temperature` | Flüssigkeitsleitung Temperatur (Web) |
+| `sensor` | `web_loading_temperature` | Ladetemperatur (Web) |
+| `sensor` | `web_mixer_heating_circuit` | Mischer Heizkreis {circuit} (Web) |
+| `sensor` | `web_myidm_id` | myIDM ID (Web) |
+| `sensor` | `web_navigator_version` | Navigator Version (Web) |
+| `sensor` | `web_outside_air_temperature` | Außenlufttemperatur (Web) |
+| `sensor` | `web_return_temperature` | Rücklauftemperatur (Web) |
+| `sensor` | `web_room_temperature_hc` | Raumtemperatur HK {circuit} (Web) |
+| `sensor` | `web_runtime_cooling_hours` | Laufzeit Kühlen (Web) |
+| `sensor` | `web_runtime_defrosting_hours` | Laufzeit Abtauen (Web) |
+| `sensor` | `web_runtime_heating_hours` | Laufzeit Heizen (Web) |
+| `sensor` | `web_runtime_hotwater_hours` | Laufzeit Warmwasser (Web) |
+| `sensor` | `web_runtime_second_heat_generator_hours` | Laufzeit 2. Wärmeerzeuger (Web) |
+| `sensor` | `web_runtime_stage_1_hours` | Laufzeit Stufe 1 (Web) |
+| `sensor` | `web_software_version` | Software Version (Web) |
+| `sensor` | `web_switch_cycles_second_heat_generator` | Schaltzyklen 2. Wärmeerzeuger (Web) |
+| `sensor` | `web_switch_cycles_stage_1` | Schaltzyklen Stufe 1 (Web) |
+| `sensor` | `web_valve_heating_hotwater` | Ventil Heizung/Warmwasser (Web) |
+| `sensor` | `web_ventilator_direction_1` | Ventilator Richtung 1 (Web) |
+| `sensor` | `web_ventilator_voltage` | Ventilator Spannung (Web) |
+| `sensor` | `web_verdamper_pressure` | Verdampfer Druck (Web) |
+| `sensor` | `web_water_temp_bottom` | Speichertemperatur unten (Web) |
+| `sensor` | `web_water_temp_top` | Speichertemperatur oben (Web) |
+| `sensor` | `web_weather_forecast` | Wettervorhersage (Web) |
+| `number` | `web_dhw_setpoint` | Warmwasser-Solltemperatur (Web) |
+| `number` | `web_hc_room_setpoint` | Heizkreis {circuit} Raumsolltemperatur (Web) |
+| `climate` | `web_hc_climate` | Heizkreis {circuit} (Web) |
+| `water_heater` | `web_water_heater` | Warmwasser (Web) |
+| `select` | `web_hc_mode` | Heizkreis {circuit} Betriebsart (Web) |
+| `switch` | `room_temp_forwarding_active` | Raumtemperatur-Weiterleitung |
+| `switch` | `room_temp_source` | Raumtemperatur-Quelle {circuit} {source} |
+| `button` | `connection_reload` | Verbindung neu laden |
+| `button` | `dhw_priority_charge` | Vorrangladung anfordern |
+| `button` | `ai_report_daily` | KI-Tagesbericht (experimentell) |
+| `button` | `ai_report_weekly` | KI-Wochenbericht (experimentell) |
+| `button` | `ai_report_health` | KI-Zustand erklären (experimentell) |
+| `button` | `ai_report_efficiency` | KI-Effizienz erklären (experimentell) |
+| `conversation` | `assist_agent` | Assistent |
+| `binary_sensor` | `firmware_update_observed` | Neuere Firmware gesichtet (unbestätigt) |
+| `binary_sensor` | `analysis_last_cycle_short` | Letzter Verdichtertakt zu kurz |
+| `binary_sensor` | `advisor_optimization_available` | Advisor-Optimierung verfügbar |
+| `binary_sensor` | `advisor_anomaly_detected` | Advisor-Anomalie erkannt |
+| `binary_sensor` | `calculated_pv_surplus_operation` | PV-Überschussbetrieb |
+| `binary_sensor` | `web_demand_reason_pv` | PV-Anforderungsgrund (Web) |
+| `binary_sensor` | `web_dhw_circulation_active` | Warmwasser-Zirkulation (Web) |
+| `binary_sensor` | `web_compressor_1` | Verdichter 1 (Web) |
+| `binary_sensor` | `web_compressor_heating` | Verdichterheizung (Web) |
+| `binary_sensor` | `web_dewpoint_humidity_alarm` | Taupunkt-Feuchtealarm (Web) |
+| `binary_sensor` | `web_ew_evu_lock_contact` | EVU-Sperrkontakt (Web) |
+| `binary_sensor` | `web_ext_hotwater_signal` | Externe Warmwasseranforderung (Web) |
+| `binary_sensor` | `web_external_request` | Externe Anforderung (Web) |
+| `binary_sensor` | `web_failure_eheating` | Störung E-Heizung (Web) |
+| `binary_sensor` | `web_flow_pump_on` | Durchflusspumpe (Web) |
+| `binary_sensor` | `web_heat_generator_2nd` | Zweiter Wärmeerzeuger (Web) |
+| `binary_sensor` | `web_heat_generator_2nd_3rd` | Zweiter oder dritter Wärmeerzeuger (Web) |
+| `binary_sensor` | `web_high_pressure_error` | Hochdruckstörung (Web) |
+| `binary_sensor` | `web_hp_heating_rod` | Heizstab (Web) |
+| `binary_sensor` | `web_ion_active` | iON-Optimierung aktiv (Web) |
+| `binary_sensor` | `web_hotwater_circulation_pump` | Warmwasser-Zirkulationspumpe (Web) |
+| `binary_sensor` | `web_hotwater_station_flow_switch` | Warmwasserstation Strömungsschalter (Web) |
+| `binary_sensor` | `web_siphon_heating` | Siphonheizung (Web) |
+| `binary_sensor` | `web_pump_heating_circuit` | Pumpe Heizkreis {circuit} (Web) |
+<!-- END GENERATED ENTITY KEY INDEX -->

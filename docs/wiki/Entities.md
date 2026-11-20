@@ -238,6 +238,25 @@ module off (or keep it, which dismisses that round of the suggestion).
 | `hc_{x}_setpoint_flow_temp` | Current setpoint flow temp |
 | `hc_{x}_active_mode` | Active operating mode |
 
+### Find and interpret an entity
+
+Use **Settings → Devices & Services → IDM Heatpump → Entities** to find the
+entity as installed. In **Developer Tools → States**, check its unit, state and
+attributes. The reference lists keys so you can identify a value even if you
+renamed the entity or Home Assistant uses a different language.
+
+| What you see | How to interpret it |
+| --- | --- |
+| No entity in the list | Check whether the feature, circuit or module is configured and whether the platform exists on your Navigator model. For register-backed values, check the per-register read report in the integration diagnostics. |
+| Entity is disabled | Enable it from its entity settings if needed. Entity profiles and diagnostic defaults determine which optional entities start enabled. |
+| `unavailable` or `unknown` | The source may be missing, stale, unsupported or awaiting enough valid data. Check the required inputs and operating conditions in the relevant section below. |
+| Zero | Interpret it in context. Zero flow can mean standby, while a zero circuit flow setpoint means there is no current flow request. A plausible zero and a missing sensor are distinct states. |
+| Power in kW versus energy in kWh | Power is the current rate. Energy is accumulated over time. Use a suitable energy counter for period totals and check whether it represents electrical input or delivered heat. |
+
+For raw values, see the [Modbus register catalog](Modbus-Register). For
+firmware-dependent web values, check the web section below and the
+[local web interface guide](Local-Web-Interface).
+
 ### Calculated Sensors
 
 These sensors are derived from register values of the same snapshot. Nothing is
@@ -249,9 +268,10 @@ value rather than a guess when its sources are not meaningful.
 | `calculated_hp_temperature_delta` | Heat pump spread (flow minus return) |
 | `calculated_heat_source_temperature_delta` | Heat source spread (inlet minus outlet) |
 | `calculated_dhw_setpoint_deviation` | DHW actual minus setpoint |
-| `calculated_cop` | Momentary COP (thermal power / electrical power) |
+| `calculated_cop` | Momentary unitless COP. Uses positive `thermal_power_flow_sensor` or falls back to `current_power`, divided by `power_consumption_hp`. Requires positive thermal output and at least 0.05 kW electrical input. Use energy statistics for a COP over time. |
 | `calculated_hc_{x}_flow_deviation` | Flow deviation per heating circuit |
-| `calculated_hp_flow_deviation` | Heat pump flow deviation (heating mode only) |
+| `calculated_hp_flow_deviation` | Heat pump flow temperature minus the highest active circuit flow setpoint, in pure heating mode. |
+| `hc_{x}_temperature_difference` | Differential circuit only. Reference temperature minus storage temperature, in K. Requires both circuit readings. |
 
 **Flow deviation per heating circuit** compares the measured flow temperature of
 a circuit (`hc_{x}_flow_temp`) with the flow setpoint the controller currently
@@ -1023,3 +1043,181 @@ entities on the plant device. Existing unique IDs and entity history are
 preserved. A newer matching observation can create a Repairs notice;
 acknowledgement is persisted per device/version. See
 [activation and interpretation](Telemetry#firmware-orientation).
+
+## Entity key index
+
+This index lists the name templates defined for integration-specific entities. `{circuit}` and `{source}` identify instances of a template. Search by key or display name, then use the feature sections above for the source, prerequisites and interpretation. For Modbus-backed keys see the [register catalog](Modbus-Register).
+
+<!-- BEGIN GENERATED ENTITY KEY INDEX -->
+| Platform | Key | Display name |
+| --- | --- | --- |
+| `sensor` | `telemetry_latest_firmware` | Latest reported firmware |
+| `sensor` | `telemetry_report_status` | Telemetry report status |
+| `sensor` | `hc_storage_temp` | Storage temperature HC {circuit} |
+| `sensor` | `hc_reference_temp` | Reference temperature HC {circuit} |
+| `sensor` | `hc_temperature_difference` | Temperature difference HC {circuit} |
+| `sensor` | `hc_differential_status` | Differential control status HC {circuit} |
+| `sensor` | `ai_learning_status` | AI learning status |
+| `sensor` | `ai_storage_used` | AI storage used |
+| `sensor` | `ai_coverage` | AI observed coverage |
+| `sensor` | `ai_observed_cop` | AI observed COP |
+| `sensor` | `ai_report` | AI report (experimental) |
+| `sensor` | `advisor_status` | Advisor status |
+| `sensor` | `advisor_recommendations` | Advisor recommendations |
+| `sensor` | `advisor_confidence` | Advisor confidence |
+| `sensor` | `advisor_operation_reason` | Advisor operation reason |
+| `sensor` | `advisor_health_score` | Advisor health score |
+| `sensor` | `advisor_efficiency_score` | Advisor efficiency score |
+| `sensor` | `advisor_expected_cop` | Advisor expected COP |
+| `sensor` | `advisor_building_heat_loss` | Advisor building heat loss |
+| `sensor` | `advisor_building_thermal_inertia` | Advisor building thermal inertia |
+| `sensor` | `advisor_optimal_flow_temp` | Advisor optimal flow temperature |
+| `sensor` | `advisor_curve_recommendation` | Advisor heating curve {circuit} recommendation |
+| `sensor` | `advisor_dhw_recommendation` | Advisor hot water recommendation |
+| `sensor` | `advisor_predicted_heat_demand` | Advisor predicted heat demand 24h |
+| `sensor` | `advisor_next_24h` | Advisor 24 hour plan |
+| `sensor` | `advisor_changes` | Advisor changes |
+| `sensor` | `advisor_optimization_review` | Advisor optimization review |
+| `sensor` | `calculated_hp_temperature_delta` | Heat pump temperature spread |
+| `sensor` | `calculated_heat_source_temperature_delta` | Heat source temperature spread |
+| `sensor` | `calculated_dhw_setpoint_deviation` | Hot water deviation from setpoint |
+| `sensor` | `calculated_cop` | Coefficient of performance (current) |
+| `sensor` | `calculated_hc_flow_deviation` | Heating circuit {circuit} flow deviation |
+| `sensor` | `calculated_hp_flow_deviation` | Heat pump flow deviation |
+| `sensor` | `analysis_heat_pump_cycles_recorded` | Heat pump cycles recorded |
+| `sensor` | `analysis_heat_pump_cycles_today` | Heat pump cycles today |
+| `sensor` | `analysis_heat_pump_cycles_2h` | Heat pump cycles last 2 hours |
+| `sensor` | `analysis_heat_pump_cycles_4h` | Heat pump cycles last 4 hours |
+| `sensor` | `analysis_current_cycle_duration` | Current cycle runtime |
+| `sensor` | `analysis_average_cycle_duration` | Average cycle runtime |
+| `sensor` | `analysis_last_compressor_start` | Last compressor start |
+| `sensor` | `analysis_last_cycle_duration` | Last cycle runtime |
+| `sensor` | `analysis_defrost_starts_recorded` | Defrost cycles recorded |
+| `sensor` | `analysis_defrost_starts_today` | Defrost cycles today |
+| `sensor` | `analysis_last_defrost_start` | Last defrost start |
+| `sensor` | `analysis_time_since_last_defrost` | Time since last defrost start |
+| `sensor` | `analysis_operating_share_heating` | Operating share heating |
+| `sensor` | `analysis_operating_share_dhw` | Operating share hot water |
+| `sensor` | `analysis_operating_share_cooling` | Operating share cooling |
+| `sensor` | `analysis_operating_share_defrost` | Operating share defrost |
+| `sensor` | `web_4way_valve_circuit1` | 4-way valve circuit 1 (Web) |
+| `sensor` | `web_airsource_temperature` | Air source temperature (Web) |
+| `sensor` | `web_battery_voltage_central_unit` | Central unit battery voltage (Web) |
+| `sensor` | `web_board_temperature` | Board temperature (Web) |
+| `sensor` | `web_cold_water_temperature` | Cold water temperature (Web) |
+| `sensor` | `web_condenser_pressure` | Condenser pressure (Web) |
+| `sensor` | `web_condenser_temperature` | Condenser temperature (Web) |
+| `sensor` | `web_controller_online_hours` | Controller online time (Web) |
+| `sensor` | `web_controller_clock` | Controller clock (Web) |
+| `sensor` | `web_last_success` | Last web update (Web) |
+| `sensor` | `web_dhw_status_info` | Hot water status info (Web) |
+| `sensor` | `connection_mode` | Connection mode |
+| `sensor` | `web_energyflow_grid` | Grid power (Web) |
+| `sensor` | `web_energyflow_pv` | PV power (Web) |
+| `sensor` | `web_heat_quantity_heating_today` | Heat quantity heating today (Web) |
+| `sensor` | `web_heat_quantity_heating_total` | Heat quantity heating total (Web) |
+| `sensor` | `web_heat_quantity_hotwater_today` | Heat quantity hot water today (Web) |
+| `sensor` | `web_heat_quantity_hotwater_total` | Heat quantity hot water total (Web) |
+| `sensor` | `web_current_electrical_power` | Current electrical power (Web) |
+| `sensor` | `web_current_expected_power_cooling` | Current/projected cooling power (Web) |
+| `sensor` | `web_current_expected_power_heating` | Current/projected heating power (Web) |
+| `sensor` | `web_current_expected_power_hotwater` | Current/projected hot water power (Web) |
+| `sensor` | `web_evaporation_temperature` | Evaporation temperature (Web) |
+| `sensor` | `web_evaporator_outlet_temperature` | Evaporator outlet temperature (Web) |
+| `sensor` | `web_ext_switch_heating_cooling` | External heating/cooling changeover (Web) |
+| `sensor` | `web_flow_pump_output` | Flow pump output (Web) |
+| `sensor` | `web_flow_pump_percentage` | Flow pump signal (Web) |
+| `sensor` | `web_flow_temp_hc` | Heating circuit {circuit} flow temperature (Web) |
+| `sensor` | `web_flow_temperature` | Flow temperature (Web) |
+| `sensor` | `web_flowmeter` | Flow meter (Web) |
+| `sensor` | `web_demand_reason` | Demand reason (Web) |
+| `sensor` | `web_heat_sink_intermediate_circuit_pump_signal` | Heat sink intermediate circuit pump signal (Web) |
+| `sensor` | `web_intermediate_flow_temperature` | Intermediate circuit flow temperature (Web) |
+| `sensor` | `web_intermediate_return_temperature` | Intermediate circuit return temperature (Web) |
+| `sensor` | `web_heating_water_outlet_temperature` | Heating water outlet temperature (Web) |
+| `sensor` | `web_heatstore_temperature` | Heat storage temperature (Web) |
+| `sensor` | `web_hotgas_temperature` | Hot gas temperature (Web) |
+| `sensor` | `web_hotwater_circulation_heat_quantity` | Circulation heat quantity (Web) |
+| `sensor` | `web_hotwater_station_flowmeter` | Hot water station flow (Web) |
+| `sensor` | `web_hotwater_station_pump_percentage` | Hot water station pump (Web) |
+| `sensor` | `web_hotwater_tapping_heat_quantity` | Tapping heat quantity (Web) |
+| `sensor` | `web_hp_power_consumption` | Heat pump power consumption (Web) |
+| `sensor` | `web_hp_power_environment` | Heat pump environment power (Web) |
+| `sensor` | `web_hotwater_temperature` | Hot water temperature (Web) |
+| `sensor` | `web_infosystem_notification_count` | Info system notification count (Web) |
+| `sensor` | `web_infosystem_notifications` | Info system notifications (Web) |
+| `sensor` | `web_stat_runtime_total_heating` | Runtime heating, total (Web 2.0) |
+| `sensor` | `web_stat_runtime_total_cooling` | Runtime cooling, total (Web 2.0) |
+| `sensor` | `web_stat_runtime_total_hotwater` | Runtime hot water, total (Web 2.0) |
+| `sensor` | `web_stat_runtime_total_defrost` | Runtime defrost, total (Web 2.0) |
+| `sensor` | `web_stat_genheat_total_heating` | Heat quantity heating, total (Web 2.0) |
+| `sensor` | `web_stat_genheat_total_cooling` | Heat quantity cooling, total (Web 2.0) |
+| `sensor` | `web_stat_genheat_total_hotwater` | Heat quantity hot water, total (Web 2.0) |
+| `sensor` | `web_stat_genheat_total_defrost` | Heat quantity defrost, total (Web 2.0) |
+| `sensor` | `web_stat_elcons_total_heating` | Electrical energy heating, total (Web 2.0) |
+| `sensor` | `web_stat_elcons_total_cooling` | Electrical energy cooling, total (Web 2.0) |
+| `sensor` | `web_stat_elcons_total_hotwater` | Electrical energy hot water, total (Web 2.0) |
+| `sensor` | `web_stat_elcons_total_defrost` | Electrical energy defrost, total (Web 2.0) |
+| `sensor` | `web_liquid_line_temperature` | Liquid line temperature (Web) |
+| `sensor` | `web_loading_temperature` | Charging temperature (Web) |
+| `sensor` | `web_mixer_heating_circuit` | Heating circuit {circuit} mixer (Web) |
+| `sensor` | `web_myidm_id` | myIDM ID (Web) |
+| `sensor` | `web_navigator_version` | Navigator version (Web) |
+| `sensor` | `web_outside_air_temperature` | Outside air temperature (Web) |
+| `sensor` | `web_return_temperature` | Return temperature (Web) |
+| `sensor` | `web_room_temperature_hc` | Heating circuit {circuit} room temperature (Web) |
+| `sensor` | `web_runtime_cooling_hours` | Cooling runtime (Web) |
+| `sensor` | `web_runtime_defrosting_hours` | Defrost runtime (Web) |
+| `sensor` | `web_runtime_heating_hours` | Heating runtime (Web) |
+| `sensor` | `web_runtime_hotwater_hours` | Hot water runtime (Web) |
+| `sensor` | `web_runtime_second_heat_generator_hours` | Second heat generator runtime (Web) |
+| `sensor` | `web_runtime_stage_1_hours` | Stage 1 runtime (Web) |
+| `sensor` | `web_software_version` | Software version (Web) |
+| `sensor` | `web_switch_cycles_second_heat_generator` | Second heat generator switch cycles (Web) |
+| `sensor` | `web_switch_cycles_stage_1` | Stage 1 switch cycles (Web) |
+| `sensor` | `web_valve_heating_hotwater` | Heating/hot water valve (Web) |
+| `sensor` | `web_ventilator_direction_1` | Fan direction 1 (Web) |
+| `sensor` | `web_ventilator_voltage` | Fan voltage (Web) |
+| `sensor` | `web_verdamper_pressure` | Evaporator pressure (Web) |
+| `sensor` | `web_water_temp_bottom` | Tank temperature bottom (Web) |
+| `sensor` | `web_water_temp_top` | Tank temperature top (Web) |
+| `sensor` | `web_weather_forecast` | Weather forecast (Web) |
+| `number` | `web_dhw_setpoint` | Hot water setpoint (Web) |
+| `number` | `web_hc_room_setpoint` | Heating circuit {circuit} room setpoint (Web) |
+| `climate` | `web_hc_climate` | Heating circuit {circuit} (Web) |
+| `water_heater` | `web_water_heater` | Hot water (Web) |
+| `select` | `web_hc_mode` | Heating circuit {circuit} mode (Web) |
+| `switch` | `room_temp_forwarding_active` | Room temperature forwarding |
+| `switch` | `room_temp_source` | Room temperature source {circuit} {source} |
+| `button` | `connection_reload` | Reload connection |
+| `button` | `dhw_priority_charge` | Request DHW priority charge |
+| `button` | `ai_report_daily` | AI daily report (experimental) |
+| `button` | `ai_report_weekly` | AI weekly report (experimental) |
+| `button` | `ai_report_health` | AI health explanation (experimental) |
+| `button` | `ai_report_efficiency` | AI efficiency explanation (experimental) |
+| `conversation` | `assist_agent` | Assistant |
+| `binary_sensor` | `firmware_update_observed` | Newer firmware observed (unconfirmed) |
+| `binary_sensor` | `analysis_last_cycle_short` | Last compressor cycle too short |
+| `binary_sensor` | `advisor_optimization_available` | Advisor optimization available |
+| `binary_sensor` | `advisor_anomaly_detected` | Advisor anomaly detected |
+| `binary_sensor` | `calculated_pv_surplus_operation` | PV surplus operation |
+| `binary_sensor` | `web_demand_reason_pv` | PV demand reason (Web) |
+| `binary_sensor` | `web_dhw_circulation_active` | Hot water circulation (Web) |
+| `binary_sensor` | `web_compressor_1` | Compressor 1 (Web) |
+| `binary_sensor` | `web_compressor_heating` | Compressor heater (Web) |
+| `binary_sensor` | `web_dewpoint_humidity_alarm` | Dew point humidity alarm (Web) |
+| `binary_sensor` | `web_ew_evu_lock_contact` | Utility lock contact (Web) |
+| `binary_sensor` | `web_ext_hotwater_signal` | External hot water request (Web) |
+| `binary_sensor` | `web_external_request` | External request (Web) |
+| `binary_sensor` | `web_failure_eheating` | Electric heater fault (Web) |
+| `binary_sensor` | `web_flow_pump_on` | Flow pump (Web) |
+| `binary_sensor` | `web_heat_generator_2nd` | Second heat generator (Web) |
+| `binary_sensor` | `web_heat_generator_2nd_3rd` | Second or third heat generator (Web) |
+| `binary_sensor` | `web_high_pressure_error` | High-pressure fault (Web) |
+| `binary_sensor` | `web_hp_heating_rod` | Heating rod (Web) |
+| `binary_sensor` | `web_ion_active` | iON optimization active (Web) |
+| `binary_sensor` | `web_hotwater_circulation_pump` | Hot water circulation pump (Web) |
+| `binary_sensor` | `web_hotwater_station_flow_switch` | Hot water station flow switch (Web) |
+| `binary_sensor` | `web_siphon_heating` | Siphon heater (Web) |
+| `binary_sensor` | `web_pump_heating_circuit` | Heating circuit {circuit} pump (Web) |
+<!-- END GENERATED ENTITY KEY INDEX -->

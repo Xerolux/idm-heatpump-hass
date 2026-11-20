@@ -45,6 +45,7 @@ def wiki_tree(tmp_path: Path) -> Path:
 
 def test_repository_wiki_is_current() -> None:
     assert check.check() == []
+    assert check.check_entity_key_indexes(check.ROOT) == []
 
 
 def test_source_change_requires_review_without_rewriting_prose(wiki_tree: Path) -> None:

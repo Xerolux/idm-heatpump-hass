@@ -249,6 +249,22 @@ Disabling the feature stops collection and cancels an in-progress request.
 The saved numeric history remains locally available if re-enabled within its
 retention window. The heat pump continues independently of the AI server.
 
+## Interpret the AI entities
+
+| Entity key | What it measures or displays |
+| --- | --- |
+| `ai_report` | Latest report text and report attributes. Generate a report or wait for an enabled schedule. |
+| `ai_learning_status` | Whether local comparison is disabled or how far its baseline has progressed. Its attributes report the reason, observed days and hours, and the minimums for comparison. |
+| `ai_storage_used` | Storage reported by the adviser in MiB. |
+| `ai_coverage` | Percentage of the rolling 24-hour observation window covered by usable energy-counter data. A partial window reduces what can be inferred from the totals. |
+| `ai_observed_cop` | Observed thermal energy divided by observed electrical energy in that rolling 24-hour window. The value requires a positive observed electrical total. |
+
+For example, 18 kWh of observed heat and 6 kWh of observed electrical input
+give a COP of 3.0 for that evidence window. Read the COP alongside coverage.
+A weekly report evaluates its own seven-day window. For either window, the
+built-in text and optional model explanation use the same measured evidence.
+Missing measurements remain visible as gaps.
+
 ## Troubleshooting
 
 If no report appears, check the feature toggle, reachability from HA, the exact
