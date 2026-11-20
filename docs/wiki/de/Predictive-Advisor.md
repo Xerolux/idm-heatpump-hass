@@ -224,6 +224,35 @@ sich nicht nach Heizen und Warmwasser trennen. Diese Sensoren bleiben bis zu
 ausreichend neuen Heizproben nicht verfügbar. Andere Analysen einschließlich
 Tagesreferenzen, COP-Daten und Abkühlbeobachtungen bleiben erhalten.
 
+### Warum die vier Gebäudesensoren nicht verfügbar sein können
+
+Advisor-Status und Konfidenz beschreiben den allgemeinen Beobachtungsstand
+und die Datenqualität. Jeder Gebäudesensor hat eigene Voraussetzungen.
+
+| Sensor | Voraussetzungen |
+| --- | --- |
+| Gebäudewärmeverlust | Ein aktiver Heizkreis mit gültiger Raumtemperatur, gültiger Außentemperatur und gemessener Wärmeleistung über 0,5 kW im Heizbetrieb. Die berechnete Wärmeleistung muss mit größerem Temperaturunterschied zwischen innen und außen steigen. |
+| Optimale Vorlauftemperatur | Ein aktiver Heizkreis mit gemessener Vorlauftemperatur, Außentemperatur und Raumtemperatur innerhalb von 0,6 °C um den normalen Raum-Heizsollwert im Heizbetrieb. Die gelernte Vorlauftemperatur muss bei steigender Außentemperatur sinken. Für den angezeigten Wert ist außerdem eine aktuelle Außentemperatur nötig. |
+| Thermische Trägheit | Mindestens drei geeignete Abkühlbeobachtungen sowie eine plausible Wärmekapazität auf Basis des erlernten Wärmeverlusts. Eine Beobachtung braucht mindestens drei Stunden nach Verdichterbetrieb, mindestens 0,2 °C Abfall der Raumtemperatur und mindestens 1 °C Temperaturunterschied zwischen innen und außen. |
+| Wärmebedarf 24 h | Ein erlernter Wärmeverlust und 24 aufeinanderfolgende stündliche Temperaturprognosen ab der aktuellen oder nächsten Stunde. In den Advisor-Optionen eine Home-Assistant-Wetterentität mit Stundenprognose auswählen. Die Berechnung nutzt die gemessene Raumtemperatur, falls vorhanden, sonst 21 °C. |
+
+Beide Regressionsmodelle brauchen jeweils mindestens 60 geeignete Messproben,
+12 gewichtete Beobachtungsstunden und unterschiedliche Eingangstemperaturen.
+Für die gewichteten Stunden zählen geeignete Beobachtungen. Deshalb kann das
+Lernen deutlich länger als 12 Stunden dauern. Fehlt einem Heizkreis eine
+brauchbare Raumtemperatur, lässt sich ein externer Sensor zuordnen. Siehe
+[Raumtemperatur ohne Raumfühler](#raumtemperatur-ohne-raumfuhler).
+
+Unter **Entwicklerwerkzeuge → Zustände** zeigen die Attribute von
+**Gebäudewärmeverlust** oder **Thermische Trägheit** die Zähler
+`heat_fit_samples`, `flow_curve_samples` und `cooldown_episodes`, sobald
+der jeweilige Sensor einen Wert hat. Bei fehlenden oder verworfenen Eingaben
+hilft der Diagnose-Download des IDM-Eintrags unter **Einstellungen → Geräte &
+Dienste → IDM Heatpump**. Dort steht die Datenqualität unter
+`predictive_advisor.data_quality`. Steigende Zähler zeigen, dass das Modell
+Beobachtungen sammelt. Bei einem engen Temperaturbereich oder einer
+unplausiblen Modellkurve kann der Sensor länger nicht verfügbar bleiben.
+
 ## Was der Advisor niemals tun wird
 
 - Sollwerte, Heizkurven, Betriebsarten, Zeitprogramme oder Leistungsgrenzen verändern
