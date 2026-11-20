@@ -59,6 +59,18 @@ def test_new_feature_links_resolve_to_built_documentation(built_public_dir: Path
             assert "Schreibende Funktionen" not in section.group(1)
 
 
+def test_model_compatibility_is_linked_from_both_homepages(built_public_dir: Path) -> None:
+    for prefix, href in (
+        ("", "docs/de/supported-devices/"),
+        ("en/", "../docs/supported-devices/"),
+    ):
+        homepage = built_public_dir / prefix / "index.html"
+        assert f'href="{href}">iDM AERO ALM, AERO SLM' in homepage.read_text(encoding="utf-8")
+        model_page = (homepage.parent / href / "index.html").read_text(encoding="utf-8")
+        for model in ("AERO ALM 6–15", "AERO SLM", "TERRA SWM", "iPUMP A ONE"):
+            assert model in model_page
+
+
 def _structured_data(document: str) -> list[dict[str, object]]:
     return [
         json.loads(match)

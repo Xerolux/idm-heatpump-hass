@@ -1,10 +1,10 @@
-# Unterstützte Geräte
+# iDM-Wärmepumpenmodelle für Home Assistant
 
 ## Kompatibilitätsstatus
 
 Der detaillierte Modell- und Firmware-Status wird in der [Kompatibilitätsmatrix](Compatibility-Matrix) gepflegt. Die Tabelle unten ist eine kurze, installationsorientierte Zusammenfassung.
 
-## Unterstützte Gerätefamilien
+## iDM-Wärmepumpenmodelle für Home Assistantfamilien
 
 | Gerät | Firmware | Heizkreise | Zonenmodule | Status |
 |--------|----------|------------------|--------------|--------|
@@ -29,13 +29,41 @@ Der detaillierte Modell- und Firmware-Status wird in der [Kompatibilitätsmatrix
 | IDM-Geräte ohne Netzwerkverbindung | Kein Modbus TCP |
 | Andere Wärmepumpenhersteller | Anderes Modbus-Protokoll / anderes Registerlayout |
 
-## Ungetestete Geräte (möglicherweise kompatibel)
+## Kompatibilität nach Wärmepumpenmodell
 
-Die folgenden Geräte könnten dieselbe Registerbelegung wie der Navigator 2.0 / 10 verwenden, sind aber in der öffentlichen Community-Testmatrix noch nicht bestätigt:
+Lies das Wärmepumpenmodell am Typenschild ab und ermittle den Navigator-Regler
+und seine Firmware separat. Für die Einrichtung per Modbus TCP bestimmt die
+Navigator-Familie die Registerbelegung. Welche Werte und Bedienelemente
+verfügbar sind, hängt auch von Firmware und Anlagenausstattung ab. Ein
+Praxistest gilt für die jeweils genannte Kombination.
 
-- IDM Terra SW (mit Navigator-2.0-/10-Regler)
-- IDM Terra HT (mit Navigator-2.0-/10-Regler)
-- IDM Aero SLM (mit Navigator-2.0-/10-Regler)
+### iDM AERO ALM und AERO SLM mit Home Assistant
+
+| Wärmepumpe | Navigator und Nachweis |
+| --- | --- |
+| **iDM AERO ALM 6–15** (ALM) | **Mit Navigator 10 im Betrieb beobachtet.** Die Felddiagnose dokumentiert Temperaturen, Warmwasser-Ladegrenzen und Betriebsverhalten mit Firmware `T_NAV10_20.24-1580`. Die separate Korrektur des einmaligen Warmwasser-Boosts wartet noch auf Feldbestätigung. Siehe [Erkenntnisse aus der Praxis](Findings-and-Documentation). |
+| **iDM AERO SLM** (SLM) | Mit Navigator 2.0 oder 10 und aktiviertem Modbus TCP möglicherweise kompatibel. Ein vollständiger Test mit Modell, Firmware und Funktionsumfang steht aus. |
+
+### iDM TERRA SW, SWM und HT mit Home Assistant
+
+| Wärmepumpe | Navigator und Nachweis |
+| --- | --- |
+| **iDM TERRA SWM** | Mit Navigator 2.0 wird Kompatibilität erwartet. Für den Fall in der [Kompatibilitätsmatrix](Compatibility-Matrix) fehlt noch ein Rohmitschnitt der Modellerkennung. |
+| **iDM TERRA SW und TERRA HT** | Mit Navigator 2.0 oder 10 möglicherweise kompatibel. In der öffentlichen Matrix fehlt ein vollständiger modellspezifischer Test. |
+
+### iDM iPUMP mit Home Assistant
+
+| Wärmepumpe | Navigator und Nachweis |
+| --- | --- |
+| **iDM iPUMP A ONE 2–8** | Ein [Anlagenbericht mit Navigator 10](https://github.com/Xerolux/idm-heatpump-hass/issues/710) nennt dieses Modell. Für den gemeldeten Vorlaufsollwert von Heizkreis A fehlt noch die Diagnose. |
+| **iDM iPUMP ALM, iPUMP A, iPUMP T und iPUMP T7** | Vor der Einrichtung Navigator-Familie und Modbus-TCP-Menü prüfen. Für diese Reihen fehlt in der öffentlichen Matrix eine vollständige modellspezifische Bestätigung. |
+
+Auch für **AERO ALM MAX, AERO AL MAX, TERRA SW MAX, TERRA TWIN und iPUMP N5
+(NANO)** fehlt ein modellspezifischer Test in der öffentlichen Matrix. Prüfe
+Regler und Schnittstelle, bevor du die Installation planst. [iDM-Produktübersicht](https://www.idm-energie.at/idm-produkte/)
+
+Wenn der Regler feststeht, geht es mit der [Installationsanleitung für
+Home Assistant](Installation-and-Setup) weiter.
 
 > **Hinweis:** Wenn du ein nicht gelistetes IDM-Gerät erfolgreich verwendest, teile bitte einen detaillierten [Kompatibilitätsbericht in Q&A](https://github.com/Xerolux/idm-heatpump-hass/discussions/categories/q-a), damit wir die Liste erweitern können. Wähle im Formular **Devices or firmware compatibility**.
 
