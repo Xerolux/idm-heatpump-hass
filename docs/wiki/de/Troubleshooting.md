@@ -281,6 +281,8 @@ Firmware)** klärte den tatsächlichen Mechanismus — es ist ein
 - Separat erschien an beiden Morgen um den Sonnenaufgang **20303:
   N2_SMARTMETER_NOTCONNECTED** und verschwand mit echter Produktion; das ist
   eine reglerseitige Zählererkennung, die das GLT-Register nicht adressiert.
+  Die [Menüstruktur des Navigator 10](Local-Web-Interface#menustruktur-des-navigator-10)
+  zeigt die Pfade zu PV-Quelle, GLT-Monitor und Meldungsdetails.
 
 Der Workaround überträgt daher für gültige Null-Auflösungs-Produktion einen
 **alternierenden 10/20-W-Herzschlag** statt einer Konstante. Das klärt weder
