@@ -20,6 +20,62 @@ register writes and the one-shot DHW boost are unavailable in `web_only`.
 The web interface exposes boost as a weekly timetable; rewriting that timetable
 is outside this integration's supported controls.
 
+## Navigator 10 menu map
+
+This map was observed in the Navigator 10 interface opened through myIDM on
+an AERO ALM. The controller exposed the entries below in its Service view.
+Menus vary with firmware, access level and installed equipment. Names in
+parentheses are the labels shown in the German interface. The map describes
+the controller UI. See [Entities](Entities) for the data and controls exposed
+by the Home Assistant integration.
+
+```text
+Navigator
+├── Home
+│   ├── Heat quantity (Wärmemenge) and coefficient of performance (Leistungszahl)
+│   ├── Demand reason (Anforderungsgrund)
+│   └── System mode (Betriebsart System) and current heat pump operation
+├── System overview (second sidebar icon)
+├── Statistics (chart icon)
+├── Settings (gear icon)
+│   ├── General settings (Allgemeine Einstellungen)
+│   ├── Information (Informationen)
+│   ├── Configuration (Konfiguration)
+│   ├── Heat pump (Wärmepumpe)
+│   ├── Heating circuit (Heizkreis)
+│   ├── Storage management (Speichermanagement)
+│   ├── Domestic hot water (Trinkwarmwasserbereitung)
+│   ├── Photovoltaics (Photovoltaik)
+│   ├── Smart Grid
+│   ├── Energy monitoring (Energiemonitoring)
+│   ├── Building management (Gebäudeleittechnik)
+│   ├── Bivalence (Bivalenz)
+│   ├── Relay test (Relaistest)
+│   ├── Sensor calibration (Fühlerabgleich)
+│   ├── Reset data (Resetdaten)
+│   └── Technician code entry (Fachmann Codeeingabe)
+└── Info system (Infosystem, warning triangle)
+    ├── Current messages (Meldungen)
+    └── Message history (Meldungsverlauf)
+```
+
+### Where to find PV, meter and GLT information
+
+| Navigator path | What you can see |
+| --- | --- |
+| Settings → Photovoltaics → **PV Leistung** | PV surplus, production, house consumption, actual heat pump electrical input, present/projected thermal outputs by mode, battery discharge and state of charge. |
+| Settings → Photovoltaics or Configuration → **PV Signal** | Selected PV input source. **Gebäudeleittechnik / Smartfox** identifies the GLT source used by the Home Assistant forwarding setup. |
+| Settings → Photovoltaics | PV-assisted DHW and storage options, maximum temperatures, hysteresis, minimum battery state of charge and consumption offset. |
+| Settings → Building management → **GLT Monitor** | Register number, access, controller value and received GLT value. Relevant rows include 74 (surplus), 78 (PV production), 82 (house consumption), 84 (battery discharge) and 86 (state of charge). |
+| Settings → Building management | Modbus TCP, KNX, BACnet IP, configured GLT sensor inputs and GLT logging. |
+| Settings → Energy monitoring → **S0-Zähler** | Configuration of the S0 pulse meter. |
+| Settings → Configuration → **Stromzähler** | The help text describes this as the switch for displaying the heat pump's electrical consumption in Statistics. |
+| Info system → Messages → expand a message | Timestamp and controller description. **20303** refers to the PV system's Smart Meter. A visible GLT value confirms that the controller received that value. The message does not identify the specific condition that triggered 20303. |
+
+Relay test, calibration and reset are service functions. For connecting
+Home Assistant and interpreting GLT readings, see [Installation and Setup](Installation-and-Setup)
+and [Troubleshooting](Troubleshooting).
+
 ## Supported local login variants
 
 Navigator generations use different local protocols. The internal variant

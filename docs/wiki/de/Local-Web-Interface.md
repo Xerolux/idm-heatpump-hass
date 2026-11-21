@@ -21,6 +21,61 @@ Warmwasser-Boost sind unter `web_only` nicht verfügbar. Die Weboberfläche bild
 den Boost als Wochenzeitplan ab; dessen Änderung gehört nicht zu den
 unterstützten Steuerungen dieser Integration.
 
+## Menüstruktur des Navigator 10
+
+Dieser Menübaum wurde in der über myIDM geöffneten Navigator-10-Oberfläche
+einer AERO ALM beobachtet. Die folgenden Einträge waren in der Service-Ansicht
+sichtbar. Je nach Firmware, Berechtigung und Anlagenausstattung können Menüs
+abweichen. Welche Daten und Bedienelemente die Integration in Home Assistant
+bereitstellt, steht unter [Entitäten](Entities).
+
+```text
+Navigator
+├── Home
+│   ├── Wärmemenge und Leistungszahl
+│   ├── Anforderungsgrund
+│   └── Betriebsart System und aktueller Wärmepumpenbetrieb
+├── Anlagenübersicht (zweites Symbol)
+├── Statistik (Diagrammsymbol)
+├── Einstellungen (Zahnrad)
+│   ├── Allgemeine Einstellungen
+│   ├── Informationen
+│   ├── Konfiguration
+│   ├── Wärmepumpe
+│   ├── Heizkreis
+│   ├── Speichermanagement
+│   ├── Trinkwarmwasserbereitung
+│   ├── Photovoltaik
+│   ├── Smart Grid
+│   ├── Energiemonitoring
+│   ├── Gebäudeleittechnik
+│   ├── Bivalenz
+│   ├── Relaistest
+│   ├── Fühlerabgleich
+│   ├── Resetdaten
+│   └── Fachmann Codeeingabe
+└── Infosystem (Warndreieck)
+    ├── Meldungen
+    └── Meldungsverlauf
+```
+
+### Wo stehen PV-, Zähler- und GLT-Werte?
+
+| Pfad im Navigator | Was dort zu sehen ist |
+| --- | --- |
+| Einstellungen → Photovoltaik → **PV Leistung** | Überschuss, PV-Erzeugung, Hausverbrauch, tatsächliche Stromaufnahme der Wärmepumpe, momentane bzw. prognostizierte Wärmeleistung nach Betriebsart, Batterieentladung und Akkustand. |
+| Einstellungen → Photovoltaik oder Konfiguration → **PV Signal** | Ausgewählte PV-Quelle. **Gebäudeleittechnik / Smartfox** bezeichnet die GLT-Quelle für die Weiterleitung aus Home Assistant. |
+| Einstellungen → Photovoltaik | PV-Optionen für Warmwasser und Speicherladung, Maximaltemperaturen, Hysterese, Mindest-Akkustand und Verbrauchsoffset. |
+| Einstellungen → Gebäudeleittechnik → **GLT Monitor** | Registernummer, Zugriff, Reglerwert und empfangener GLT-Wert. Dazu gehören 74 (Überschuss), 78 (PV-Erzeugung), 82 (Hausverbrauch), 84 (Batterieentladung) und 86 (Akkustand). |
+| Einstellungen → Gebäudeleittechnik | Modbus TCP, KNX, BACnet IP, konfigurierte GLT-Fühlereingänge und GLT-Log. |
+| Einstellungen → Energiemonitoring → **S0-Zähler** | Konfiguration des S0-Impulszählers. |
+| Einstellungen → Konfiguration → **Stromzähler** | Laut Hilfetext aktiviert dieser Schalter die Anzeige der elektrischen Leistungsaufnahme der Wärmepumpe in der Statistik. |
+| Infosystem → Meldungen → Meldung aufklappen | Zeitpunkt und Beschreibung des Reglers. **20303** bezieht sich auf den Smart Meter der PV-Anlage. Ein sichtbarer GLT-Wert bestätigt den Empfang dieses Werts. Die Meldung nennt die genaue Auslösebedingung für 20303 nicht. |
+
+Relaistest, Fühlerabgleich und Reset sind Servicefunktionen. Für die Anbindung
+an Home Assistant und die Einordnung der GLT-Werte siehe
+[Installation und Einrichtung](Installation-and-Setup) und [Fehlersuche](Troubleshooting).
+
 ## Unterstützte lokale Anmeldevarianten
 
 Die Navigator-Generationen verwenden unterschiedliche lokale Protokolle. Die

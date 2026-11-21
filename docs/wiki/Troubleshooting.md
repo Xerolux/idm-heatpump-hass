@@ -268,6 +268,8 @@ threshold**:
 - Separately, **20303: N2_SMARTMETER_NOTCONNECTED** appeared around sunrise on
   both days and cleared with real production; it is a controller-side meter
   detection, not addressed by the GLT register.
+  The [Navigator 10 menu map](Local-Web-Interface#navigator-10-menu-map)
+  shows where to compare the PV source, GLT Monitor and expanded message.
 
 The workaround therefore transmits an **alternating 10 W / 20 W heartbeat**
 for valid zero-resolution production instead of a constant. This finding does
