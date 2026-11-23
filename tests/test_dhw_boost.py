@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
@@ -877,6 +878,39 @@ async def test_enforcement_reraises_home_assistant_errors_outside_pacing():
 
     assert manager.status == "enforcement_failed"
     manager._async_save.assert_awaited()
+
+
+async def test_onetime_boost_cancel_waits_for_eeprom_then_logs_setpoint_write(monkeypatch, caplog):
+    manager, coordinator, _store = await _manager(monkeypatch, onetime=True)
+    coordinator.data["dhw_setpoint"] = 52
+    await manager.async_start(target_temperature=60)
+    coordinator.events.clear()
+    write = coordinator.async_write_register
+    remaining = iter([42.2, 10.4])
+
+    async def paced(register, value):
+        seconds = next(remaining, None)
+        if seconds is not None:
+            raise ValueError(
+                f"EEPROM-sensitive register '{register.name}' was written too recently (try again in {seconds}s)"
+            )
+        await write(register, value)
+
+    coordinator.async_write_register = paced
+    caplog.set_level(logging.DEBUG, logger=module.__name__)
+    await manager.async_cancel()
+    for expected_setpoint in (60, 52):
+        coordinator._listener()
+        await manager._evaluation_task
+        assert coordinator.data["dhw_setpoint"] == expected_setpoint
+
+    assert not manager.active
+    assert [event for event in coordinator.events if event[0] == "write"] == [("write", "dhw_setpoint", 52)]
+    assert [record.getMessage() for record in caplog.records if record.name == module.__name__] == [
+        "DHW boost waiting for the dhw_setpoint write interval (manual_cancel)",
+        "DHW boost wrote the previous setpoint of 52 °C (manual_cancel)",
+    ]
+    await manager.async_shutdown()
 
 
 @pytest.mark.parametrize("paced_register", ["dhw_setpoint", "system_mode"])

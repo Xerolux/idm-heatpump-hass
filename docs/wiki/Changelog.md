@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.28.5 — 2026-11-23
+
+Debug logging now identifies the register that delays hot water boost restoration and records the previous setpoint when Home Assistant successfully writes it. [Cancel a boost](Services#cancel-dhw-boost).
+
 ## v0.28.4 — 2026-11-23
 
 The integration now pins stable API 2.17.0. Room temperature forwarding registers its switches and reloads saved season boundaries and offsets. Cancelling a DHW boost waits for register write protection. The Services page explains how to request a single charge at the configured temperatures. [Services](Services#start-dhw-boost).

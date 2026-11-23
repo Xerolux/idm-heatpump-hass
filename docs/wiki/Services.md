@@ -305,7 +305,7 @@ snapshot (previous setpoint and mode) is restored from persistent storage.
 Cancels an active DHW boost and restores the previous DHW setpoint — and the
 previous system mode where the boost had changed it.
 
-If a register write is still cooling down, restoration resumes on subsequent polls. The controller owns any charge it has already accepted.
+If a register write is still cooling down, restoration resumes on subsequent polls. You can press Cancel once and wait. With debug logging enabled, the integration records the wait and the successful write of the previous setpoint. Check the setpoint on the Navigator for independent confirmation. The controller owns any charge it has already accepted.
 
 **Service:** `idm_heatpump.cancel_dhw_boost`
 

@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.28.5 — 2026-11-23
+
+Das Debuglog nennt beim Abbrechen eines Warmwasser-Boosts das Register, dessen Schreibintervall noch läuft. Sobald Home Assistant den vorherigen Sollwert erfolgreich schreibt, erscheint auch dieser im Log. [Boost abbrechen](Services#cancel-dhw-boost).
+
 ## v0.28.4 — 2026-11-23
 
 Die Integration nutzt die stabile API 2.17.0. Die Raumtemperatur-Weiterleitung registriert ihre Schalter und übernimmt Saison und Offsets beim Neuladen. Der Warmwasser-Boost wartet beim Abbrechen auf laufende Schreibsperren. Für eine einzelne Ladung mit unveränderten Einstellungen ist der Schalter für die einmalige WW-Anforderung dokumentiert. [Services](Services#start-dhw-boost).

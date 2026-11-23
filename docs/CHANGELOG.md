@@ -13,6 +13,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.28.5] - 2026-11-23
+
+If you cancel a hot water boost soon after starting it, the debug log now shows when Home Assistant waits and when it writes the previous setpoint.
+
+### ⚠️ Upgrade notes
+
+- **Rollback to 0.28.4 is safe.** Both versions use the same settings and saved boost state.
+
+### ✨ New
+
+- **Trace a delayed setpoint restoration.** Enable debug logging for the integration before cancelling the boost. Look for the register whose write interval is still active, followed by the previous setpoint when Home Assistant successfully writes it. You can check the displayed temperature setting on the Navigator for independent confirmation.
+
+### ❤️ Thanks
+
+- **Thanks to @x29a** for testing both hot water controls on a Navigator 10 and sharing the log that identified the EEPROM write interval during cancellation. [#719](https://github.com/Xerolux/idm-heatpump-hass/issues/719)
+
 ## [0.28.4] - 2026-11-23
 
 ### ⚠️ Upgrade notes
