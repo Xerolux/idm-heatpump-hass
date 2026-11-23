@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.28.6 — 2026-11-23
+
+Cancelling a hot water boost once restores the previous setpoint on the next eligible update, even when the first write has to wait for register write protection. [Cancel a boost](Services#cancel-dhw-boost).
+
 ## v0.28.5 — 2026-11-23
 
 Debug logging now identifies the register that delays hot water boost restoration and records the previous setpoint when Home Assistant successfully writes it. [Cancel a boost](Services#cancel-dhw-boost).

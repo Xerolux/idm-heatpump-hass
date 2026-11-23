@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.28.6 — 2026-11-23
+
+Ein Klick auf „Boost beenden“ genügt. Ist die Schreibsperre noch aktiv, stellt die Integration den vorherigen Warmwasser-Sollwert bei der nächsten möglichen Aktualisierung wieder her. [Boost abbrechen](Services#cancel-dhw-boost).
+
 ## v0.28.5 — 2026-11-23
 
 Das Debuglog nennt beim Abbrechen eines Warmwasser-Boosts das Register, dessen Schreibintervall noch läuft. Sobald Home Assistant den vorherigen Sollwert erfolgreich schreibt, erscheint auch dieser im Log. [Boost abbrechen](Services#cancel-dhw-boost).
