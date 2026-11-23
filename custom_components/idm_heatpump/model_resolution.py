@@ -456,12 +456,21 @@ def resolve_model(
     # Persist the resolved model: confirmed web evidence may have corrected
     # the fresh probe as well as the stale stored detection.
     if stale_navigator_version is not None and fresh.model_info is not None:
+        stored_matches_final = stored.navigator_version is not None and navigator_family(
+            stored.navigator_version
+        ) == navigator_family(model_name)
+        if stored_matches_final and firmware_version is None and stored.software_version is not None:
+            firmware_version = stored.software_version
         data_updates[CONF_DETECTED_NAVIGATOR_VERSION] = model_name
         if web is not None and web.web_variant:
             data_updates[CONF_DETECTED_WEB_VARIANT] = web.web_variant
         if firmware_version:
             data_updates[CONF_DETECTED_SOFTWARE_VERSION] = firmware_version
-        if reconciled.stored_conflict and CONF_DETECTED_SOFTWARE_VERSION not in data_updates:
+        if (
+            reconciled.stored_conflict
+            and not stored_matches_final
+            and CONF_DETECTED_SOFTWARE_VERSION not in data_updates
+        ):
             data_removals.add(CONF_DETECTED_SOFTWARE_VERSION)
             logs.append(
                 (
@@ -470,7 +479,7 @@ def resolve_model(
                     (),
                 )
             )
-        if reconciled.stored_conflict and CONF_DETECTED_WEB_VARIANT not in data_updates:
+        if reconciled.stored_conflict and not stored_matches_final and CONF_DETECTED_WEB_VARIANT not in data_updates:
             data_removals.add(CONF_DETECTED_WEB_VARIANT)
             logs.append(
                 (

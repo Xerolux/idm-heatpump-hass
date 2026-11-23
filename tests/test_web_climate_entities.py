@@ -223,6 +223,13 @@ class TestWebClimateStateGuards:
 
         assert climate.native_current_temperature == 21.0
 
+    def test_current_temperature_ignores_unwired_sentinels(self):
+        coordinator = _coordinator()
+        climate = web_climate_entities(coordinator)[0]
+        for sentinel in (-1.0, -327.0):
+            _supplement_with_circuits(coordinator, _circuit_a_with(room_temperature=sentinel))
+            assert climate.native_current_temperature is None
+
     def test_target_temperature_none_when_the_setpoint_value_is_missing(self):
         coordinator = _coordinator()
         climate = web_climate_entities(coordinator)[0]
@@ -364,3 +371,14 @@ class TestWebWaterHeaterState:
         await heater.async_set_temperature()
 
         coordinator.async_web_set_dhw_setpoint.assert_not_awaited()
+
+    def test_current_temperature_ignores_unwired_sentinels(self):
+        coordinator = _coordinator()
+        heater = web_water_heater_entities(coordinator)[0]
+        for sentinel in (-1.0, -327.0):
+            coordinator.web_supplement = dc_replace(
+                coordinator.web_supplement,
+                freshwater=MagicMock(temperature_top=MagicMock(numeric_value=sentinel)),
+            )
+            coordinator.data = {"dhw_temp_top": sentinel}
+            assert heater.native_current_temperature is None

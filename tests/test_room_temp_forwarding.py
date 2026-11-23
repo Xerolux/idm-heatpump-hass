@@ -1221,12 +1221,7 @@ class TestForwardingControls:
         from custom_components.idm_heatpump import room_temp_forwarding as module
         from custom_components.idm_heatpump.room_temp_forwarding import SeasonWindow
 
-        class _FixedDate(date):
-            @classmethod
-            def today(cls):
-                return cls(2026, 12, 24)
-
-        monkeypatch.setattr(module, "date", _FixedDate)
+        monkeypatch.setattr(module, "_today", lambda: date(2026, 12, 24))
         coord, _reg = _make_coordinator()
         hass = _multi_source_hass({"sensor.one": "21.5"})
         forwarder = self._forwarder(hass, coord, season=SeasonWindow((7, 1), (8, 31)))
@@ -1382,6 +1377,11 @@ class TestRoomForwardingEntities:
         await switch.async_turn_on()
         assert forwarder.master_enabled is True
 
+        switch.async_write_ha_state = MagicMock()
+        await switch.async_turn_off()
+        await switch.async_turn_on()
+        assert switch.async_write_ha_state.call_count == 2
+
     async def test_master_switch_attributes_render_the_season_window(self):
         from custom_components.idm_heatpump.room_forwarding_entities import (
             IdmRoomForwardingMasterSwitch,
@@ -1423,3 +1423,8 @@ class TestRoomForwardingEntities:
         assert forwarder.source_enabled("a", "sensor.one") is False
         await switch.async_turn_on()
         assert forwarder.source_enabled("a", "sensor.one") is True
+
+        switch.async_write_ha_state = MagicMock()
+        await switch.async_turn_off()
+        await switch.async_turn_on()
+        assert switch.async_write_ha_state.call_count == 2

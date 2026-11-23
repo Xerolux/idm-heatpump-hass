@@ -462,6 +462,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         caller assigning the list directly had to remember all three.
         """
         self._registers = list(registers)
+        self._alias_primary_map = None
         selected_names = {register.name for register in self._registers}
         self._room_mode_registers = [
             register for register in self._all_room_mode_registers if register.name in selected_names
@@ -566,6 +567,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # on every poll.
         self._room_mode_registers = [reg for reg in self._registers if _is_zone_room_mode_register(reg)]
         self._all_room_mode_registers = list(self._room_mode_registers)
+        self._polling_plan_total_count = len(self._registers)
+        self._polling_plan_active_count = len(self._registers)
         # Reset so the next poll always individually validates the (possibly
         # new) room-mode register set, instead of picking up mid-cycle where
         # a reconfigure (e.g. adding a zone) could skip a newly added
@@ -1625,7 +1628,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def async_refresh_web_supplement(self) -> None:
         """Refresh optional local web data without affecting Modbus updates."""
-        if not self._web_pin:
+        if not self._web_pin or self._web_auth_blocked:
             return
 
         try:

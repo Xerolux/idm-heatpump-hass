@@ -14,7 +14,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "3f16e7a100100a88c235cf014225c1640fd1011f9e9444484ca19fde20b3d5f2"
+      "reviewed_source_sha256": "daf4141ca4963739211aba39f2c32ade0cd53349f66ec19e138e3910d09d80d6"
     },
     {
       "feature": "Model and register semantics",
@@ -38,7 +38,7 @@
         "Supported-Devices.md",
         "Protocol-Capabilities.md"
       ],
-      "reviewed_source_sha256": "00ecbefcabaaa1fd3ad717c926af07ed05e4e1074f95e6c11aa9fc8633995fbe"
+      "reviewed_source_sha256": "fbdab1d39e093e930dd26366ef68fdd30eb88cffd74ee66bec22f5b29f3a4601"
     },
     {
       "feature": "Polling, transport and recovery",
@@ -57,7 +57,7 @@
         "Configuration.md",
         "Troubleshooting.md"
       ],
-      "reviewed_source_sha256": "79cf811be6f635ce2388eaa11ae7d03687693ffb008ccfe947cc4621fde8a604"
+      "reviewed_source_sha256": "a2efe39a4abafceea013f2a129ebbb0543134e8ce6a2fe16f5609954e55f4930"
     },
     {
       "feature": "Core entities and device placement",
@@ -78,7 +78,7 @@
         "Entities.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "9dfe9eeebcf6d9768747c000fd02e99b740a9611c729d0d3bd9181312995326c"
+      "reviewed_source_sha256": "e152f599a41b1593f6fec0741a485a300367058a4dfcf69f14ee4cefc24c23ba"
     },
     {
       "feature": "Local Navigator supplement and controls",
@@ -97,7 +97,7 @@
         "Navigator-Protocol-Analysis.md",
         "Protocol-Capabilities.md"
       ],
-      "reviewed_source_sha256": "d51518933b5b0cf647e6c5d2f8f48f50370955cd7f588b0cb2811d14899c9fe9"
+      "reviewed_source_sha256": "a2066c595bc0b11fd215126a91b1dc627cd13252a76f2f9885a2df9f5af430b3"
     },
     {
       "feature": "Energy and operating analysis",
@@ -113,7 +113,7 @@
         "Smart-Energy-and-Comfort.md",
         "Entities.md"
       ],
-      "reviewed_source_sha256": "e40699e2dcf06598a4230207fa2673991f08dba3b1969afb051822b2eb567f63"
+      "reviewed_source_sha256": "a562432e320c8429732a8ac31abaa81c6146a214c5a5eb7b9e9871b7ffc665dc"
     },
     {
       "feature": "External climate and power forwarding",
@@ -128,7 +128,7 @@
         "Installation-and-Setup.md",
         "Smart-Energy-and-Comfort.md"
       ],
-      "reviewed_source_sha256": "b3d15ee11379109d13e2b8c3e885664fcb4e30362a59e542016125046f65687b"
+      "reviewed_source_sha256": "d34dd297c38fe06f7cfd462f3fd5aed80f8fb20e5adb73b22a07f03537f41b86"
     },
     {
       "feature": "Comfort and hot water automation",
@@ -143,7 +143,7 @@
         "Smart-Energy-and-Comfort.md",
         "Services.md"
       ],
-      "reviewed_source_sha256": "8fce588be2b100ff8d05ffb71ce7d4ed1d15cbbb80352e3e59c7cf871165632b"
+      "reviewed_source_sha256": "b7a59ffbc659aea1a426c69295f0a874440204d2e35f97d1973193e8543eb880"
     },
     {
       "feature": "Predictive evidence and local Assist",
@@ -164,7 +164,7 @@
         "Configuration.md",
         "Entities.md"
       ],
-      "reviewed_source_sha256": "9492491f56c551ae458346ba3c6dbe1bb978e09c70db462be318627121b28ee7"
+      "reviewed_source_sha256": "46c9f92cc3261eb7ff62d9433851cbb2d9a5776e6269c973ed314bb56d43d274"
     },
     {
       "feature": "Experimental reports and providers",
@@ -211,7 +211,7 @@
         "KNX-Bridge.md",
         "KNX-Generator.md"
       ],
-      "reviewed_source_sha256": "49ceec6f56a279855e5ef67e352b431ae2c11099440d43c1151ecc92be33254b"
+      "reviewed_source_sha256": "c51a200c10fb51eb8cb04cf8ef36d0024ded66e426210a662ab08a7262caafb2"
     },
     {
       "feature": "Consent, plant reports and firmware observations",
@@ -240,7 +240,7 @@
         "Services.md",
         "Predictive-Advisor.md"
       ],
-      "reviewed_source_sha256": "7e1940261818fa7cc7d501b2a9708161e6b7973927f69fd7f87f4b12be2994bc"
+      "reviewed_source_sha256": "7c95810f956ef4af800b6c2296b5a4233f8744c6f8e2dfb4a238b5ef94183690"
     }
   ]
 }

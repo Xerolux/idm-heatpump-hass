@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import math
 from collections.abc import Callable
@@ -125,6 +126,7 @@ class DhwBoostManager:
         self._timeout_task: asyncio.Task[None] | None = None
         self._evaluation_task: asyncio.Task[None] | None = None
         self._evaluation_in_progress = False
+        self._notifying = False
         self._unsub_coordinator: Callable[[], None] | None = None
         self._setup_complete = False
 
@@ -345,7 +347,7 @@ class DhwBoostManager:
             self._setup_complete = False
 
     def _handle_coordinator_update(self) -> None:
-        if not self.active or self._evaluation_in_progress or self._evaluation_task is not None:
+        if self._notifying or not self.active or self._evaluation_in_progress or self._evaluation_task is not None:
             return
         self._evaluation_task = self.coordinator.hass.async_create_task(self._async_evaluate())
 
@@ -435,6 +437,9 @@ class DhwBoostManager:
             return
         delay = max(0.0, (self.deadline - _utcnow()).total_seconds())
         await asyncio.sleep(delay)
+        if self._evaluation_task is not None and not self._evaluation_task.done():
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._evaluation_task
         await self._async_evaluate()
 
     def _schedule_timeout(self) -> None:
@@ -528,7 +533,11 @@ class DhwBoostManager:
         )
 
     def _notify(self) -> None:
-        self.coordinator.async_update_listeners()
+        self._notifying = True
+        try:
+            self.coordinator.async_update_listeners()
+        finally:
+            self._notifying = False
 
     @staticmethod
     def _iso(value: datetime | None) -> str | None:

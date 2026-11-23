@@ -1110,24 +1110,24 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         ),
                         vol.Optional(
                             CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
-                            default=_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH),
+                            **_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH),
                         ): NumberSelector(NumberSelectorConfig(min=1, max=12, mode=NumberSelectorMode.BOX)),
                         vol.Optional(
                             CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY,
-                            default=_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY),
+                            **_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY),
                         ): NumberSelector(NumberSelectorConfig(min=1, max=31, mode=NumberSelectorMode.BOX)),
                         vol.Optional(
                             CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH,
-                            default=_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH),
+                            **_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH),
                         ): NumberSelector(NumberSelectorConfig(min=1, max=12, mode=NumberSelectorMode.BOX)),
                         vol.Optional(
                             CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY,
-                            default=_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY),
+                            **_season_field_default(options, CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY),
                         ): NumberSelector(NumberSelectorConfig(min=1, max=31, mode=NumberSelectorMode.BOX)),
                         **{
                             vol.Optional(
                                 f"room_temp_forwarding_offset_{circuit}",
-                                default=_offset_field_default(options, circuit),
+                                **_offset_field_default(options, circuit),
                             ): NumberSelector(
                                 NumberSelectorConfig(
                                     min=MIN_ROOM_TEMP_FORWARDING_OFFSET,
@@ -2016,7 +2016,13 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
         feature = self._guided_selected[self._guided_index]
         keys = _guided_detail_keys(feature, self._guided_level)
         if user_input is not None:
-            for optional_key in (CONF_DYNAMIC_PRICE_ENTITY, CONF_COMFORT_WINDOWS, CONF_WEATHER_ENTITY):
+            for optional_key in (
+                CONF_DYNAMIC_PRICE_ENTITY,
+                CONF_ADVISOR_PV_FORECAST_ENTITY,
+                CONF_AI_TASK_ENTITY,
+                CONF_COMFORT_WINDOWS,
+                CONF_WEATHER_ENTITY,
+            ):
                 if optional_key in keys:
                     user_input.setdefault(optional_key, "")
             if feature == "comfort" and str(user_input.get(CONF_COMFORT_WINDOWS, "")).strip():
@@ -2129,7 +2135,13 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
     async def async_step_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             submitted_options = _flatten_options_input(user_input)
-            for optional_key in (CONF_DYNAMIC_PRICE_ENTITY, CONF_COMFORT_WINDOWS, CONF_WEATHER_ENTITY):
+            for optional_key in (
+                CONF_DYNAMIC_PRICE_ENTITY,
+                CONF_ADVISOR_PV_FORECAST_ENTITY,
+                CONF_AI_TASK_ENTITY,
+                CONF_COMFORT_WINDOWS,
+                CONF_WEATHER_ENTITY,
+            ):
                 submitted_options.setdefault(optional_key, "")
             _normalize_room_forwarding_options(submitted_options)
             rows = str(submitted_options.get(CONF_COMFORT_WINDOWS, ""))

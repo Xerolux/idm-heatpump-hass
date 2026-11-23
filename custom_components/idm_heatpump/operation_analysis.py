@@ -391,6 +391,8 @@ class OperationAnalysis:
 
             defrost_on = mode == 8
             if not self._defrost_reconciled:
+                if defrost_on and (self._defrost_on is not True or self.last_defrost_start is None):
+                    self.last_defrost_start = observed_at
                 self._defrost_on = defrost_on
                 self._defrost_reconciled = True
                 changed = True

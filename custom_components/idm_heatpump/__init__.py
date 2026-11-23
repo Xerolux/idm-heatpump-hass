@@ -598,11 +598,11 @@ async def _async_setup_web_only_entry(
         hide_unused=False,
         model_name=model_name,
         firmware_version=firmware_version,
-        model_info=None,
+        model_info=detected_model_info,
         web_pin=web_pin,
         web_host=web_host,
         web_supplement=web_supplement,
-        web_variant=stored_web_variant,
+        web_variant=getattr(web_supplement, "web_variant", None) or stored_web_variant,
         web_differential_circuits=_web_detected_differential_circuits(web_supplement),
         device_hierarchy_enabled=device_hierarchy_enabled,
     )
@@ -665,25 +665,26 @@ async def _async_setup_web_only_entry(
             knx_receive = bool(entry.options.get(CONF_KNX_RECEIVE, DEFAULT_KNX_RECEIVE))
             groups = tuple(str(group) for group in (entry.options.get(CONF_KNX_GROUPS) or OBJECT_GROUPS))
             overrides = entry.options.get(CONF_KNX_OVERRIDES) or {}
+            bridge = KnxBridge(
+                hass,
+                coordinator,
+                KnxBridgeConfig(
+                    base_address=str(entry.options.get(CONF_KNX_BASE_ADDRESS, DEFAULT_KNX_BASE_ADDRESS)).strip(),
+                    send_enabled=bool(entry.options.get(CONF_KNX_SEND, DEFAULT_KNX_SEND)),
+                    receive_enabled=knx_receive,
+                    respond_to_read=bool(entry.options.get(CONF_KNX_RESPOND_TO_READ, DEFAULT_KNX_RESPOND_TO_READ)),
+                    groups=groups,
+                    overrides=dict(overrides) if isinstance(overrides, Mapping) else {},
+                    resend_interval=int(entry.options.get(CONF_KNX_RESEND_INTERVAL, DEFAULT_KNX_RESEND_INTERVAL)),
+                    tolerance=float(entry.options.get(CONF_KNX_TOLERANCE, DEFAULT_KNX_TOLERANCE)),
+                ),
+                entry_id=entry.entry_id,
+            )
+            entry.runtime_data.knx_bridge = bridge
             try:
-                bridge = KnxBridge(
-                    hass,
-                    coordinator,
-                    KnxBridgeConfig(
-                        base_address=str(entry.options.get(CONF_KNX_BASE_ADDRESS, DEFAULT_KNX_BASE_ADDRESS)).strip(),
-                        send_enabled=bool(entry.options.get(CONF_KNX_SEND, DEFAULT_KNX_SEND)),
-                        receive_enabled=knx_receive,
-                        respond_to_read=bool(entry.options.get(CONF_KNX_RESPOND_TO_READ, DEFAULT_KNX_RESPOND_TO_READ)),
-                        groups=groups,
-                        overrides=dict(overrides) if isinstance(overrides, Mapping) else {},
-                        resend_interval=int(entry.options.get(CONF_KNX_RESEND_INTERVAL, DEFAULT_KNX_RESEND_INTERVAL)),
-                        tolerance=float(entry.options.get(CONF_KNX_TOLERANCE, DEFAULT_KNX_TOLERANCE)),
-                    ),
-                    entry_id=entry.entry_id,
-                )
                 await bridge.async_start()
-                entry.runtime_data.knx_bridge = bridge
             except InvalidGroupAddressError:
+                entry.runtime_data.knx_bridge = None
                 _LOGGER.warning(
                     "KNX bridge for %s could not start in web-only mode: invalid base address",
                     entry.title,
@@ -1025,7 +1026,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
         # resolution before anything consumes it.
         if not entry.options.get(CONF_SOLAR_THERMAL, DEFAULT_SOLAR_THERMAL):
             detected_model_info = without_solar(detected_model_info)
-        runtime_web_variant = web_plan.preferred_variant
+        runtime_web_variant = (
+            resolution.data_updates.get(CONF_DETECTED_WEB_VARIANT)
+            or getattr(web_supplement, "web_variant", None)
+            or web_plan.preferred_variant
+        )
 
         if resolution.data_updates or resolution.data_removals:
             updated_data = {**entry.data, **resolution.data_updates}
@@ -1481,6 +1486,12 @@ async def _async_teardown_partial_setup(hass: HomeAssistant, entry: IdmConfigEnt
     await _async_cancel_entry_tasks(runtime)
 
     coordinator = getattr(runtime, "coordinator", None)
+    dhw_boost_mgr = getattr(coordinator, "dhw_boost_manager", None)
+    if dhw_boost_mgr is not None:
+        try:
+            await dhw_boost_mgr.async_shutdown()
+        except Exception:
+            _LOGGER.debug("Error shutting down DHW boost manager while unwinding setup", exc_info=True)
     shutdown = getattr(coordinator, "async_shutdown", None)
     if callable(shutdown):
         try:
@@ -1584,6 +1595,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None
                 await save_advisor()
             except Exception:
                 _LOGGER.warning("Failed to persist IDM AI advisor during unload", exc_info=True)
+    await _async_cancel_entry_tasks(entry.runtime_data)
+    knx_bridge = getattr(entry.runtime_data, "knx_bridge", None)
+    if knx_bridge is not None:
+        try:
+            await knx_bridge.async_stop()
+        except Exception:
+            _LOGGER.debug("Error stopping the KNX bridge for %s", entry.title, exc_info=True)
     coordinator = getattr(entry.runtime_data, "coordinator", None)
     dhw_boost_mgr = getattr(coordinator, "dhw_boost_manager", None)
     if dhw_boost_mgr is not None:
@@ -1598,13 +1616,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None
         except TypeError:
             # Non-awaitable mock or sync cleanup callback; not fatal on unload.
             pass
-    await _async_cancel_entry_tasks(entry.runtime_data)
-    knx_bridge = getattr(entry.runtime_data, "knx_bridge", None)
-    if knx_bridge is not None:
-        try:
-            await knx_bridge.async_stop()
-        except Exception:
-            _LOGGER.debug("Error stopping the KNX bridge for %s", entry.title, exc_info=True)
     try:
         await entry.runtime_data.client.disconnect()
     except Exception:
@@ -1627,4 +1638,6 @@ async def async_reload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None
             entry.entry_id,
         )
         return
+    if runtime is not None:
+        runtime.reload_fingerprint = new_fingerprint
     await hass.config_entries.async_reload(entry.entry_id)

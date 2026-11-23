@@ -947,6 +947,7 @@ class AdvisorEngine:
 
     def _compute_plan(self, current: datetime) -> None:
         plan: dict[str, Any] = {}
+        hour = current.replace(minute=0, second=0, microsecond=0)
         heat_loss = self._analytics.heat_loss_w_per_k
         data = self._coordinator.data if isinstance(self._coordinator.data, Mapping) else {}
         room, _circuit = self._primary_room_temp(data)
@@ -955,7 +956,6 @@ class AdvisorEngine:
             # A few hours or duplicate timestamps are not a 24-hour forecast.
             # Require a contiguous grid near now; warm hours cannot cancel
             # the positive heating demand of colder hours.
-            hour = current.replace(minute=0, second=0, microsecond=0)
             weather = sorted(
                 {
                     at: temperature
@@ -972,7 +972,9 @@ class AdvisorEngine:
                     heat_loss / 1000.0 * sum(max(0.0, indoor - temperature) for _at, temperature in weather), 1
                 )
         if self._pv_hours:
-            plan["expected_pv_kwh"] = round(sum(value for _at, value in self._pv_hours[:24]), 2)
+            plan["expected_pv_kwh"] = round(
+                sum(value for at, value in self._pv_hours if hour <= at < hour + timedelta(hours=24)), 2
+            )
         if self._price_hours:
             expensive = best_window(self._price_hours, highest=True)
             if expensive is not None:
@@ -1057,25 +1059,23 @@ class AdvisorEngine:
         published when at least two domains have data. Findings are matched
         by their stable machine reason codes, never by title wording.
         """
-        reasons = {
-            reason
+        by_reason = {
+            reason: (30.0 if rec.severity is RecommendationSeverity.WARNING else 12.0)
             for rec in self._advisor.active_recommendations
             if rec.category is RecommendationCategory.ANOMALY
             for reason in rec.reasons
         }
         components: dict[str, Any] = {}
         if self._analytics.metric_baseline("heat_sink_flow_rate") is not None:
-            penalty = 0.0
-            if "heat_circle_flow_below_baseline" in reasons:
-                penalty += 30.0
-            if "spread_above_baseline" in reasons:
-                penalty += 12.0
+            penalty = by_reason.get("heat_circle_flow_below_baseline", 0.0) + by_reason.get(
+                "spread_above_baseline", 0.0
+            )
             components["hydraulics"] = round(max(0.0, 100.0 - penalty), 0)
         if self._analytics.metric_baseline("compressor_starts") is not None:
-            penalty = 30.0 if "compressor_starts_above_baseline" in reasons else 0.0
+            penalty = by_reason.get("compressor_starts_above_baseline", 0.0)
             components["compressor"] = round(max(0.0, 100.0 - penalty), 0)
         if self._analytics.metric_baseline("dhw_charge_minutes") is not None:
-            penalty = 30.0 if "dhw_charge_time_above_baseline" in reasons else 0.0
+            penalty = by_reason.get("dhw_charge_time_above_baseline", 0.0)
             components["dhw"] = round(max(0.0, 100.0 - penalty), 0)
         efficiency = self.efficiency
         if efficiency["expected_cop"] is not None and efficiency["observed_cop"] is not None:

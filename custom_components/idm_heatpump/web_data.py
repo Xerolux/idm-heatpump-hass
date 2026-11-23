@@ -7,6 +7,7 @@ import inspect
 import ipaddress
 import json
 import logging
+import math
 import re
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field, replace
@@ -185,7 +186,7 @@ def _normalize_sensor_value(value: Any) -> IdmWebSensorValue:
     unit = getattr(value, "unit", None)
     if text_value in _NO_VALUE_TEXT_VALUES:
         return IdmWebSensorValue(value=text_value, native_value=None, unit=unit)
-    if isinstance(numeric_value, (int, float)):
+    if not isinstance(numeric_value, bool) and isinstance(numeric_value, (int, float)) and math.isfinite(numeric_value):
         return IdmWebSensorValue(value=text_value, native_value=float(numeric_value), unit=unit)
 
     match = _UNIT_SUFFIX_RE.match(text_value)
@@ -194,7 +195,7 @@ def _normalize_sensor_value(value: Any) -> IdmWebSensorValue:
             parsed = float(match.group(1).replace(",", "."))
         except ValueError:
             parsed = None
-        if parsed is not None:
+        if parsed is not None and math.isfinite(parsed):
             return IdmWebSensorValue(value=text_value, native_value=parsed, unit=unit or match.group(2))
 
     return IdmWebSensorValue(value=text_value, native_value=text_value, unit=unit)
@@ -279,7 +280,7 @@ def _add_web_notifications(
     """Return a supplement enriched with Navigator 10 infosystem notifications."""
     count = getattr(notifications, "count", None)
     summary = getattr(notifications, "summary", None)
-    if not isinstance(count, int) or not isinstance(summary, str):
+    if isinstance(count, bool) or not isinstance(count, int) or not isinstance(summary, str):
         return supplement
 
     values = dict(supplement.values)
@@ -357,6 +358,8 @@ def _statistic_sensor_value(value: Any) -> IdmWebSensorValue:
     try:
         numeric = float(text)
     except ValueError:
+        numeric = None
+    if numeric is not None and not math.isfinite(numeric):
         numeric = None
     return IdmWebSensorValue(value=text, native_value=numeric if numeric is not None else text, unit="kWh")
 
@@ -444,8 +447,13 @@ async def _read_optional_freshwater(
             native_value=1.0 if circulation else 0.0,
         )
     status = getattr(freshwater, "status", None)
-    if status is not None:
-        extra["dhw_status_info"] = IdmWebSensorValue(value=str(status), native_value=float(status))
+    if status is not None and not isinstance(status, bool):
+        try:
+            status_num = float(status)
+        except (TypeError, ValueError):
+            status_num = None
+        if status_num is not None and math.isfinite(status_num):
+            extra["dhw_status_info"] = IdmWebSensorValue(value=str(status), native_value=status_num)
     return _with_sensor_values(supplement, extra, freshwater=freshwater)
 
 
@@ -1259,9 +1267,14 @@ class IdmWebClientPool:
         return self._client, self._variant  # type: ignore[return-value]
 
     def set(self, client: _IdmWebClient, variant: str) -> None:
-        """Store a successful client for reuse."""
+        """Store a successful client for reuse, closing any displaced client."""
+        previous = self._client
         self._client = client
         self._variant = variant
+        if previous is not None and previous is not client:
+            task = asyncio.create_task(_safe_close(previous))
+            _pending_session_releases.add(task)
+            task.add_done_callback(_pending_session_releases.discard)
 
     async def invalidate(self) -> None:
         """Drop the cached client, closing it best-effort."""

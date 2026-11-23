@@ -3704,3 +3704,34 @@ async def test_pv_zero_workaround_is_saved_by_all_feature_flows(kind: str, enabl
     assert flow._options[CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND] is enabled
     markers = {marker.schema: marker for marker in _build_external_power_forwarding_schema(flow._options).schema}
     assert markers[CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND].default() is enabled
+
+
+def test_room_temp_forwarding_options_schema_unpacks_season_and_offset_defaults() -> None:
+    """Season and offset markers must carry numeric defaults or vol.UNDEFINED, never dicts."""
+    empty_schema = _build_options_schema({CONF_HEATING_CIRCUITS: ["a"]})
+    empty_defaults = _marker_defaults(empty_schema.schema["room_temperature_forwarding"])
+    for key in (
+        CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
+        CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY,
+        CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH,
+        CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY,
+        "room_temp_forwarding_offset_a",
+    ):
+        assert empty_defaults[key] is vol.UNDEFINED
+
+    configured_schema = _build_options_schema(
+        {
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH: 10,
+            CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY: 1,
+            CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH: 4,
+            CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY: 30,
+            CONF_ROOM_TEMP_FORWARDING_OFFSETS: {"a": -1.5},
+        }
+    )
+    configured_defaults = _marker_defaults(configured_schema.schema["room_temperature_forwarding"])
+    assert configured_defaults[CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH] == 10
+    assert configured_defaults[CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY] == 1
+    assert configured_defaults[CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH] == 4
+    assert configured_defaults[CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY] == 30
+    assert configured_defaults["room_temp_forwarding_offset_a"] == -1.5

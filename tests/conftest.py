@@ -336,11 +336,18 @@ def _stub_homeassistant() -> None:
     ha.util = _make_module("homeassistant.util")
     ha.util.json = _make_module("homeassistant.util.json")
     ha.util.dt = _make_module("homeassistant.util.dt")
+    ha.util.dt.DEFAULT_TIME_ZONE = None
     ha.util.dt.as_utc = lambda value: (
         value.replace(tzinfo=UTC).astimezone(UTC) if value.tzinfo is None else value.astimezone(UTC)
     )
-    ha.util.dt.now = datetime.now
-    ha.util.dt.as_local = lambda value: value.astimezone()
+    ha.util.dt.now = lambda time_zone=None: datetime.now(time_zone).astimezone(
+        time_zone or ha.util.dt.DEFAULT_TIME_ZONE
+    )
+    ha.util.dt.as_local = lambda value: (
+        value.replace(tzinfo=UTC).astimezone(ha.util.dt.DEFAULT_TIME_ZONE)
+        if value.tzinfo is None
+        else value.astimezone(ha.util.dt.DEFAULT_TIME_ZONE)
+    )
 
     # homeassistant.util.unit_conversion.TemperatureConverter, reproduced from
     # the real implementation: the temperature scales
