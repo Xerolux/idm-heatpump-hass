@@ -352,7 +352,11 @@ class DhwBoostManager:
     def _handle_coordinator_update(self) -> None:
         if self._notifying or not self.active or self._evaluation_in_progress or self._evaluation_task is not None:
             return
-        self._evaluation_task = self.coordinator.hass.async_create_task(self._async_evaluate())
+        task = self.coordinator.hass.async_create_task(self._async_evaluate())
+        # Home Assistant can finish an eager task before async_create_task
+        # returns. Only an evaluation still in flight should block later polls.
+        if not task.done():
+            self._evaluation_task = task
 
     async def _async_evaluate(self) -> None:
         if self._evaluation_in_progress:

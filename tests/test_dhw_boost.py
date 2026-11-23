@@ -6,6 +6,7 @@ import asyncio
 import logging
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
+from functools import partial
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -880,8 +881,12 @@ async def test_enforcement_reraises_home_assistant_errors_outside_pacing():
     manager._async_save.assert_awaited()
 
 
-async def test_onetime_boost_cancel_waits_for_eeprom_then_logs_setpoint_write(monkeypatch, caplog):
+@pytest.mark.parametrize("eager_start", [False, True])
+async def test_onetime_boost_cancel_waits_for_eeprom_then_logs_setpoint_write(monkeypatch, caplog, eager_start):
     manager, coordinator, _store = await _manager(monkeypatch, onetime=True)
+    coordinator.hass.async_create_task.side_effect = partial(
+        asyncio.Task, loop=asyncio.get_running_loop(), eager_start=eager_start
+    )
     coordinator.data["dhw_setpoint"] = 52
     await manager.async_start(target_temperature=60)
     coordinator.events.clear()
@@ -901,7 +906,7 @@ async def test_onetime_boost_cancel_waits_for_eeprom_then_logs_setpoint_write(mo
     await manager.async_cancel()
     for expected_setpoint in (60, 52):
         coordinator._listener()
-        await manager._evaluation_task
+        await asyncio.sleep(0)
         assert coordinator.data["dhw_setpoint"] == expected_setpoint
 
     assert not manager.active

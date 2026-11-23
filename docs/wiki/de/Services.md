@@ -319,7 +319,7 @@ Bricht einen aktiven Warmwasser-Boost ab und stellt den vorherigen
 Warmwasser-Sollwert wieder her — und die vorherige Betriebsart, falls der
 Boost sie geändert hatte.
 
-Ist eine Schreibsperre aktiv, holt die Integration die Wiederherstellung bei den nächsten Abfragen nach. Einmaliges Drücken auf „Abbrechen“ genügt. Bei aktivierter Debug-Protokollierung meldet die Integration die Wartezeit und das erfolgreiche Schreiben des vorherigen Sollwerts. Den am Regler angezeigten Sollwert kannst du am Navigator prüfen. Eine bereits angenommene Ladung steuert der Regler selbst.
+Drücke einmal auf „Abbrechen“. Solange die Schreibsperre gilt, bleibt die Rückstellung ausstehend. Die Integration versucht es bei den nächsten Aktualisierungen erneut und schreibt den vorherigen Sollwert, sobald es die Sperre zulässt. Bei aktivierter Debug-Protokollierung meldet die Integration die Wartezeit und das erfolgreiche Schreiben des vorherigen Sollwerts. Den am Regler angezeigten Sollwert kannst du am Navigator prüfen. Eine bereits angenommene Ladung steuert der Regler selbst.
 
 **Aktion:** `idm_heatpump.cancel_dhw_boost`
 
