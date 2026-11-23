@@ -13,6 +13,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.28.4-b2] - 2026-11-23
+
+### ⚠️ Upgrade notes
+
+- **Removed forwarding sources are cleaned up.** Saving the integration options removes the switches for sources that are no longer configured. Check any automation that referenced a removed source switch.
+
+### 🐛 Bugfixes
+
+- **Room forwarding options reopen with their saved values.** Season dates and circuit offsets load correctly, and forwarding shuts down during integration reload and unload.
+- **The clock action honors Home Assistant local time.** Naive datetimes use the configured Home Assistant time zone before the clock is sent to the controller.
+- **Runtime edge cases are handled more consistently.** This includes device registry cleanup, model detection, Web climate and snapshot handling, KNX event processing, hot water boost, calculated sensors, energy statistics, polling and Advisor calculations. See [#738](https://github.com/Xerolux/idm-heatpump-hass/pull/738).
+
 ## [0.28.4-b1] - 2026-11-23
 
 This beta repairs the room temperature forwarding controls that 0.28.3 announced but never showed, and closes three gaps where a setting or a reading was silently misread. It also moves the device library to the 2.17.0 release candidate, which is why it stays a beta.
