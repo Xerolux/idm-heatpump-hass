@@ -11,6 +11,7 @@ import voluptuous as vol
 
 from custom_components.idm_heatpump import config_flow as flow_module
 from custom_components.idm_heatpump.config_flow import (
+    _LEGACY_OPTION_KEYS,
     _OPTIONS_SECTION_KEYS,
     IdmHeatpumpConfigFlow,
     IdmHeatpumpOptionsFlow,
@@ -47,7 +48,6 @@ from custom_components.idm_heatpump.const import (
     CONF_EXTERNAL_POWER_BATTERY_SIGN,
     CONF_EXTERNAL_POWER_FORWARDING,
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
-    CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
     CONF_EXTERNAL_POWER_GRID_SIGN,
     CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
     CONF_FEATURE_PROFILE,
@@ -100,7 +100,6 @@ from custom_components.idm_heatpump.const import (
     CONNECTION_MODE_WEB_ONLY,
     DEFAULT_COMMUNICATION_DIAGNOSTICS,
     DEFAULT_CONNECTION_MODE,
-    DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
     DEFAULT_MODBUS_CONNECT_DELAY,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_MESSAGE_SPACING,
@@ -3221,24 +3220,45 @@ async def test_external_power_step_rejects_unused_grid_meter(extra_fields, used:
         assert result["errors"] == {"base": "grid_power_unused"}
 
 
-class TestExternalPowerForwardingIntervalField:
-    """The interval must be a real options field (issue #471).
+class TestExternalPowerForwardingIntervalRemoved:
+    """External power forwarding has no interval option (0.28.4).
 
-    The guided flow offers ``external_power_forwarding_interval`` as an
-    advanced detail of the external power feature. Before this field existed
-    on the options page, ``_build_guided_field_schema`` raised ``KeyError``
-    and configuring the feature on the advanced level died with an
-    "Unknown error".
+    Some Navigator firmwares drop GLT RAM inputs about ten seconds after the
+    last write (#493), so an interval of 30 s and above can never keep them
+    present. The forwarder refreshed at a fixed cadence and never read the
+    option, while the options page and the guided flow kept offering it as a
+    "fallback cycle" up to 0.28.3. Issue #471's rule still holds — a guided
+    detail key has to exist on the options page — because the key left both.
     """
 
-    def test_field_defaults_to_60s(self):
+    def test_field_is_gone_from_the_options_page(self):
         defaults = _marker_defaults(_build_options_schema({}).schema["features"])
-        assert defaults[CONF_EXTERNAL_POWER_FORWARDING_INTERVAL] == DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL
+        assert _LEGACY_OPTION_KEYS == ("external_power_forwarding_interval",)
+        for key in _LEGACY_OPTION_KEYS:
+            assert key not in defaults
+        # The feature toggle itself is still offered.
+        assert CONF_EXTERNAL_POWER_FORWARDING in defaults
 
-    def test_field_keeps_stored_value(self):
-        schema = _build_options_schema({CONF_EXTERNAL_POWER_FORWARDING_INTERVAL: 120}).schema["features"]
-        defaults = _marker_defaults(schema)
-        assert defaults[CONF_EXTERNAL_POWER_FORWARDING_INTERVAL] == 120
+    async def test_stored_value_is_dropped_when_the_options_are_saved(self):
+        flow = IdmHeatpumpOptionsFlow()
+        flow.config_entry = MagicMock()
+        flow.config_entry.options = {
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 0,
+            "external_power_forwarding_interval": 3600,
+        }
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 30,
+                CONF_HIDE_UNUSED: False,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+            }
+        )
+        assert result["type"] == "create_entry"
+        assert "external_power_forwarding_interval" not in result["data"]
+        assert result["data"][CONF_SCAN_INTERVAL] == 30
 
 
 class TestFlowFieldLabelCoverage:

@@ -176,7 +176,6 @@
               "comfort_schedule_windows": "Weitere Komfort-Zeitfenster",
               "advisor_pv_forecast_entity": "PV-Prognose-Sensor für den Predictive Advisor (optional)",
               "predictive_advisor": "Predictive Advisor aktivieren",
-              "external_power_forwarding_interval": "Weiterleitungsintervall für externe Leistungswerte",
               "ai_advisor": "Experimenteller KI-Anlagenberater (nur lesend)",
               "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten KI-Anbieter senden erlauben (HA AI Task / Cloud)",
               "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
@@ -227,7 +226,6 @@
               "comfort_schedule_windows": "Optional: ein Fenster pro Zeile als Heizkreis,HH:MM,HH:MM,Zielwert (Beispiel: a,06:00,09:00,21.0). Bis zu 16 Zeitfenster ohne Überschneidung für konfigurierte Heizkreise. Diese ersetzen das bisherige einzelne Fenster. Exklusive Heizkreissteuerung ist erforderlich.",
               "advisor_pv_forecast_entity": "Optional — kann leer gelassen werden, der Advisor funktioniert auch ohne. Ein Home-Assistant-Sensor mit stündlicher PV-Erzeugungsprognose (z. B. PVForecast- oder Solcast-Attribute) ist nur die Grundlage für PV-basierte Warmwasser-Zeitfenster-Empfehlungen.",
               "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt.",
-              "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
               "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
               "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
               "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
@@ -270,7 +268,7 @@
               "room_temp_forwarding": "Schreibt ausgewählte Home-Assistant-Temperatursensoren an die aktiven Heizkreise.",
               "room_temp_forwarding_interval": "Wie oft die Temperaturen geprüft werden; Zustandsänderungen werden zusätzlich sofort weitergegeben.",
               "room_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat.",
-              "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe; eine halb ausgefüllte Grenze vervollständigt zum Ersten des Monats.",
+              "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe; eine halb ausgefüllte Grenze vervollständigt zum Ersten des Monats, ein Beginn ohne Ende läuft bis 31. Dezember und ein Ende ohne Beginn ab 1. Januar.",
               "room_temp_forwarding_season_end_month": "Ein Zeitraum über den Jahreswechsel (z. B. Oktober bis April) wird unterstützt.",
               "room_temp_forwarding_offset_a": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
               "room_temp_forwarding_offset_b": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
@@ -613,7 +611,17 @@
           "advisor_pv_forecast_entity": "PV-Prognose-Sensor für den Predictive Advisor (optional)",
           "predictive_advisor": "Predictive Advisor aktivieren",
           "connection_mode": "Verbindungsmodus",
-          "external_power_forwarding_interval": "Weiterleitungsintervall für externe Leistungswerte"
+          "room_temp_forwarding_season_start_month": "Saisonbeginn (Monat)",
+          "room_temp_forwarding_season_start_day": "Saisonbeginn (Tag)",
+          "room_temp_forwarding_season_end_month": "Saisonende (Monat)",
+          "room_temp_forwarding_season_end_day": "Saisonende (Tag)",
+          "room_temp_forwarding_offset_a": "Offset Heizkreis A",
+          "room_temp_forwarding_offset_b": "Offset Heizkreis B",
+          "room_temp_forwarding_offset_c": "Offset Heizkreis C",
+          "room_temp_forwarding_offset_d": "Offset Heizkreis D",
+          "room_temp_forwarding_offset_e": "Offset Heizkreis E",
+          "room_temp_forwarding_offset_f": "Offset Heizkreis F",
+          "room_temp_forwarding_offset_g": "Offset Heizkreis G"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -678,7 +686,6 @@
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
           "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
-          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
           "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
           "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
           "ai_language": "Sprache der erzeugten Berichte (de oder en).",
@@ -694,7 +701,16 @@
           "ai_storage_mib": "Obergrenze für lokal gespeicherte KI-Verlaufsdaten, in MiB.",
           "ai_unverified_text": "Freie KI-Erklärungen lassen sich nicht vollständig gegen die Messwerte verifizieren; nur aktivieren, wenn diese Einschränkung akzeptiert wird.",
           "ai_openai_key": "Optionaler OpenAI-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
-          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn."
+          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
+          "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe; eine halb ausgefüllte Grenze vervollständigt zum Ersten des Monats, ein Beginn ohne Ende läuft bis 31. Dezember und ein Ende ohne Beginn ab 1. Januar.",
+          "room_temp_forwarding_season_end_month": "Ein Zeitraum über den Jahreswechsel (z. B. Oktober bis April) wird unterstützt.",
+          "room_temp_forwarding_offset_a": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_b": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_c": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_d": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_e": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_f": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_g": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben."
         }
       },
       "guided_detail": {
@@ -779,7 +795,17 @@
           "advisor_pv_forecast_entity": "PV-Prognose-Sensor für den Predictive Advisor (optional)",
           "predictive_advisor": "Predictive Advisor aktivieren",
           "connection_mode": "Verbindungsmodus",
-          "external_power_forwarding_interval": "Weiterleitungsintervall für externe Leistungswerte"
+          "room_temp_forwarding_season_start_month": "Saisonbeginn (Monat)",
+          "room_temp_forwarding_season_start_day": "Saisonbeginn (Tag)",
+          "room_temp_forwarding_season_end_month": "Saisonende (Monat)",
+          "room_temp_forwarding_season_end_day": "Saisonende (Tag)",
+          "room_temp_forwarding_offset_a": "Offset Heizkreis A",
+          "room_temp_forwarding_offset_b": "Offset Heizkreis B",
+          "room_temp_forwarding_offset_c": "Offset Heizkreis C",
+          "room_temp_forwarding_offset_d": "Offset Heizkreis D",
+          "room_temp_forwarding_offset_e": "Offset Heizkreis E",
+          "room_temp_forwarding_offset_f": "Offset Heizkreis F",
+          "room_temp_forwarding_offset_g": "Offset Heizkreis G"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -844,7 +870,6 @@
           "advisor_pv_forecast_entity": "Optional — kann leer gelassen werden, der Advisor funktioniert auch ohne. Ein Home-Assistant-Sensor mit stündlicher PV-Erzeugungsprognose (z. B. PVForecast- oder Solcast-Attribute) ist nur die Grundlage für PV-basierte Warmwasser-Zeitfenster-Empfehlungen.",
           "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt.",
           "connection_mode": "Automatisch behält das empfohlene Verhalten: Modbus für Register und Schreibvorgänge, die lokale Web-Ergänzung für zusätzliche Werte, wenn eine PIN konfiguriert ist. Modbus + Web-Ergänzung legt beide Pfade fest und deaktiviert den Web-only-Fallback beim Einrichten. Nur Web betreibt den Eintrag ohne Modbus-Verbindung: Betriebsart und Störungsquittierung werden über die lokale Web-Oberfläche gesteuert; Sollwerte und weitere Steuermöglichkeiten erfordern weiterhin Modbus. Nur Modbus kontaktiert niemals das Web-Interface, auch nicht mit konfigurierter PIN.",
-          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
           "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
           "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
           "ai_language": "Sprache der erzeugten Berichte (de oder en).",
@@ -860,7 +885,16 @@
           "ai_storage_mib": "Obergrenze für lokal gespeicherte KI-Verlaufsdaten, in MiB.",
           "ai_unverified_text": "Freie KI-Erklärungen lassen sich nicht vollständig gegen die Messwerte verifizieren; nur aktivieren, wenn diese Einschränkung akzeptiert wird.",
           "ai_openai_key": "Optionaler OpenAI-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
-          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn."
+          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
+          "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe; eine halb ausgefüllte Grenze vervollständigt zum Ersten des Monats, ein Beginn ohne Ende läuft bis 31. Dezember und ein Ende ohne Beginn ab 1. Januar.",
+          "room_temp_forwarding_season_end_month": "Ein Zeitraum über den Jahreswechsel (z. B. Oktober bis April) wird unterstützt.",
+          "room_temp_forwarding_offset_a": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_b": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_c": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_d": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_e": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_f": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_g": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben."
         }
       },
       "guided_review": {
@@ -1028,7 +1062,6 @@
               "comfort_schedule_windows": "Weitere Komfort-Zeitfenster",
               "advisor_pv_forecast_entity": "PV-Prognose-Sensor für den Predictive Advisor (optional)",
               "predictive_advisor": "Predictive Advisor aktivieren",
-              "external_power_forwarding_interval": "Weiterleitungsintervall für externe Leistungswerte",
               "ai_advisor": "Experimenteller KI-Anlagenberater (nur lesend)",
               "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten KI-Anbieter senden erlauben (HA AI Task / Cloud)",
               "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
@@ -1079,7 +1112,6 @@
               "comfort_schedule_windows": "Optional: ein Fenster pro Zeile als Heizkreis,HH:MM,HH:MM,Zielwert (Beispiel: a,06:00,09:00,21.0). Bis zu 16 Zeitfenster ohne Überschneidung für konfigurierte Heizkreise. Diese ersetzen das bisherige einzelne Fenster. Exklusive Heizkreissteuerung ist erforderlich.",
               "advisor_pv_forecast_entity": "Optional — kann leer gelassen werden, der Advisor funktioniert auch ohne. Ein Home-Assistant-Sensor mit stündlicher PV-Erzeugungsprognose (z. B. PVForecast- oder Solcast-Attribute) ist nur die Grundlage für PV-basierte Warmwasser-Zeitfenster-Empfehlungen.",
               "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt.",
-              "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
               "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
               "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
               "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
@@ -1122,7 +1154,7 @@
               "room_temp_forwarding": "Schreibt ausgewählte Home-Assistant-Temperatursensoren an die aktiven Heizkreise.",
               "room_temp_forwarding_interval": "Wie oft die Temperaturen geprüft werden; Zustandsänderungen werden zusätzlich sofort weitergegeben.",
               "room_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat.",
-              "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe; eine halb ausgefüllte Grenze vervollständigt zum Ersten des Monats.",
+              "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe; eine halb ausgefüllte Grenze vervollständigt zum Ersten des Monats, ein Beginn ohne Ende läuft bis 31. Dezember und ein Ende ohne Beginn ab 1. Januar.",
               "room_temp_forwarding_season_end_month": "Ein Zeitraum über den Jahreswechsel (z. B. Oktober bis April) wird unterstützt.",
               "room_temp_forwarding_offset_a": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
               "room_temp_forwarding_offset_b": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
@@ -1430,7 +1462,17 @@
           "advisor_pv_forecast_entity": "PV-Prognose-Sensor für den Predictive Advisor (optional)",
           "predictive_advisor": "Predictive Advisor aktivieren",
           "connection_mode": "Verbindungsmodus",
-          "external_power_forwarding_interval": "Weiterleitungsintervall für externe Leistungswerte"
+          "room_temp_forwarding_season_start_month": "Saisonbeginn (Monat)",
+          "room_temp_forwarding_season_start_day": "Saisonbeginn (Tag)",
+          "room_temp_forwarding_season_end_month": "Saisonende (Monat)",
+          "room_temp_forwarding_season_end_day": "Saisonende (Tag)",
+          "room_temp_forwarding_offset_a": "Offset Heizkreis A",
+          "room_temp_forwarding_offset_b": "Offset Heizkreis B",
+          "room_temp_forwarding_offset_c": "Offset Heizkreis C",
+          "room_temp_forwarding_offset_d": "Offset Heizkreis D",
+          "room_temp_forwarding_offset_e": "Offset Heizkreis E",
+          "room_temp_forwarding_offset_f": "Offset Heizkreis F",
+          "room_temp_forwarding_offset_g": "Offset Heizkreis G"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -1495,7 +1537,6 @@
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
           "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
-          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
           "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
           "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
           "ai_language": "Sprache der erzeugten Berichte (de oder en).",
@@ -1511,7 +1552,16 @@
           "ai_storage_mib": "Obergrenze für lokal gespeicherte KI-Verlaufsdaten, in MiB.",
           "ai_unverified_text": "Freie KI-Erklärungen lassen sich nicht vollständig gegen die Messwerte verifizieren; nur aktivieren, wenn diese Einschränkung akzeptiert wird.",
           "ai_openai_key": "Optionaler OpenAI-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
-          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn."
+          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
+          "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe; eine halb ausgefüllte Grenze vervollständigt zum Ersten des Monats, ein Beginn ohne Ende läuft bis 31. Dezember und ein Ende ohne Beginn ab 1. Januar.",
+          "room_temp_forwarding_season_end_month": "Ein Zeitraum über den Jahreswechsel (z. B. Oktober bis April) wird unterstützt.",
+          "room_temp_forwarding_offset_a": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_b": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_c": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_d": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_e": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_f": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_g": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben."
         }
       },
       "guided_detail": {
@@ -1596,7 +1646,17 @@
           "advisor_pv_forecast_entity": "PV-Prognose-Sensor für den Predictive Advisor (optional)",
           "predictive_advisor": "Predictive Advisor aktivieren",
           "connection_mode": "Verbindungsmodus",
-          "external_power_forwarding_interval": "Weiterleitungsintervall für externe Leistungswerte"
+          "room_temp_forwarding_season_start_month": "Saisonbeginn (Monat)",
+          "room_temp_forwarding_season_start_day": "Saisonbeginn (Tag)",
+          "room_temp_forwarding_season_end_month": "Saisonende (Monat)",
+          "room_temp_forwarding_season_end_day": "Saisonende (Tag)",
+          "room_temp_forwarding_offset_a": "Offset Heizkreis A",
+          "room_temp_forwarding_offset_b": "Offset Heizkreis B",
+          "room_temp_forwarding_offset_c": "Offset Heizkreis C",
+          "room_temp_forwarding_offset_d": "Offset Heizkreis D",
+          "room_temp_forwarding_offset_e": "Offset Heizkreis E",
+          "room_temp_forwarding_offset_f": "Offset Heizkreis F",
+          "room_temp_forwarding_offset_g": "Offset Heizkreis G"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -1661,7 +1721,6 @@
           "advisor_pv_forecast_entity": "Optional — kann leer gelassen werden, der Advisor funktioniert auch ohne. Ein Home-Assistant-Sensor mit stündlicher PV-Erzeugungsprognose (z. B. PVForecast- oder Solcast-Attribute) ist nur die Grundlage für PV-basierte Warmwasser-Zeitfenster-Empfehlungen.",
           "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt.",
           "connection_mode": "Automatisch behält das empfohlene Verhalten: Modbus für Register und Schreibvorgänge, die lokale Web-Ergänzung für zusätzliche Werte, wenn eine PIN konfiguriert ist. Modbus + Web-Ergänzung legt beide Pfade fest und deaktiviert den Web-only-Fallback beim Einrichten. Nur Web betreibt den Eintrag ohne Modbus-Verbindung: Betriebsart und Störungsquittierung werden über die lokale Web-Oberfläche gesteuert; Sollwerte und weitere Steuermöglichkeiten erfordern weiterhin Modbus. Nur Modbus kontaktiert niemals das Web-Interface, auch nicht mit konfigurierter PIN.",
-          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden.",
           "ai_url": "Basis-URL der lokalen Ollama-Instanz. Leer lassen, wenn kein lokales Modell genutzt wird.",
           "ai_model": "Modellname, der von der lokalen Ollama-Instanz angefragt wird; nur für lokale freie Erklärungen relevant.",
           "ai_language": "Sprache der erzeugten Berichte (de oder en).",
@@ -1677,7 +1736,16 @@
           "ai_storage_mib": "Obergrenze für lokal gespeicherte KI-Verlaufsdaten, in MiB.",
           "ai_unverified_text": "Freie KI-Erklärungen lassen sich nicht vollständig gegen die Messwerte verifizieren; nur aktivieren, wenn diese Einschränkung akzeptiert wird.",
           "ai_openai_key": "Optionaler OpenAI-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
-          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn."
+          "ai_zai_key": "Optionaler Z.ai-API-Schlüssel für direkte Cloud-Anfragen. Leer lassen, um den gespeicherten Schlüssel zu behalten; ein einzelner Bindestrich entfernt ihn.",
+          "room_temp_forwarding_season_start_month": "Die Weitergabe läuft nur zwischen Saisonbeginn und Saisonende. Alle vier Felder leer lassen für ganzjährige Weitergabe; eine halb ausgefüllte Grenze vervollständigt zum Ersten des Monats, ein Beginn ohne Ende läuft bis 31. Dezember und ein Ende ohne Beginn ab 1. Januar.",
+          "room_temp_forwarding_season_end_month": "Ein Zeitraum über den Jahreswechsel (z. B. Oktober bis April) wird unterstützt.",
+          "room_temp_forwarding_offset_a": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_b": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_c": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_d": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_e": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_f": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben.",
+          "room_temp_forwarding_offset_g": "Wird zur gemittelten Raumtemperatur addiert, bevor geschrieben wird; ein Ergebnis außerhalb des Registerbereichs wird nie geschrieben."
         }
       },
       "guided_review": {

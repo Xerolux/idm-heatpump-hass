@@ -71,7 +71,6 @@ class ExternalPowerForwardingConfig:
     """Runtime configuration for external power forwarding."""
 
     entities: dict[str, str]
-    interval: int = 60
     battery_sign: str = "as_is"
     #: Sign convention of the ``grid_power`` mapping key: "import" means the
     #: source reports grid draw positive, "export" means feed-in positive.
@@ -175,8 +174,11 @@ class ExternalPowerForwarder:
             await self.async_forward()
             while True:
                 # Keep cyclic GLT refresh even with quiet sources (#493).
-                # This takes precedence over the configured fallback interval;
-                # controller-side retention/processing remains unverified.
+                # This is a fixed cadence, not an option: intervals of 30 s
+                # and above can never keep a RAM input present on the
+                # firmwares that clear it after about ten seconds, so the
+                # interval option offered up to 0.28.3 was never read here.
+                # Controller-side retention/processing remains unverified.
                 await asyncio.sleep(_RAM_INPUT_REFRESH_SECONDS)
                 await self.async_forward()
         finally:

@@ -38,7 +38,9 @@ def _forwarder(
         module.ExternalPowerForwarder(
             hass,
             coordinator,
-            module.ExternalPowerForwardingConfig(entities, 30, battery_sign, grid_sign, pv_zero_workaround),
+            module.ExternalPowerForwardingConfig(
+                entities, battery_sign=battery_sign, grid_sign=grid_sign, pv_zero_workaround=pv_zero_workaround
+            ),
         ),
         coordinator,
     )
@@ -181,7 +183,7 @@ async def test_successful_forward_is_logged(caplog: pytest.LogCaptureFixture) ->
 def test_unmapped_battery_discharge_logs_info_hint(caplog: pytest.LogCaptureFixture) -> None:
     hass = MagicMock()
     coordinator = MagicMock()
-    config = module.ExternalPowerForwardingConfig({"battery_soc": "sensor.soc"}, 60)
+    config = module.ExternalPowerForwardingConfig({"battery_soc": "sensor.soc"})
     with caplog.at_level("INFO", logger="custom_components.idm_heatpump.external_power_forwarding"):
         module.ExternalPowerForwarder(hass, coordinator, config)
     assert "battery_discharge is unmapped" in caplog.text
@@ -550,7 +552,6 @@ def test_unusable_grid_meter_mapping_logs_warning(caplog: pytest.LogCaptureFixtu
             "pv_surplus": "sensor.net",
             "house_consumption": "sensor.house",
         },
-        60,
     )
     with caplog.at_level("WARNING", logger="custom_components.idm_heatpump.external_power_forwarding"):
         module.ExternalPowerForwarder(hass, coordinator, config)
@@ -566,7 +567,7 @@ def test_grid_meter_usable_mappings_do_not_warn(caplog: pytest.LogCaptureFixture
         {"grid_power": "sensor.grid", "pv_surplus": "sensor.net", "pv_production": "sensor.pv"},
     ):
         with caplog.at_level("WARNING", logger="custom_components.idm_heatpump.external_power_forwarding"):
-            module.ExternalPowerForwarder(hass, coordinator, module.ExternalPowerForwardingConfig(entities, 60))
+            module.ExternalPowerForwarder(hass, coordinator, module.ExternalPowerForwardingConfig(entities))
     assert "not used" not in caplog.text
 
 
@@ -639,7 +640,7 @@ async def test_periodic_pass_refreshes_below_the_controller_ram_hold_window(monk
     )
     coordinator.async_write_register = AsyncMock()
     forwarder = module.ExternalPowerForwarder(
-        hass, coordinator, module.ExternalPowerForwardingConfig({"battery_soc": "sensor.soc"}, 60)
+        hass, coordinator, module.ExternalPowerForwardingConfig({"battery_soc": "sensor.soc"})
     )
     real_sleep = asyncio.sleep
     delays: list[float] = []

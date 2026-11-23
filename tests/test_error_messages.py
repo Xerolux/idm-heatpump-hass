@@ -71,6 +71,20 @@ def test_classifies_web_errors(error: Exception, issue_id: str) -> None:
             ValueError("Register 'hc_c_room_setpoint_heat_normal' is not available for detected model Navigator 10"),
             "write_not_supported",
         ),
+        # Local refusals idm-heatpump-api 2.17.0 added. Both are guards in
+        # front of the wire; reported as write_failed they read as a
+        # controller that "rejected the value".
+        (
+            ValueError("EEPROM-sensitive register 'hc_a_heating_curve' already has a write in progress"),
+            "write_eeprom_blocked",
+        ),
+        (
+            ValueError(
+                "Register 'hc_a_ext_room_temp' differs from the detected model's definition: "
+                "Navigator 10 has FLOAT at holding address 1364, got UCHAR at holding address 1364"
+            ),
+            "write_not_supported",
+        ),
         (
             IdmModbusError("Modbus write at address 1405 failed: refused (exception_code=4)"),
             "write_rejected_by_device",

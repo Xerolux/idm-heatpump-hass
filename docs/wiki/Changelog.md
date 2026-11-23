@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.28.4-b1 — 2026-11-23
+
+The room temperature forwarding switches that 0.28.3 announced now exist after a real setup: the master switch and one switch per source are created as soon as forwarding is configured. One season border alone is an open-ended season, an unwired hot water sensor (≤ −300 °C) no longer triggers a boost, and `set_controller_clock` sends local time for every input format. The external power forwarding interval option is removed; it never changed the three-second refresh. The device library moves to the release candidate idm-heatpump-api 2.17.0rc1, which is why this is a beta. [Configuration](Configuration#room-temperature-forwarding), [Findings](Findings-and-Documentation#findings-register).
+
 ## v0.28.3 — 2026-11-20
 
 Room temperature forwarding supports averaging several sensors per circuit, a per-circuit offset, seasonal gating, and runtime switches. Without a usable source the controller receives the documented no-value sentinel. On Navigator 2.0/10/Pro the manual DHW boost sends the one-time demand via register 1713 and preserves the operating mode. The reference Navigator 10 read back the demand but did not start a charge during either five-minute test. Navigator 1.x keeps the earlier mode-switch behavior. The wiki now includes a bilingual entity index, richer register metadata, Advisor prerequisites and model compatibility. [Configuration](Configuration) · [Boost action](Services#start-dhw-boost) · [Model guide](Supported-Devices).

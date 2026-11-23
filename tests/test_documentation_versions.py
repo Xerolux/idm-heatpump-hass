@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,19 @@ from scripts import check_documentation_versions as check
 
 def test_repository_documentation_matches_manifest() -> None:
     assert check.synchronize(check.ROOT) == []
+
+
+def test_agent_guidance_files_carry_the_manifest_version() -> None:
+    """Both agent guidance files state the source version, and both are guarded.
+
+    CLAUDE.md was missing from the pattern table and drifted four releases
+    behind the manifest (0.28.0 against 0.28.3) without any check noticing.
+    """
+    manifest = json.loads((check.ROOT / "custom_components/idm_heatpump/manifest.json").read_text(encoding="utf-8"))
+    for name in ("AGENTS.md", "CLAUDE.md"):
+        assert name in check.SOURCE_VERSION_PATTERNS
+        text = (check.ROOT / name).read_text(encoding="utf-8")
+        assert re.findall(check.SOURCE_VERSION_PATTERNS[name], text) == [manifest["version"]]
 
 
 def test_update_preserves_history_and_detects_drift(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -69,7 +69,7 @@ controller clock in sync so time programs stay correct.
 
 | Field | Required | Description |
 |---|---|---|
-| `datetime` | no | The time to set (ISO format). Omit for the current Home Assistant time. |
+| `datetime` | no | The time to set (ISO format), in Home Assistant's local time zone. Omit for the current Home Assistant time. |
 | `entity_id` / `entry_id` | no | Targeting, like every other service. |
 
 ```yaml
@@ -77,6 +77,12 @@ service: idm_heatpump.set_controller_clock
 data:
   datetime: "2026-09-29 12:30:00"
 ```
+
+A value without a zone is read as Home Assistant local time, and a value with
+an offset is converted to local time before it is sent; in both cases the
+controller receives the local wall time. Up to 0.28.3 the value went out
+exactly as written, so an offset-bearing timestamp could set the clock to
+another zone's wall time.
 
 The service requires an active web supplement; without one it declines with
 a validation error instead of touching anything.
@@ -193,7 +199,7 @@ infinite values and applies library limits automatically if a future tested API
 release supplies them.
 
 The table was rechecked against the published
-`idm-heatpump-api[web]==2.16.2` artifact. Those GLT power registers still do not
+`idm-heatpump-api[web]==2.17.0rc1` artifact. Those GLT power registers still do not
 declare universal minimum or maximum values; the integration therefore keeps
 the finite-number validation described above.
 

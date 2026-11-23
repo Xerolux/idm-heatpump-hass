@@ -13,6 +13,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.28.4-b1] - 2026-11-23
+
+This beta repairs the room temperature forwarding controls that 0.28.3 announced but never showed, and closes three gaps where a setting or a reading was silently misread. It also moves the device library to the 2.17.0 release candidate, which is why it stays a beta.
+
+### ⚠️ Upgrade notes
+
+- **The room temperature forwarding switches now appear.** A master switch and one switch per configured source are created as soon as forwarding is configured; on 0.28.3 they were announced but never registered. Existing forwarding keeps running unchanged, and rolling back removes the switches again.
+- **The external power forwarding interval option is gone.** It never changed the write cadence, which stays at three seconds. A stored value is dropped the next time the options are saved; rolling back restores the field without changing any behavior.
+- **This beta pins idm-heatpump-api 2.17.0rc1, a release candidate.** The full suite, the contract tests and the real-Home-Assistant smoke tests pass against it. Rolling back to 0.28.3 returns to the stable library 2.16.2.
+
+### ✨ New
+
+- **One season border is enough.** A start without an end forwards until 31 December, an end without a start from 1 January. Before, a half-configured window silently forwarded all year. The master switch attributes show the effective borders.
+
+### 🐛 Bugfixes
+
+- **The room temperature forwarding switches exist after a real setup.** The forwarder was built after the switch platform had already run, so the master switch and the per-source switches never appeared outside the test suite. A real-Home-Assistant test now walks setup, reload and unload with forwarding enabled.
+- **An unwired hot water sensor no longer triggers a boost.** Readings in the uninitialized band (at or below -300 °C) count as "no sensor" for the manual boost and the PV surplus automation, as they already did for the health check and the water heater card. See [#668](https://github.com/Xerolux/idm-heatpump-hass/issues/668).
+- **The controller clock receives local time for every input format.** `set_controller_clock` reads a value without a zone as Home Assistant local time and converts a value that carries an offset. Before, the value went out exactly as written.
+- **The guided wizard labels the season and offset fields.** The room temperature forwarding fields added in 0.28.3 had no labels in the guided configuration and were shown as raw keys.
+
+### 💼 Maintenance
+
+- **idm-heatpump-api is pinned to 2.17.0rc1.** Model detection now fails after a single unanswered probe instead of returning a partial result; the integration keeps its generic-model fallback. Writes must match the detected model's data type and register type, which no register of the four model maps violates.
+- **The tmodbus floor rises to 1.1.0.** That is the version Home Assistant 2026.11 pins itself, and this release was validated with it. `modbus-connection` stays at 4.12.7: Home Assistant pins that exact version up to 2026.11.2, so a higher floor could not be installed next to it.
+- **Two library refusals are reported as what they are.** The new library refuses a second concurrent write to an EEPROM register and writes with another data type than the detected model defines. Both now read as write protection and unsupported register instead of "rejected the value".
+- **The agent snapshot is version-checked.** `CLAUDE.md` had drifted four releases behind the manifest; the documentation version check now covers it.
+
 ## [0.28.3] - 2026-11-20
 
 ### ⚠️ Upgrade notes

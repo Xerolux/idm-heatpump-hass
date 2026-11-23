@@ -236,7 +236,9 @@ def classify_write_error(err: Exception) -> str:
     message = _error_chain_text(err)
     # Local guards first: these never reach the wire, so reporting them as a
     # controller rejection sends the user looking in the wrong place.
-    if "eeprom" in message and any(marker in message for marker in ("too recently", "write cycle")):
+    if "eeprom" in message and any(
+        marker in message for marker in ("too recently", "write cycle", "write in progress")
+    ):
         return "write_eeprom_blocked"
     if getattr(err, "translation_key", None) == "write_cooldown_active" or "cooldown" in message:
         return "write_cooldown_active"
@@ -251,6 +253,9 @@ def classify_write_error(err: Exception) -> str:
             "exception_code=2",
             "unsupported register",
             "not available for detected model",
+            # idm-heatpump-api 2.17.0: same name and address, but another
+            # datatype or register type than the detected model defines.
+            "differs from the detected model",
         )
     ):
         return "write_not_supported"

@@ -218,8 +218,12 @@ async def _automatic_manager(monkeypatch, **config):
     return manager, boost
 
 
-@pytest.mark.parametrize("temperature", [50.01, 54.9, 55, None, float("nan"), float("inf"), True])
+@pytest.mark.parametrize(
+    "temperature",
+    [50.01, 54.9, 55, None, float("nan"), float("inf"), True, -1.0, -327.33, -999.0],
+)
 async def test_small_temperature_drops_and_invalid_samples_never_restart(monkeypatch, temperature):
+    """Includes the uninitialized-sensor band (<= -300 C): no automatic charge on garbage."""
     manager, boost = await _automatic_manager(monkeypatch)
     manager._coordinator.data["dhw_temp_top"] = temperature
     assert await manager.async_evaluate_once() is False

@@ -69,7 +69,7 @@ Zeitprogramme korrekt bleiben.
 
 | Feld | Pflicht | Beschreibung |
 |---|---|---|
-| `datetime` | nein | Die zu setzende Zeit (ISO-Format). Ohne Angabe die aktuelle Home-Assistant-Zeit. |
+| `datetime` | nein | Die zu setzende Zeit (ISO-Format) in der Home-Assistant-Zeitzone. Ohne Angabe die aktuelle Home-Assistant-Zeit. |
 | `entity_id` / `entry_id` | nein | Zielwahl wie bei jedem anderen Dienst. |
 
 ```yaml
@@ -77,6 +77,12 @@ service: idm_heatpump.set_controller_clock
 data:
   datetime: "2026-09-29 12:30:00"
 ```
+
+Ein Wert ohne Zone wird als Home-Assistant-Ortszeit gelesen, ein Wert mit
+Offset vor dem Senden in Ortszeit umgerechnet; der Regler erhält in beiden
+Fällen die lokale Wanduhrzeit. Bis 0.28.3 ging der Wert genau so hinaus, wie er
+angegeben war, sodass ein Zeitstempel mit Offset die Uhr auf die Wanduhrzeit
+einer anderen Zone setzen konnte.
 
 Der Dienst erfordert eine aktive Web-Ergänzung; ohne sie lehnt er mit einem
 Validierungsfehler ab, statt etwas anzufassen.
@@ -195,7 +201,7 @@ Bibliotheksgrenzen automatisch an, falls eine künftige getestete API-Version
 sie liefert.
 
 Die Tabelle wurde erneut mit dem veröffentlichten Artefakt
-`idm-heatpump-api[web]==2.16.2` abgeglichen. Diese GLT-Leistungsregister
+`idm-heatpump-api[web]==2.17.0rc1` abgeglichen. Diese GLT-Leistungsregister
 deklarieren weiterhin keine universellen Mindest- oder Höchstwerte; die
 Integration behält daher die oben beschriebene Validierung auf endliche
 Zahlen bei.

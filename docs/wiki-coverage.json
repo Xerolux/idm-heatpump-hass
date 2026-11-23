@@ -14,7 +14,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "f37d63bf3760fedc4f6f87fc5f4ae2fa66fde735cd8f715ed500c07e729368ad"
+      "reviewed_source_sha256": "3f16e7a100100a88c235cf014225c1640fd1011f9e9444484ca19fde20b3d5f2"
     },
     {
       "feature": "Model and register semantics",
@@ -128,7 +128,7 @@
         "Installation-and-Setup.md",
         "Smart-Energy-and-Comfort.md"
       ],
-      "reviewed_source_sha256": "f5bb3ea03596469f02f6560c4c7f9830b9a04f82813e1546dfe6f5cf150f6743"
+      "reviewed_source_sha256": "b3d15ee11379109d13e2b8c3e885664fcb4e30362a59e542016125046f65687b"
     },
     {
       "feature": "Comfort and hot water automation",
@@ -143,7 +143,7 @@
         "Smart-Energy-and-Comfort.md",
         "Services.md"
       ],
-      "reviewed_source_sha256": "4eeaa635bd5f9ad71dbe430070fa97b980790d97d9e3b868355d34b754e8a1a3"
+      "reviewed_source_sha256": "8fce588be2b100ff8d05ffb71ce7d4ed1d15cbbb80352e3e59c7cf871165632b"
     },
     {
       "feature": "Predictive evidence and local Assist",
@@ -199,7 +199,7 @@
         "Smart-Energy-and-Comfort.md",
         "Entities.md"
       ],
-      "reviewed_source_sha256": "1990e7ddafef5dfda8c1b955a7093ce9fc103e83438794a1062d2b1b4b8a899d"
+      "reviewed_source_sha256": "4ff07e429941bca10495ef0a5c0270971afd9769a195178cef00a932911fe4ad"
     },
     {
       "feature": "KNX bridge and catalog",
@@ -240,7 +240,7 @@
         "Services.md",
         "Predictive-Advisor.md"
       ],
-      "reviewed_source_sha256": "1c330bf879641abb70e9fdd696fd44afca0ecee29e9806ab3d75c6bda4eda594"
+      "reviewed_source_sha256": "7e1940261818fa7cc7d501b2a9708161e6b7973927f69fd7f87f4b12be2994bc"
     }
   ]
 }
