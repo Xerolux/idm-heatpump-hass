@@ -5,13 +5,9 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
-## v0.28.4-b2 — 2026-11-23
+## v0.28.4 — 2026-11-23
 
-Das Formular zur Raumtemperatur-Weiterleitung übernimmt gespeicherte Saisondaten und Offsets korrekt. Schalter für entfernte Quellen werden bereinigt. Die Aktion zum Stellen der Regleruhr verwendet bei Zeitangaben ohne Zeitzone die Home-Assistant-Zeitzone. Die Beta verbessert außerdem das Laufzeitverhalten bei Web-Klimasteuerung, KNX, berechneten Sensoren und Advisor. [Pull Request #738](https://github.com/Xerolux/idm-heatpump-hass/pull/738).
-
-## v0.28.4-b1 — 2026-11-23
-
-Die Schalter der Raumtemperatur-Weiterleitung, die 0.28.3 ankündigte, existieren nun nach einem echten Setup: Hauptschalter und je Quelle ein Schalter entstehen, sobald Weiterleitung konfiguriert ist. Ein allein gesetzter Saisonrand ist eine offene Saison, ein nicht verdrahteter Warmwasser-Fühler (≤ −300 °C) löst keinen Boost mehr aus, und `set_controller_clock` sendet für jedes Eingabeformat Ortszeit. Die Option *Weiterleitungsintervall für externe Leistungswerte* ist entfernt; sie änderte nie die Drei-Sekunden-Auffrischung. Die Gerätebibliothek wechselt auf den Release Candidate idm-heatpump-api 2.17.0rc1, deshalb ist dies eine Beta. [Konfiguration](Configuration#raumtemperatur-weiterleitung), [Erkenntnisse](Findings-and-Documentation#erkenntnisregister).
+Die Integration nutzt die stabile API 2.17.0. Die Raumtemperatur-Weiterleitung registriert ihre Schalter und übernimmt Saison und Offsets beim Neuladen. Der Warmwasser-Boost wartet beim Abbrechen auf laufende Schreibsperren. Für eine einzelne Ladung mit unveränderten Einstellungen ist der Schalter für die einmalige WW-Anforderung dokumentiert. [Services](Services#start-dhw-boost).
 
 ## v0.28.3 — 2026-11-20
 

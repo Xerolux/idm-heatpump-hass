@@ -201,7 +201,7 @@ Bibliotheksgrenzen automatisch an, falls eine künftige getestete API-Version
 sie liefert.
 
 Die Tabelle wurde erneut mit dem veröffentlichten Artefakt
-`idm-heatpump-api[web]==2.17.0rc1` abgeglichen. Diese GLT-Leistungsregister
+`idm-heatpump-api[web]==2.17.0` abgeglichen. Diese GLT-Leistungsregister
 deklarieren weiterhin keine universellen Mindest- oder Höchstwerte; die
 Integration behält daher die oben beschriebene Validierung auf endliche
 Zahlen bei.
@@ -269,6 +269,8 @@ den Warmwasser-Sollwert auf das gewünschte Ziel und stößt die Ladung an; wenn
 der Boost endet (Ziel erreicht, Timeout oder Abbruch), werden der exakte
 vorherige Sollwert — und der Modus, falls er geändert wurde — wiederhergestellt.
 
+Für eine einzelne Ladung mit den eingestellten Temperaturen schalte **Einmalige WW-Anforderung** einmal mit `switch.turn_on` ein (Register 1713, sofern vorhanden). Dabei bleiben Zapfsollwert, Ladegrenzen und Betriebsart erhalten. Der Regler entscheidet über Beginn und Ende der Ladung und setzt die Anforderung selbst zurück.
+
 **Aktion:** `idm_heatpump.start_dhw_boost`
 
 **Ziel:** Gerät der Integration
@@ -294,7 +296,7 @@ Wie die Ladung ausgelöst wird, hängt vom Regler ab:
 - **Navigator 2.0 / 10 / Pro:** der Boost schreibt das GLT-Register für die
   einmalige WW-Anforderung (1713, `demand_onetime_dhw`, KNX-Objekt 383)
   genau einmal und lässt die Betriebsart unberührt — der Regler bleibt in
-  Automatik, die Raumheizung läuft weiter. Das entspricht der nativen
+  Automatik. Der Regler kann die Heizkreispumpe während der Ladung anhalten. Das entspricht der nativen
   iDM-App (Issue #719: der frühere Wechsel in den Nur-Warmwasser-Modus
   stoppte die Heizung, ohne eine Ladung zu starten, an einem Navigator 10).
   Das Bit ist ein einmaliger Befehl: die Integration schreibt es nie auf 0
@@ -305,8 +307,7 @@ Wie die Ladung ausgelöst wird, hängt vom Regler ab:
 - **Regler ohne dieses Register (Navigator 1.x):** der Boost wählt für die
   Laufzeit den Nur-Warmwasser-Modus und stellt am Ende die vorherige
   Betriebsart wieder her, wie bisher.
-- **Automatischer PV-Boost:** erhöht nur den Sollwert und ändert die
-  Betriebsart an keinem Regler.
+- **Automatischer PV-Boost:** erhöht den Sollwert und fordert über 1713 einmalig eine Ladung an, sofern das Register verfügbar ist. Die Betriebsart bleibt erhalten.
 
 Der Boost ist neustartsicher: Startet Home Assistant während eines Boosts neu,
 wird der Snapshot (vorheriger Sollwert und Modus) aus dem persistenten Speicher
@@ -317,6 +318,8 @@ wiederhergestellt.
 Bricht einen aktiven Warmwasser-Boost ab und stellt den vorherigen
 Warmwasser-Sollwert wieder her — und die vorherige Betriebsart, falls der
 Boost sie geändert hatte.
+
+Ist eine Schreibsperre aktiv, holt die Integration die Wiederherstellung bei den nächsten Abfragen nach. Eine bereits angenommene Ladung steuert der Regler selbst.
 
 **Aktion:** `idm_heatpump.cancel_dhw_boost`
 

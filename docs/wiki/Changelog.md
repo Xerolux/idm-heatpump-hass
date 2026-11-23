@@ -5,13 +5,9 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
-## v0.28.4-b2 — 2026-11-23
+## v0.28.4 — 2026-11-23
 
-The room temperature forwarding form loads the saved season dates and offsets correctly. Switches for removed sources are cleaned up, and the clock action honors the Home Assistant time zone for naive datetimes. This beta also improves runtime handling for Web climate, KNX, calculated sensors and the Advisor. [Pull request #738](https://github.com/Xerolux/idm-heatpump-hass/pull/738).
-
-## v0.28.4-b1 — 2026-11-23
-
-The room temperature forwarding switches that 0.28.3 announced now exist after a real setup: the master switch and one switch per source are created as soon as forwarding is configured. One season border alone is an open-ended season, an unwired hot water sensor (≤ −300 °C) no longer triggers a boost, and `set_controller_clock` sends local time for every input format. The external power forwarding interval option is removed; it never changed the three-second refresh. The device library moves to the release candidate idm-heatpump-api 2.17.0rc1, which is why this is a beta. [Configuration](Configuration#room-temperature-forwarding), [Findings](Findings-and-Documentation#findings-register).
+The integration now pins stable API 2.17.0. Room temperature forwarding registers its switches and reloads saved season boundaries and offsets. Cancelling a DHW boost waits for register write protection. The Services page explains how to request a single charge at the configured temperatures. [Services](Services#start-dhw-boost).
 
 ## v0.28.3 — 2026-11-20
 

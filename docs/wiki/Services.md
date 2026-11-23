@@ -199,7 +199,7 @@ infinite values and applies library limits automatically if a future tested API
 release supplies them.
 
 The table was rechecked against the published
-`idm-heatpump-api[web]==2.17.0rc1` artifact. Those GLT power registers still do not
+`idm-heatpump-api[web]==2.17.0` artifact. Those GLT power registers still do not
 declare universal minimum or maximum values; the integration therefore keeps
 the finite-number validation described above.
 
@@ -258,6 +258,8 @@ setpoint to the requested target and triggers the charge; when the boost ends
 (target reached, timeout or cancel) the exact previous setpoint — and mode,
 where it was changed — is restored.
 
+For one charge at the configured temperatures, call `switch.turn_on` once on **One-time hot water demand** (register 1713, where available). This leaves the DHW setpoint, charge thresholds and system mode untouched. The controller decides when to charge and clears the demand itself.
+
 **Service:** `idm_heatpump.start_dhw_boost`
 
 **Target:** Device of the integration
@@ -282,8 +284,8 @@ How the charge is triggered depends on the controller:
 
 - **Navigator 2.0 / 10 / Pro:** the boost writes the GLT one-time DHW
   demand register (1713, `demand_onetime_dhw`, KNX object 383) exactly once
-  and never touches the system mode — the controller stays in Automatic and
-  room heating continues. This mirrors the native iDM app (issue #719: the
+  and never touches the system mode — a controller in Automatic stays in Automatic. The controller may pause
+  the heating circuit pump during the charge. This mirrors the native iDM app (issue #719: the
   previous hot-water-only mode switch stopped heating without starting a
   charge on a Navigator 10). The command bit is momentary: the integration
   never writes it back to 0. On the reference Navigator 10 the command was
@@ -293,8 +295,7 @@ How the charge is triggered depends on the controller:
 - **Controllers without that register (Navigator 1.x):** the boost selects
   hot-water-only mode for the runtime and restores the previous mode at the
   end, as before.
-- **Automatic PV boost:** raises the setpoint only and never changes the
-  system mode on any controller.
+- **Automatic PV boost:** raises the setpoint and issues the one-time demand where register 1713 is available. It preserves the system mode.
 
 The boost is restart-safe: if Home Assistant restarts during a boost, the
 snapshot (previous setpoint and mode) is restored from persistent storage.
@@ -303,6 +304,8 @@ snapshot (previous setpoint and mode) is restored from persistent storage.
 
 Cancels an active DHW boost and restores the previous DHW setpoint — and the
 previous system mode where the boost had changed it.
+
+If a register write is still cooling down, restoration resumes on subsequent polls. The controller owns any charge it has already accepted.
 
 **Service:** `idm_heatpump.cancel_dhw_boost`
 
