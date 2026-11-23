@@ -13,6 +13,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.28.6] - 2026-11-23
+
+Press Cancel once to end a hot water boost. If the controller’s write interval is still active, Home Assistant can now restore your previous setpoint on a later update.
+
+### ⚠️ Upgrade notes
+
+- **Rollback to 0.28.5 is safe.** Both versions use the same settings and saved boost state.
+
+### 🐛 Bugfixes
+
+- **Cancelling a boost retries the pending write.** Previously, a completed check could block all later attempts and leave the boost setpoint in place until you pressed Cancel again. The integration now retries after the write interval expires. The Navigator controls when a charge it has already accepted ends. [#719](https://github.com/Xerolux/idm-heatpump-hass/issues/719)
+
+### ❤️ Thanks
+
+- **Thanks to @x29a** for testing the quick cancellation on a Navigator 10 and sharing the debug log.
+
 ## [0.28.5] - 2026-11-23
 
 If you cancel a hot water boost soon after starting it, the debug log now shows when Home Assistant waits and when it writes the previous setpoint.
