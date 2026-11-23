@@ -386,7 +386,16 @@ async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> Non
     if _entry_is_web_only(coordinator):
         # Web-only entries have no Modbus register map: the mode write goes
         # through the local Navigator 10 web interface instead (Phase 4).
-        await coordinator.async_web_set_system_mode(mode_val)
+        try:
+            await coordinator.async_web_set_system_mode(mode_val)
+        except HomeAssistantError:
+            raise
+        except Exception as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key=classify_write_error(err),
+                translation_placeholders=write_error_placeholders("system_mode", err),
+            ) from err
         return
 
     reg = coordinator.get_register("system_mode") or coordinator.get_register("system_mode_17")
@@ -433,18 +442,24 @@ async def _handle_set_controller_clock(hass: HomeAssistant, call: ServiceCall) -
         # status timestamp runs exactly the local offset ahead of UTC), so
         # the default must be Home Assistant's local time, not UTC.
         moment = dt_util.now()
+    elif moment.tzinfo is None:
+        # Home Assistant's datetime selector (and the services.yaml example)
+        # passes a naive ISO string representing local wall time. dt_util.as_local
+        # treats naive datetimes as UTC, which would shift the clock by the local
+        # offset; attach the configured local time zone directly instead.
+        local_tz = getattr(dt_util, "DEFAULT_TIME_ZONE", None)
+        moment = moment.replace(tzinfo=local_tz) if local_tz is not None else moment.astimezone()
+        moment = dt_util.as_local(moment)
     else:
-        # A parsed value arrives naive or with any offset, and the library
-        # sends it exactly as ``datetime.isoformat()`` spells it: without a
-        # zone for a naive value, and how the Navigator firmware reads that
-        # is not verified (idm-heatpump-api 2.17.0). Handing over Home
-        # Assistant local time either way keeps the clock on the same wall
-        # time the default above relies on.
+        # An offset-bearing value is converted to Home Assistant local time so
+        # the library receives an explicit local offset in isoformat().
         moment = dt_util.as_local(moment)
     try:
         client = coordinator._web_write_client()
         await client.set_datetime(moment)
         await coordinator.async_refresh_web_supplement()
+    except HomeAssistantError:
+        raise
     except Exception as err:
         issue_id = classify_write_error(err)
         raise HomeAssistantError(
@@ -460,7 +475,16 @@ async def _handle_acknowledge_errors(hass: HomeAssistant, call: ServiceCall) -> 
         # Web-only entries acknowledge through the web interface (Phase 4):
         # the Navigator 1.x coil and the 2.0/10 holding register do not exist
         # without a Modbus register map.
-        await coordinator.async_web_acknowledge_notifications()
+        try:
+            await coordinator.async_web_acknowledge_notifications()
+        except HomeAssistantError:
+            raise
+        except Exception as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key=classify_write_error(err),
+                translation_placeholders=write_error_placeholders("error_acknowledge", err),
+            ) from err
         return
     # The acknowledge is model-specific: holding register 1999 on the shared
     # 2.0/10 family, coil c3000 on Navigator 1.0/1.7. Only the detected map's

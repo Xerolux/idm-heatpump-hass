@@ -181,6 +181,7 @@ class EntityAwarePollingManager:
         self._refresh_task: asyncio.Task[None] | None = None
         self._setup_task: asyncio.Task[None] | None = None
         self._unsub_registry: Callable[[], None] | None = None
+        self._shutdown = False
         # Entity IDs this entry owned when the plan was last applied, so a
         # removal event can be attributed without a registry lookup.
         self._known_entity_ids: frozenset[str] = frozenset()
@@ -214,6 +215,7 @@ class EntityAwarePollingManager:
 
     async def async_shutdown(self) -> None:
         """Cancel pending work and remove the entity registry listener."""
+        self._shutdown = True
         if self._unsub_registry is not None:
             self._unsub_registry()
             self._unsub_registry = None
@@ -237,6 +239,8 @@ class EntityAwarePollingManager:
         it has to ask for one. Debounced through the same path as a registry
         change, so a bridge declaring many objects re-plans once.
         """
+        if self._shutdown:
+            return
         if self._refresh_task is not None:
             self._refresh_task.cancel()
         self._refresh_task = self._hass.async_create_task(self._async_debounced_apply())
@@ -251,6 +255,8 @@ class EntityAwarePollingManager:
         registry. Removals are matched against the entity IDs the last plan saw
         instead.
         """
+        if self._shutdown:
+            return
         entity_id = event.data.get("entity_id")
         if not isinstance(entity_id, str):
             return

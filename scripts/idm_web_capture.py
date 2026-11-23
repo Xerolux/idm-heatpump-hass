@@ -900,7 +900,7 @@ def build_manifest(
     manifest = {
         "tool": "idm_web_capture",
         "version": SCRIPT_VERSION,
-        "created_utc": datetime.now(timezone.utc).isoformat(),  # noqa: UP017 (keep 3.9/3.10 runnable)
+        "created_utc": datetime.now(timezone.utc).isoformat(),
         "host": host,
         "web_port": web_port,
         "ws_port": ws_port,

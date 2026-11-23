@@ -88,9 +88,11 @@ class IdmRoomForwardingMasterSwitch(IdmCoordinatorEntityBase, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._forwarder.async_set_master_enabled(True)
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._forwarder.async_set_master_enabled(False)
+        self.async_write_ha_state()
 
 
 class IdmRoomForwardingSourceSwitch(IdmCoordinatorEntityBase, SwitchEntity):
@@ -136,6 +138,8 @@ class IdmRoomForwardingSourceSwitch(IdmCoordinatorEntityBase, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._forwarder.async_set_source_enabled(self._circuit, self._source, True)
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._forwarder.async_set_source_enabled(self._circuit, self._source, False)
+        self.async_write_ha_state()

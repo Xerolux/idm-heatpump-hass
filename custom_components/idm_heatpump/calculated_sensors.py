@@ -24,6 +24,7 @@ from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .differential_circuits import configured_differential_circuits
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
+from .temperature_plausibility import is_uninitialized_temperature
 
 
 @dataclass(frozen=True)
@@ -357,7 +358,9 @@ class IdmCalculatedSensor(IdmCoordinatorEntityBase, SensorEntity):
         if source not in data or source in self.coordinator.unused_registers:
             return False
         value = data[source]
-        return not (isinstance(value, float) and (math.isnan(value) or math.isinf(value)))
+        if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+            return False
+        return not is_uninitialized_temperature(value)
 
     def _sources_available(self) -> bool:
         """Return True when every source register is present, not unused, and finite.
@@ -528,19 +531,26 @@ def _enum_value(data: Mapping[str, Any], key: str, valid: frozenset[int]) -> int
     return integral if integral in valid else None
 
 
-def evaluate_pv_surplus_state(data: Mapping[str, Any]) -> PvSurplusState:
+def evaluate_pv_surplus_state(
+    data: Mapping[str, Any],
+    unused_registers: set[str] | frozenset[str] = frozenset(),
+) -> PvSurplusState:
     """Evaluate the PV surplus operation state from one coordinator snapshot."""
     surplus: bool | None = None
     surplus_sources: list[str] = []
 
-    pv_surplus = _finite_number(data, _PV_SURPLUS_REGISTER)
+    pv_surplus = None if _PV_SURPLUS_REGISTER in unused_registers else _finite_number(data, _PV_SURPLUS_REGISTER)
     if pv_surplus is not None:
         pv_available = pv_surplus >= _PV_SURPLUS_MIN_KW
         surplus = pv_available if surplus is None else (surplus or pv_available)
         if pv_available:
             surplus_sources.append(_PV_SURPLUS_REGISTER)
 
-    smart_grid = _enum_value(data, _SMART_GRID_REGISTER, _SMART_GRID_VALID_VALUES)
+    smart_grid = (
+        None
+        if _SMART_GRID_REGISTER in unused_registers
+        else _enum_value(data, _SMART_GRID_REGISTER, _SMART_GRID_VALID_VALUES)
+    )
     if smart_grid is not None:
         supergreen = smart_grid == _SMART_GRID_SUPERGREEN
         surplus = supergreen if surplus is None else (surplus or supergreen)
@@ -551,13 +561,17 @@ def evaluate_pv_surplus_state(data: Mapping[str, Any]) -> PvSurplusState:
     power_source: str | None = None
     running: bool | None = None
 
-    power = _power(data, _HP_POWER_REGISTER)
+    power = None if _HP_POWER_REGISTER in unused_registers else _power(data, _HP_POWER_REGISTER)
     if power is not None:
         power_consumption = power
         power_source = _HP_POWER_REGISTER
         running = power >= _HP_MIN_POWER_KW
     else:
-        mode = _enum_value(data, _HP_OPERATING_MODE_REGISTER, _HP_OPERATING_MODE_VALID_VALUES)
+        mode = (
+            None
+            if _HP_OPERATING_MODE_REGISTER in unused_registers
+            else _enum_value(data, _HP_OPERATING_MODE_REGISTER, _HP_OPERATING_MODE_VALID_VALUES)
+        )
         if mode is not None:
             power_source = _HP_OPERATING_MODE_REGISTER
             running = mode != _HP_OPERATING_MODE_OFF
@@ -623,7 +637,8 @@ class IdmPvSurplusBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
         data = self.coordinator.data
         if not data:
             return None
-        return evaluate_pv_surplus_state(data).is_on
+        unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
+        return evaluate_pv_surplus_state(data, unused).is_on
 
     @property
     def available(self) -> bool:
@@ -634,7 +649,8 @@ class IdmPvSurplusBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
         data = self.coordinator.data
         if not data:
             return {}
-        state = evaluate_pv_surplus_state(data)
+        unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
+        state = evaluate_pv_surplus_state(data, unused)
         return {
             "surplus_threshold_kw": _PV_SURPLUS_MIN_KW,
             "min_power_kw": _HP_MIN_POWER_KW,

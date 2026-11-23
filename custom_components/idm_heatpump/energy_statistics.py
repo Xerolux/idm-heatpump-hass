@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import math
 import time
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any, Final
 
@@ -291,7 +292,8 @@ class EnergyStatistics:
             value = float(state.state)
         except (TypeError, ValueError):
             return None
-        unit = getattr(state, "attributes", {}).get("unit_of_measurement")
+        attrs = getattr(state, "attributes", None)
+        unit = attrs.get("unit_of_measurement") if isinstance(attrs, Mapping) else None
         if unit in {"ct/kWh", "c/kWh"}:
             value /= 100.0
         elif unit not in {"€/kWh", "EUR/kWh"}:
@@ -308,7 +310,8 @@ class EnergyStatistics:
             value = float(state.state)
         except (TypeError, ValueError):
             return None
-        unit = getattr(state, "attributes", {}).get("unit_of_measurement")
+        attrs = getattr(state, "attributes", None)
+        unit = attrs.get("unit_of_measurement") if isinstance(attrs, Mapping) else None
         if not math.isfinite(value) or value < 0:
             return None
         if unit == "W":

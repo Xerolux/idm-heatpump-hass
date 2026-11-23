@@ -23,6 +23,8 @@ from .const import (
     CONF_HEATING_CIRCUITS,
     CONF_HEATING_CURVE_ASSISTANT,
     CONF_PREDICTIVE_ADVISOR,
+    CONF_ROOM_TEMP_FORWARDING,
+    CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_TELEMETRY,
     CONF_TELEMETRY_CONSENT_AT,
     CONF_TELEMETRY_POLICY,
@@ -32,6 +34,7 @@ from .const import (
     DEFAULT_HEALTH_MONITOR,
     DEFAULT_HEATING_CURVE_ASSISTANT,
     DEFAULT_PREDICTIVE_ADVISOR,
+    DEFAULT_ROOM_TEMP_FORWARDING,
     DEFAULT_WEATHER_ENTITY,
     DEFAULT_WEATHER_PREHEAT,
     DOMAIN,
@@ -653,6 +656,19 @@ def cleanup_disabled_feature_entities(hass: HomeAssistant, coordinator: IdmCoord
         and options.get(CONF_WEATHER_PREHEAT, DEFAULT_WEATHER_PREHEAT)
         and str(options.get(CONF_WEATHER_ENTITY, DEFAULT_WEATHER_ENTITY)).strip()
     )
+    from .room_temp_forwarding import normalize_sources
+
+    room_entities = options.get(CONF_ROOM_TEMP_FORWARDING_ENTITIES, {})
+    active_room_source_keys: set[str] = set()
+    if (
+        getattr(coordinator, "update_interval", True) is not None
+        and bool(options.get(CONF_ROOM_TEMP_FORWARDING, DEFAULT_ROOM_TEMP_FORWARDING))
+        and isinstance(room_entities, Mapping)
+    ):
+        for circuit, raw_sources in room_entities.items():
+            for source in normalize_sources(raw_sources):
+                active_room_source_keys.add(f"room_temp_source_{circuit}_{source.replace('.', '_')}")
+    room_forwarding_active = bool(active_room_source_keys)
     registry = er.async_get(hass)
     prefix = f"{config_entry.entry_id}_"
 
@@ -666,6 +682,8 @@ def cleanup_disabled_feature_entities(hass: HomeAssistant, coordinator: IdmCoord
             or (key.startswith("health_") and not health)
             or (key == "heating_curve_advice" and not heating_curve)
             or (key == "weather_preheat_advice" and not weather)
+            or (key == "room_temp_forwarding_active" and not room_forwarding_active)
+            or (key.startswith("room_temp_source_") and key not in active_room_source_keys)
             or (
                 not smart
                 and key.startswith(

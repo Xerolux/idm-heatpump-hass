@@ -822,3 +822,37 @@ def test_retired_technician_cleanup_without_entry() -> None:
     coordinator = _coordinator(enabled=False)
     coordinator.config_entry = None
     cleanup_removed_technician_entities(MagicMock(), coordinator)
+
+
+def test_disabling_room_temp_forwarding_or_removing_source_cleans_up_switch_entities() -> None:
+    entities = [
+        _entity("entry_room_temp_forwarding_active", "switch.room_master"),
+        _entity("entry_room_temp_source_a_sensor_one", "switch.room_a_one"),
+        _entity("entry_room_temp_source_a_sensor_two", "switch.room_a_two"),
+        _entity("entry_idm_api_version", "sensor.version"),
+    ]
+    # Keep only sensor.one on circuit a -> sensor.two switch is removed, master and sensor.one stay.
+    partial_registry = _run_feature_cleanup(
+        {
+            "heating_circuits": ["a"],
+            "room_temp_forwarding": True,
+            "room_temp_forwarding_entities": {"a": ["sensor.one"]},
+        },
+        entities,
+    )
+    assert {call.args[0] for call in partial_registry.async_remove.call_args_list} == {"switch.room_a_two"}
+
+    # Disabling room_temp_forwarding removes master and all source switches.
+    disabled_registry = _run_feature_cleanup(
+        {
+            "heating_circuits": ["a"],
+            "room_temp_forwarding": False,
+            "room_temp_forwarding_entities": {"a": ["sensor.one"]},
+        },
+        entities,
+    )
+    assert {call.args[0] for call in disabled_registry.async_remove.call_args_list} == {
+        "switch.room_master",
+        "switch.room_a_one",
+        "switch.room_a_two",
+    }

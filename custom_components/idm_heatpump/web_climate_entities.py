@@ -26,7 +26,18 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import build_entity_unique_id
+from .temperature_plausibility import is_uninitialized_temperature
 from .web_control_entities import _web_control_active
+
+
+def _usable_web_temperature(value: Any) -> float | None:
+    """Return one finite temperature that is neither a -1 sentinel nor uninitialized memory."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    numeric = float(value)
+    if not math.isfinite(numeric) or numeric == -1.0 or is_uninitialized_temperature(numeric):
+        return None
+    return numeric
 
 
 def _circuit_state(coordinator: IdmCoordinator, hc_id: str) -> Any:
@@ -130,11 +141,7 @@ class IdmWebHeatingCircuitClimate(_IdmWebClimateEntityBase, ClimateEntity):
 
     @property
     def native_current_temperature(self) -> float | None:
-        value = getattr(self._circuit(), "room_temperature", None)
-        if isinstance(value, bool) or not isinstance(value, (int, float)):
-            return None
-        numeric = float(value)
-        return numeric if math.isfinite(numeric) else None
+        return _usable_web_temperature(getattr(self._circuit(), "room_temperature", None))
 
     @property
     def native_target_temperature(self) -> float | None:
@@ -240,17 +247,13 @@ class IdmWebWaterHeater(_IdmWebClimateEntityBase, WaterHeaterEntity):
     def _current_temperature_value(self) -> float | None:
         supplement = self.coordinator.web_supplement
         freshwater = getattr(supplement, "freshwater", None) if supplement is not None else None
-        top = getattr(getattr(freshwater, "temperature_top", None), "numeric_value", None)
-        if isinstance(top, bool) or not isinstance(top, (int, float)) or not math.isfinite(float(top)):
+        top = _usable_web_temperature(getattr(getattr(freshwater, "temperature_top", None), "numeric_value", None))
+        if top is None:
             unused = getattr(self.coordinator, "unused_registers", ())
             data = self.coordinator.data if isinstance(self.coordinator.data, dict) else {}
-            top = data.get("dhw_temp_top") if "dhw_temp_top" not in unused else None
-            if top == -1.0:
-                return None
-        if isinstance(top, bool) or not isinstance(top, (int, float)):
-            return None
-        numeric = float(top)
-        return numeric if math.isfinite(numeric) else None
+            raw = data.get("dhw_temp_top") if "dhw_temp_top" not in unused else None
+            top = _usable_web_temperature(raw)
+        return top
 
     @property
     def native_current_temperature(self) -> float | None:

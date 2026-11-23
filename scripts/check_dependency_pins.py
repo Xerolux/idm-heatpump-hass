@@ -144,9 +144,7 @@ BARE_VERSION_STATEMENTS: dict[str, tuple[tuple[str, str], ...]] = {
     "docs/wiki/Home.md": (("modbus-connection", r"(?<=`){version}(?=` is the connection-library version)"),),
     # The parity test's rejection fixture writes an open-ended requirement on
     # purpose; the updater moves that fixture version along with the pin.
-    "tests/test_register_reference_parity.py": (
-        ("idm-heatpump-api", r"(?<=idm-heatpump-api\[web\]>=){version}"),
-    ),
+    "tests/test_register_reference_parity.py": (("idm-heatpump-api", r"(?<=idm-heatpump-api\[web\]>=){version}"),),
     "docs/wiki/Configuration.md": (("modbus-connection", r"(?<=`){version}(?=` is the version of)"),),
     "docs/wiki/Local-Web-Interface.md": (
         ("modbus-connection", r"(?<=version `){version}(?=` an IDM integration release)"),

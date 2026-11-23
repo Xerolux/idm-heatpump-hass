@@ -782,7 +782,7 @@ class IdmSensor(IdmEntity, SensorEntity):
         if self._register.enum_options:
             try:
                 int_value = int(value)
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 return _as_sensor_state(value)
             if self._register.datatype == DataType.BITFLAG:
                 return _decode_bitflag(int_value, self._enum_bitflag_labels or self._register.enum_options)
@@ -830,7 +830,7 @@ class IdmSensor(IdmEntity, SensorEntity):
                 return None
             try:
                 message_code = int(value)
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 return None
             attributes: dict[str, str | int | bool] = {}
             if self._register.name == "internal_message":
@@ -852,7 +852,7 @@ class IdmSensor(IdmEntity, SensorEntity):
             raw = self.coordinator.data.get(self._register.name)
             try:
                 raw_int = int(raw)  # type: ignore[arg-type]
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 return None
             if raw_int in self._reported_unmapped_values:
                 return {"raw_value": raw_int}

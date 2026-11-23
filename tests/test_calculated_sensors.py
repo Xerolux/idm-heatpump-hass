@@ -767,3 +767,21 @@ def test_pv_surplus_unknown_with_bare_attributes_when_the_snapshot_becomes_empty
     assert sensor.is_on is None
     assert sensor.extra_state_attributes == {}
     assert sensor.available is False
+
+
+def test_uninitialized_temperature_sentinel_marks_calculated_sensor_unavailable():
+    coordinator = _coordinator({"hp_flow_temp": 35.0, "hp_return_temp": -327.3})
+    sensor = _entities_by_key(coordinator)["calculated_hp_temperature_delta"]
+
+    assert sensor.available is False
+    assert sensor.native_value is None
+
+
+def test_pv_surplus_evaluation_ignores_unused_registers():
+    state = evaluate_pv_surplus_state(
+        {"pv_surplus": 1.5, "power_consumption_hp": 2.2},
+        unused_registers={"pv_surplus"},
+    )
+    assert state.pv_surplus_kw is None
+    assert state.surplus_available is None
+    assert state.is_on is None

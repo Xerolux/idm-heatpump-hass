@@ -374,7 +374,6 @@ class TestSetControllerClock:
         client.set_datetime = AsyncMock()
         coord._web_write_client = MagicMock(return_value=client)
         coord.async_refresh_web_supplement = AsyncMock()
-        local_offset = dt.now().astimezone().utcoffset()
 
         naive = MagicMock()
         naive.data = {"datetime": "2026-09-29 12:30:00"}
@@ -382,13 +381,13 @@ class TestSetControllerClock:
         moment = client.set_datetime.await_args.args[0]
         assert moment.tzinfo is not None
         assert (moment.year, moment.month, moment.day, moment.hour, moment.minute) == (2026, 9, 29, 12, 30)
-        assert moment.utcoffset() == local_offset
+        assert moment.utcoffset() == dt(2026, 9, 29, 12, 30).astimezone().utcoffset()
 
         utc = MagicMock()
         utc.data = {"datetime": "2026-09-29T10:30:00Z"}
         await _handle_set_controller_clock(mock_hass, utc)
         moment = client.set_datetime.await_args.args[0]
-        assert moment.utcoffset() == local_offset
+        assert moment.utcoffset() == dt(2026, 9, 29, 10, 30, tzinfo=UTC).astimezone().utcoffset()
         assert moment == dt(2026, 9, 29, 10, 30, tzinfo=UTC)
 
     async def test_invalid_datetime_string_is_rejected(self, mock_hass):
@@ -1211,6 +1210,22 @@ class TestWebOnlyDetection:
 
         coord.async_write_register.assert_called_once()
         coord.async_web_set_system_mode.assert_not_called()
+
+    async def test_web_only_mode_translates_write_errors(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.config_entry.options = {"connection_mode": "web_only"}
+        coord.async_web_set_system_mode = AsyncMock(side_effect=RuntimeError("connection lost"))
+        coord.async_web_acknowledge_notifications = AsyncMock(side_effect=RuntimeError("connection lost"))
+
+        mode_call = MagicMock(data={"mode": "standby"})
+        with pytest.raises(HomeAssistantError) as mode_exc:
+            await _handle_set_system_mode(mock_hass, mode_call)
+        assert mode_exc.value.translation_key == "write_connection_failed"
+
+        ack_call = MagicMock(data={})
+        with pytest.raises(HomeAssistantError) as ack_exc:
+            await _handle_acknowledge_errors(mock_hass, ack_call)
+        assert ack_exc.value.translation_key == "write_connection_failed"
 
 
 class TestWriteRegisterEncodedRegisters:

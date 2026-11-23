@@ -502,7 +502,7 @@ class AdvisorAnalytics:
         if not source:
             return None
         current = now or _utcnow()
-        cutoff = (current - timedelta(days=days)).date().isoformat()
+        cutoff = (dt_util.as_local(current) - timedelta(days=days)).date().isoformat()
         electric = sum(total[0] for day, total in source.items() if day >= cutoff)
         thermal = sum(total[1] for day, total in source.items() if day >= cutoff)
         if electric <= 0 or thermal <= 0:
@@ -614,8 +614,9 @@ class AdvisorAnalytics:
         # Daily metric aggregates live long enough for a same-month prior-year
         # comparison (#611); the COP day totals and regressions only need the
         # rolling window.
-        seasonal_cutoff = (now - timedelta(days=_SEASONAL_RETENTION_DAYS)).date().isoformat()
-        cutoff = (now - timedelta(days=_BASELINE_DAYS + 2)).date().isoformat()
+        local_now = dt_util.as_local(now)
+        seasonal_cutoff = (local_now - timedelta(days=_SEASONAL_RETENTION_DAYS)).date().isoformat()
+        cutoff = (local_now - timedelta(days=_BASELINE_DAYS + 2)).date().isoformat()
         for days in self._daily.values():
             for key in [key for key in days if key < seasonal_cutoff]:
                 days.pop(key)

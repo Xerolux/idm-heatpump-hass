@@ -179,6 +179,7 @@ class KnxBridge:
         self._registered_event_groups: set[tuple[str | None, tuple[str, ...]]] = set()
         self._pending_writes: dict[str, _PendingKnxWrite] = {}
         self._write_tasks: dict[str, asyncio.Task[None]] = {}
+        self._response_tasks: set[asyncio.Task[None]] = set()
         self._last_write_completed_at: dict[str, float] = {}
         self._release_register_demand: Callable[[], None] | None = None
         self._started = False
@@ -317,12 +318,15 @@ class KnxBridge:
                 await worker
         write_tasks = list(self._write_tasks.values())
         self._write_tasks.clear()
+        response_tasks = list(self._response_tasks)
+        self._response_tasks.clear()
         self._pending_writes.clear()
         self._queued.clear()
-        for task in write_tasks:
+        all_tasks = write_tasks + response_tasks
+        for task in all_tasks:
             task.cancel()
-        if write_tasks:
-            await asyncio.gather(*write_tasks, return_exceptions=True)
+        if all_tasks:
+            await asyncio.gather(*all_tasks, return_exceptions=True)
         if self._started and self._config.receive_enabled and self._registered_event_groups:
             await self._async_register_events(remove=True)
         self._started = False
@@ -532,7 +536,10 @@ class KnxBridge:
         payload = _coerce_outgoing(value, obj.dpt)
         if payload is None:
             return
-        self._hass.async_create_task(self._async_send_response(destination, obj, payload))
+        task = self._hass.async_create_task(self._async_send_response(destination, obj, payload))
+        if isinstance(task, asyncio.Task):
+            self._response_tasks.add(task)
+            task.add_done_callback(self._response_tasks.discard)
 
     async def _async_send_response(self, destination: str, obj: KnxObject, payload: float) -> None:
         data: dict[str, Any] = {"address": destination, "response": True}

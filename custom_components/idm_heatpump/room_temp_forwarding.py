@@ -35,6 +35,7 @@ from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, PERCENTAGE, UnitOfTemp
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 from homeassistant.util.unit_conversion import TemperatureConverter
 
 from idm_heatpump import RegisterDef
@@ -80,9 +81,14 @@ class SeasonWindow:
     end: tuple[int, int]
 
 
+def _today() -> date:
+    """Return today's date in Home Assistant's configured local time zone."""
+    return dt_util.now().date()
+
+
 def _normalized_month_day(month: int, day: int) -> tuple[int, int]:
     """Clamp the day into the month's real length in the current year."""
-    last_day = calendar.monthrange(date.today().year, month)[1]
+    last_day = calendar.monthrange(_today().year, month)[1]
     return (month, min(max(day, 1), last_day))
 
 
@@ -472,7 +478,7 @@ class RoomTempForwarder:
     def _forwarding_active(self) -> bool:
         if not self._master_enabled:
             return False
-        return date_in_season(date.today(), self._season)
+        return date_in_season(_today(), self._season)
 
     def _warn_once_about_unit(self, entity_id: str, unit: str) -> None:
         """Report a source entity that measures the wrong quantity, once.
@@ -621,7 +627,7 @@ class RoomTempForwarder:
 
     def season_active(self, today: date | None = None) -> bool:
         """Whether the given day (default today) lies inside the season window."""
-        return date_in_season(today if today is not None else date.today(), self._season)
+        return date_in_season(today if today is not None else _today(), self._season)
 
     @property
     def forwarding_active(self) -> bool:
