@@ -4,6 +4,10 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.28.5 release decision
+
+This patch adds diagnostics to the existing boost recovery path. The regression test models two EEPROM refusals followed by a successful restoration to 52 °C after a single cancellation. Confirmation of the displayed setpoint on the reporting Navigator 10 is still pending. [Release evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.5.md)
+
 ## 0.28.4 release decision
 
 The integration pins stable API 2.17.0. Regression tests cover cancellation during a write cooldown and recovery after a partial restoration. Fifteen lifecycle tests passed on Home Assistant 2026.11.0. After a Core restart, an upgraded Home Assistant 2026.11.2 loaded integration 0.28.4 and API 2.17.0. Modbus and local web polling both succeeded. The displayed flow/return difference and instantaneous COP agreed with the source readings. Hardware verification was read-only. [Release evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.4.md)
@@ -643,7 +647,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.28.4` and `idm-heatpump-api` `2.17.0` form the current
+Source-tree integration `0.28.5` and `idm-heatpump-api` `2.17.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

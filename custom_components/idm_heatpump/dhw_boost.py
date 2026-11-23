@@ -476,6 +476,7 @@ class DhwBoostManager:
             if not self._setpoint_restored:
                 await self._async_write_paced("dhw_setpoint", self.previous_setpoint)
                 self._setpoint_restored = True
+                _LOGGER.debug("DHW boost wrote the previous setpoint of %s °C (%s)", self.previous_setpoint, reason)
                 if not self.preserve_system_mode:
                     await self._async_save()
             if not self.preserve_system_mode:
@@ -483,6 +484,9 @@ class DhwBoostManager:
         except _WritePaced as err:
             # Keep the recovery snapshot active. The next coordinator update
             # resumes from the first unfinished write after the cooldown.
+            if not already_pending:
+                register = "system_mode" if self._setpoint_restored else "dhw_setpoint"
+                _LOGGER.debug("DHW boost waiting for the %s write interval (%s)", register, reason)
             self._notify()
             if reason != "start_failed_rollback":
                 return
