@@ -25,7 +25,7 @@ from .temperature_plausibility import is_uninitialized_temperature
 _PACING_TRANSLATION_KEYS: frozenset[str] = frozenset({"write_cooldown_active", "write_eeprom_blocked"})
 
 
-class _EnforcementPaced(Exception):
+class _WritePaced(Exception):
     """Raised when re-applying an owned value has to wait for write pacing."""
 
 
@@ -138,6 +138,7 @@ class DhwBoostManager:
         self.deadline: datetime | None = None
         self.previous_mode: int | None = None
         self.previous_setpoint: int | None = None
+        self._setpoint_restored = False
         self.last_reason: str | None = None
         self.preserve_system_mode = False
         self.uses_onetime_demand = False
@@ -195,6 +196,7 @@ class DhwBoostManager:
         self.deadline = _parse_datetime(stored.get("deadline"))
         self.previous_mode = self._safe_int(stored.get("previous_mode"))
         self.previous_setpoint = self._safe_int(stored.get("previous_setpoint"))
+        self._setpoint_restored = stored.get("setpoint_restored") is True
         self.last_reason = "startup_recovery"
         # Old snapshots describe the manual, hot-water-only boost.
         self.preserve_system_mode = stored.get("preserve_system_mode") is True
@@ -276,6 +278,7 @@ class DhwBoostManager:
             self.deadline = now + timedelta(minutes=timeout)
             self.previous_mode = previous_mode
             self.previous_setpoint = previous_setpoint
+            self._setpoint_restored = False
             self.last_reason = None
             self.uses_onetime_demand = onetime
             # With the one-time demand register the boost never owns the
@@ -405,10 +408,10 @@ class DhwBoostManager:
                 # all unrelated registers are deliberately untouched.
                 try:
                     if data.get("dhw_setpoint") != self.target_temperature:
-                        await self._async_enforce("dhw_setpoint", self.target_temperature)
+                        await self._async_write_paced("dhw_setpoint", self.target_temperature)
                     if not self.preserve_system_mode and data.get("system_mode") != _HOT_WATER_ONLY_MODE:
-                        await self._async_enforce("system_mode", _HOT_WATER_ONLY_MODE)
-                except _EnforcementPaced:
+                        await self._async_write_paced("system_mode", _HOT_WATER_ONLY_MODE)
+                except _WritePaced:
                     # Write pacing, not a fault: the controller reports the
                     # previous value for a poll or two after a write, and both
                     # the coordinator cooldown and the API's EEPROM interval
@@ -464,16 +467,30 @@ class DhwBoostManager:
                 translation_key="dhw_boost_invalid_recovery_state",
             )
 
-        self.status = "restoring"
+        already_pending = self.status == "recovery_required" and self.last_reason == reason
         self.last_reason = reason
-        await self._async_save()
-        try:
-            await self._async_write("dhw_setpoint", self.previous_setpoint)
-            if not self.preserve_system_mode:
-                await self._async_write("system_mode", self.previous_mode)
-        except Exception as err:
+        if not already_pending:
             self.status = "recovery_required"
             await self._async_save()
+        try:
+            if not self._setpoint_restored:
+                await self._async_write_paced("dhw_setpoint", self.previous_setpoint)
+                self._setpoint_restored = True
+                if not self.preserve_system_mode:
+                    await self._async_save()
+            if not self.preserve_system_mode:
+                await self._async_write_paced("system_mode", self.previous_mode)
+        except _WritePaced as err:
+            # Keep the recovery snapshot active. The next coordinator update
+            # resumes from the first unfinished write after the cooldown.
+            self._notify()
+            if reason != "start_failed_rollback":
+                return
+            raise DhwBoostError(
+                "Restoration is waiting for the register write interval",
+                translation_key="dhw_boost_restore_failed",
+            ) from err
+        except Exception as err:
             self._notify()
             raise DhwBoostError(
                 "The previous domestic hot water state could not be fully restored yet",
@@ -487,10 +504,10 @@ class DhwBoostManager:
         await self._async_save()
         self._notify()
 
-    async def _async_enforce(self, register_name: str, value: Any) -> None:
-        """Re-apply one owned value, treating write pacing as "not yet".
+    async def _async_write_paced(self, register_name: str, value: Any) -> None:
+        """Write one owned value, distinguishing a pacing refusal from a failure.
 
-        Raises :class:`_EnforcementPaced` when the write was refused because it
+        Raises :class:`_WritePaced` when the write was refused because it
         came too soon after the previous one, so the caller can wait instead of
         reporting a failure the user cannot act on.
         """
@@ -498,11 +515,11 @@ class DhwBoostManager:
             await self._async_write(register_name, value)
         except HomeAssistantError as err:
             if getattr(err, "translation_key", None) in _PACING_TRANSLATION_KEYS:
-                raise _EnforcementPaced from err
+                raise _WritePaced from err
             raise
         except Exception as err:
             if classify_write_error(err) == "write_eeprom_blocked":
-                raise _EnforcementPaced from err
+                raise _WritePaced from err
             raise
 
     async def _async_write(self, register_name: str, value: Any) -> None:
@@ -526,6 +543,7 @@ class DhwBoostManager:
                 "deadline": self._iso(self.deadline),
                 "previous_mode": self.previous_mode,
                 "previous_setpoint": self.previous_setpoint,
+                "setpoint_restored": self._setpoint_restored,
                 "last_reason": self.last_reason,
                 "preserve_system_mode": self.preserve_system_mode,
                 "uses_onetime_demand": self.uses_onetime_demand,

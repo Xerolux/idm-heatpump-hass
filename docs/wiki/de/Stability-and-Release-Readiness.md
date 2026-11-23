@@ -4,6 +4,10 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.28.4
+
+Die Integration verwendet die stabile API 2.17.0. Regressionstests prüfen den Boost-Abbruch bei aktiver Schreibsperre und die Fortsetzung nach einer teilweisen Wiederherstellung. 15 Lebenszyklus-Tests liefen mit Home Assistant 2026.11.0. Ein aktualisierter Home Assistant 2026.11.2 lud 0.28.4 und API 2.17.0 nach einem Core-Neustart. Modbus und die lokale Weboberfläche lieferten Daten. Die angezeigte Spreizung und der momentane COP stimmten mit den Quellwerten überein. Die Prüfung am Gerät war rein lesend. [Prüfprotokoll](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.4.md)
+
 ## Release-Entscheidung zu 0.28.3
 
 Der Maintainer hat die Veröffentlichung mit einer Ausnahme für die
@@ -685,7 +689,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.28.4-b2` und `idm-heatpump-api` `2.17.0rc1` bilden das aktuelle exakt
+Integration im Quellstand `0.28.4` und `idm-heatpump-api` `2.17.0` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

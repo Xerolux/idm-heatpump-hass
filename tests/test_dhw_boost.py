@@ -877,3 +877,49 @@ async def test_enforcement_reraises_home_assistant_errors_outside_pacing():
 
     assert manager.status == "enforcement_failed"
     manager._async_save.assert_awaited()
+
+
+@pytest.mark.parametrize("paced_register", ["dhw_setpoint", "system_mode"])
+async def test_early_cancel_resumes_only_unfinished_writes(monkeypatch, paced_register):
+    from homeassistant.exceptions import HomeAssistantError
+
+    manager, coordinator, store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+    write = coordinator.async_write_register
+    cooldown = HomeAssistantError()
+    cooldown.translation_key = "write_cooldown_active"
+
+    async def paced(register, value):
+        if register.name == paced_register:
+            raise cooldown
+        await write(register, value)
+
+    coordinator.events.clear()
+    coordinator.async_write_register = paced
+    await manager.async_cancel()
+    assert manager.active and manager.status == "recovery_required"
+    saves = len(store.saved)
+    await manager._async_evaluate()
+    assert len(store.saved) == saves
+    coordinator.async_write_register = write
+    await manager._async_evaluate()
+    assert not manager.active
+    assert [event for event in coordinator.events if event[0] == "write"] == [
+        ("write", "dhw_setpoint", 48),
+        ("write", "system_mode", 1),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_restart_after_partial_restoration_preserves_new_setpoint(monkeypatch):
+    loaded = {
+        "active": True,
+        "previous_mode": 1,
+        "previous_setpoint": 48,
+        "setpoint_restored": True,
+    }
+    events = []
+    manager, _, store = await _manager(monkeypatch, loaded=loaded, events=events)
+    assert [event for event in events if event[0] == "write"] == [("write", "system_mode", 1)]
+    assert not manager.active
+    assert store.saved[-1]["active"] is False
