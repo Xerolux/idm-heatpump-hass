@@ -7,13 +7,13 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.28.3` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
+- **Current Version**: `0.28.4-b1` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Platinum (self-assessed against Home Assistant's integration quality scale: every rule done or legitimately exempt, pinned by `tests/test_quality_scale.py`)
 - **License**: MIT
 - **Min HA Version**: 2026.11.0 (the 2026.8.1–2026.10 line stays on integration 0.24.x)
 - **Python**: 3.14+ (Home Assistant 2026.11 requires `>=3.14.2`)
-- **Direct Modbus Runtime**: `modbus-connection>=4.12.7`, `tmodbus[async-serial]>=0.6.2`
-- **Device Logic**: `idm-heatpump-api[web]==2.16.2` (owns its own exception hierarchy; pymodbus is no longer a dependency)
+- **Direct Modbus Runtime**: `modbus-connection>=4.12.7`, `tmodbus[async-serial]>=1.1.0`
+- **Device Logic**: `idm-heatpump-api[web]==2.17.0rc1` (owns its own exception hierarchy; pymodbus is no longer a dependency)
 - **Completed audit**: `docs/dev/code-audit-2026-09.md` — the September 2026 full-read audit.
   Every work package shipped (D5 was attempted and closed as won't-fix); the document stays as
   the historical record of what was reviewed and why each change was made. The 0.20.0 web-first
@@ -281,7 +281,7 @@ Home Assistant
     ├── IdmCoordinator (DataUpdateCoordinator) [coordinator.py]
     │       │
     │       ├── IdmModbusConnectionClient (modbus_client.py)
-    │       │       ├── idm-heatpump-api 2.16.2 (device logic)
+    │       │       ├── idm-heatpump-api 2.17.0rc1 (device logic)
     │       │       ├── SharedModbusUnitTransport (HA shared connection)
     │       │       └── ModbusConnectionTransport (modbus-connection + tmodbus socket, fallback/probe)
     │       │
@@ -387,8 +387,8 @@ mypy). Recreate it and check through it with:
 ```bash
 py -3.14 -m venv test_ha
 test_ha/Scripts/python -m pip install homeassistant==2026.11.0 \
-    "modbus-connection>=4.12.7" "tmodbus[async-serial]>=0.6.2" \
-    "idm-heatpump-api[web]==2.16.2" mypy
+    "modbus-connection>=4.12.7" "tmodbus[async-serial]>=1.1.0" \
+    "idm-heatpump-api[web]==2.17.0rc1" mypy
 test_ha/Scripts/python -m mypy custom_components/idm_heatpump/
 ```
 
@@ -534,7 +534,7 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
 - Bump version there before creating a release and update `CHANGELOG.md`
 - Pin the `idm-heatpump-api` requirement for every released integration version to the exact PyPI version that is current at release time or has been explicitly tested for that release. Do not publish a release with an open-ended API lower bound such as `idm-heatpump-api>=x.y.z`; the integration release and API version must remain a reproducible pair.
 - When updating to a newer `idm-heatpump-api`, verify compatibility before widening or changing the pin, then document the tested API version in the changelog/release notes.
-- Never bump a runtime pin by hand without checking PyPI first: `python scripts/check_dependency_pins.py` reports every pin that is behind, `--update` rewrites every updatable pin (`modbus-connection`, `tmodbus`, `idm-heatpump-api`) and every document that states them, and `--set name==version` pins a version the caller names. The daily `dependency-freshness.yml` workflow does exactly this, validates the result and merges it; the release workflow always refuses to publish stale runtime pins (no override). Automation never selects a pre-release for a stable pin — that is how the `4.0.0a3` alpha stayed pinned for two weeks — and it never merges a major bump on its own.
+- Never bump a runtime pin by hand without checking PyPI first: `python scripts/check_dependency_pins.py` reports every pin that is behind, `--update` rewrites every updatable pin (`modbus-connection`, `tmodbus`, `idm-heatpump-api`) and every document that states them, and `--set name==version` pins a version the caller names. The daily `dependency-freshness.yml` workflow does exactly this, validates the result and merges it; the release workflow always refuses to publish stale runtime pins (no override). Automation never selects a pre-release for a stable pin — that is how the `4.0.0a3` alpha stayed pinned for two weeks — and it never merges a major bump on its own. `--set` therefore accepts stable versions only. A beta may pin an API release candidate that was explicitly tested: move the pin with the script's own rewrite logic (`_apply`) so every pin document changes together, as 0.28.4-b1 did for `2.17.0rc1`, and say so in the upgrade notes.
 - A sentence that dates a change (`pymodbus is gone as of idm-heatpump-api 2.0.0`) is history and keeps its version. Those sentences are listed in `HISTORY_STATEMENTS` in `scripts/check_dependency_pins.py`; everything else naming a pin is rewritten. Do not write a document that states the current pin in a spelling the updater does not cover — `tests/test_dependency_pins.py` fails when one appears.
 - A document that states the current pins belongs in `PIN_DOCUMENTS` in `scripts/check_dependency_pins.py`; `tests/test_dependency_pins.py` fails when a new one is missing there.
 - `modbus-connection` and `tmodbus` are Home-Assistant-owned packages (HA's built-in modbus integration adopted them in 2026.10), so hassfest rejects exact pins for them: the manifest states minimum requirements whose floor is the validated transport pair — raise both floors together after a validating run, and never pick up a newer major automatically. **Home Assistant's core modbus integration exact-pins these packages itself** (see the core modbus manifest at the newest stable tag for its current versions), so a floor above HA's own pin cannot be installed next to HA and hassfest rejects it; `check_dependency_pins.py` therefore treats HA's own pin as the ceiling — an upstream release HA has not adopted yet is reported as *held*, never as stale (2026-10-09: `modbus-connection` 4.12.4 on PyPI vs HA's then-`==4.12.3` pin blocked every release until this rule existed; two days later HA 2026.10.1 adopted 4.12.4 and the floor followed). A `>=` floor names the `modbus-connection` library version, not the integration version. The `tmodbus[async-serial]` extra is required even though this integration is TCP-only: since `modbus-connection` 4.7.0 the `modbus_connection.tmodbus` backend module imports `serialx` at module level, so importing the backend fails without it. Do not drop the extra to save the dependency.
@@ -557,7 +557,7 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
   same. Tag the API repository with the PEP 440 version (`v2.0.0b1`).
 - **The manifest pins the exact published API version** in PEP 440 form,
   because that is what pip resolves. The manifest currently pins
-  `idm-heatpump-api[web]==2.16.2`.
+  `idm-heatpump-api[web]==2.17.0rc1`.
 
 #### Release notes
 

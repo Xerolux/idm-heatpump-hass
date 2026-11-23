@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.28.4-b1 — 2026-11-23
+
+Die Schalter der Raumtemperatur-Weiterleitung, die 0.28.3 ankündigte, existieren nun nach einem echten Setup: Hauptschalter und je Quelle ein Schalter entstehen, sobald Weiterleitung konfiguriert ist. Ein allein gesetzter Saisonrand ist eine offene Saison, ein nicht verdrahteter Warmwasser-Fühler (≤ −300 °C) löst keinen Boost mehr aus, und `set_controller_clock` sendet für jedes Eingabeformat Ortszeit. Die Option *Weiterleitungsintervall für externe Leistungswerte* ist entfernt; sie änderte nie die Drei-Sekunden-Auffrischung. Die Gerätebibliothek wechselt auf den Release Candidate idm-heatpump-api 2.17.0rc1, deshalb ist dies eine Beta. [Konfiguration](Configuration#raumtemperatur-weiterleitung), [Erkenntnisse](Findings-and-Documentation#erkenntnisregister).
+
 ## v0.28.3 — 2026-11-20
 
 Die Raumtemperatur-Weiterleitung unterstützt mehrere gemittelte Sensoren je Heizkreis, einen Offset, ein Saisonfenster und Schalter zur Laufzeit. Ohne nutzbare Quelle erhält der Regler den dokumentierten Kein-Wert-Sentinel. Beim Navigator 2.0/10/Pro schreibt der manuelle Warmwasser-Boost die einmalige Anforderung in Register 1713 und behält die Betriebsart bei. Auf der Navigator-10-Referenzanlage war die Anforderung lesbar, während beider Fünf-Minuten-Tests startete aber keine Ladung. Navigator 1.x behält den bisherigen Moduswechsel. Die Wiki enthält jetzt ein zweisprachiges Entitätenverzeichnis, mehr Registerdetails, Advisor-Voraussetzungen und die Modellübersicht. [Konfiguration](Configuration) · [Boost-Aktion](Services#start-dhw-boost) · [Modellübersicht](Supported-Devices).

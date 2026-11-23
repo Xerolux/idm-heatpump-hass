@@ -72,9 +72,9 @@ original versions and dates do not override the current action list above.
   contract, endpoint validation, conflict detection and privacy-safe diagnostics
   helpers.
 - Direct socket through `modbus-connection>=4.12.7` and the separately pinned
-  backend level `tmodbus[async-serial]>=0.6.2`; the first integration version to
+  backend level `tmodbus[async-serial]>=1.1.0`; the first integration version to
   ship it is `0.11.0-beta.1`.
-- API device logic stays with `idm-heatpump-api[web]==2.16.2`. The API owns its
+- API device logic stays with `idm-heatpump-api[web]==2.17.0rc1`. The API owns its
   exception hierarchy and the injected transport path does not install or
   import pymodbus; the physical connection belongs to tmodbus.
 - Diagnostics export for the transport source, socket ownership, connection

@@ -2,7 +2,7 @@
 
 Decided: 2026-11-10. Planned minor line: `0.27.0` (betas from `v0.27.0-b1`).
 Baseline: integration `0.26.13`, Home Assistant `2026.11.0` minimum,
-`idm-heatpump-api[web]==2.16.2`.
+`idm-heatpump-api[web]==2.17.0rc1`.
 
 Both prior roadmaps are fully worked off: the feature roadmap
 (`heatpump-feature-roadmap.md`) and all nine predictive-advisor phases
