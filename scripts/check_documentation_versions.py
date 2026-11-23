@@ -25,6 +25,10 @@ VERSION = r"[0-9][0-9A-Za-z.+-]*"
 # are intentionally absent. A missing claim is an error, not a silent skip.
 SOURCE_VERSION_PATTERNS = {
     "AGENTS.md": r"(?<=\*\*Current Version\*\*: `)" + VERSION + r"(?=`)",
+    # CLAUDE.md carries the same snapshot for Claude-compatible agents under
+    # its own label. It was not listed here and drifted four releases behind
+    # the manifest unnoticed (0.28.0 against 0.28.3).
+    "CLAUDE.md": r"(?<=\*\*Version\*\*: `)" + VERSION + r"(?=`)",
     "docs/wiki/Home.md": r"(?<=\| \*\*Documentation version\*\* \| `)" + VERSION + r"(?=`)",
     "docs/wiki/de/Home.md": r"(?<=\| \*\*Dokumentationsversion\*\* \| Quellstand `)" + VERSION + r"(?=`)",
     "docs/wiki/Stability-and-Release-Readiness.md": r"(?<=Source-tree integration `)" + VERSION + r"(?=` and)",

@@ -387,9 +387,10 @@ Assistant verlassen. Typische Ursachen und ihre Meldungen:
 | Meldung | Ursache | Was du tun solltest |
 | --- | --- | --- |
 | „wurde zu kurz zuvor geschrieben“ | EEPROM-Schreibschutz | Warte das EEPROM-Schreibintervall ab (standardmäßig 60 s) |
+| „läuft bereits ein Schreibvorgang“ | EEPROM-Schreibschutz: ein zweiter Schreibvorgang auf dasselbe Register, während der vorherige noch läuft (idm-heatpump-api 2.17.0) | Versuche es einen Moment später erneut; der erste Schreibvorgang endet von selbst |
 | „kann noch nicht geschrieben werden“ | Die Option **Schreib-Cooldown** | Warte die angegebene Zeit ab oder verringere den Cooldown |
 | „außerhalb des zulässigen Bereichs“ | Der Wert liegt außerhalb des dokumentierten Registerbereichs | Wähle einen Wert innerhalb der Entitätsgrenzen |
-| „von diesem Wärmepumpenmodell nicht unterstützt“ | Das Register ist nicht in der Registerliste des erkannten Modells enthalten | Prüfe das erkannte Navigator-Modell in der Diagnose |
+| „von diesem Wärmepumpenmodell nicht unterstützt“ | Das Register ist nicht in der Registerliste des erkannten Modells enthalten oder ist dort mit anderem Datentyp oder Registertyp definiert; die Bibliothek lehnt beides ab, bevor etwas gesendet wird | Prüfe das erkannte Navigator-Modell in der Diagnose |
 
 **2. Die Wärmepumpe antwortete mit einem Fehler.** Die Anfrage erreichte den Regler und wurde
 von ihm abgelehnt. Die Meldung nennt den Modbus-Exception-Code, und dieselbe Information wird

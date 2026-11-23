@@ -15,7 +15,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN, SystemMode
-from .dhw_boost import DhwBoostError, _finite_number, _parse_datetime, async_get_dhw_boost_manager
+from .dhw_boost import (
+    DhwBoostError,
+    _finite_number,
+    _parse_datetime,
+    _usable_dhw_temperature,
+    async_get_dhw_boost_manager,
+)
 
 _LOGGER = logging.getLogger(__name__)
 _POWER_UNITS = frozenset({"W", "kW", "MW"})
@@ -222,8 +228,7 @@ class EnergyManager:
         temperature = _finite_number(data.get("dhw_temp_top"))
         if (
             temperature is None
-            or temperature == -1.0
-            or temperature == -1
+            or not _usable_dhw_temperature(temperature)
             or temperature > self._config.target_temperature - _REHEAT_HYSTERESIS_C
         ):
             return False

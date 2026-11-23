@@ -15,6 +15,7 @@ from homeassistant.helpers.storage import Store
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .error_messages import classify_write_error
+from .temperature_plausibility import is_uninitialized_temperature
 
 #: Translation keys that mean "this write came too soon", not "this write
 #: failed". The coordinator raises the first for its own per-register cooldown;
@@ -88,6 +89,19 @@ def _finite_number(value: Any) -> float | None:
         return None
     result = float(value)
     return result if math.isfinite(result) else None
+
+
+def _usable_dhw_temperature(temperature: float | None) -> bool:
+    """Return whether a ``dhw_temp_top`` reading may drive a boost decision.
+
+    Two readings mean "no sensor": the documented -1 sentinel and the
+    uninitialized-temperature band (the memory garbage of an unwired sensor,
+    <= -300 C; issues #504 and #668). The water heater card publishes neither,
+    so a boost must not be started on one either. 0.28.3 only knew the -1
+    sentinel: -327 C passed as "colder than the target", the energy manager
+    started a charge on it, and "target reached" could never fire.
+    """
+    return temperature is not None and temperature != -1.0 and not is_uninitialized_temperature(temperature)
 
 
 class DhwBoostManager:
@@ -224,7 +238,7 @@ class DhwBoostManager:
                     translation_key="dhw_boost_no_current_temp",
                 )
             current_temperature = _finite_number(data.get("dhw_temp_top"))
-            if current_temperature is None or current_temperature == -1.0 or current_temperature == -1:
+            if current_temperature is None or not _usable_dhw_temperature(current_temperature):
                 raise DhwBoostError(
                     "The current domestic hot water temperature is not available",
                     translation_key="dhw_boost_no_current_temp",
@@ -370,10 +384,9 @@ class DhwBoostManager:
                 raw_temp = data.get("dhw_temp_top") if "dhw_temp_top" not in unused else None
                 current_temperature = _finite_number(raw_temp)
                 if (
-                    current_temperature is not None
-                    and current_temperature != -1.0
-                    and current_temperature != -1
+                    _usable_dhw_temperature(current_temperature)
                     and self.target_temperature is not None
+                    and current_temperature is not None
                     and current_temperature >= self.target_temperature
                 ):
                     try:

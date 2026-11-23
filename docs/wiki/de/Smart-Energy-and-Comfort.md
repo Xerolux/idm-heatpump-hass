@@ -127,6 +127,14 @@ steuert. Ungültige oder nicht verfügbare Quellwerte führen dazu, dass sicher
 nichts gestartet wird (fail closed). Minimaler Überschuss, minimaler SOC,
 Warmwasser-Ziel, maximale Dauer und Cooldown sind konfigurierbar.
 
+Auch eine unbrauchbare aktuelle Warmwassertemperatur führt dazu, dass sicher
+nichts gestartet wird. Der dokumentierte Sentinel −1 und das Band
+uninitialisierter Werte eines nicht verdrahteten Fühlers (≤ −300 °C, siehe
+[Erkenntnisregister](Findings-and-Documentation#erkenntnisregister)) gelten
+beide als „kein Fühler", auch für die manuelle Aktion `start_dhw_boost`. Bis
+0.28.3 galt nur der Sentinel; ein solcher Wert galt als „kälter als das Ziel",
+und die Automation konnte darauf eine Ladung starten.
+
 | Einstellung | Standard | Einrichtungstiefe |
 |---------|---------|-------------|
 | Minimaler Überschuss | 1.0 kW | Erweitert / Experte |
@@ -161,8 +169,11 @@ während der Übertragung lösen einen weiteren Durchgang mit den aktuellen
 Quellwerten aus. Periodische und ereignisgesteuerte Durchgänge überlappen nicht.
 Bei aktivierter Weiterleitung werden gültige zugeordnete GLT-Eingänge alle drei
 Sekunden erneut geschrieben, auch bei unveränderten Quellen. Diese
-RAM-Auffrischung hat Vorrang vor dem konfigurierten *Weiterleitungsintervall für
-externe Leistungswerte* (30–3600 Sekunden). Der Schreib-Cooldown dieser Eingänge
+RAM-Auffrischung ist ein fester Takt und keine Option: Intervalle ab 30
+Sekunden können einen Eingang auf Firmwares, die ihn nach rund zehn Sekunden
+verwerfen, nie präsent halten. Das bis 0.28.3 angebotene *Weiterleitungsintervall
+für externe Leistungswerte* wurde nie gelesen und ist entfernt. Der
+Schreib-Cooldown dieser Eingänge
 ist auf zwei Sekunden begrenzt; schnellere Sensorereignisse können still
 übersprungen werden.
 

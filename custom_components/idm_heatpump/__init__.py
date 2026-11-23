@@ -65,7 +65,6 @@ from .const import (
     CONF_EXTERNAL_POWER_BATTERY_SIGN,
     CONF_EXTERNAL_POWER_FORWARDING,
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
-    CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
     CONF_EXTERNAL_POWER_GRID_SIGN,
     CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
     CONF_FEATURE_PROFILE,
@@ -133,7 +132,6 @@ from .const import (
     DEFAULT_ENERGY_PRICE,
     DEFAULT_EXTERNAL_POWER_BATTERY_SIGN,
     DEFAULT_EXTERNAL_POWER_FORWARDING,
-    DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
     DEFAULT_EXTERNAL_POWER_GRID_SIGN,
     DEFAULT_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
     DEFAULT_FEATURE_PROFILE,
@@ -832,9 +830,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
         entry.options.get(CONF_EXTERNAL_POWER_FORWARDING, DEFAULT_EXTERNAL_POWER_FORWARDING)
     )
     external_power_forwarding_entities = entry.options.get(CONF_EXTERNAL_POWER_FORWARDING_ENTITIES, {})
-    external_power_forwarding_interval = int(
-        entry.options.get(CONF_EXTERNAL_POWER_FORWARDING_INTERVAL, DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL)
-    )
     external_power_battery_sign = str(
         entry.options.get(CONF_EXTERNAL_POWER_BATTERY_SIGN, DEFAULT_EXTERNAL_POWER_BATTERY_SIGN)
     )
@@ -1218,6 +1213,40 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
         if entry.options.get(CONF_TELEMETRY) is True:
             entry.runtime_data.telemetry = Telemetry(hass, entry, coordinator, versions.integration)
 
+        # The room temperature forwarder object has to exist before the
+        # platforms are set up: the switch platform builds the master and
+        # per-source switches from ``entry.runtime_data.room_temp_forwarder``
+        # during its own setup. Building it after the platforms (as 0.28.3
+        # did) left the switches out of every real setup, because the
+        # platform had already run with no forwarder to read. Only the object
+        # is created here; its loop starts below, after the first refresh.
+        room_temp_forwarder: RoomTempForwarder | None = None
+        if room_temp_forwarding_enabled and isinstance(room_temp_forwarding_entities, dict):
+            # Both storage shapes are accepted: the legacy single entity id
+            # per circuit and the multi-source list (averaged per circuit).
+            room_sources: dict[str, str | list[str]] = {
+                str(circuit): normalize_sources(entity_id)
+                for circuit, entity_id in room_temp_forwarding_entities.items()
+                if normalize_sources(entity_id)
+            }
+            if room_sources:
+                room_temp_forwarder = RoomTempForwarder(
+                    hass,
+                    coordinator,
+                    RoomTempForwardingConfig(
+                        entities=room_sources,
+                        interval=room_temp_forwarding_interval,
+                        tolerance=room_temp_forwarding_tolerance,
+                        offsets=offsets_from_options(entry.options),
+                        season=season_window_from_options(entry.options),
+                    ),
+                    persist_key=f"{DOMAIN}.room_forwarding.{entry.entry_id}",
+                )
+                # Load the persisted switch states before the platforms are
+                # set up so the control entities render the restored state.
+                await room_temp_forwarder.async_load_controls()
+                entry.runtime_data.room_temp_forwarder = room_temp_forwarder
+
         await coordinator.async_config_entry_first_refresh()
         precreate_main_device(hass, coordinator)
         await hass.config_entries.async_forward_entry_setups(entry, platforms)
@@ -1250,37 +1279,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
                 name=f"{DOMAIN}_web_poll_{entry.entry_id}",
             )
 
-        if room_temp_forwarding_enabled and isinstance(room_temp_forwarding_entities, dict):
-            # Both storage shapes are accepted: the legacy single entity id
-            # per circuit and the multi-source list (averaged per circuit).
-            room_sources: dict[str, str | list[str]] = {
-                str(circuit): normalize_sources(entity_id)
-                for circuit, entity_id in room_temp_forwarding_entities.items()
-                if normalize_sources(entity_id)
-            }
-            if room_sources:
-                forwarder = RoomTempForwarder(
-                    hass,
-                    coordinator,
-                    RoomTempForwardingConfig(
-                        entities=room_sources,
-                        interval=room_temp_forwarding_interval,
-                        tolerance=room_temp_forwarding_tolerance,
-                        offsets=offsets_from_options(entry.options),
-                        season=season_window_from_options(entry.options),
-                    ),
-                    persist_key=f"{DOMAIN}.room_forwarding.{entry.entry_id}",
-                )
-                # Load the persisted switch states before the task starts so
-                # the control entities render the restored state immediately.
-                await forwarder.async_load_controls()
-                entry.runtime_data.room_temp_forwarder = forwarder
-                entry.runtime_data.room_temp_forwarding_task = _create_entry_background_task(
-                    hass,
-                    entry,
-                    forwarder.async_run(),
-                    name=f"{DOMAIN}_room_temp_{entry.entry_id}",
-                )
+        if room_temp_forwarder is not None:
+            entry.runtime_data.room_temp_forwarding_task = _create_entry_background_task(
+                hass,
+                entry,
+                room_temp_forwarder.async_run(),
+                name=f"{DOMAIN}_room_temp_{entry.entry_id}",
+            )
 
         if humidity_forwarding_enabled and humidity_forwarding_entity:
             humidity_forwarder = HumidityForwarder(
@@ -1336,7 +1341,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
                     coordinator,
                     ExternalPowerForwardingConfig(
                         entities=forwarding_entities,
-                        interval=external_power_forwarding_interval,
                         battery_sign=external_power_battery_sign,
                         grid_sign=external_power_grid_sign,
                         pv_zero_workaround=bool(

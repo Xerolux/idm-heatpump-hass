@@ -374,6 +374,10 @@ zum Beispiel `hc_a_ext_room_temp`.
 - Ungültige, nicht verfügbare, nicht numerische oder außerhalb des Bereichs
   liegende Werte werden übersprungen.
 - Ein Heizkreis ohne ausgewählten Sensor bleibt unangetastet.
+- Für ganzjährige Weitergabe lassen sich alle vier Saisonfelder leer. Ein
+  allein gesetzter Rand ist eine offene Saison: Ein Beginn ohne Ende läuft bis
+  31. Dezember, ein Ende ohne Beginn ab 1. Januar. Bis 0.28.3 verwarf ein
+  halb ausgefülltes Paar das ganze Fenster still und gab ganzjährig weiter.
 - Diese Funktion schreibt Modbus-Werte. Verwende Sensoren, die die
   tatsächliche Raumtemperatur abbilden, die die Wärmepumpe sehen soll.
 
@@ -455,14 +459,21 @@ der PV-Erzeugung — in die IDM-GLT-Leistungsregister (`pv_surplus`,
 | Option | Beschreibung | Standard |
 |--------|-------------|---------|
 | Externe Leistungs-Weiterleitung | Aktiviert die Weiterleitung für ausgewählte Leistungs-/Batteriequellen | aus |
-| Weiterleitungsintervall | Periodisches Aktualisierungsintervall | 60 Sekunden |
-| Leistungstoleranz | Minimale Änderung, bevor ein Leistungswert erneut geschrieben wird | 0.1 kW |
-| Batterietoleranz | Minimale Änderung, bevor ein Batterie-Füllstand erneut geschrieben wird | 1 % |
 | Netzstromzähler-Sensor | Optionaler Zweirichtungszähler (Netzbezug/Netzeinspeisung) zur automatischen Berechnung von `pv_surplus` und `house_consumption` | leer |
 | Zähler-Vorzeichenkonvention | Vorzeichenkonvention des Zweirichtungszählers (`positive_import` oder `positive_export`) | `positive_import` |
 
 **Wichtiges Verhalten:**
 
+- Die externe Leistungs-Weiterleitung hat keine Intervall- und keine
+  Toleranzoption. Sensoraktualisierungen werden sofort weitergegeben, und ein
+  periodischer Durchlauf schreibt jede gültig zugeordnete Eingabe alle drei
+  Sekunden neu, auch unveränderte Werte: Manche Navigator-Firmwares verwerfen
+  GLT-RAM-Eingaben rund zehn Sekunden nach dem letzten Schreiben
+  ([#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493)). Das bis
+  0.28.3 angebotene *Weiterleitungsintervall* wurde gespeichert, aber nie
+  gelesen, und ist deshalb entfernt; ein gespeicherter Wert fällt beim nächsten
+  Speichern der Optionen weg. Siehe
+  [Smart Energy & Comfort](Smart-Energy-and-Comfort#optionale-pv-uberschuss-warmwasser-automation).
 - Wenn ein **Netzstromzähler-Sensor** und ein **PV-Erzeugungs-Sensor**
   ausgewählt sind, berechnet die Integration automatisch den PV-Überschuss
   (`pv_surplus`) und den Hausverbrauch (`house_consumption`), sofern deren

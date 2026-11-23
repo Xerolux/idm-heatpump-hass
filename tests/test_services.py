@@ -358,6 +358,39 @@ class TestSetControllerClock:
         moment = client.set_datetime.await_args.args[0]
         assert moment.year == 2026 and moment.hour == 12
 
+    async def test_explicit_datetime_is_sent_as_home_assistant_local_time(self, mock_hass):
+        """Naive and offset-bearing input both reach the API as local time.
+
+        The library forwards ``datetime.isoformat()`` verbatim, and how the
+        firmware reads a value without a zone is not verified.
+        """
+        from datetime import UTC
+        from datetime import datetime as dt
+
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.web_supplement = MagicMock()
+        coord.web_supplement.web_variant = "nav10"
+        client = MagicMock()
+        client.set_datetime = AsyncMock()
+        coord._web_write_client = MagicMock(return_value=client)
+        coord.async_refresh_web_supplement = AsyncMock()
+        local_offset = dt.now().astimezone().utcoffset()
+
+        naive = MagicMock()
+        naive.data = {"datetime": "2026-09-29 12:30:00"}
+        await _handle_set_controller_clock(mock_hass, naive)
+        moment = client.set_datetime.await_args.args[0]
+        assert moment.tzinfo is not None
+        assert (moment.year, moment.month, moment.day, moment.hour, moment.minute) == (2026, 9, 29, 12, 30)
+        assert moment.utcoffset() == local_offset
+
+        utc = MagicMock()
+        utc.data = {"datetime": "2026-09-29T10:30:00Z"}
+        await _handle_set_controller_clock(mock_hass, utc)
+        moment = client.set_datetime.await_args.args[0]
+        assert moment.utcoffset() == local_offset
+        assert moment == dt(2026, 9, 29, 10, 30, tzinfo=UTC)
+
     async def test_invalid_datetime_string_is_rejected(self, mock_hass):
         coord = _make_coordinator_in_hass(mock_hass)
         coord.web_supplement = MagicMock()

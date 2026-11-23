@@ -426,13 +426,21 @@ async def _handle_set_controller_clock(hass: HomeAssistant, call: ServiceCall) -
                 translation_key="invalid_datetime",
                 translation_placeholders={"value": str(moment)},
             ) from err
+    from homeassistant.util import dt as dt_util
+
     if not isinstance(moment, datetime):
         # The controller clock stores local wall time (verified live: the
         # status timestamp runs exactly the local offset ahead of UTC), so
         # the default must be Home Assistant's local time, not UTC.
-        from homeassistant.util import dt as dt_util
-
         moment = dt_util.now()
+    else:
+        # A parsed value arrives naive or with any offset, and the library
+        # sends it exactly as ``datetime.isoformat()`` spells it: without a
+        # zone for a naive value, and how the Navigator firmware reads that
+        # is not verified (idm-heatpump-api 2.17.0). Handing over Home
+        # Assistant local time either way keeps the clock on the same wall
+        # time the default above relies on.
+        moment = dt_util.as_local(moment)
     try:
         client = coordinator._web_write_client()
         await client.set_datetime(moment)

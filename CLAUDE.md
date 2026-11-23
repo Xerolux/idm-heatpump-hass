@@ -7,13 +7,13 @@ This file is a short pointer for Claude-compatible agents.
 ## Snapshot (keep in sync with `manifest.json`)
 
 - **Domain**: `idm_heatpump`
-- **Version**: `0.28.0` (previous stable: `0.27.2`; the 0.24.0 line ended at `0.24.0-b2` and serves the 2026.8–2026.10 Home Assistant line)
+- **Version**: `0.28.3` (previous stable: `0.28.2`; the 0.24.0 line ended at `0.24.0-b2` and serves the 2026.8–2026.10 Home Assistant line)
 - **Min HA**: 2026.11.0 (the 2026.8.1–2026.10 line stays on integration 0.24.x)
 - **Python**: 3.14+ (Home Assistant 2026.11 requires 3.14.2)
 - **Dependencies**: `modbus-connection>=4.12.7`, `tmodbus[async-serial]>=0.6.2`,
   `idm-heatpump-api[web]==2.16.2`
 - **Quality Scale**: Platinum (self-assessed; see `quality_scale.yaml` and `tests/test_quality_scale.py`)
-- **Platforms**: sensor, binary_sensor, number, select, switch, climate, water_heater, button
+- **Platforms**: sensor, binary_sensor, number, select, switch, climate, water_heater, button, conversation (optional)
 - **Transports**: Modbus TCP through `modbus-connection`/tmodbus (primary) + optional local Navigator web supplement / web-only mode
 - **Optional KNX bridge**: serves the IDM KNX communication objects through the
   Home Assistant `knx` integration (`knx_bridge.py`, `knx_catalog.py`). Never add

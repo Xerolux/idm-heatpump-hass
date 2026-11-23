@@ -375,9 +375,10 @@ Assistant. Typical reasons and their messages:
 | Message | Cause | What to do |
 | --- | --- | --- |
 | "was written too recently" | EEPROM write protection | Wait for the EEPROM write interval (60 s by default) |
+| "already has a write in progress" | EEPROM write protection: a second write to the same register while the previous one is still running (idm-heatpump-api 2.17.0) | Try again a moment later; the first write finishes on its own |
 | "cannot be written yet" | The **Write cooldown** option | Wait the reported time or lower the cooldown |
 | "outside the permitted range" | The value is outside the register's documented range | Choose a value inside the entity limits |
-| "not supported by this heat pump model" | The register is not part of the detected model's map | Check the detected Navigator model in diagnostics |
+| "not supported by this heat pump model" | The register is not part of the detected model's map, or is defined with another data type or register type for it (the library refuses both before sending) | Check the detected Navigator model in diagnostics |
 
 **2. The heat pump answered with an error.** The request reached the controller
 and it refused it. The message names the Modbus exception code, and the same

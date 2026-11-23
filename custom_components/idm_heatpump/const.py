@@ -79,7 +79,6 @@ CONF_STORAGE_TEMP_FORWARDING_TOLERANCE: str = "storage_temp_forwarding_tolerance
 CONF_STORAGE_TEMP_FORWARDING_ENTITIES: str = "storage_temp_forwarding_entities"
 # Optional automatic forwarding of selected HA energy sensors to IDM GLT/PV registers.
 CONF_EXTERNAL_POWER_FORWARDING: str = "external_power_forwarding"
-CONF_EXTERNAL_POWER_FORWARDING_INTERVAL: str = "external_power_forwarding_interval"
 CONF_EXTERNAL_POWER_FORWARDING_ENTITIES: str = "external_power_forwarding_entities"
 CONF_EXTERNAL_POWER_BATTERY_SIGN: str = "external_power_battery_sign"
 # Sign convention of the optional bidirectional grid meter source
@@ -248,12 +247,11 @@ DEFAULT_STORAGE_TEMP_FORWARDING: bool = False
 DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL: int = 300
 DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE: float = 0.5
 DEFAULT_EXTERNAL_POWER_FORWARDING: bool = False
-DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL: int = 60
-# The forwarder never writes faster than every 30 s regardless of the
-# configured interval (external_power_forwarding.AsyncPowerForwarder loop),
-# so the selector floor matches that clamp.
-MIN_EXTERNAL_POWER_FORWARDING_INTERVAL: int = 30
-MAX_EXTERNAL_POWER_FORWARDING_INTERVAL: int = 3600
+# External power forwarding has no interval or tolerance option on purpose:
+# some Navigator firmwares drop GLT RAM inputs about ten seconds after the
+# last write (#493), so the forwarder refreshes them at a fixed cadence
+# below that hold window. The interval option offered up to 0.28.3 was
+# stored but never read.
 DEFAULT_EXTERNAL_POWER_FORWARDING_ENTITIES: dict[str, str] = {}
 DEFAULT_EXTERNAL_POWER_BATTERY_SIGN: str = "as_is"
 # Most bidirectional meters report grid draw as positive values.

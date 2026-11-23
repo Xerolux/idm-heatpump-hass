@@ -951,14 +951,20 @@ class TestSeasonWindow:
         assert date_in_season(date(2026, 3, 14), window) is False
         assert date_in_season(date(2026, 3, 16), window) is False
 
-    def test_from_options_requires_month_and_day(self):
+    def test_from_options_treats_one_border_as_an_open_ended_season(self):
+        from datetime import date
+
         from custom_components.idm_heatpump.const import (
             CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY,
             CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH,
             CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY,
             CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
         )
-        from custom_components.idm_heatpump.room_temp_forwarding import season_window_from_options
+        from custom_components.idm_heatpump.room_temp_forwarding import (
+            SeasonWindow,
+            date_in_season,
+            season_window_from_options,
+        )
 
         keys = (
             CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH,
@@ -966,14 +972,37 @@ class TestSeasonWindow:
             CONF_ROOM_TEMP_FORWARDING_SEASON_END_MONTH,
             CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY,
         )
+        # No border at all is the documented year-round default.
         assert season_window_from_options({}) is None
         assert season_window_from_options(dict.fromkeys(keys, 0)) is None
-        assert season_window_from_options({keys[0]: 13, keys[1]: 1, keys[2]: 4, keys[3]: 30}) is None
-        assert season_window_from_options({keys[0]: 10, keys[1]: 32, keys[2]: 4, keys[3]: 30}) is None
-        window = season_window_from_options({keys[0]: 10, keys[1]: 1, keys[2]: 4, keys[3]: 30})
+        assert season_window_from_options({keys[0]: "soon", keys[2]: 4, keys[3]: 30}) is None
+
+        # A start without an end runs to the end of the year. 0.28.3 dropped the
+        # whole window for this input and forwarded in July.
+        window = season_window_from_options({keys[0]: 10, keys[1]: 1})
+        assert window == SeasonWindow((10, 1), (12, 31))
         assert window is not None
-        assert window.start == (10, 1)
-        assert window.end == (4, 30)
+        assert date_in_season(date(2026, 7, 15), window) is False
+        assert date_in_season(date(2026, 12, 31), window) is True
+
+        # An end without a start runs from New Year.
+        window = season_window_from_options({keys[2]: 4, keys[3]: 30})
+        assert window == SeasonWindow((1, 1), (4, 30))
+        assert window is not None
+        assert date_in_season(date(2026, 2, 15), window) is True
+        assert date_in_season(date(2026, 5, 1), window) is False
+
+        # A bad value in one field does not throw away the border the user did
+        # type: it completes like the options form does.
+        assert season_window_from_options({keys[0]: 13, keys[1]: 1, keys[2]: 4, keys[3]: 30}) == SeasonWindow(
+            (1, 1), (4, 30)
+        )
+        assert season_window_from_options({keys[0]: 10, keys[1]: 32, keys[2]: 4, keys[3]: 30}) == SeasonWindow(
+            (10, 1), (4, 30)
+        )
+
+        window = season_window_from_options({keys[0]: 10, keys[1]: 1, keys[2]: 4, keys[3]: 30})
+        assert window == SeasonWindow((10, 1), (4, 30))
 
     def test_from_options_clamps_february_30(self):
         from datetime import date

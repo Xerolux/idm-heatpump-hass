@@ -2850,7 +2850,6 @@ class TestOptionalFeatureStartup:
         from custom_components.idm_heatpump.const import (
             CONF_EXTERNAL_POWER_FORWARDING,
             CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
-            CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
             CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
         )
 
@@ -2863,7 +2862,6 @@ class TestOptionalFeatureStartup:
                     "pv_production": "sensor.pv_power",
                     "house_consumption": "sensor.house_power",
                 },
-                CONF_EXTERNAL_POWER_FORWARDING_INTERVAL: 45,
                 CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND: pv_zero_workaround,
             }
         )
@@ -2890,7 +2888,8 @@ class TestOptionalFeatureStartup:
             "house_consumption": "sensor.house_power",
         }
         assert config.pv_zero_workaround is pv_zero_workaround
-        assert config.interval == 45
+        # The refresh cadence is fixed (#493); there is no interval to carry.
+        assert not hasattr(config, "interval")
         assert config.battery_sign == "as_is"
         forwarders[0].async_run.assert_called_once_with()
 

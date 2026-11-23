@@ -534,3 +534,47 @@ async def test_external_power_entities_survive_forwarding_reload(
         assert smoke_hass.states.get(ids["battery_soc_set"]).state == "unknown"
     assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
     await smoke_hass.async_block_till_done()
+
+
+async def test_room_forwarding_switches_exist_after_a_real_setup(smoke_hass, patched_client, smoke_entry) -> None:
+    """The runtime switches must come out of a real setup (0.28.4-b1).
+
+    The switch platform builds the master and per-source switches from
+    ``entry.runtime_data.room_temp_forwarder`` during its own setup, so the
+    forwarder object has to exist before the platforms are forwarded. The
+    stubbed suite sets the forwarder by hand and could not see that 0.28.3
+    created it only afterwards: forwarding ran, the switches never appeared.
+    """
+    from custom_components.idm_heatpump.const import (
+        CONF_ROOM_TEMP_FORWARDING,
+        CONF_ROOM_TEMP_FORWARDING_ENTITIES,
+    )
+
+    await smoke_hass.config_entries.async_add(smoke_entry)
+    await smoke_hass.async_block_till_done()
+    smoke_hass.config_entries.async_update_entry(
+        smoke_entry,
+        options={
+            CONF_ROOM_TEMP_FORWARDING: True,
+            CONF_ROOM_TEMP_FORWARDING_ENTITIES: {"a": ["sensor.room_a", "sensor.room_b"]},
+        },
+    )
+    await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+    await smoke_hass.async_block_till_done()
+    assert smoke_entry.state is ConfigEntryState.LOADED
+
+    registry = er.async_get(smoke_hass)
+    unique_ids = {
+        entity.unique_id.removeprefix(smoke_entry.entry_id + "_")
+        for entity in er.async_entries_for_config_entry(registry, smoke_entry.entry_id)
+    }
+    assert {
+        "room_temp_forwarding_active",
+        "room_temp_source_a_sensor_room_a",
+        "room_temp_source_a_sensor_room_b",
+    } <= unique_ids, f"room forwarding switches missing: {sorted(unique_ids)[:5]} ..."
+
+    assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
+    await smoke_hass.async_block_till_done()
+    pending = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
+    assert not pending, f"leaked tasks after unload: {[task.get_coro() for task in pending]}"

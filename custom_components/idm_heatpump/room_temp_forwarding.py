@@ -86,8 +86,30 @@ def _normalized_month_day(month: int, day: int) -> tuple[int, int]:
     return (month, min(max(day, 1), last_day))
 
 
+def _season_border(month: int, day: int) -> tuple[int, int] | None:
+    """Return one normalized season border, or ``None`` when it is unset.
+
+    A border counts as set when its month or its day is valid. A half-filled
+    border completes the way the options form completes it: a month without a
+    day is the first of that month, a day without a month is a January date.
+    """
+    month_valid = 1 <= month <= 12
+    day_valid = 1 <= day <= 31
+    if not month_valid and not day_valid:
+        return None
+    return _normalized_month_day(month if month_valid else 1, day if day_valid else 1)
+
+
 def season_window_from_options(options: Mapping[str, Any]) -> SeasonWindow | None:
-    """Build the season window from the flat option keys; None when unset."""
+    """Build the season window from the flat option keys; None when unset.
+
+    Both borders empty means year-round forwarding. A single border is an
+    open-ended season, not no season: a start without an end runs to
+    31 December and an end without a start runs from 1 January. Dropping the
+    whole window for a half-configured pair (as 0.28.3 did) silently turned
+    the restriction the user had typed into year-round forwarding, and the
+    end fields are empty by default in the options form.
+    """
     try:
         start_month = int(options.get(CONF_ROOM_TEMP_FORWARDING_SEASON_START_MONTH, 0) or 0)
         start_day = int(options.get(CONF_ROOM_TEMP_FORWARDING_SEASON_START_DAY, 0) or 0)
@@ -95,13 +117,13 @@ def season_window_from_options(options: Mapping[str, Any]) -> SeasonWindow | Non
         end_day = int(options.get(CONF_ROOM_TEMP_FORWARDING_SEASON_END_DAY, 0) or 0)
     except (TypeError, ValueError):
         return None
-    if not (1 <= start_month <= 12 and 1 <= end_month <= 12):
-        return None
-    if not (1 <= start_day <= 31 and 1 <= end_day <= 31):
+    start = _season_border(start_month, start_day)
+    end = _season_border(end_month, end_day)
+    if start is None and end is None:
         return None
     return SeasonWindow(
-        _normalized_month_day(start_month, start_day),
-        _normalized_month_day(end_month, end_day),
+        start if start is not None else (1, 1),
+        end if end is not None else (12, 31),
     )
 
 

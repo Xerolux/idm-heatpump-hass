@@ -339,6 +339,10 @@ Important behavior:
   ±5 K; a result outside the register bounds is never written.
 - Invalid, unavailable, non-numeric or out-of-range values are skipped.
 - Leaving a circuit without a selected sensor keeps that circuit untouched.
+- Leave all four season fields empty for year-round forwarding. One border
+  alone is an open-ended season: a start without an end runs to 31 December,
+  an end without a start runs from 1 January. Up to 0.28.3 a half-configured
+  pair silently dropped the whole window and forwarded all year.
 - This feature writes Modbus values. Use sensors that represent the actual room
   temperature you want the heat pump to see.
 
@@ -413,14 +417,19 @@ registers (`pv_surplus`, `pv_production`, `house_consumption`,
 | Option | Description | Default |
 |--------|-------------|---------|
 | External power forwarding | Enables forwarding for selected power/battery sources | off |
-| Forwarding interval | Periodic refresh interval | 60 seconds |
-| Power tolerance | Minimum change before a repeated power value is written again | 0.1 kW |
-| Battery tolerance | Minimum change before a repeated battery SoC value is written again | 1 % |
 | Grid meter sensor | Optional bidirectional grid meter (import/export) used to derive `pv_surplus` and `house_consumption` automatically | empty |
 | Grid meter convention | Sign convention of the bidirectional grid meter (`positive_import` or `positive_export`) | `positive_import` |
 
 Important behavior:
 
+- External power forwarding has no interval or tolerance option. Sensor
+  updates are forwarded immediately, and a periodic pass refreshes every valid
+  mapped input every three seconds, unchanged values included: some Navigator
+  firmwares drop GLT RAM inputs about ten seconds after the last write
+  ([#493](https://github.com/Xerolux/idm-heatpump-hass/issues/493)). The
+  *forwarding interval* offered up to 0.28.3 was stored but never read, so it
+  was removed; a stored value is dropped the next time the options are saved.
+  See [Smart Energy & Comfort](Smart-Energy-and-Comfort#optional-pv-surplus-dhw-automation).
 - When a bidirectional **Grid meter sensor** and **PV production sensor** are
   configured, the integration automatically derives `pv_surplus` and
   `house_consumption` when their direct sensor fields are left empty (#519).

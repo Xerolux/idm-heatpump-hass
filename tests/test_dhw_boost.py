@@ -352,6 +352,35 @@ async def test_start_is_a_no_op_when_the_target_is_already_reached(monkeypatch) 
     assert coordinator.data["system_mode"] == 1
 
 
+@pytest.mark.parametrize("temperature", [-327.33, -999.0])
+@pytest.mark.asyncio
+async def test_start_refuses_an_uninitialized_dhw_sensor(monkeypatch, temperature) -> None:
+    """An unwired sensor answers with memory garbage (<= -300 C), not with -1 (#668).
+
+    0.28.3 only knew the -1 sentinel, so the garbage passed as "colder than
+    the target" and the energy manager could start an automatic charge on it.
+    """
+    manager, coordinator, _store = await _manager(monkeypatch)
+    coordinator.data["dhw_temp_top"] = temperature
+
+    with _raises_boost_error("dhw_boost_no_current_temp"):
+        await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+    assert manager.active is False
+
+
+@pytest.mark.asyncio
+async def test_uninitialized_dhw_sensor_does_not_end_an_active_boost(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=58, timeout_minutes=30)
+    coordinator.data["dhw_temp_top"] = -327.33
+
+    await manager._async_evaluate()
+
+    assert manager.active is True
+    assert manager.status == "active"
+
+
 @pytest.mark.asyncio
 async def test_start_requires_a_known_previous_state(monkeypatch) -> None:
     manager, coordinator, _store = await _manager(monkeypatch)

@@ -113,6 +113,14 @@ it while Smartfox, openWB or another system controls domestic hot water.
 Invalid or unavailable source values fail closed. Minimum surplus, minimum SOC,
 DHW target, maximum duration and cooldown are configurable.
 
+The manager also fails closed on an unusable current DHW temperature. The
+documented -1 sentinel and the uninitialized-temperature band of an unwired
+sensor (at or below -300 °C, see
+[Findings](Findings-and-Documentation#findings-register)) both count as "no
+sensor", for the manual `start_dhw_boost` action as well. Up to 0.28.3 only the
+sentinel did, so such a reading passed as "colder than the target" and the
+manager could start an automatic charge on it.
+
 | Setting | Default | Setup depth |
 |---------|---------|-------------|
 | Minimum surplus | 1.0 kW | Advanced / Expert |
@@ -143,9 +151,11 @@ Further updates are coalesced without cancelling an active batch. Updates
 during an active batch request another pass with the latest source states.
 Periodic and event-driven batches cannot interleave.
 While forwarding is enabled, a periodic pass refreshes valid mapped GLT inputs
-every three seconds, including unchanged sources. This RAM refresh takes
-precedence over the configured *external power forwarding interval* (30–3600
-seconds). The integration caps the per-register cooldown for these inputs at
+every three seconds, including unchanged sources. This RAM refresh is a fixed
+cadence, not an option: intervals of 30 seconds and above cannot keep an input
+present on firmwares that clear it after about ten seconds. The *external power
+forwarding interval* offered up to 0.28.3 was never read and has been removed.
+The integration caps the per-register cooldown for these inputs at
 two seconds; faster sensor events can be skipped quietly.
 
 Disabling forwarding or unloading the integration stops these writes without

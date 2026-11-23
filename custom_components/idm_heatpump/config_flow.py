@@ -95,7 +95,6 @@ from .const import (
     CONF_EXTERNAL_POWER_BATTERY_SIGN,
     CONF_EXTERNAL_POWER_FORWARDING,
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
-    CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
     CONF_EXTERNAL_POWER_GRID_SIGN,
     CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
     CONF_FEATURE_PROFILE,
@@ -177,7 +176,6 @@ from .const import (
     DEFAULT_ENERGY_PRICE,
     DEFAULT_EXTERNAL_POWER_BATTERY_SIGN,
     DEFAULT_EXTERNAL_POWER_FORWARDING,
-    DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
     DEFAULT_EXTERNAL_POWER_GRID_SIGN,
     DEFAULT_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
     DEFAULT_FEATURE_PROFILE,
@@ -224,7 +222,6 @@ from .const import (
     FEATURE_PROFILE_SMART,
     HEATING_CIRCUITS,
     MAX_EEPROM_WRITE_INTERVAL,
-    MAX_EXTERNAL_POWER_FORWARDING_INTERVAL,
     MAX_KNX_RESEND_INTERVAL,
     MAX_KNX_TOLERANCE,
     MAX_MODBUS_CONNECT_DELAY,
@@ -237,7 +234,6 @@ from .const import (
     MAX_WRITE_COOLDOWN,
     MAX_ZONE_COUNT,
     MIN_EEPROM_WRITE_INTERVAL,
-    MIN_EXTERNAL_POWER_FORWARDING_INTERVAL,
     MIN_KNX_RESEND_INTERVAL,
     MIN_KNX_TOLERANCE,
     MIN_MODBUS_CONNECT_DELAY,
@@ -539,7 +535,7 @@ _GUIDED_FEATURES: dict[str, tuple[str | None, tuple[str, ...], tuple[str, ...], 
     "external_power": (
         CONF_EXTERNAL_POWER_FORWARDING,
         (),
-        (CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,),
+        (),
         (),
     ),
     "knx": (
@@ -629,7 +625,6 @@ def _default_options() -> dict[str, Any]:
         CONF_WEATHER_ENTITY: DEFAULT_WEATHER_ENTITY,
         CONF_WEATHER_PREHEAT_THRESHOLD: DEFAULT_WEATHER_PREHEAT_THRESHOLD,
         CONF_EXTERNAL_POWER_FORWARDING_ENTITIES: {},
-        CONF_EXTERNAL_POWER_FORWARDING_INTERVAL: DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
         CONF_EXTERNAL_POWER_BATTERY_SIGN: DEFAULT_EXTERNAL_POWER_BATTERY_SIGN,
         CONF_EXTERNAL_POWER_GRID_SIGN: DEFAULT_EXTERNAL_POWER_GRID_SIGN,
         CONF_EXTERNAL_POWER_PV_ZERO_WORKAROUND: DEFAULT_EXTERNAL_POWER_PV_ZERO_WORKAROUND,
@@ -746,6 +741,17 @@ def _flatten_options_input(user_input: dict[str, Any]) -> dict[str, Any]:
         if isinstance(section_data, dict):
             options.update(section_data)
     return options
+
+
+#: Option keys of earlier versions that no code reads anymore. Entries that
+#: still store them lose them the next time their options are saved.
+_LEGACY_OPTION_KEYS: tuple[str, ...] = ("external_power_forwarding_interval",)
+
+
+def _drop_legacy_options(options: dict[str, Any]) -> None:
+    """Remove stored option keys that no code reads anymore."""
+    for key in _LEGACY_OPTION_KEYS:
+        options.pop(key, None)
 
 
 def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
@@ -1041,23 +1047,6 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                             CONF_EXTERNAL_POWER_FORWARDING,
                             default=options.get(CONF_EXTERNAL_POWER_FORWARDING, DEFAULT_EXTERNAL_POWER_FORWARDING),
                         ): BooleanSelector(BooleanSelectorConfig()),
-                        vol.Required(
-                            CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
-                            default=int(
-                                options.get(
-                                    CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
-                                    DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
-                                )
-                            ),
-                        ): NumberSelector(
-                            NumberSelectorConfig(
-                                min=MIN_EXTERNAL_POWER_FORWARDING_INTERVAL,
-                                max=MAX_EXTERNAL_POWER_FORWARDING_INTERVAL,
-                                step=10,
-                                mode=NumberSelectorMode.SLIDER,
-                                unit_of_measurement="s",
-                            )
-                        ),
                         vol.Required(
                             CONF_WEB_ENABLED,
                             default=options.get(CONF_WEB_ENABLED, DEFAULT_WEB_ENABLED),
@@ -2903,6 +2892,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             self._options[CONF_ROOM_TEMP_FORWARDING_ENTITIES] = {}
         if not self._guided_active and not _storage_temp_forwarding_enabled(self._options):
             self._options[CONF_STORAGE_TEMP_FORWARDING_ENTITIES] = {}
+        _drop_legacy_options(self._options)
         if self._reconfigure_entry is not None:
             _LOGGER.info(
                 "Updating existing IDM entry %s while preserving its connection settings",
@@ -3290,6 +3280,7 @@ class IdmHeatpumpOptionsFlow(_IdmOptionsStepsMixin, config_entries.OptionsFlow):
             self._options[CONF_ROOM_TEMP_FORWARDING_ENTITIES] = {}
         if not self._guided_active and not _storage_temp_forwarding_enabled(self._options):
             self._options[CONF_STORAGE_TEMP_FORWARDING_ENTITIES] = {}
+        _drop_legacy_options(self._options)
         return self.async_create_entry(data=self._options)
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
