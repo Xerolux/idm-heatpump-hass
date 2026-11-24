@@ -8663,3 +8663,8 @@ Every contribution is a huge motivation! Thank you!
 _Generated automatically by GitHub Actions on 2026-03-21 12:18:05 UTC_
 
 ---
+
+## Related IDM Tools
+
+- [IDM Heatpump Desktop Client](https://xerolux.github.io/idm-heatpump-client/#downloads) — download the desktop app.
+- [IDM Tools](https://idmtools.xerolux.de/) — browse the available tools.

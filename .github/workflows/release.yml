@@ -195,6 +195,7 @@ jobs:
                       index
                       for index in range(start + 1, len(changelog_lines))
                       if changelog_lines[index].startswith("## [")
+                      or changelog_lines[index] == "## Related IDM Tools"
                   ),
                   len(changelog_lines),
               )
@@ -235,6 +236,11 @@ jobs:
 
           # Every release carries the support links, curated notes included.
           release_notes += """
+
+          ### Related IDM Tools
+
+          - [IDM Heatpump Desktop Client](https://xerolux.github.io/idm-heatpump-client/#downloads) — download the desktop app.
+          - [IDM Tools](https://idmtools.xerolux.de/) — browse the available tools.
 
           ### ☕ Support the project
 
