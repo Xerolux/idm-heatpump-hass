@@ -57,7 +57,7 @@
         "Configuration.md",
         "Troubleshooting.md"
       ],
-      "reviewed_source_sha256": "a2efe39a4abafceea013f2a129ebbb0543134e8ce6a2fe16f5609954e55f4930"
+      "reviewed_source_sha256": "d820d507d1913f48bad98e1ac123fc09f776446e0825ca11c9c40ef4d807eacb"
     },
     {
       "feature": "Core entities and device placement",
@@ -143,7 +143,7 @@
         "Smart-Energy-and-Comfort.md",
         "Services.md"
       ],
-      "reviewed_source_sha256": "73759fea820158af5bf2c68aeb390b463900e277b2bcde26806b5ade90043283"
+      "reviewed_source_sha256": "4a7c5df35c875ceada87f72854804762d71c5185629679b6cae258b374e3851d"
     },
     {
       "feature": "Predictive evidence and local Assist",

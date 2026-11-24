@@ -22,6 +22,8 @@ The integration uses Home Assistant's **DataUpdateCoordinator**:
 
 ## Entity-aware polling and Smart consumers
 
+On controllers with the one-time hot water request input, polling retains register 1713 even if its switch is disabled. The boost uses its state to decide whether it can withdraw a request on manual cancellation.
+
 The polling plan keeps registers needed by enabled entities and declared
 background consumers. Smart energy statistics retain both power
 inputs even when their raw sensors are disabled. An active comfort schedule

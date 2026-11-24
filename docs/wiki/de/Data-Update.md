@@ -19,6 +19,8 @@ Die Integration verwendet den **DataUpdateCoordinator** von Home Assistant:
 
 ## Entitätsbewusste Abfrage und Smart-Verbraucher
 
+Bei Reglern mit Einmalanforderung für Warmwasser wird Register 1713 auch bei deaktiviertem Schalter abgefragt. Anhand des Zustands entscheidet die Integration, ob sie die Anforderung beim manuellen Boost-Abbruch zurücknehmen kann.
+
 Der Abfrageplan behält die Register, die aktivierte Entitäten und deklarierte Hintergrund-Verbraucher benötigen. Die Smart-Energiestatistiken halten beide Leistungseingänge vor, selbst wenn ihre rohen Sensoren deaktiviert sind. Ein aktiver Komfort-Zeitplan behält ebenfalls seinen Heizkreis-Sollwert und gibt diese Anforderung beim Beenden wieder frei. Eine rohe Entität zu deaktivieren deaktiviert daher weder eine aktive Automation noch den Energiezähler; schalte stattdessen die entsprechende Funktion aus.
 
 ## Konfiguriertes Intervall

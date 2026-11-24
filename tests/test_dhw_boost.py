@@ -50,6 +50,7 @@ class FakeCoordinator:
         self.config_entry.entry_id = "entry"
         self.hass = MagicMock()
         self.hass.async_create_task.side_effect = asyncio.create_task
+        self.last_update_success = True
         self.data = {
             "system_mode": 1,
             "dhw_setpoint": 48,
@@ -753,8 +754,7 @@ async def test_onetime_demand_boost_triggers_a_charge_without_mode_switch(monkey
     assert not manager.active
     assert coordinator.data["dhw_setpoint"] == 48
     assert coordinator.data["system_mode"] == 1
-    # The momentary command is never cleared by the integration.
-    assert not any(event[:2] == ("write", "demand_onetime_dhw") and event[2] is False for event in events)
+    assert events.count(("write", "demand_onetime_dhw", False)) == (1 if reason == "cancel" else 0)
     assert not any(event[:2] == ("write", "system_mode") for event in events)
     await manager.async_shutdown()
 
@@ -776,6 +776,70 @@ async def test_onetime_demand_boost_enforces_only_the_setpoint(monkeypatch):
     assert coordinator.data["system_mode"] == 2
     assert ("write", "demand_onetime_dhw", True) not in events
     await manager.async_shutdown()
+
+
+@pytest.mark.parametrize("initial", [True, None, 255])
+async def test_cancel_leaves_a_preexisting_or_unknown_onetime_demand(monkeypatch, initial):
+    manager, coordinator, _store = await _manager(monkeypatch, onetime=True)
+    coordinator.data["demand_onetime_dhw"] = initial
+    await manager.async_start()
+    await manager.async_cancel()
+    assert coordinator.data["dhw_setpoint"] == 48
+    assert ("write", "demand_onetime_dhw", False) not in coordinator.events
+
+
+async def test_cancel_leaves_a_new_request_after_the_controller_cleared_the_boost(monkeypatch):
+    manager, coordinator, _store = await _manager(monkeypatch, onetime=True)
+    await manager.async_start()
+    coordinator.data["demand_onetime_dhw"] = 0
+    coordinator._listener()
+    await manager._evaluation_task
+    coordinator.data["demand_onetime_dhw"] = 1
+    await manager.async_cancel()
+    assert coordinator.data["demand_onetime_dhw"] == 1
+    assert ("write", "demand_onetime_dhw", False) not in coordinator.events
+
+
+async def test_restart_finishes_pending_manual_withdrawal_without_rewriting_the_setpoint(monkeypatch):
+    manager, coordinator, store = await _manager(monkeypatch, onetime=True)
+    await manager.async_start()
+    coordinator.last_update_success = False
+    await manager.async_cancel()
+    assert coordinator.data["dhw_setpoint"] == 48
+    assert manager.active and store.saved[-1]["withdraw_onetime_demand"]
+    await manager.async_shutdown()
+
+    store.loaded = store.saved[-1]
+    coordinator.last_update_success = True
+    coordinator.events.clear()
+    restarted = DhwBoostManager(coordinator)
+    await restarted.async_setup()
+    assert not restarted.active
+    assert [event for event in coordinator.events if event[0] == "write"] == [("write", "demand_onetime_dhw", False)]
+
+
+async def test_paced_onetime_withdrawal_retries_without_rewriting_the_setpoint(monkeypatch):
+    manager, coordinator, _store = await _manager(monkeypatch, onetime=True)
+    await manager.async_start()
+    write = coordinator.async_write_register
+
+    async def paced(register, value):
+        if register.name == "demand_onetime_dhw":
+            raise ValueError("EEPROM-sensitive register was written too recently (try again in 2s)")
+        await write(register, value)
+
+    coordinator.async_write_register = paced
+    coordinator.events.clear()
+    await manager.async_cancel()
+    assert manager.active and coordinator.data["dhw_setpoint"] == 48
+    coordinator.async_write_register = write
+    coordinator._listener()
+    await manager._evaluation_task
+    assert not manager.active
+    assert [event for event in coordinator.events if event[0] == "write"] == [
+        ("write", "dhw_setpoint", 48),
+        ("write", "demand_onetime_dhw", False),
+    ]
 
 
 async def test_onetime_demand_boost_start_failure_never_switches_the_mode(monkeypatch):
@@ -910,10 +974,14 @@ async def test_onetime_boost_cancel_waits_for_eeprom_then_logs_setpoint_write(mo
         assert coordinator.data["dhw_setpoint"] == expected_setpoint
 
     assert not manager.active
-    assert [event for event in coordinator.events if event[0] == "write"] == [("write", "dhw_setpoint", 52)]
+    assert [event for event in coordinator.events if event[0] == "write"] == [
+        ("write", "dhw_setpoint", 52),
+        ("write", "demand_onetime_dhw", False),
+    ]
     assert [record.getMessage() for record in caplog.records if record.name == module.__name__] == [
         "DHW boost waiting for the dhw_setpoint write interval (manual_cancel)",
         "DHW boost wrote the previous setpoint of 52 °C (manual_cancel)",
+        "DHW boost withdrew its one-time hot water demand (manual_cancel)",
     ]
     await manager.async_shutdown()
 

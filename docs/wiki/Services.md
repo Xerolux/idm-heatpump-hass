@@ -258,7 +258,7 @@ setpoint to the requested target and triggers the charge; when the boost ends
 (target reached, timeout or cancel) the exact previous setpoint — and mode,
 where it was changed — is restored.
 
-For one charge at the configured temperatures, call `switch.turn_on` once on **One-time hot water demand** (register 1713, where available). This leaves the DHW setpoint, charge thresholds and system mode untouched. The controller decides when to charge and clears the demand itself.
+For one charge at the configured temperatures, call `switch.turn_on` once on **One-time hot water demand** (register 1713, where available). This leaves the DHW setpoint, charge thresholds and system mode untouched. The controller decides when to charge. The switch shows the current request input.
 
 **Service:** `idm_heatpump.start_dhw_boost`
 
@@ -282,13 +282,12 @@ data:
 
 How the charge is triggered depends on the controller:
 
-- **Navigator 2.0 / 10 / Pro:** the boost writes the GLT one-time DHW
+- **Navigator 2.0 / 10 / Pro:** the boost starts by writing 1 to the GLT one-time DHW
   demand register (1713, `demand_onetime_dhw`, KNX object 383) exactly once
   and never touches the system mode — a controller in Automatic stays in Automatic. The controller may pause
   the heating circuit pump during the charge. This mirrors the native iDM app (issue #719: the
   previous hot-water-only mode switch stopped heating without starting a
-  charge on a Navigator 10). The command bit is momentary: the integration
-  never writes it back to 0. On the reference Navigator 10 the command was
+  charge on a Navigator 10). On the reference Navigator 10 the command was
   read back as active in two five-minute tests, but no charge started. The
   original setpoint was restored and Automatic stayed selected. Verify that
   your controller actually starts a charge before relying on this action.
@@ -305,7 +304,7 @@ snapshot (previous setpoint and mode) is restored from persistent storage.
 Cancels an active DHW boost and restores the previous DHW setpoint — and the
 previous system mode where the boost had changed it.
 
-Press Cancel once. If the write interval is still active, the boost stays pending and the integration retries on coordinator updates. The first update that can write the previous setpoint restores it. With debug logging enabled, the integration records the wait and the successful write of the previous setpoint. Check the setpoint on the Navigator for independent confirmation. The controller owns any charge it has already accepted.
+Press Cancel once. If the write interval is still active, the boost stays pending and the integration retries on coordinator updates. The first update that can write the previous setpoint restores it. With debug logging enabled, the integration records the wait and the successful write of the previous setpoint. Check the setpoint on the Navigator for independent confirmation. On manual cancellation the integration also withdraws the one-time request if it observed the input off before the boost, asserted it, and still reads it as on. A request that was already on or has since cleared is left to the controller. Scheduled hot water and the end of an accepted charge remain under Navigator control.
 
 **Service:** `idm_heatpump.cancel_dhw_boost`
 
