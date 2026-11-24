@@ -107,9 +107,7 @@ Warmwasser-Boost mit einem vorübergehend erhöhten Warmwasser-Sollwert. Der
 automatische Boost lässt die Betriebsart unverändert, sodass die Raumheizung
 verfügbar bleibt. Am Navigator 2.0/10/Pro lösen sowohl der manuelle als auch
 der automatische Boost die Ladung über das Register für die einmalige
-WW-Anforderung (1713) aus und lassen die Betriebsart unberührt; der manuelle
-Wechsel in den Nur-Warmwasser-Modus bleibt nur an Reglern ohne dieses
-Register (Navigator 1.x). Heizkurve und Einstellungen der Zusatzheizung
+WW-Anforderung (1713) aus und lassen die Betriebsart unberührt. Beim Navigator 1.x löst der separate Taster für Vorrangladung eine einmalige Ladung aus. Heizkurve und Einstellungen der Zusatzheizung
 werden nicht verändert.
 
 Voraussetzungen:

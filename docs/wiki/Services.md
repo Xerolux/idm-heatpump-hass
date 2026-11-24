@@ -258,11 +258,11 @@ setpoint to the requested target and triggers the charge; when the boost ends
 (target reached, timeout or cancel) the exact previous setpoint — and mode,
 where it was changed — is restored.
 
-For one charge at the configured temperatures, call `switch.turn_on` once on **One-time hot water demand** (register 1713, where available). This leaves the DHW setpoint, charge thresholds and system mode untouched. The controller decides when to charge and clears the demand itself.
+For one charge at the configured temperatures, call `switch.turn_on` once on **One-time hot water demand** (register 1713, where available). This leaves the DHW setpoint, charge thresholds and system mode untouched. The controller decides when to charge. The switch shows the current request input.
 
 **Service:** `idm_heatpump.start_dhw_boost`
 
-**Target:** Device of the integration
+When multiple heat pumps are configured, select one with `data.entry_id`.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -273,8 +273,6 @@ For one charge at the configured temperatures, call `switch.turn_on` once on **O
 **Example:**
 ```yaml
 service: idm_heatpump.start_dhw_boost
-target:
-  device_id: abc123def456
 data:
   target_temperature: 60
   timeout_minutes: 90
@@ -282,19 +280,16 @@ data:
 
 How the charge is triggered depends on the controller:
 
-- **Navigator 2.0 / 10 / Pro:** the boost writes the GLT one-time DHW
-  demand register (1713, `demand_onetime_dhw`, KNX object 383) exactly once
+- **Navigator 2.0 / 10 / Pro:** the boost requests a charge through GLT register
+  1713 (`demand_onetime_dhw`, KNX object 383) unless the request is already on
   and never touches the system mode — a controller in Automatic stays in Automatic. The controller may pause
   the heating circuit pump during the charge. This mirrors the native iDM app (issue #719: the
   previous hot-water-only mode switch stopped heating without starting a
-  charge on a Navigator 10). The command bit is momentary: the integration
-  never writes it back to 0. On the reference Navigator 10 the command was
+  charge on a Navigator 10). On the reference Navigator 10 the command was
   read back as active in two five-minute tests, but no charge started. The
   original setpoint was restored and Automatic stayed selected. Verify that
   your controller actually starts a charge before relying on this action.
-- **Controllers without that register (Navigator 1.x):** the boost selects
-  hot-water-only mode for the runtime and restores the previous mode at the
-  end, as before.
+- **Navigator 1.x:** Use the separate priority-charge button (coil 3003). The current 1.x map does not support the timed boost. If a Navigator 10 reports its one-time input as unavailable, the integration declines the start.
 - **Automatic PV boost:** raises the setpoint and issues the one-time demand where register 1713 is available. It preserves the system mode.
 
 The boost is restart-safe: if Home Assistant restarts during a boost, the
@@ -305,17 +300,15 @@ snapshot (previous setpoint and mode) is restored from persistent storage.
 Cancels an active DHW boost and restores the previous DHW setpoint — and the
 previous system mode where the boost had changed it.
 
-Press Cancel once. If the write interval is still active, the boost stays pending and the integration retries on coordinator updates. The first update that can write the previous setpoint restores it. With debug logging enabled, the integration records the wait and the successful write of the previous setpoint. Check the setpoint on the Navigator for independent confirmation. The controller owns any charge it has already accepted.
+Press Cancel once. If the write interval is still active, the boost stays pending and the integration retries on coordinator updates. The first update that can write the previous setpoint restores it. With debug logging enabled, the integration records the wait and the successful write of the previous setpoint. Check the setpoint on the Navigator for independent confirmation. On manual cancellation the integration also withdraws the one-time request if it observed the input off before the boost, asserted it, and still reads it as on. A request that was already on or has since cleared is left to the controller. Scheduled hot water and the end of an accepted charge remain under Navigator control.
 
 **Service:** `idm_heatpump.cancel_dhw_boost`
 
-**Target:** Device of the integration
+When multiple heat pumps are configured, select one with `data.entry_id`.
 
 **Example:**
 ```yaml
 service: idm_heatpump.cancel_dhw_boost
-target:
-  device_id: abc123def456
 ```
 
 ## generate_dashboard

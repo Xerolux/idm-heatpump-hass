@@ -278,17 +278,17 @@ data:
 
 ### `idm_heatpump.start_dhw_boost`
 
-Trigger a one-time domestic hot water boost that raises the DHW setpoint to the configured boost target for a configurable duration. The boost state survives Home Assistant restarts and is cancelled automatically when the boost window elapses or when the DHW setpoint is changed manually.
+Trigger a one-time domestic hot water boost that raises the DHW setpoint to the configured boost target for a configurable duration. The integration restores the saved setpoint when the target temperature is reached, the timeout expires, or you cancel the boost. After a Home Assistant restart it recovers the saved settings.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `duration` | integer | no | Boost duration in minutes (default: `120`) |
-| `target_temperature` | number | no | Temporary DHW target temperature in °C (default: integration config) |
+| `timeout_minutes` | integer | no | Boost duration in minutes (5–240, default 60) |
+| `target_temperature` | number | no | Temporary DHW target temperature in °C (35–65, default 60) |
 
 ```yaml
 action: idm_heatpump.start_dhw_boost
 data:
-  duration: 90
+  timeout_minutes: 90
   target_temperature: 60
 ```
 

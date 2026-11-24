@@ -344,27 +344,20 @@ def pins_from_requires_dist(requires_dist: list[str] | None) -> dict[str, Versio
 
 
 def homeassistant_pins() -> dict[str, Version]:
-    """Return the exact transport pins Home Assistant's core modbus carries.
-
-    Home Assistant does not list the transport packages in the
-    ``homeassistant`` distribution itself — its built-in modbus integration
-    exact-pins them in its manifest (``modbus-connection[tmodbus]==4.12.3``,
-    ``tmodbus==0.6.2`` as of 2026.10). A custom-integration floor above that
-    pin cannot be installed next to Home Assistant — hassfest rejects it —
-    so it is the hard ceiling for our own minimum versions. Raises on
-    network problems; the caller decides how loud that is.
-    """
-    payload = fetch_project("homeassistant")
-    stable = latest_version(payload, allow_prerelease=False)
-    if stable is None:
-        return {}
-    manifest_url = (
-        f"https://raw.githubusercontent.com/home-assistant/core/{stable}/homeassistant/components/modbus/manifest.json"
-    )
-    with urllib.request.urlopen(manifest_url, timeout=NETWORK_TIMEOUT) as response:
-        manifest = json.loads(response.read().decode("utf-8"))
-    requirements = manifest.get("requirements") or []
-    return {name: pin for name, pin in pins_from_requires_dist(requirements).items() if name in HA_OWNED}
+    """Cap each transport floor at the pins of the minimum and latest stable HA."""
+    minimum = Version(json.loads((ROOT / "hacs.json").read_text(encoding="utf-8"))["homeassistant"])
+    latest = latest_version(fetch_project("homeassistant"), allow_prerelease=False)
+    ceilings: dict[str, Version] = {}
+    for tag in dict.fromkeys((minimum, latest or minimum)):
+        manifest_url = (
+            f"https://raw.githubusercontent.com/home-assistant/core/{tag}/homeassistant/components/modbus/manifest.json"
+        )
+        with urllib.request.urlopen(manifest_url, timeout=NETWORK_TIMEOUT) as response:
+            manifest = json.load(response)
+        for name, pin in pins_from_requires_dist(manifest["requirements"]).items():
+            if name in HA_OWNED:
+                ceilings[name] = min(ceilings.get(name, pin), pin)
+    return ceilings
 
 
 def evaluate(
@@ -470,15 +463,7 @@ def _evaluate_ha_owned_minimum(
 
 def check(requirements: list[Requirement]) -> list[Finding]:
     """Evaluate every requirement against PyPI, tolerating network failures."""
-    ha_pins: dict[str, Version] = {}
-    if any(requirement.is_ha_owned_minimum for requirement in requirements):
-        try:
-            ha_pins = homeassistant_pins()
-        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
-            print(
-                f"warning: could not determine Home Assistant's own transport pins: {error}",
-                file=sys.stderr,
-            )
+    ha_pins = homeassistant_pins() if any(req.is_ha_owned_minimum for req in requirements) else {}
     findings = []
     for requirement in requirements:
         try:
@@ -685,7 +670,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.pin:
         return _run_set(args)
 
-    findings = check(manifest_requirements())
+    try:
+        findings = check(manifest_requirements())
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
+        print(f"Could not verify Home Assistant transport pins: {error}", file=sys.stderr)
+        return 0 if args.warn_only else 1
 
     if args.json:
         print(

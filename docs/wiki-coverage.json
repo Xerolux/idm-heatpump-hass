@@ -14,7 +14,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "daf4141ca4963739211aba39f2c32ade0cd53349f66ec19e138e3910d09d80d6"
+      "reviewed_source_sha256": "29feaedbd354e9446df238d11fd2526caa01db4889663553d58318bc4d152815"
     },
     {
       "feature": "Model and register semantics",
@@ -57,7 +57,7 @@
         "Configuration.md",
         "Troubleshooting.md"
       ],
-      "reviewed_source_sha256": "a2efe39a4abafceea013f2a129ebbb0543134e8ce6a2fe16f5609954e55f4930"
+      "reviewed_source_sha256": "d820d507d1913f48bad98e1ac123fc09f776446e0825ca11c9c40ef4d807eacb"
     },
     {
       "feature": "Core entities and device placement",
@@ -78,7 +78,7 @@
         "Entities.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "e152f599a41b1593f6fec0741a485a300367058a4dfcf69f14ee4cefc24c23ba"
+      "reviewed_source_sha256": "01afd2be7c4980785344df6700d8d60fc5ed6b9865a188e2998c72f5be971d18"
     },
     {
       "feature": "Local Navigator supplement and controls",
@@ -143,7 +143,7 @@
         "Smart-Energy-and-Comfort.md",
         "Services.md"
       ],
-      "reviewed_source_sha256": "73759fea820158af5bf2c68aeb390b463900e277b2bcde26806b5ade90043283"
+      "reviewed_source_sha256": "58d9b22aaa8f5a1f675ba9ce6ae107b022d09dcd33627e83ee637c066101028b"
     },
     {
       "feature": "Predictive evidence and local Assist",

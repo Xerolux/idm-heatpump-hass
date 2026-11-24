@@ -47,7 +47,10 @@ must be limited to documented safe registers.
 
 - `python scripts/check_dependency_pins.py` — every exactly pinned runtime
   dependency is the newest release on PyPI. The release workflow runs this and
-  fails the release when a pin is behind, without an override.
+  fails the release when a pin is behind, without an override. For the two
+  HA-owned transport libraries, the minimum must fit the core Modbus pins in
+  both the earliest supported Home Assistant (from `hacs.json`) and the latest
+  stable Home Assistant. Newer installations can resolve their newer transport.
   The daily `dependency-freshness.yml` workflow updates
   every pin, validates the result (ruff, mypy, the suite with the coverage gates
   at the minimum supported Home Assistant, real-HA lifecycle smoke tests, hassfest) and merges it into `main` on

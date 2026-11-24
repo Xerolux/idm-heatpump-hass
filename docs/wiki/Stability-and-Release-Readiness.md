@@ -4,6 +4,10 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.28.7 release decision
+
+Home Assistant's start and cancel services restored the saved setpoint and withdrew the boost's own demand on a simulated Navigator. On the reporting Navigator 10, confirmation that charging stays off when the controller returns from standby to automatic is pending. [Release evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.7.md)
+
 ## 0.28.6 release decision
 
 The regression test reproduced a setpoint stuck at 60 °C after an early cancellation. The fixed integration restored 52 °C after one cancellation with either task scheduling mode. Confirmation on the reporting Navigator 10 is pending. [Release evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.6.md)
@@ -651,7 +655,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.28.6` and `idm-heatpump-api` `2.17.0` form the current
+Source-tree integration `0.28.7` and `idm-heatpump-api` `2.17.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

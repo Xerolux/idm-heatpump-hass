@@ -35,6 +35,7 @@ _ALWAYS_REQUIRED = frozenset(
         "system_mode",
         "dhw_temp_top",
         "dhw_setpoint",
+        "demand_onetime_dhw",
         "dhw_charge_on_temp",
         "dhw_charge_off_temp",
         "dhw_demand",

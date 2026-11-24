@@ -790,6 +790,9 @@
     "dhw_boost_start_failed_rollback_incomplete": {
       "message": "El refuerzo de ACS no pudo iniciarse y el estado anterior no se pudo restaurar por completo. La recuperación reintentará en la próxima actualización del coordinador."
     },
+    "dhw_boost_storage_unavailable": {
+      "message": "Home Assistant no pudo leer el estado guardado del refuerzo de agua caliente. Inténtalo de nuevo cuando el almacenamiento esté disponible."
+    },
     "dhw_boost_invalid_recovery_state": {
       "message": "El estado de recuperación persistido está incompleto."
     },

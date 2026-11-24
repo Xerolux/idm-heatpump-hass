@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.28.7 — 2026-11-24
+
+Manually cancelling a boost withdraws its outstanding one-time demand, including while the controller delays setpoint restoration. The integration preserves pre-existing requests and the PV cooldown after a declined start. [Cancel a boost](Services#cancel-dhw-boost).
+
 ## v0.28.6 — 2026-11-23
 
 Cancelling a hot water boost once restores the previous setpoint on the next eligible update, even when the first write has to wait for register write protection. [Cancel a boost](Services#cancel-dhw-boost).

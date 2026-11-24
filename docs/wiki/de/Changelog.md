@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.28.7 — 2026-11-24
+
+Beim manuellen Abbruch nimmt der Boost seine noch anstehende Einmalanforderung zurück, auch wenn der Schreibschutz die Rückstellung des Sollwerts verzögert. Eine zuvor aktive Anforderung bleibt erhalten. Die PV-Automatik hält ihre Sperrzeit auch nach einem abgewiesenen Start ein. [Boost abbrechen](Services#cancel-dhw-boost).
+
 ## v0.28.6 — 2026-11-23
 
 Ein Klick auf „Boost beenden“ genügt. Ist die Schreibsperre noch aktiv, stellt die Integration den vorherigen Warmwasser-Sollwert bei der nächsten möglichen Aktualisierung wieder her. [Boost abbrechen](Services#cancel-dhw-boost).

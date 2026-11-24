@@ -790,6 +790,9 @@
     "dhw_boost_start_failed_rollback_incomplete": {
       "message": "Boost-ul de apă caldă nu a putut porni, iar starea anterioară nu a putut fi restabilită complet. Recuperarea va reîncerca la următoarea actualizare a coordonatorului."
     },
+    "dhw_boost_storage_unavailable": {
+      "message": "Home Assistant nu a putut citi starea salvată a încălzirii accelerate a apei calde. Încearcă din nou când spațiul de stocare este disponibil."
+    },
     "dhw_boost_invalid_recovery_state": {
       "message": "Starea de recuperare persistată este incompletă."
     },

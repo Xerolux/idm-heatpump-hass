@@ -219,7 +219,11 @@ class EnergyManager:
             self._waiting_for_end = False
         if self._blocked_until is not None and now < self._blocked_until:
             return False
-        if not self._ready() or not self._coordinator.last_update_success:
+        if (
+            not self._ready()
+            or not self._coordinator.last_update_success
+            or self._coordinator.poll_statistics.consecutive_failures
+        ):
             return False
         data = self._coordinator.data or {}
         unused: frozenset[str] = getattr(self._coordinator, "unused_registers", frozenset())
@@ -246,12 +250,9 @@ class EnergyManager:
             )
         except DhwBoostError as err:
             _LOGGER.warning("IDM energy manager could not start DHW boost: %s", err)
-            self._waiting_for_end = False
-            await self._async_save()
+            # Keep the persisted reservation. The next idle evaluation starts the cooldown.
             return False
         if not manager.active:
-            self._waiting_for_end = False
-            await self._async_save()
             return False
         _LOGGER.info("IDM energy manager started DHW boost using %.2f kW surplus", self._surplus_kw() or 0.0)
         return True

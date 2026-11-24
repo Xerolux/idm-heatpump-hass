@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import logging
 import math
 from collections.abc import Callable
@@ -41,9 +40,8 @@ _MAX_TIMEOUT: Final = 240
 _HOT_WATER_ONLY_MODE: Final = 4
 
 #: GLT one-time DHW demand register (1713, KNX object 383), present in the
-#: shared Navigator 2.0/10/Pro register map. One rising write starts a single
-#: DHW charge while the system mode stays untouched — the controller clears
-#: the bit itself, so the boost never writes 0 back (momentary-command rule).
+#: shared Navigator 2.0/10/Pro register map. Check this read/write input on
+#: manual cancellation in case the boost request is still asserted (#719).
 #: Navigator 1.x maps do not include the register; their one-shot control is
 #: the c3003 Vorrangladung coil served by the button platform (issue #719).
 _ONETIME_DEMAND_REGISTER: Final = "demand_onetime_dhw"
@@ -142,6 +140,8 @@ class DhwBoostManager:
         self.last_reason: str | None = None
         self.preserve_system_mode = False
         self.uses_onetime_demand = False
+        self._owns_onetime_demand = False
+        self._withdrawal_saved = False
 
     @property
     def default_target_temperature(self) -> int:
@@ -153,11 +153,15 @@ class DhwBoostManager:
 
     @property
     def supported(self) -> bool:
+        if self.coordinator.update_interval is None:
+            return False
         mode = self.coordinator.get_register("system_mode")
         setpoint = self.coordinator.get_register("dhw_setpoint")
         current = self.coordinator.get_register("dhw_temp_top")
-        unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
-        if "system_mode" in unused or "dhw_setpoint" in unused or "dhw_temp_top" in unused:
+        unavailable = self.coordinator.unused_registers | self.coordinator.unsupported_registers
+        if unavailable.intersection(("system_mode", "dhw_setpoint", "dhw_temp_top", _ONETIME_DEMAND_REGISTER)):
+            return False
+        if self.coordinator.get_register(_ONETIME_DEMAND_REGISTER) is not None and not self._onetime_demand_available():
             return False
         return bool(mode and mode.writable and setpoint and setpoint.writable and current)
 
@@ -167,27 +171,28 @@ class DhwBoostManager:
         When register 1713 is in the map, the boost triggers a single charge
         through it and never switches the system mode: on a Navigator 10 the
         hot-water-only mode stopped room heating without starting a charge
-        (issue #719). Without the register (Navigator 1.x) the legacy
-        mode-switch strategy remains.
+        (issue #719). Navigator 1.x exposes a separate priority-charge button.
         """
         register = self.coordinator.get_register(_ONETIME_DEMAND_REGISTER)
-        unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
-        return bool(register is not None and register.writable and _ONETIME_DEMAND_REGISTER not in unused)
+        unavailable = self.coordinator.unused_registers | self.coordinator.unsupported_registers
+        return bool(register is not None and register.writable and _ONETIME_DEMAND_REGISTER not in unavailable)
 
     async def async_setup(self) -> None:
         """Load persisted recovery data and subscribe to coordinator updates."""
-        if self._setup_complete:
-            return
-        self._setup_complete = True
-        self._unsub_coordinator = self.coordinator.async_add_listener(self._handle_coordinator_update)
-        try:
-            stored = await self._store.async_load()
-        except Exception:
-            _LOGGER.warning("Could not load persisted IDM DHW boost state", exc_info=True)
-            return
-        if not isinstance(stored, dict) or stored.get("active") is not True:
-            return
+        async with self._lock:
+            if self._setup_complete:
+                return
+            try:
+                stored = await self._store.async_load()
+            except Exception:
+                _LOGGER.warning("Could not load persisted IDM DHW boost state", exc_info=True)
+                return
+            self._setup_complete = True
+            if isinstance(stored, dict) and stored.get("active") is True:
+                self._subscribe()
+                await self._async_recover_locked(stored)
 
+    async def _async_recover_locked(self, stored: dict[str, Any]) -> None:
         self.active = True
         self.status = "recovery_required"
         self.target_temperature = self._safe_int(stored.get("target_temperature"))
@@ -201,15 +206,15 @@ class DhwBoostManager:
         # Old snapshots describe the manual, hot-water-only boost.
         self.preserve_system_mode = stored.get("preserve_system_mode") is True
         self.uses_onetime_demand = stored.get("uses_onetime_demand") is True
+        self._owns_onetime_demand = self.uses_onetime_demand and stored.get("withdraw_onetime_demand") is True
+        if self._owns_onetime_demand:
+            self.last_reason = "manual_cancel"
 
-        async with self._lock:
-            try:
-                await self._async_restore_locked("startup_recovery")
-            except Exception:
-                _LOGGER.exception(
-                    "IDM DHW boost recovery could not restore the previous state; "
-                    "the integration will retry on coordinator updates",
-                )
+        self._withdrawal_saved = self._owns_onetime_demand
+        try:
+            await self._async_restore_locked(self.last_reason)
+        except Exception:
+            _LOGGER.exception("Could not restore the DHW boost snapshot; retrying on coordinator updates")
         self._notify()
 
     async def async_start(
@@ -220,12 +225,20 @@ class DhwBoostManager:
         preserve_system_mode: bool = False,
     ) -> None:
         """Persist the snapshot, then activate DHW priority and target."""
+        if not self._setup_complete:
+            await self.async_setup()
         async with self._lock:
             if self.active:
                 raise DhwBoostError(
                     "The domestic hot water boost is already running; cancel it first",
                     translation_key="dhw_boost_already_active",
                 )
+            if not self._setup_complete:
+                raise DhwBoostError(
+                    "Could not read the saved boost state", translation_key="dhw_boost_storage_unavailable"
+                )
+            if not self._has_current_poll():
+                raise DhwBoostError("No current controller reading", translation_key="dhw_boost_no_current_temp")
             if not self.supported:
                 raise DhwBoostError(
                     "The required domestic hot water and system mode registers are not available",
@@ -281,22 +294,29 @@ class DhwBoostManager:
             self._setpoint_restored = False
             self.last_reason = None
             self.uses_onetime_demand = onetime
+            self._owns_onetime_demand = False
             # With the one-time demand register the boost never owns the
             # system mode, so it also never has to give it back.
             self.preserve_system_mode = preserve_system_mode or onetime
 
             # Persist before the first device write. This is the recovery
             # contract if Home Assistant stops between the two writes.
-            await self._async_save()
+            try:
+                await self._async_save()
+            except (Exception, asyncio.CancelledError):
+                self.active = False
+                self.status = "idle"
+                raise
+            self._subscribe()
             self._notify()
 
             try:
                 await self._async_write("dhw_setpoint", target)
                 if onetime:
-                    # Momentary GLT command: one rising write triggers the
-                    # charge. Writing 0 back is forbidden — the controller
-                    # clears the bit itself.
-                    await self._async_write(_ONETIME_DEMAND_REGISTER, True)
+                    previous_demand = self._onetime_demand_readback()
+                    if previous_demand is not True:
+                        await self._async_write(_ONETIME_DEMAND_REGISTER, True)
+                        self._owns_onetime_demand = previous_demand is False
                 elif not self.preserve_system_mode:
                     await self._async_write("system_mode", _HOT_WATER_ONLY_MODE)
             except Exception as err:
@@ -316,13 +336,19 @@ class DhwBoostManager:
                 ) from err
 
             self.status = "active"
-            await self._async_save()
             self._schedule_timeout()
+            await self._async_save()
             self._notify()
 
     async def async_cancel(self) -> None:
         """Cancel an active boost and restore the exact saved snapshot."""
+        if not self._setup_complete:
+            await self.async_setup()
         async with self._lock:
+            if not self._setup_complete:
+                raise DhwBoostError(
+                    "Could not read the saved boost state", translation_key="dhw_boost_storage_unavailable"
+                )
             if not self.active:
                 self.status = "idle"
                 self.last_reason = "not_active"
@@ -335,7 +361,8 @@ class DhwBoostManager:
         async with self._lock:
             if self.active:
                 try:
-                    await self._async_restore_locked("integration_unload")
+                    reason = "manual_cancel" if self.last_reason == "manual_cancel" else "integration_unload"
+                    await self._async_restore_locked(reason)
                 except Exception:
                     _LOGGER.exception(
                         "Could not restore IDM DHW boost state during unload; persisted recovery remains active",
@@ -349,7 +376,14 @@ class DhwBoostManager:
                 self._unsub_coordinator = None
             self._setup_complete = False
 
+    def _subscribe(self) -> None:
+        if self._unsub_coordinator is None:
+            self._unsub_coordinator = self.coordinator.async_add_listener(self._handle_coordinator_update)
+
     def _handle_coordinator_update(self) -> None:
+        if self._owns_onetime_demand and self._onetime_demand_readback() is False:
+            # A later rising edge belongs to a new request.
+            self._owns_onetime_demand = False
         if self._notifying or not self.active or self._evaluation_in_progress or self._evaluation_task is not None:
             return
         task = self.coordinator.hass.async_create_task(self._async_evaluate())
@@ -388,6 +422,8 @@ class DhwBoostManager:
                         )
                     return
 
+                if not self._has_current_poll():
+                    return
                 data = self.coordinator.data or {}
                 unused: frozenset[str] = getattr(self.coordinator, "unused_registers", frozenset())
                 raw_temp = data.get("dhw_temp_top") if "dhw_temp_top" not in unused else None
@@ -445,19 +481,31 @@ class DhwBoostManager:
         delay = max(0.0, (self.deadline - _utcnow()).total_seconds())
         await asyncio.sleep(delay)
         if self._evaluation_task is not None and not self._evaluation_task.done():
-            with contextlib.suppress(asyncio.CancelledError):
-                await self._evaluation_task
+            # Cancelling the timer during restoration must not cancel the write it is waiting for.
+            await asyncio.shield(self._evaluation_task)
         await self._async_evaluate()
 
     def _schedule_timeout(self) -> None:
         self._cancel_timeout()
-        self._timeout_task = self.coordinator.hass.async_create_task(self._async_timeout())
+        self._timeout_task = self._entry.async_create_background_task(
+            self.coordinator.hass, self._async_timeout(), "IDM DHW boost timeout"
+        )
 
     def _cancel_timeout(self) -> None:
         task = self._timeout_task
         if task is not None and task is not asyncio.current_task():
             task.cancel()
         self._timeout_task = None
+
+    def _has_current_poll(self) -> bool:
+        # During the quiet Modbus outage window the coordinator serves its last snapshot.
+        return self.coordinator.last_update_success and self.coordinator.poll_statistics.consecutive_failures == 0
+
+    def _onetime_demand_readback(self) -> bool | None:
+        if not self._has_current_poll() or _ONETIME_DEMAND_REGISTER in self.coordinator.unused_registers:
+            return None
+        value = (self.coordinator.data or {}).get(_ONETIME_DEMAND_REGISTER)
+        return bool(value) if value in (0, 1) else None
 
     async def _async_restore_locked(self, reason: str) -> None:
         if self.previous_setpoint is None or self.previous_mode is None:
@@ -473,23 +521,45 @@ class DhwBoostManager:
 
         already_pending = self.status == "recovery_required" and self.last_reason == reason
         self.last_reason = reason
-        if not already_pending:
+        if not already_pending or self._withdrawal_saved != (reason == "manual_cancel" and self._owns_onetime_demand):
             self.status = "recovery_required"
             await self._async_save()
+        register = "dhw_setpoint"
         try:
             if not self._setpoint_restored:
-                await self._async_write_paced("dhw_setpoint", self.previous_setpoint)
-                self._setpoint_restored = True
-                _LOGGER.debug("DHW boost wrote the previous setpoint of %s °C (%s)", self.previous_setpoint, reason)
-                if not self.preserve_system_mode:
-                    await self._async_save()
+                try:
+                    await self._async_write_paced("dhw_setpoint", self.previous_setpoint)
+                except _WritePaced:
+                    if reason != "manual_cancel" or not self._owns_onetime_demand:
+                        raise
+                    if not already_pending:
+                        _LOGGER.debug("DHW boost waiting for the dhw_setpoint write interval (%s)", reason)
+                else:
+                    self._setpoint_restored = True
+                    _LOGGER.debug("DHW boost wrote the previous setpoint of %s °C (%s)", self.previous_setpoint, reason)
+                    if not self.preserve_system_mode or (reason == "manual_cancel" and self._owns_onetime_demand):
+                        await self._async_save()
+            if reason == "manual_cancel" and self._owns_onetime_demand:
+                register = _ONETIME_DEMAND_REGISTER
+                demand = self._onetime_demand_readback()
+                if demand is None or not self._onetime_demand_available():
+                    self._notify()
+                    return
+                if demand:
+                    await self._async_write_paced(register, False)
+                    _LOGGER.debug("DHW boost withdrew its one-time hot water demand (%s)", reason)
+                self._owns_onetime_demand = False
+                await self._async_save()
+            if not self._setpoint_restored:
+                self._notify()
+                return
             if not self.preserve_system_mode:
-                await self._async_write_paced("system_mode", self.previous_mode)
+                register = "system_mode"
+                await self._async_write_paced(register, self.previous_mode)
         except _WritePaced as err:
             # Keep the recovery snapshot active. The next coordinator update
             # resumes from the first unfinished write after the cooldown.
             if not already_pending:
-                register = "system_mode" if self._setpoint_restored else "dhw_setpoint"
                 _LOGGER.debug("DHW boost waiting for the %s write interval (%s)", register, reason)
             self._notify()
             if reason != "start_failed_rollback":
@@ -506,6 +576,7 @@ class DhwBoostManager:
             ) from err
 
         self._cancel_timeout()
+        self._owns_onetime_demand = False
         self.active = False
         self.status = "idle"
         self.last_reason = reason
@@ -541,6 +612,7 @@ class DhwBoostManager:
         await self.coordinator.async_write_register(register, value)
 
     async def _async_save(self) -> None:
+        withdraw = self._owns_onetime_demand and self.last_reason == "manual_cancel"
         await self._store.async_save(
             {
                 "active": self.active,
@@ -555,8 +627,10 @@ class DhwBoostManager:
                 "last_reason": self.last_reason,
                 "preserve_system_mode": self.preserve_system_mode,
                 "uses_onetime_demand": self.uses_onetime_demand,
+                "withdraw_onetime_demand": withdraw,
             }
         )
+        self._withdrawal_saved = withdraw
 
     def _notify(self) -> None:
         self._notifying = True

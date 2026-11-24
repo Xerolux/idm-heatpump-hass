@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 import re
 from pathlib import Path
@@ -512,6 +513,33 @@ def test_transport_update_keeps_dated_contributor_example(tmp_path, monkeypatch)
     updated = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
     assert f"Current: `modbus-connection>={new_version}`" in updated
     assert historical in updated
+
+
+def test_transport_ceilings_respect_both_supported_ha_versions(tmp_path, monkeypatch) -> None:
+    _write(tmp_path, "hacs.json", json.dumps({"homeassistant": "2026.11.0"}))
+    monkeypatch.setattr(pins, "ROOT", tmp_path)
+    monkeypatch.setattr(pins, "fetch_project", lambda name: _payload("2026.11.0", "2026.11.3", "2026.12.0b1"))
+    releases = {
+        "2026.11.0": ["modbus-connection[tmodbus]==4.12.7", "tmodbus==1.1.1"],
+        "2026.11.3": ["modbus-connection[tmodbus]==4.12.8", "tmodbus==1.1.0"],
+    }
+
+    def fetch_manifest(url, *, timeout):
+        tag = url.split("/core/")[1].split("/")[0]
+        return io.BytesIO(json.dumps({"requirements": releases[tag]}).encode())
+
+    monkeypatch.setattr(pins.urllib.request, "urlopen", fetch_manifest)
+    assert pins.homeassistant_pins() == {"modbus-connection": pins.Version("4.12.7"), "tmodbus": pins.Version("1.1.0")}
+
+
+def test_transport_floor_update_stops_if_ha_pins_are_unavailable(monkeypatch) -> None:
+    def unavailable():
+        raise TimeoutError
+
+    monkeypatch.setattr(pins, "homeassistant_pins", unavailable)
+    assert pins.main([]) == 1
+    assert pins.main(["--update"]) == 1
+    assert pins.main(["--warn-only"]) == 0
 
 
 def test_ha_owned_floor_held_below_home_assistants_own_pin() -> None:

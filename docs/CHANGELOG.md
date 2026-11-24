@@ -13,6 +13,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.28.7] - 2026-11-24
+
+Cancelling a hot water boost now also withdraws its outstanding one-time demand on supported Navigators. The controller still decides when an accepted charge ends.
+
+### ⚠️ Upgrade notes
+
+- **No configuration changes are needed.** Finish an active boost before upgrading or rolling back. A boost started on 0.28.6 has no record of who set the one-time demand, so 0.28.7 leaves that input alone.
+
+### 🐛 Bugfixes
+
+- **Cancel clears the request the boost made.** If the input was off at startup and is still on, the integration can withdraw it while the previous setpoint waits for write protection to expire. Once the input clears, a later request is preserved, including after a restart. [#719](https://github.com/Xerolux/idm-heatpump-hass/issues/719)
+- **Boost startup waits for current readings and saved state.** A failed read or initial save prevents a start. Removing the start button allows an active boost to finish, and its timer lets Home Assistant finish startup normally.
+- **PV boost respects its configured cooldown.** A declined start or a tank already at temperature keeps the cooldown in effect.
+
+### 💼 Maintenance
+
+- **The transport version check now respects the oldest supported Home Assistant.** Home Assistant 2026.11.0 through 2026.11.2 can keep their Modbus library at 4.12.7. Home Assistant 2026.11.3 can use 4.12.8. The integration still uses iDM API 2.17.0.
+
+### ❤️ Thanks
+
+- **Thanks to @x29a** for confirming that 0.28.6 restored the setpoint and reporting that charging resumed after switching from standby back to automatic.
+
 ## [0.28.6] - 2026-11-23
 
 Press Cancel once to end a hot water boost. If the controller’s write interval is still active, Home Assistant can now restore your previous setpoint on a later update.

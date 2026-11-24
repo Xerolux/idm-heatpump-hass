@@ -207,6 +207,7 @@ def test_water_heater_and_internal_safety_registers_are_preserved(
         "system_mode",
         "dhw_temp_top",
         "dhw_setpoint",
+        "demand_onetime_dhw",
         "hp_operating_mode",
         "hp_sum_alarm",
         "compressor_status_1",
@@ -224,6 +225,7 @@ def test_water_heater_and_internal_safety_registers_are_preserved(
     assert required is not None
     assert "dhw_temp_top" in required
     assert "dhw_setpoint" in required
+    assert "demand_onetime_dhw" in required
     assert "hp_sum_alarm" in required
     assert "compressor_status_1" in required
     assert "unused_register" not in required
