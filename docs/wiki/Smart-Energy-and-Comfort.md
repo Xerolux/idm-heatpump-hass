@@ -96,8 +96,7 @@ transactional DHW boost with a temporary DHW setpoint only. The automatic
 boost leaves the system mode unchanged, so room heating remains available.
 On Navigator 2.0/10/Pro both the manual and the automatic boost trigger the
 charge through the one-time DHW demand register (1713) and keep the system
-mode untouched; the manual hot-water-only mode switch remains only on
-controllers without that register (Navigator 1.x). Neither path changes the
+mode untouched. Navigator 1.x has a separate one-shot priority-charge button. Neither path changes the
 heating curve or the electric heater settings.
 
 Requirements:

@@ -273,7 +273,7 @@ Für eine einzelne Ladung mit den eingestellten Temperaturen schalte **Einmalige
 
 **Aktion:** `idm_heatpump.start_dhw_boost`
 
-**Ziel:** Gerät der Integration
+Bei mehreren Anlagen unter `data.entry_id` den Konfigurationseintrag auswählen.
 
 | Feld | Typ | Beschreibung |
 |-------|------|-------------|
@@ -284,8 +284,6 @@ Für eine einzelne Ladung mit den eingestellten Temperaturen schalte **Einmalige
 **Beispiel:**
 ```yaml
 service: idm_heatpump.start_dhw_boost
-target:
-  device_id: abc123def456
 data:
   target_temperature: 60
   timeout_minutes: 90
@@ -293,9 +291,9 @@ data:
 
 Wie die Ladung ausgelöst wird, hängt vom Regler ab:
 
-- **Navigator 2.0 / 10 / Pro:** beim Start schreibt der Boost eine 1 in das GLT-Register für die
-  einmalige WW-Anforderung (1713, `demand_onetime_dhw`, KNX-Objekt 383)
-  genau einmal und lässt die Betriebsart unberührt — der Regler bleibt in
+- **Navigator 2.0 / 10 / Pro:** beim Start setzt der Boost die einmalige WW-Anforderung
+  (1713, `demand_onetime_dhw`, KNX-Objekt 383), sofern sie noch nicht aktiv ist,
+  und lässt die Betriebsart unberührt — der Regler bleibt in
   Automatik. Der Regler kann die Heizkreispumpe während der Ladung anhalten. Das entspricht der nativen
   iDM-App (Issue #719: der frühere Wechsel in den Nur-Warmwasser-Modus
   stoppte die Heizung, ohne eine Ladung zu starten, an einem Navigator 10).
@@ -303,9 +301,7 @@ Wie die Ladung ausgelöst wird, hängt vom Regler ab:
   Fünf-Minuten-Tests lesbar, aber es startete keine Ladung. Automatik blieb
   aktiv und der ursprüngliche Sollwert wurde wiederhergestellt. Prüfe, ob
   dein Regler tatsächlich lädt, bevor du dich auf diese Aktion verlässt.
-- **Regler ohne dieses Register (Navigator 1.x):** der Boost wählt für die
-  Laufzeit den Nur-Warmwasser-Modus und stellt am Ende die vorherige
-  Betriebsart wieder her, wie bisher.
+- **Navigator 1.x:** Für die Vorrangladung gibt es einen eigenen Taster (Coil 3003). Die aktuelle Registerkarte unterstützt den zeitbegrenzten Boost nicht. Wenn ein Navigator 10 das vorgesehene Einmalregister nicht bereitstellt, wird der Start abgelehnt.
 - **Automatischer PV-Boost:** erhöht den Sollwert und fordert über 1713 einmalig eine Ladung an, sofern das Register verfügbar ist. Die Betriebsart bleibt erhalten.
 
 Der Boost ist neustartsicher: Startet Home Assistant während eines Boosts neu,
@@ -322,13 +318,11 @@ Drücke einmal auf „Abbrechen“. Solange die Schreibsperre gilt, bleibt die R
 
 **Aktion:** `idm_heatpump.cancel_dhw_boost`
 
-**Ziel:** Gerät der Integration
+Bei mehreren Anlagen unter `data.entry_id` den Konfigurationseintrag auswählen.
 
 **Beispiel:**
 ```yaml
 service: idm_heatpump.cancel_dhw_boost
-target:
-  device_id: abc123def456
 ```
 
 ## generate_dashboard

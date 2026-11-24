@@ -25,6 +25,7 @@ def _coordinator():
         config_entry=SimpleNamespace(entry_id="test"),
         data={"dhw_temp_top": 45.0, "dhw_setpoint": 48, "system_mode": 1},
         last_update_success=True,
+        poll_statistics=SimpleNamespace(consecutive_failures=0),
         register_required_registers=lambda *_: lambda: None,
     )
 
@@ -441,3 +442,14 @@ async def test_start_spawns_a_background_task_bootstrap_does_not_wait_for(monkey
     assert not task.done()
     await manager.async_stop()
     assert manager._task is None
+
+
+@pytest.mark.parametrize("refused", [False, True])
+async def test_noop_and_failed_starts_retain_the_automatic_cooldown(monkeypatch, refused):
+    manager, boost = await _automatic_manager(monkeypatch)
+    boost.async_start.side_effect = module.DhwBoostError("refused") if refused else None
+    assert not await manager.async_evaluate_once()
+    assert manager._store.data["waiting_for_end"]
+    assert not await manager.async_evaluate_once()
+    boost.async_start.assert_awaited_once()
+    assert manager._store.data["blocked_until"] is not None

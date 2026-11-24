@@ -790,6 +790,9 @@
     "dhw_boost_start_failed_rollback_incomplete": {
       "message": "Podbicie ciepłej wody nie mogło się rozpocząć i poprzedni stan nie został jeszcze w pełni przywrócony. Przywracanie zostanie ponowione przy następnej aktualizacji koordynatora."
     },
+    "dhw_boost_storage_unavailable": {
+      "message": "Home Assistant nie mógł odczytać zapisanego stanu dogrzewania ciepłej wody. Spróbuj ponownie, gdy pamięć będzie dostępna."
+    },
     "dhw_boost_invalid_recovery_state": {
       "message": "Zapisany stan przywracania jest niekompletny."
     },

@@ -214,12 +214,6 @@ class IdmDhwBoostStartButton(_IdmDhwBoostButtonBase):
         except DhwBoostError as err:
             raise _translate_boost_error(err) from err
 
-    async def async_will_remove_from_hass(self) -> None:
-        # The boost actions are domain services registered in async_setup, so
-        # they outlive this entity; only the manager is torn down here.
-        await self._manager.async_shutdown()
-        await super().async_will_remove_from_hass()
-
 
 class IdmDhwBoostCancelButton(_IdmDhwBoostButtonBase):
     """Cancel DHW boost and restore the exact previous values."""

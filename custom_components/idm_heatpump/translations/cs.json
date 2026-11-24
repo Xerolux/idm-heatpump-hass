@@ -790,6 +790,9 @@
     "dhw_boost_start_failed_rollback_incomplete": {
       "message": "Boost teplé vody se nepodařilo spustit a předchozí stav se zatím nepodařilo plně obnovit. Obnovení se zopakuje při další aktualizaci koordinátora."
     },
+    "dhw_boost_storage_unavailable": {
+      "message": "Home Assistant nemohl načíst uložený stav ohřevu teplé vody. Zkuste to znovu, až bude úložiště dostupné."
+    },
     "dhw_boost_invalid_recovery_state": {
       "message": "Uložený stav obnovení je neúplný."
     },

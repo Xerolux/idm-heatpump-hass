@@ -3416,6 +3416,9 @@
     "dhw_boost_start_failed_rollback_incomplete": {
       "message": "The DHW boost could not start and the previous state could not be fully restored yet. Recovery will retry on the next coordinator update."
     },
+    "dhw_boost_storage_unavailable": {
+      "message": "Home Assistant could not read the saved hot-water boost state. Try again when storage is available."
+    },
     "dhw_boost_invalid_recovery_state": {
       "message": "The persisted recovery state is incomplete."
     },

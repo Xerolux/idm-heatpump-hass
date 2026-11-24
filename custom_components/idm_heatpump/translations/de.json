@@ -3416,6 +3416,9 @@
     "dhw_boost_start_failed_rollback_incomplete": {
       "message": "Der Boost-Start ist fehlgeschlagen und der vorherige Zustand konnte noch nicht vollständig wiederhergestellt werden. Die Wiederherstellung wird beim nächsten Coordinator-Update erneut versucht."
     },
+    "dhw_boost_storage_unavailable": {
+      "message": "Home Assistant konnte den gespeicherten Zustand des Warmwasser-Boosts nicht lesen. Versuche es erneut, sobald der Speicher verfügbar ist."
+    },
     "dhw_boost_invalid_recovery_state": {
       "message": "Der gespeicherte Wiederherstellungszustand ist unvollständig."
     },

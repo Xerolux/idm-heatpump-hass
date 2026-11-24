@@ -185,6 +185,7 @@ from .device_hierarchy import (
     precreate_main_device,
     shorten_legacy_differential_entity_ids,
 )
+from .dhw_boost import async_get_dhw_boost_manager
 from .energy_manager import EnergyManager, EnergyManagerConfig
 from .energy_statistics import EnergyStatistics
 from .error_messages import (
@@ -1253,6 +1254,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
                 entry.runtime_data.room_temp_forwarder = room_temp_forwarder
 
         await coordinator.async_config_entry_first_refresh()
+        # Pending restoration belongs to the entry even when the Smart profile or its buttons are disabled.
+        await async_get_dhw_boost_manager(coordinator)
         precreate_main_device(hass, coordinator)
         await hass.config_entries.async_forward_entry_setups(entry, platforms)
         cleanup_removed_technician_entities(hass, coordinator)

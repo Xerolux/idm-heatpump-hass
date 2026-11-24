@@ -48,8 +48,13 @@ class FakeCoordinator:
         self.events = events if events is not None else []
         self.config_entry = MagicMock()
         self.config_entry.entry_id = "entry"
+        self.config_entry.async_create_background_task.side_effect = lambda hass, coro, name: asyncio.create_task(coro)
+        self.unused_registers = frozenset()
+        self.unsupported_registers = frozenset()
+        self.poll_statistics = MagicMock(consecutive_failures=0)
         self.hass = MagicMock()
         self.hass.async_create_task.side_effect = asyncio.create_task
+        self.update_interval = timedelta(seconds=60)
         self.last_update_success = True
         self.data = {
             "system_mode": 1,
@@ -786,6 +791,8 @@ async def test_cancel_leaves_a_preexisting_or_unknown_onetime_demand(monkeypatch
     await manager.async_cancel()
     assert coordinator.data["dhw_setpoint"] == 48
     assert ("write", "demand_onetime_dhw", False) not in coordinator.events
+    if initial is True:
+        assert ("write", "demand_onetime_dhw", True) not in coordinator.events
 
 
 async def test_cancel_leaves_a_new_request_after_the_controller_cleared_the_boost(monkeypatch):
@@ -876,9 +883,9 @@ async def test_onetime_demand_boost_recovery_never_writes_mode_or_demand(monkeyp
 
 @pytest.mark.parametrize(
     "register_setup",
-    ["not_writable", "unused"],
+    ["not_writable", "unused", "unsupported"],
 )
-async def test_unusable_onetime_register_falls_back_to_the_mode_switch(monkeypatch, register_setup):
+async def test_unusable_onetime_register_does_not_switch_off_heating(monkeypatch, register_setup):
     events = []
     store = FakeStore(events=events)
     monkeypatch.setattr(module, "Store", lambda *args, **kwargs: store)
@@ -890,16 +897,16 @@ async def test_unusable_onetime_register_falls_back_to_the_mode_switch(monkeypat
             datatype=DataType.BOOL,
             name="demand_onetime_dhw",
         )
-    else:
+    elif register_setup == "unused":
         coordinator.unused_registers = frozenset({"demand_onetime_dhw"})
+    else:
+        coordinator.unsupported_registers = frozenset({"demand_onetime_dhw"})
     manager = DhwBoostManager(coordinator)
     await manager.async_setup()
 
-    await manager.async_start(target_temperature=60, timeout_minutes=30)
-
-    assert ("write", "system_mode", 4) in events
-    assert not any(event[:2] == ("write", "demand_onetime_dhw") for event in events)
-    assert manager.state_attributes["priority"] == "dhw_setpoint_and_hot_water_only_until_end_or_cancel"
+    with _raises_boost_error("dhw_boost_unsupported"):
+        await manager.async_start()
+    assert not any(event[0] == "write" for event in events)
     await manager.async_shutdown()
 
 
@@ -958,7 +965,7 @@ async def test_onetime_boost_cancel_waits_for_eeprom_then_logs_setpoint_write(mo
     remaining = iter([42.2, 10.4])
 
     async def paced(register, value):
-        seconds = next(remaining, None)
+        seconds = next(remaining, None) if register.name == "dhw_setpoint" else None
         if seconds is not None:
             raise ValueError(
                 f"EEPROM-sensitive register '{register.name}' was written too recently (try again in {seconds}s)"
@@ -975,13 +982,13 @@ async def test_onetime_boost_cancel_waits_for_eeprom_then_logs_setpoint_write(mo
 
     assert not manager.active
     assert [event for event in coordinator.events if event[0] == "write"] == [
-        ("write", "dhw_setpoint", 52),
         ("write", "demand_onetime_dhw", False),
+        ("write", "dhw_setpoint", 52),
     ]
     assert [record.getMessage() for record in caplog.records if record.name == module.__name__] == [
         "DHW boost waiting for the dhw_setpoint write interval (manual_cancel)",
-        "DHW boost wrote the previous setpoint of 52 °C (manual_cancel)",
         "DHW boost withdrew its one-time hot water demand (manual_cancel)",
+        "DHW boost wrote the previous setpoint of 52 °C (manual_cancel)",
     ]
     await manager.async_shutdown()
 
@@ -1030,3 +1037,119 @@ async def test_restart_after_partial_restoration_preserves_new_setpoint(monkeypa
     assert [event for event in events if event[0] == "write"] == [("write", "system_mode", 1)]
     assert not manager.active
     assert store.saved[-1]["active"] is False
+
+
+@pytest.mark.parametrize(("success", "failures"), [(False, 1), (True, 1)])
+async def test_stale_poll_cannot_start_a_boost(monkeypatch, success, failures):
+    manager, coordinator, _store = await _manager(monkeypatch, onetime=True)
+    coordinator.last_update_success = success
+    coordinator.poll_statistics.consecutive_failures = failures
+    with _raises_boost_error("dhw_boost_no_current_temp"):
+        await manager.async_start()
+    assert not any(e[0] == "write" for e in coordinator.events)
+
+
+async def test_store_failure_before_start_never_enforces_unsaved_setpoint(monkeypatch):
+    manager, coordinator, store = await _manager(monkeypatch, onetime=True)
+    store.async_save = AsyncMock(side_effect=OSError("disk full"))
+    with pytest.raises(OSError):
+        await manager.async_start()
+    await manager._async_evaluate()
+    assert not manager.active
+    assert not any(e[0] == "write" for e in coordinator.events)
+
+
+async def test_unreadable_store_blocks_start_until_recovery_can_be_read(monkeypatch):
+    manager, _coordinator, store = await _manager(monkeypatch, onetime=True)
+    await manager.async_shutdown()
+    store.async_load = AsyncMock(side_effect=[OSError("unavailable"), None])
+    with _raises_boost_error("dhw_boost_storage_unavailable"):
+        await manager.async_start()
+    assert store.saved == []
+    await manager.async_start()
+    assert manager.active
+    await manager.async_cancel()
+
+
+async def test_concurrent_start_waits_for_startup_recovery(monkeypatch):
+    coordinator = FakeCoordinator(onetime=True)
+    store = FakeStore()
+    release = asyncio.Event()
+
+    async def load():
+        await release.wait()
+        return {"active": True, "previous_mode": 1, "previous_setpoint": 41, "preserve_system_mode": True}
+
+    store.async_load = load
+    monkeypatch.setattr(module, "Store", lambda *args: store)
+    setup = asyncio.create_task(module.async_get_dhw_boost_manager(coordinator))
+    await asyncio.sleep(0)
+
+    async def start():
+        manager = await module.async_get_dhw_boost_manager(coordinator)
+        await manager.async_start()
+
+    service = asyncio.create_task(start())
+    await asyncio.sleep(0)
+    assert not any(e[0] == "write" for e in coordinator.events)
+    release.set()
+    manager, _ = await asyncio.gather(setup, service)
+    assert manager.previous_setpoint == 41 and coordinator.data["dhw_setpoint"] == 60
+    await manager.async_cancel()
+
+
+async def test_new_request_survives_restart_during_setpoint_cooldown(monkeypatch):
+    manager, coordinator, store = await _manager(monkeypatch, onetime=True)
+    await manager.async_start()
+    write = coordinator.async_write_register
+
+    async def paced(register, value):
+        raise ValueError("EEPROM register written too recently; try again in 10s")
+
+    coordinator.async_write_register = paced
+    await manager.async_cancel()
+    assert store.saved[-1]["withdraw_onetime_demand"]
+    coordinator.data["demand_onetime_dhw"] = 0
+    coordinator._listener()
+    await manager._evaluation_task
+    assert not store.saved[-1]["withdraw_onetime_demand"]
+
+    coordinator.data["demand_onetime_dhw"] = 1
+    await manager.async_shutdown()
+    coordinator.async_write_register = write
+    store.loaded = store.saved[-1]
+    restarted = DhwBoostManager(coordinator)
+    await restarted.async_setup()
+    assert not restarted.active and coordinator.data["dhw_setpoint"] == 48
+    assert coordinator.data["demand_onetime_dhw"] == 1
+
+
+async def test_watchdog_cancellation_leaves_inflight_restoration_running(monkeypatch):
+    manager, coordinator, store = await _manager(monkeypatch, onetime=True)
+    await manager.async_start()
+    manager._cancel_timeout()
+    manager.deadline = datetime.now(UTC) - timedelta(seconds=1)
+    inside_write = asyncio.Event()
+    finish_write = asyncio.Event()
+    write = coordinator.async_write_register
+
+    async def delayed(register, value):
+        inside_write.set()
+        await finish_write.wait()
+        await write(register, value)
+        # Model the controller's async write confirmation and storage checkpoint.
+        await asyncio.sleep(0)
+
+    coordinator.async_write_register = delayed
+    coordinator._listener()
+    evaluation = manager._evaluation_task
+    await inside_write.wait()
+    manager._schedule_timeout()
+    watchdog = manager._timeout_task
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+    finish_write.set()
+    await evaluation
+    with pytest.raises(asyncio.CancelledError):
+        await watchdog
+    assert not store.saved[-1]["active"]

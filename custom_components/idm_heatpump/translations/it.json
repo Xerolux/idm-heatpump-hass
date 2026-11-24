@@ -790,6 +790,9 @@
     "dhw_boost_start_failed_rollback_incomplete": {
       "message": "Il boost dell'acqua calda non ha potuto avviarsi e lo stato precedente non è ancora stato ripristinato completamente. Il ripristino verrà ritentato al prossimo aggiornamento del coordinatore."
     },
+    "dhw_boost_storage_unavailable": {
+      "message": "Home Assistant non è riuscito a leggere lo stato salvato del boost dell’acqua calda. Riprova quando lo spazio di archiviazione sarà disponibile."
+    },
     "dhw_boost_invalid_recovery_state": {
       "message": "Lo stato di ripristino persistente è incompleto."
     },

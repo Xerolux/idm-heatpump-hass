@@ -237,31 +237,13 @@ class TestDhwBoostStartButton:
         assert exc_info.value.translation_key == "dhw_boost_already_active"
         assert exc_info.value.translation_domain == "idm_heatpump"
 
-    async def test_async_will_remove_only_shuts_down_the_manager(self):
-        """The boost actions are domain services and outlive this entity.
-
-        They used to be registered by this platform and removed when the last
-        entry unloaded, which is the opposite of what the action-setup rule
-        asks for and of what every other service in this integration does.
-        """
+    async def test_removing_start_button_leaves_entry_manager_running(self, monkeypatch):
         from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+        monkeypatch.setattr(CoordinatorEntity, "async_will_remove_from_hass", AsyncMock(), raising=False)
         button, manager, _coord = self._make()
-
-        async def _no_op_will_remove(self):
-            return None
-
-        orig_super = getattr(CoordinatorEntity, "async_will_remove_from_hass", None)
-        CoordinatorEntity.async_will_remove_from_hass = _no_op_will_remove
-        try:
-            await button.async_will_remove_from_hass()
-        finally:
-            if orig_super is not None:
-                CoordinatorEntity.async_will_remove_from_hass = orig_super
-            else:
-                delattr(CoordinatorEntity, "async_will_remove_from_hass")
-
-        assert manager.shutdown_called is True
+        await button.async_will_remove_from_hass()
+        assert not manager.shutdown_called
 
 
 class TestDhwBoostCancelButton:

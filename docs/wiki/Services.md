@@ -262,7 +262,7 @@ For one charge at the configured temperatures, call `switch.turn_on` once on **O
 
 **Service:** `idm_heatpump.start_dhw_boost`
 
-**Target:** Device of the integration
+When multiple heat pumps are configured, select one with `data.entry_id`.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -273,8 +273,6 @@ For one charge at the configured temperatures, call `switch.turn_on` once on **O
 **Example:**
 ```yaml
 service: idm_heatpump.start_dhw_boost
-target:
-  device_id: abc123def456
 data:
   target_temperature: 60
   timeout_minutes: 90
@@ -282,8 +280,8 @@ data:
 
 How the charge is triggered depends on the controller:
 
-- **Navigator 2.0 / 10 / Pro:** the boost starts by writing 1 to the GLT one-time DHW
-  demand register (1713, `demand_onetime_dhw`, KNX object 383) exactly once
+- **Navigator 2.0 / 10 / Pro:** the boost requests a charge through GLT register
+  1713 (`demand_onetime_dhw`, KNX object 383) unless the request is already on
   and never touches the system mode — a controller in Automatic stays in Automatic. The controller may pause
   the heating circuit pump during the charge. This mirrors the native iDM app (issue #719: the
   previous hot-water-only mode switch stopped heating without starting a
@@ -291,9 +289,7 @@ How the charge is triggered depends on the controller:
   read back as active in two five-minute tests, but no charge started. The
   original setpoint was restored and Automatic stayed selected. Verify that
   your controller actually starts a charge before relying on this action.
-- **Controllers without that register (Navigator 1.x):** the boost selects
-  hot-water-only mode for the runtime and restores the previous mode at the
-  end, as before.
+- **Navigator 1.x:** Use the separate priority-charge button (coil 3003). The current 1.x map does not support the timed boost. If a Navigator 10 reports its one-time input as unavailable, the integration declines the start.
 - **Automatic PV boost:** raises the setpoint and issues the one-time demand where register 1713 is available. It preserves the system mode.
 
 The boost is restart-safe: if Home Assistant restarts during a boost, the
@@ -308,13 +304,11 @@ Press Cancel once. If the write interval is still active, the boost stays pendin
 
 **Service:** `idm_heatpump.cancel_dhw_boost`
 
-**Target:** Device of the integration
+When multiple heat pumps are configured, select one with `data.entry_id`.
 
 **Example:**
 ```yaml
 service: idm_heatpump.cancel_dhw_boost
-target:
-  device_id: abc123def456
 ```
 
 ## generate_dashboard
