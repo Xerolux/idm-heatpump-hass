@@ -48,6 +48,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── services.py                   # Custom HA services (set_system_mode, acknowledge_errors, write_register, generate_dashboard)
 │   ├── services.yaml                 # Service schema definitions
 │   ├── diagnostics.py                # HA diagnostics export
+│   ├── bridge_api.py               # Opt-in scoped HTTP access to electrical power and tariff data
 │   ├── repairs.py                    # Repair flows (e.g. missing web PIN)
 │   ├── registers.py                  # Collects entity descriptions from idm-heatpump-api
 │   ├── library_adapter.py            # Adapter between idm-heatpump-api and HA EntityDescriptions
@@ -135,6 +136,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_calculated_sensors.py
 │   ├── test_cop_plausibility.py
 │   ├── test_differential_circuits.py
+│   ├── test_bridge_api.py          # Scoped bridge credentials, revocation, power and prices
 │   ├── test_changelog_consolidation.py
 │   ├── test_changelog_style.py        # Release-notes style: upgrade-notes block first, closed header set, 60-word bullets (sections after 0.23.0)
 │   ├── test_config_flow.py
