@@ -1038,6 +1038,10 @@ def _stub_homeassistant() -> None:
 
     # homeassistant.components stubs
     components = _make_module("homeassistant.components")
+    components.http = _make_module("homeassistant.components.http")
+    components.http.HomeAssistantView = type("HomeAssistantView", (), {})
+    helpers_http = _make_module("homeassistant.helpers.http")
+    helpers_http.KEY_HASS = "hass"
     components.ai_task = _make_module("homeassistant.components.ai_task")
     components.ai_task.async_generate_data = AsyncMock()
 

@@ -2352,7 +2352,8 @@ class TestOptionsFlow:
             CONF_ZONE_COUNT: 0,
         }
         result = await flow.async_step_init(None)
-        assert result["type"] == "form"
+        assert result["type"] == "menu"
+        result = await flow.async_step_configuration()
         assert result["step_id"] == "guided_mode"
 
     async def test_step_options_no_zones_creates_entry(self):
@@ -2696,7 +2697,8 @@ class TestOptionsFlowFull:
             CONF_HIDE_UNUSED: False,
         }
         result = await flow.async_step_init(None)
-        # Should re-display form with existing options pre-filled
+        assert result["type"] == "menu"
+        result = await flow.async_step_configuration()
         assert result["type"] == "form"
         assert result["step_id"] == "guided_mode"
 

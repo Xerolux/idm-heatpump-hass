@@ -733,3 +733,9 @@ and efficiency reviews. Local measured-data reports without model calls are the
 default. Free-form explanations through Ollama, an HA AI Task entity or a
 separately consented cloud provider can be enabled additionally. Reports never
 control the plant. See [setup, actions, data coverage and limits](Experimental-AI-Adviser).
+
+## Local bridge API
+
+Open the IDM integration's options and select **Local bridge API**. Copy the entry ID and the generated key before enabling access and saving. Each entry has one active key. Saving with the option disabled revokes it immediately. Only a hash is stored by the integration.
+
+The route `GET /api/idm_heatpump/bridge/v1/{entry_id}/power` takes the key in the `X-IDM-Bridge-Key` request header and returns `electrical_power_w` and `observed_at`. Use HTTPS on the LAN. Plain HTTP is accepted over loopback. The endpoint is disabled by default and returns unavailable when the IDM power observation is missing or the successful poll is older than 60 seconds.

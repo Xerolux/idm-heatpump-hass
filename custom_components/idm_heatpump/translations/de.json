@@ -987,6 +987,19 @@
   },
   "options": {
     "step": {
+      "init": {
+        "menu_options": {
+          "configuration": "Anlage konfigurieren",
+          "bridge_api": "Lokale Bridge-Schnittstelle"
+        }
+      },
+      "bridge_api": {
+        "title": "Lokale Bridge-Schnittstelle",
+        "description": "Speichere mit aktivierter Option, um den angezeigten Schlüssel für diese Anlage zu setzen oder zu ersetzen. Anlagen-ID: `{entry_id}`. Neuer Schlüssel: `{bridge_key}`. Speichern mit deaktivierter Option widerruft den Zugriff.",
+        "data": {
+          "enable": "Lesezugriff mit neuem Schlüssel aktivieren"
+        }
+      },
       "options": {
         "title": "Konfiguration – {name}",
         "description": "Lege fest, welche Daten die Integration abruft und wie sie in Home Assistant dargestellt werden. Die empfohlenen Standardwerte passen für die meisten Anlagen. Änderungen werden nach dem Speichern durch einen automatischen Neustart der Integration wirksam.",
