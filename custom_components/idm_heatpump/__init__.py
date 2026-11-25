@@ -446,7 +446,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     Services are registered here (action-setup rule) so they are available
     as soon as the domain loads, independently of config entries.
     """
-    from .bridge_api import IdmBridgePowerView
+    from .bridge_api import IdmBridgePowerView, IdmBridgePricesView
     from .ha_compat import (
         MIN_HA_VERSION_LABEL,
         ha_running_version,
@@ -468,6 +468,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     await async_setup_services(hass)
     if hass.http is not None:
         hass.http.register_view(IdmBridgePowerView)
+        hass.http.register_view(IdmBridgePricesView)
     return True
 
 

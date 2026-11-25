@@ -15,7 +15,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "be4d4c82691f0674166b534fa6542cdbb6bdcf099cc18f77690b0e3b2f570ee0"
+      "reviewed_source_sha256": "1c6afc82c187a2862d6b68351e95f213c5ca795e3aff04f93f2a41798f21f6e8"
     },
     {
       "feature": "Model and register semantics",

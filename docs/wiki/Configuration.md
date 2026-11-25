@@ -739,3 +739,5 @@ control the plant. See [setup, actions, data coverage and limits](Experimental-A
 Open the IDM integration's options and select **Local bridge API**. Copy the entry ID and the generated key before enabling access and saving. Each entry has one active key. Saving with the option disabled revokes it immediately. Only a hash is stored by the integration.
 
 The route `GET /api/idm_heatpump/bridge/v1/{entry_id}/power` takes the key in the `X-IDM-Bridge-Key` request header and returns `electrical_power_w` and `observed_at`. Use HTTPS on the LAN. Plain HTTP is accepted over loopback. The endpoint is disabled by default and returns unavailable when the IDM power observation is missing or the successful poll is older than 60 seconds.
+
+With a dynamic electricity price sensor configured in IDM, `GET /api/idm_heatpump/bridge/v1/{entry_id}/prices` returns its current price and any hourly price entries that the existing forecast parser recognizes. The route uses the same key. Euro and cent units are normalized to EUR/kWh, including negative prices. The current price carries the sensor's last-update timestamp. Missing sensors and unsupported units return unavailable.
