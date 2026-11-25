@@ -3,6 +3,7 @@
   "name": "IDM Heatpump",
   "after_dependencies": [
     "ai_task",
+    "http",
     "network"
   ],
   "codeowners": [

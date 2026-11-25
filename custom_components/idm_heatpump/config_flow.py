@@ -3295,7 +3295,29 @@ class IdmHeatpumpOptionsFlow(_IdmOptionsStepsMixin, config_entries.OptionsFlow):
         _drop_legacy_options(self._options)
         return self.async_create_entry(data=self._options)
 
+    async def async_step_configuration(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        return await self.async_step_guided_mode(user_input)
+
+    async def async_step_bridge_api(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        from secrets import token_urlsafe
+
+        from .bridge_api import CONF_BRIDGE_KEY_HASH, bridge_key_hash
+
+        if user_input is not None:
+            if user_input.get("enable"):
+                self._options[CONF_BRIDGE_KEY_HASH] = bridge_key_hash(self._bridge_key)
+            else:
+                self._options.pop(CONF_BRIDGE_KEY_HASH, None)
+            return self.async_create_entry(data=self._options)
+
+        self._bridge_key: str = token_urlsafe(32)
+        return self.async_show_form(
+            step_id="bridge_api",
+            data_schema=vol.Schema({vol.Required("enable", default=False): bool}),
+            description_placeholders={"bridge_key": self._bridge_key, "entry_id": self.config_entry.entry_id},
+        )
+
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         self._options = dict(self.config_entry.options)
         self._previous_options = dict(self.config_entry.options)
-        return await self.async_step_guided_mode()
+        return self.async_show_menu(step_id="init", menu_options=["configuration", "bridge_api"])

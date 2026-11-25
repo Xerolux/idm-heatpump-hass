@@ -987,6 +987,19 @@
   },
   "options": {
     "step": {
+      "init": {
+        "menu_options": {
+          "configuration": "Configure system",
+          "bridge_api": "Local bridge API"
+        }
+      },
+      "bridge_api": {
+        "title": "Local bridge API",
+        "description": "Save with the option enabled to set or replace the shown key for this system. Entry ID: `{entry_id}`. New key: `{bridge_key}`. Save with the option disabled to revoke access.",
+        "data": {
+          "enable": "Enable reads with the new key"
+        }
+      },
       "options": {
         "title": "Configuration – {name}",
         "description": "Choose which data the integration reads and how it is presented in Home Assistant. The recommended defaults suit most installations. Saving automatically restarts the integration to apply your changes.",

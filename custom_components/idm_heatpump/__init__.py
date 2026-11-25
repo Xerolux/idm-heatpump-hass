@@ -324,7 +324,7 @@ def _entry_reload_fingerprint(entry: ConfigEntry) -> str:
     ``entry.data`` without tearing down Modbus, web polls, or active writes.
     """
     data = {key: value for key, value in dict(entry.data).items() if key not in _DETECTION_ONLY_DATA_KEYS}
-    options = dict(entry.options)
+    options = {key: value for key, value in entry.options.items() if key != "bridge_key_hash"}
     return json.dumps({"data": data, "options": options}, sort_keys=True, default=str)
 
 
@@ -446,6 +446,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     Services are registered here (action-setup rule) so they are available
     as soon as the domain loads, independently of config entries.
     """
+    from .bridge_api import IdmBridgePowerView, IdmBridgePricesView
     from .ha_compat import (
         MIN_HA_VERSION_LABEL,
         ha_running_version,
@@ -465,6 +466,9 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     install_library_log_filter()
 
     await async_setup_services(hass)
+    if hass.http is not None:
+        hass.http.register_view(IdmBridgePowerView)
+        hass.http.register_view(IdmBridgePricesView)
     return True
 
 

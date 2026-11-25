@@ -37,6 +37,7 @@ TO_REDACT.update(
     {"myidm_id", "serial_number", "serial", "telemetry_myidm_id", "telemetry_consent_at", "firmware_consent_at"}
 )
 TO_REDACT.update(CLOUD_KEYS)
+TO_REDACT.add("bridge_key_hash")
 
 
 def _connection_diagnostics(entry: ConfigEntry, coordinator: Any) -> dict[str, Any]:

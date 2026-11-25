@@ -4,6 +4,7 @@
       "feature": "Setup, discovery and lifecycle",
       "sources": [
         "custom_components/idm_heatpump/__init__.py",
+        "custom_components/idm_heatpump/bridge_api.py",
         "custom_components/idm_heatpump/config_flow.py",
         "custom_components/idm_heatpump/const.py",
         "custom_components/idm_heatpump/ha_compat.py",
@@ -14,7 +15,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "29feaedbd354e9446df238d11fd2526caa01db4889663553d58318bc4d152815"
+      "reviewed_source_sha256": "1c6afc82c187a2862d6b68351e95f213c5ca795e3aff04f93f2a41798f21f6e8"
     },
     {
       "feature": "Model and register semantics",
@@ -199,7 +200,7 @@
         "Smart-Energy-and-Comfort.md",
         "Entities.md"
       ],
-      "reviewed_source_sha256": "4ff07e429941bca10495ef0a5c0270971afd9769a195178cef00a932911fe4ad"
+      "reviewed_source_sha256": "e87b4587b6548eb0a6446304675a3b7ff10275157fa7f4b7bd245c115faaf50c"
     },
     {
       "feature": "KNX bridge and catalog",
