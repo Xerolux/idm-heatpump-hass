@@ -419,7 +419,11 @@ Three further read-only WebSocket controllers are evaluated on every web poll
   controller's own `statistic/detail` heat-quantity block — the lifetime
   totals and today's values in kWh. They are an independent cross-check for
   the integration's own [energy statistics](Smart-Energy-and-Comfort) and work
-  without any Modbus access.
+  without any Modbus access. Between 23:55 and 00:05 the integration checks an
+  increase in the lifetime total against the heat added to its daily counter.
+  If the daily reading cannot explain the increase, the sensor holds its last
+  value. On startup in this window the lifetime total stays unavailable until
+  00:05. The daily sensor can still reset to zero at midnight.
 - **Hot water circulation (Web)** (`web_dhw_circulation_active`): binary
   sensor for the domestic-hot-water circulation pump from the
   `system.freshwater/overview` frame — a state the Modbus map does not expose.

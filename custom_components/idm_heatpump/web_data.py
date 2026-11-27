@@ -79,6 +79,9 @@ class IdmWebSensorValue:
 # belong here, so a legitimate text value can never be swallowed.
 _NO_VALUE_TEXT_VALUES = frozenset({"---"})
 
+# Both periods come from statistic/detail, in separate responses.
+_HEAT_QUANTITIES = {"heating": "heat_quantity_heating", "priority": "heat_quantity_hotwater"}
+
 
 @dataclass(frozen=True)
 class IdmWebSupplement:
@@ -365,7 +368,70 @@ def _statistic_sensor_value(value: Any) -> IdmWebSensorValue:
         numeric = None
     if numeric is not None and not math.isfinite(numeric):
         numeric = None
-    return IdmWebSensorValue(value=text, native_value=numeric if numeric is not None else text, unit="kWh")
+    return IdmWebSensorValue(value=text, native_value=numeric, unit="kWh")
+
+
+def _valid_web_counters(supplement: IdmWebSupplement) -> IdmWebSupplement:
+    """Discard missing, non-finite and negative web counter readings before publication."""
+    invalid = set()
+    for key, entry in supplement.sensor_values.items():
+        if not (
+            key.endswith("_hours")
+            or key.startswith(("switch_cycles_", "heat_quantity_", "stat_runtime_", "stat_genheat_", "stat_elcons_"))
+            or key in {"hotwater_circulation_heat_quantity", "hotwater_tapping_heat_quantity"}
+        ):
+            continue
+        number = entry.native_value
+        if not isinstance(number, (int, float)) or not math.isfinite(number) or number < 0:
+            invalid.add(key)
+    if not invalid:
+        return supplement
+    return replace(
+        supplement,
+        sensor_values={k: v for k, v in supplement.sensor_values.items() if k not in invalid},
+        values={k: v for k, v in supplement.values.items() if k not in invalid},
+    )
+
+
+def guard_heat_quantity_rollover(supplement: IdmWebSupplement, previous: IdmWebSupplement | None) -> IdmWebSupplement:
+    """Check lifetime gains against today's heat around the Navigator's midnight (#751)."""
+    if supplement.web_variant != "nav10":
+        return supplement
+    clock = navigator10_clock_utc(getattr(supplement.status, "timestamp_ms", None))
+    local = dt_util.as_local(clock) if clock is not None else dt_util.now()
+    if not (local.hour == 23 and local.minute >= 55 or local.hour == 0 and local.minute < 5):
+        return supplement
+    old = previous.sensor_values if previous is not None else {}
+    readings = supplement.sensor_values
+    held = {}
+    missing = set()
+    for prefix in _HEAT_QUANTITIES.values():
+        total_key, today_key = f"{prefix}_total", f"{prefix}_today"
+        if total_key not in readings:
+            continue
+        last = old.get(total_key)
+        if last is None:
+            # No trusted baseline, for example when HA restarts at midnight.
+            missing.add(total_key)
+            continue
+        current, baseline = readings[total_key].native_value, last.native_value
+        if not isinstance(current, (int, float)) or not isinstance(baseline, (int, float)) or current <= baseline:
+            continue
+        today = getattr(readings.get(today_key), "native_value", None)
+        last_today = getattr(old.get(today_key), "native_value", None)
+        if isinstance(today, (int, float)) and isinstance(last_today, (int, float)):
+            gain = today - last_today if today >= last_today else today
+            # Both counters are reported to two decimals in separate frames.
+            if current - baseline <= gain + 0.05:
+                continue
+        held[total_key] = last
+    if missing:
+        supplement = replace(
+            supplement,
+            sensor_values={k: v for k, v in readings.items() if k not in missing},
+            values={k: v for k, v in supplement.values.items() if k not in missing},
+        )
+    return _with_sensor_values(supplement, held)
 
 
 async def _read_optional_statistics(
@@ -393,10 +459,6 @@ async def _read_optional_statistics(
     if not callable(read_statistics):
         return supplement
     extra: dict[str, IdmWebSensorValue] = {}
-    name_map = {
-        "heating": "heat_quantity_heating",
-        "priority": "heat_quantity_hotwater",
-    }
     try:
         async with asyncio.timeout(WEB_READ_TIMEOUT):
             totals = await read_statistics(
@@ -412,12 +474,11 @@ async def _read_optional_statistics(
     except Exception:
         _LOGGER.debug("IDM web statistic/detail read failed", exc_info=True)
         return supplement
-    for parsed in (totals, todays):
-        for name, value in (getattr(parsed, "values", None) or {}).items():
-            for raw_key, target in name_map.items():
-                if name.endswith(f"_{raw_key}"):
-                    suffix = "today" if "_today_" in name else "total"
-                    extra[f"{target}_{suffix}"] = _statistic_sensor_value(value)
+    for parsed, period in ((totals, "total"), (todays, "today")):
+        values = getattr(parsed, "values", None) or {}
+        for raw_key, target in _HEAT_QUANTITIES.items():
+            if (value := values.get(f"hq_{period}_{raw_key}")) is not None:
+                extra[f"{target}_{period}"] = _statistic_sensor_value(value)
     return _with_sensor_values(supplement, extra)
 
 
@@ -673,7 +734,7 @@ async def _augment_web_supplement(
     supplement = await _read_optional_heatingcircuits(client, supplement)
     supplement = await _read_optional_system_frames(client, supplement)
     supplement = await _read_optional_system_overview(client, supplement)
-    return supplement
+    return _valid_web_counters(supplement)
 
 
 async def _read_optional_system_overview(

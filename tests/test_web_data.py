@@ -1,6 +1,7 @@
 """Tests for optional IDM local web supplement handling."""
 
 import asyncio
+from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -397,15 +398,27 @@ def _nav10_base_data() -> SimpleNamespace:
 async def test_async_read_web_supplement_adds_heat_quantity_statistics(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    statistics = SimpleNamespace(
-        values={
-            "hq_total_heating": SimpleNamespace(value="27316.22"),
-            "hq_total_priority": SimpleNamespace(value="3587.84"),
-            "hq_today_heating": SimpleNamespace(value="7.15"),
-            "hq_today_priority": SimpleNamespace(value="0"),
-        }
-    )
-    nav10 = _FakeWebClient(_nav10_base_data(), statistics=statistics)
+    nav10 = _FakeWebClient(_nav10_base_data())
+
+    async def statistics(statistic_type: int, period: int, prefix: str) -> SimpleNamespace:
+        nav10.statistic_calls.append((statistic_type, period, prefix))
+        if period == 7:
+            return SimpleNamespace(
+                values={
+                    "hq_total_heating": SimpleNamespace(value="27316.22"),
+                    "hq_total_priority": SimpleNamespace(value="3587.84"),
+                    "hq_current_year_heating": SimpleNamespace(value="1250"),
+                }
+            )
+        return SimpleNamespace(
+            values={
+                "hq_today_heating": SimpleNamespace(value="7.15"),
+                "hq_today_priority": SimpleNamespace(value="0"),
+                "hq_total_heating": SimpleNamespace(value="28965.97"),
+            }
+        )
+
+    monkeypatch.setattr(nav10, "read_statistics", statistics)
     _install_fake_clients(monkeypatch, nav10)
 
     result = await async_read_web_supplement("192.0.2.10", "1234")
@@ -537,6 +550,8 @@ async def test_async_read_web_supplement_adds_nav20_statistics(
         async def read_statistics(self):
             return SimpleNamespace(
                 values={
+                    "stat_runtime_total_defrost": SimpleNamespace(value="-1", unit="h"),
+                    "stat_genheat_total_hotwater": SimpleNamespace(value="NaN", unit="kWh"),
                     "stat_runtime_total_heating": IdmWebValue(
                         name="stat_runtime_total_heating",
                         value="3379.48",
@@ -577,6 +592,8 @@ async def test_async_read_web_supplement_adds_nav20_statistics(
 
     assert result is not None
     assert result.web_variant == "nav20"
+    for invalid in ("stat_runtime_total_defrost", "stat_genheat_total_hotwater"):
+        assert invalid not in result.values and invalid not in result.sensor_values
     assert result.sensor_values["stat_runtime_total_heating"].native_value == 3379.48
     assert result.sensor_values["stat_elcons_total_heating"].native_value == 5.0
 
@@ -1766,10 +1783,66 @@ class TestOptionalReaderRobustness:
 
 
 class TestStatisticValueNormalisation:
-    def test_unparseable_heat_quantities_stay_text(self) -> None:
+    def test_unparseable_heat_quantities_have_no_numeric_value(self) -> None:
         value = web_data._statistic_sensor_value("--")
 
-        assert value == IdmWebSensorValue(value="--", native_value="--", unit="kWh")
+        assert value == IdmWebSensorValue(value="--", native_value=None, unit="kWh")
+
+
+async def test_web_counter_sentinel_and_recovery(monkeypatch: pytest.MonkeyPatch) -> None:
+    base = _nav10_base_data()
+    client = _FakeWebClient(base)
+    _install_fake_clients(monkeypatch, client)
+    for reading in ("4188.3", "-1", "4188.4", "0"):
+        base.simple_values = {
+            "runtime_heating_hours": reading,
+            "switch_cycles_stage_1": "-1",
+            "controller_online_hours": "---",
+            "outside_air_temperature": "-1",
+        }
+        result = await async_read_web_supplement("192.0.2.10", "1234")
+        assert result is not None
+        if reading == "-1":
+            assert "runtime_heating_hours" not in result.sensor_values
+            assert "runtime_heating_hours" not in result.values
+        else:
+            assert result.sensor_values["runtime_heating_hours"].native_value == float(reading)
+        assert "switch_cycles_stage_1" not in result.sensor_values
+        assert "controller_online_hours" not in result.sensor_values
+        assert result.sensor_values["outside_air_temperature"].native_value == -1
+
+
+@pytest.mark.parametrize("mode", ["heating", "hotwater"])
+def test_web_lifetime_counter_across_midnight(monkeypatch: pytest.MonkeyPatch, mode: str) -> None:
+    total_key, today_key = f"heat_quantity_{mode}_total", f"heat_quantity_{mode}_today"
+
+    def sample(total: float, today: float) -> IdmWebSupplement:
+        values = {total_key: str(total), today_key: str(today)}
+        return IdmWebSupplement(
+            web_variant="nav10",
+            values=values,
+            sensor_values={k: IdmWebSensorValue(v, float(v), "kWh") for k, v in values.items()},
+        )
+
+    monkeypatch.setattr(web_data.dt_util, "now", lambda: datetime(2026, 11, 26, 23, 59))
+    previous = sample(28826.14, 139.83)
+    spike = sample(28965.97, 139.83)
+    cold_start = web_data.guard_heat_quantity_rollover(spike, None)
+    assert total_key not in cold_start.sensor_values and total_key not in cold_start.values
+    assert cold_start.sensor_values[today_key].native_value == 139.83
+    for incoming, expected in (
+        (spike, 28826.14),
+        (sample(28965.97, 0), 28826.14),
+        (sample(28826.14, 0), 28826.14),
+        (sample(28826.25, 0.11), 28826.25),
+    ):
+        previous = web_data.guard_heat_quantity_rollover(incoming, previous)
+        assert previous.sensor_values[total_key].native_value == expected
+        assert float(previous.values[total_key]) == expected
+        assert previous.values[today_key] == incoming.values[today_key]
+    monkeypatch.setattr(web_data.dt_util, "now", lambda: datetime(2026, 11, 27, 0, 5))
+    recovered = sample(28827.2, 1.06)
+    assert web_data.guard_heat_quantity_rollover(recovered, cold_start) is recovered
 
 
 class TestApiSymbolFallbacks:

@@ -13,6 +13,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.28.9] - 2026-11-27
+
+### ⚠️ Upgrade notes
+
+- **Existing installations can update directly from 0.28.8.** The fixes apply to new web readings. Previously recorded spikes remain in Home Assistant history. If Home Assistant restarts between 23:55 and 00:05, the Navigator 10 lifetime heat totals can stay unavailable until the first poll after the guard window. Rollback to 0.28.8 requires no migration.
+
+### 🐛 Bugfixes
+
+- **A midnight rollover can no longer publish the reported extra day's heat.** Around midnight the Navigator 10 heating and hot-water totals hold their last value when the daily reading cannot account for an increase. Daily counters still reset normally. Each counter reads only its own statistics period. [#751](https://github.com/Xerolux/idm-heatpump-hass/issues/751)
+- **Invalid web counter readings become unavailable.** A heating runtime of −1 h is discarded and the next valid reading restores the sensor. Operating hours, starts and energy counters accept zero and reject negative or non-finite readings. [#752](https://github.com/Xerolux/idm-heatpump-hass/issues/752)
+
 ## [0.28.8] - 2026-11-27
 
 Navigator 10 plants gain six read-only web entities for hydraulic visualization: the differential-temperature control sensor (B84), its reference temperature, the control pump with its analogue signal, the HGL mixer control signal (M71) and the heating/cooling valve (M61).

@@ -302,7 +302,12 @@ ausgewertet (live verifiziert auf Firmware jsonVersion 11, September 2026):
   `statistic/detail`-Wärmemengenblock des Reglers — die Gesamtwerte und die
   Werte des heutigen Tages in kWh. Sie sind ein unabhängiger Gegencheck für
   die [eigenen Energiestatistiken](Smart-Energy-and-Comfort) der Integration
-  und funktionieren ohne jeden Modbus-Zugriff.
+  und funktionieren ohne jeden Modbus-Zugriff. Zwischen 23:55 und 00:05 Uhr
+  prüft die Integration einen Anstieg des Gesamtzählers anhand des zugehörigen
+  Tageszählers. Erklärt der Tageswert den Anstieg nicht, behält der Sensor
+  seinen letzten Stand. Bei einem Neustart in diesem Zeitraum bleibt der
+  Gesamtwert bis 00:05 Uhr unverfügbar. Der Tageszähler kann um Mitternacht
+  weiterhin auf null zurückspringen.
 - **Warmwasser-Zirkulation (Web)** (`web_dhw_circulation_active`):
   Binärsensor der Warmwasser-Zirkulationspumpe aus dem Frame
   `system.freshwater/overview` — ein Zustand, den die Modbus-Map nicht

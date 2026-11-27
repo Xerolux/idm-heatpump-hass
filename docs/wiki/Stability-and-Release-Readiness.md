@@ -4,6 +4,10 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.28.9 release decision
+
+Regression tests cover the reported 139.83 kWh midnight spike and the −1 h runtime reading. Lifecycle tests passed on Home Assistant 2026.11.0 and 2026.12.0b2. Confirmation on the reporting Navigator 10 is pending. [Release evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.9.md)
+
 ## 0.28.8 release decision
 
 The six new Navigator 10 hydraulic-visualization entities are read-only, appear only where the controller delivers the row, and add no controller request: the differential-temperature values ride the `system/overview` frame and M71/M88/M61 ride setting requests already issued. Verified against the reporter's sanitized capture; field confirmation on that plant and the seven-day soak remain open. [Release evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.8.md)
@@ -659,7 +663,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.28.8` and `idm-heatpump-api` `2.18.0` form the current
+Source-tree integration `0.28.9` and `idm-heatpump-api` `2.18.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

@@ -57,7 +57,7 @@
         "Configuration.md",
         "Troubleshooting.md"
       ],
-      "reviewed_source_sha256": "d820d507d1913f48bad98e1ac123fc09f776446e0825ca11c9c40ef4d807eacb"
+      "reviewed_source_sha256": "34c8cf9b8647fc8f6af14907c8bbd163034fd0280dc0fd465657c379b5549ea9"
     },
     {
       "feature": "Core entities and device placement",
@@ -97,7 +97,7 @@
         "Navigator-Protocol-Analysis.md",
         "Protocol-Capabilities.md"
       ],
-      "reviewed_source_sha256": "4cfd0127908bdd362333ae4d7a1e517c0cdcd98ec994bff97f34af0c32be66a0"
+      "reviewed_source_sha256": "a2802c9377a3cd113bdcaa6fc529b3b7dc67c7ba227c4bd1cc1d0bc70ddadbb3"
     },
     {
       "feature": "Energy and operating analysis",

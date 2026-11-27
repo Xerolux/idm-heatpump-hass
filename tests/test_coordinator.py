@@ -4,7 +4,7 @@ import asyncio
 import contextlib
 import logging
 import socket
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -1851,6 +1851,38 @@ class TestAsyncWriteRegister:
 
 
 class TestAsyncRefreshWebSupplement:
+    async def test_controller_midnight_guard_covers_setup_and_refresh(self, mock_hass, mock_config_entry):
+        from homeassistant.util import dt as dt_util
+
+        total = "heat_quantity_heating_total"
+        today = "heat_quantity_heating_today"
+
+        def snapshot(clock: datetime, lifetime: float, daily: float) -> IdmWebSupplement:
+            numbers = {total: lifetime, today: daily}
+            return IdmWebSupplement(
+                web_variant="nav10",
+                status=SimpleNamespace(timestamp_ms=int(clock.timestamp() * 1000)),
+                sensor_values={k: IdmWebSensorValue(str(v), v, "kWh") for k, v in numbers.items()},
+                values={k: str(v) for k, v in numbers.items()},
+            )
+
+        before = snapshot(datetime(2026, 11, 26, 23, 50, tzinfo=UTC), 28826.14, 139.83)
+        spike = snapshot(datetime(2026, 11, 26, 23, 59, tzinfo=UTC), 28965.97, 139.83)
+        recovered = snapshot(datetime(2026, 11, 27, 0, 0, tzinfo=UTC), 28826.14, 0.0)
+        with patch.object(dt_util, "DEFAULT_TIME_ZONE", UTC):
+            fresh, _ = _make_coordinator(mock_hass, mock_config_entry, web_supplement=spike)
+            assert total not in fresh.web_supplement.sensor_values
+            coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="1234", web_supplement=before)
+            with patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                side_effect=[spike, recovered],
+            ):
+                await coord.async_refresh_web_supplement()
+                assert coord.web_supplement.values[total] == "28826.14"
+                await coord.async_refresh_web_supplement()
+                assert coord.web_supplement.sensor_values[total].native_value == 28826.14
+                assert coord.web_supplement.sensor_values[today].native_value == 0.0
+
     async def test_web_authentication_failure_creates_specific_repair_issue(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(
             mock_hass,

@@ -87,6 +87,7 @@ from .web_data import (
     IdmWebSupplement,
     _firmware_indicates_nav10,
     async_read_web_supplement,
+    guard_heat_quantity_rollover,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -322,7 +323,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._client.set_model_info(model_info)
         self._web_pin = web_pin
         self._web_host = web_host or client.host
-        self._web_supplement = web_supplement
+        self._web_supplement = (
+            guard_heat_quantity_rollover(web_supplement, None) if web_supplement is not None else None
+        )
         self._web_variant = web_variant if web_variant in ("nav10", "nav20") else None
         self._device_hierarchy_enabled = device_hierarchy_enabled
         if web_supplement is not None:
@@ -1713,6 +1716,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         previous_model_name = self._model_name
         previous_firmware_version = self._firmware_version
         previous_myidm_id = self.myidm_id
+        web_supplement = guard_heat_quantity_rollover(web_supplement, self._web_supplement)
         web_supplement = self._suppress_transient_web_counter_zeros(web_supplement)
         self._web_supplement = web_supplement
         from .differential_circuits import web_detected_differential_circuits

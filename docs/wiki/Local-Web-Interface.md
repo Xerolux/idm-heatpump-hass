@@ -158,6 +158,12 @@ the requests every web poll already makes; see
   repair issue and does not stop Modbus updates.
 - Missing values from a successful web snapshot remain unavailable; old values
   are not invented.
+- Web counters for operating hours, starts and energy require a finite,
+  nonnegative reading. A heating runtime of `-1 h` makes that sensor unavailable
+  until a valid reading arrives. Zero is valid. Temperatures may be negative.
+  The Navigator 10 [heat quantity sensors](Entities) also check the daily
+  rollover using the controller clock, or Home Assistant local time if the
+  clock is missing.
 - The cached client is closed when the config entry unloads or when its session
   must be rebuilt.
 
