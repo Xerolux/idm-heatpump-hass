@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.28.10 — 2026-11-27
+
+A defrost run is no longer counted as a short compressor cycle or a compressor start. The cycle before the defrost ends when the compressor stops; the restart after it begins a new cycle. Cycle durations recorded before this version start over once. [Release notes](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.28.10)
+
 ## v0.28.9 — 2026-11-27
 
 Navigator 10 cross-checks lifetime heating and hot-water energy against the daily reading around midnight. A web runtime of −1 h makes the sensor unavailable until the next valid reading. The fixes apply to new samples. [Release notes](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.28.9)

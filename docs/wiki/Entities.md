@@ -795,14 +795,23 @@ Derived from observed compressor, defrost and operating-mode transitions.
 Restart-safe: the counters persist across Home Assistant restarts, and
 communication gaps are never counted as operating events.
 
+A defrost is its own event, not a compressor cycle
+([#757](https://github.com/Xerolux/idm-heatpump-hass/issues/757)). The
+controller stops the compressor for the defrost reversal and runs it again
+for the defrost itself; a compressor run that begins while the operating mode
+is *Defrost* is neither a compressor start nor a cycle duration. The cycle
+before the defrost ends when the compressor stops, and the restart after the
+defrost begins a new cycle because the motor starts again. The current cycle
+runtime is 0 during a defrost run.
+
 | Entity | Description |
 |--------|-------------|
-| Heat pump cycles recorded (`analysis_heat_pump_cycles_recorded`) | Total observed compressor cycles since installation of the profile |
+| Heat pump cycles recorded (`analysis_heat_pump_cycles_recorded`) | Total observed compressor cycles since installation of the profile; defrost runs are not cycles |
 | Heat pump cycles today (`analysis_heat_pump_cycles_today`) | Compressor cycles since midnight |
 | Heat pump cycles last 2 hours (`analysis_heat_pump_cycles_2h`) | Rolling 2-hour cycle count |
 | Heat pump cycles last 4 hours (`analysis_heat_pump_cycles_4h`) | Rolling 4-hour cycle count |
-| Current cycle runtime (`analysis_current_cycle_duration`) | Runtime of the currently running compressor cycle |
-| Average cycle runtime (`analysis_average_cycle_duration`) | Mean runtime over the retained cycle history |
+| Current cycle runtime (`analysis_current_cycle_duration`) | Runtime of the currently running compressor cycle; 0 during a defrost run |
+| Average cycle runtime (`analysis_average_cycle_duration`) | Mean runtime over the retained cycle history, without defrost runs |
 | Last compressor start (`analysis_last_compressor_start`) | Timestamp of the last observed start |
 | Last cycle runtime (`analysis_last_cycle_duration`) | Runtime of the last finished cycle |
 | Last compressor cycle too short (`analysis_last_cycle_short`) | Binary: the last cycle stayed below the configured short-cycle threshold |

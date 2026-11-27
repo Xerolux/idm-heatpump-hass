@@ -512,8 +512,14 @@ für den Installateur, kein Ersatz für einen Servicebericht. Er sagt
 zukünftige Ausfälle nicht voraus. Eine konservative Trendprüfung vergleicht
 die letzten fünf abgeschlossenen Verdichterzyklen mit fünfzehn früheren
 Zyklen derselben Installation; ungewöhnlich kurze aktuelle Zyklen meldet sie
-erst nach zwanzig beobachteten Zyklen. Das ist ein lokaler Anomalie-Hinweis,
-keine Ausfallwahrscheinlichkeit. Die heruntergeladene Diagnose enthält die
+erst nach zwanzig beobachteten Zyklen. Abtauläufe sind keine Zyklen
+([#757](https://github.com/Xerolux/idm-heatpump-hass/issues/757)), siehe
+[Betriebsanalyse](Entities#betriebsanalyse-smart-profil). Vor 0.28.10
+erfasste Laufzeiten werden beim Laden einmal verworfen; nach diesem Update
+meldet die Prüfung daher bis zu zwanzig neuen Zyklen keinen Wert, und der
+Installateurbericht zeigt bis zum ersten abgeschlossenen Zyklus keine
+Zykluswerte. Das ist ein lokaler Anomalie-Hinweis, keine
+Ausfallwahrscheinlichkeit. Die heruntergeladene Diagnose enthält die
 Versionen der installierten Integration, von `idm-heatpump-api`,
 `modbus-connection`, `tmodbus`, von Home Assistant und Python. Siehe
 [Fehlerbehebung](Troubleshooting#smart-funktionen-und-beta-upgrades), falls

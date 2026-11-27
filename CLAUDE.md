@@ -7,7 +7,7 @@ This file is a short pointer for Claude-compatible agents.
 ## Snapshot (keep in sync with `manifest.json`)
 
 - **Domain**: `idm_heatpump`
-- **Version**: `0.28.9` (previous stable: `0.28.3`; the 0.24.0 line ended at `0.24.0-b2` and serves the 2026.8–2026.10 Home Assistant line)
+- **Version**: `0.28.10` (previous stable: `0.28.3`; the 0.24.0 line ended at `0.24.0-b2` and serves the 2026.8–2026.10 Home Assistant line)
 - **Min HA**: 2026.11.0 (the 2026.8.1–2026.10 line stays on integration 0.24.x)
 - **Python**: 3.14+ (Home Assistant 2026.11 requires 3.14.2)
 - **Dependencies**: `modbus-connection>=4.12.7`, `tmodbus[async-serial]>=1.1.0`,

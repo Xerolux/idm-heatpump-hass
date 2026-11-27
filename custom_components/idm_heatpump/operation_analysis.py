@@ -22,6 +22,9 @@ _STORAGE_VERSION: Final = 1
 _STORAGE_SAVE_DELAY: Final = 30.0
 _EVENT_RETENTION: Final = timedelta(days=8)
 _MAX_COMPLETED_CYCLES: Final = 100
+#: Cycle durations recorded before this version include defrost runs (#757).
+#: They are discarded once on load; the counters are kept as recorded.
+_CYCLE_ACCOUNTING_VERSION: Final = 2
 _COMPRESSOR_KEYS: Final = tuple(f"compressor_status_{index}" for index in range(1, 5))
 #: A completed hot-water charge must reach the switch-off temperature; this
 #: tolerance absorbs sampling and sensor offsets when judging it (#713).
@@ -125,6 +128,8 @@ class OperationAnalysis:
         self.last_dhw_charge_ended: datetime | None = None
 
         self._compressor_on: bool | None = None
+        self._cycle_in_defrost = False
+        self._defrost_left_at: datetime | None = None
         self._defrost_on: bool | None = None
         self._alarm_on: bool | None = None
         self._alarm_reconciled = False
@@ -176,18 +181,17 @@ class OperationAnalysis:
         self.alarm_start_events = _parse_datetime_list(stored.get("alarm_start_events"))
         self.last_compressor_start = _parse_datetime(stored.get("last_compressor_start"))
         self.current_cycle_started = _parse_datetime(stored.get("current_cycle_started"))
-        self.last_cycle_ended = _parse_datetime(stored.get("last_cycle_ended"))
         self.last_defrost_start = _parse_datetime(stored.get("last_defrost_start"))
 
-        last_cycle = _finite_non_negative(stored.get("last_cycle_duration"))
-        self.last_cycle_duration = last_cycle
-
-        cycle_values = stored.get("completed_cycle_durations")
-        if isinstance(cycle_values, list):
-            parsed_cycles = [_finite_non_negative(item) for item in cycle_values]
-            self.completed_cycle_durations = [item for item in parsed_cycles if item is not None][
-                -_MAX_COMPLETED_CYCLES:
-            ]
+        if stored.get("cycle_accounting") == _CYCLE_ACCOUNTING_VERSION:
+            self.last_cycle_ended = _parse_datetime(stored.get("last_cycle_ended"))
+            self.last_cycle_duration = _finite_non_negative(stored.get("last_cycle_duration"))
+            cycle_values = stored.get("completed_cycle_durations")
+            if isinstance(cycle_values, list):
+                parsed_cycles = [_finite_non_negative(item) for item in cycle_values]
+                self.completed_cycle_durations = [item for item in parsed_cycles if item is not None][
+                    -_MAX_COMPLETED_CYCLES:
+                ]
 
         stored_modes = stored.get("mode_durations")
         if isinstance(stored_modes, dict):
@@ -246,6 +250,7 @@ class OperationAnalysis:
             "defrost_start_events": [event.isoformat() for event in self.defrost_start_events],
             "alarm_start_events": [event.isoformat() for event in self.alarm_start_events],
             "completed_cycle_durations": self.completed_cycle_durations[-_MAX_COMPLETED_CYCLES:],
+            "cycle_accounting": _CYCLE_ACCOUNTING_VERSION,
             "mode_durations": dict(self.mode_durations),
             "last_compressor_start": self._iso(self.last_compressor_start),
             "current_cycle_started": self._iso(self.current_cycle_started),
@@ -328,6 +333,10 @@ class OperationAnalysis:
         The first valid observation for each source only reconciles persisted and
         live state. It never creates a start event, preventing false starts after
         Home Assistant restarts or communication gaps.
+
+        A compressor run that begins while the operating mode is defrost belongs
+        to the defrost event (#757): it is no compressor start and leaves no
+        cycle duration. The defrost itself is counted by the defrost trackers.
         """
         observed_at = (now or _utcnow()).astimezone(UTC)
         changed = False
@@ -348,36 +357,54 @@ class OperationAnalysis:
                     self._alarm_on = alarm_on
                     changed = True
 
+        mode = self._operating_mode(data, unused_registers)
+        defrost_now = mode == 8
+
         compressor_on = self._compressor_state(data, unused_registers)
         if compressor_on is not None:
             if not self._compressor_reconciled:
                 if compressor_on:
-                    if self._compressor_on is not True or self.current_cycle_started is None:
+                    tracked_cycle = self._compressor_on is True and self.current_cycle_started is not None
+                    if not tracked_cycle and defrost_now:
+                        # A run that is in progress at startup began during a defrost.
+                        self._cycle_in_defrost = True
+                    elif not tracked_cycle:
                         self.current_cycle_started = observed_at
                 else:
+                    # A cycle that ended while Home Assistant was down leaves no duration.
                     self.current_cycle_started = None
                 self._compressor_on = compressor_on
                 self._compressor_reconciled = True
                 changed = True
             elif compressor_on != self._compressor_on:
                 if compressor_on:
-                    self.total_compressor_starts += 1
-                    self.compressor_start_events.append(observed_at)
-                    self.last_compressor_start = observed_at
-                    self.current_cycle_started = observed_at
+                    # The controller stops the compressor for the defrost reversal and
+                    # restarts it for the defrost itself. That run belongs to the
+                    # defrost event: it is neither a compressor start nor a cycle (#757).
+                    self._cycle_in_defrost = defrost_now
+                    self._defrost_left_at = None
+                    if not defrost_now:
+                        self.total_compressor_starts += 1
+                        self.compressor_start_events.append(observed_at)
+                        self.last_compressor_start = observed_at
+                        self.current_cycle_started = observed_at
                 else:
-                    if self.current_cycle_started is not None:
-                        duration = (observed_at - self.current_cycle_started).total_seconds()
-                        if duration >= 0:
-                            self.last_cycle_duration = duration
-                            self.last_cycle_ended = observed_at
-                            self.completed_cycle_durations.append(duration)
-                            self.completed_cycle_durations = self.completed_cycle_durations[-_MAX_COMPLETED_CYCLES:]
-                    self.current_cycle_started = None
+                    self._complete_cycle(observed_at)
                 self._compressor_on = compressor_on
                 changed = True
+            elif self._cycle_in_defrost and mode is not None:
+                if defrost_now:
+                    self._defrost_left_at = None
+                elif self._defrost_left_at is None:
+                    self._defrost_left_at = observed_at
+                elif (observed_at - self._defrost_left_at).total_seconds() >= self._max_sample_gap:
+                    # The compressor ran on from the defrost and outlasted the
+                    # controller's restart delay: a cycle starts when the defrost
+                    # ended, but no start edge was observed.
+                    self._cycle_in_defrost = False
+                    self.current_cycle_started = self._defrost_left_at
+                    changed = True
 
-        mode = self._operating_mode(data, unused_registers)
         if mode is not None:
             if not self._mode_reconciled:
                 self._last_mode = mode
@@ -413,6 +440,19 @@ class OperationAnalysis:
         changed |= self._prune_events(observed_at)
         if changed:
             self._schedule_save()
+
+    def _complete_cycle(self, observed_at: datetime) -> None:
+        """Close the running cycle; a defrost run leaves no cycle duration."""
+        if self.current_cycle_started is not None and not self._cycle_in_defrost:
+            duration = (observed_at - self.current_cycle_started).total_seconds()
+            if duration >= 0:
+                self.last_cycle_duration = duration
+                self.last_cycle_ended = observed_at
+                self.completed_cycle_durations.append(duration)
+                self.completed_cycle_durations = self.completed_cycle_durations[-_MAX_COMPLETED_CYCLES:]
+        self.current_cycle_started = None
+        self._cycle_in_defrost = False
+        self._defrost_left_at = None
 
     def _process_dhw_charge(
         self,

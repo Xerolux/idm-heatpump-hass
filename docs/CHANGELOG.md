@@ -13,6 +13,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.28.10] - 2026-11-27
+
+Defrost runs no longer show up as short compressor cycles. On Navigator 10 controllers a defrost briefly stops the compressor and runs it for about five minutes in reverse; the operating analysis counted that run as its own cycle and raised *Last compressor cycle too short* after nearly every defrost.
+
+### ⚠️ Upgrade notes
+
+- **Cycle durations start over once.** Durations recorded before this version include defrost runs and cannot be told apart from real cycles, so *Average cycle runtime*, *Last cycle runtime* and the short-cycle sensor show unavailable until the first cycle completes after the update. Start counters keep their recorded values. Rolling back to 0.28.9 is safe.
+
+### 🐛 Bugfixes
+
+- **A defrost run is no longer a compressor cycle.** A compressor run that begins while the operating mode is defrost belongs to the defrost event: it is neither a compressor start nor a cycle duration. The cycle before the defrost ends when the compressor stops, and the restart after it begins a new cycle. [#757](https://github.com/Xerolux/idm-heatpump-hass/issues/757)
+
+### ❤️ Thanks
+
+- **Thanks to @Holzkuder** for the report and the sensor history that pointed at the defrost. [#757](https://github.com/Xerolux/idm-heatpump-hass/issues/757)
+
 ## [0.28.9] - 2026-11-27
 
 ### ⚠️ Upgrade notes

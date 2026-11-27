@@ -4,6 +4,10 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.28.10 release decision
+
+One week of Navigator 10 history with 47 defrosts is the field evidence: every defrost run was counted as a short cycle. A regression test replays the recorded sequence, and replaying that week through the new rule leaves one real cycle under 15 minutes. Cycle durations recorded before this version are discarded once. Confirmation on the reporting installation is pending. [Release evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.10.md)
+
 ## 0.28.9 release decision
 
 Regression tests cover the reported 139.83 kWh midnight spike and the −1 h runtime reading. Lifecycle tests passed on Home Assistant 2026.11.0 and 2026.12.0b2. Confirmation on the reporting Navigator 10 is pending. [Release evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.9.md)
@@ -663,7 +667,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.28.9` and `idm-heatpump-api` `2.18.0` form the current
+Source-tree integration `0.28.10` and `idm-heatpump-api` `2.18.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
