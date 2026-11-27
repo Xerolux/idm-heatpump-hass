@@ -86,6 +86,7 @@ def test_unknown_entity_remains_on_main_device() -> None:
         ("telemetry_report_status", "telemetry"),
         ("telemetry_latest_firmware", "telemetry"),
         ("firmware_update_observed", "telemetry"),
+        ("firmware_check_status", "telemetry"),
     ],
 )
 def test_nonregister_feature_entity_uses_its_subdevice(key: str, device_suffix: str) -> None:

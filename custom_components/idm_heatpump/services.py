@@ -948,7 +948,7 @@ async def _handle_plant_cloud_action(hass: HomeAssistant, call: ServiceCall) -> 
         return {"accepted": False, "status": "entry_not_loaded"}
     runtime = entry.runtime_data
     if call.service == "send_telemetry":
-        if runtime.telemetry is None:
+        if runtime.telemetry is None or not runtime.telemetry.consent_active:
             return {"accepted": False, "status": "consent_required"}
         if (cooldown := runtime.telemetry.manual_cooldown) > 0:
             raise ServiceValidationError(

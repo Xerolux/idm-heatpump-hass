@@ -987,7 +987,7 @@
       "invalid_subnet": "Not a valid IPv4 subnet, or too large (at most /22). Use a notation like `192.168.1.0/24`.",
       "no_candidates": "No device with an open Modbus TCP port was found. Check that the heat pump is reachable and Modbus TCP is enabled, verify the subnet — or enter the address manually.",
       "telemetry_myidm_required": "Enter the myIDM ID of the IDM plant.",
-      "plant_model_invalid": "Enter the heat pump model using up to 80 printable characters."
+      "plant_model_invalid": "Enter the heat pump model with letters, digits and simple separators only, up to 80 characters."
     },
     "abort": {
       "already_configured": "This heat pump is already configured.",
@@ -2672,7 +2672,12 @@
         "name": "Heat source pressure switch fault"
       },
       "firmware_check_status": {
-        "name": "Firmware check status"
+        "name": "Firmware check status",
+        "state": {
+          "not_checked": "Not checked",
+          "completed": "Completed",
+          "unavailable": "Unavailable"
+        }
       },
       "firmware_version": {
         "name": "Navigator firmware version"

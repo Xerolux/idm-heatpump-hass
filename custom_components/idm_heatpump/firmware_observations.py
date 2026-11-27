@@ -185,10 +185,12 @@ class FirmwareObservations:
 
     def observe_firmware(self) -> None:
         """Check a changed firmware at the next tick instead of after six hours."""
-        if not self.enabled or self._firmware_task is not None:
+        # Before the first scheduled check nothing is a change: the random
+        # startup slot must survive a firmware that arrives late or at once.
+        if not self.enabled or self._firmware_task is not None or not self._last_firmware_check:
             return
         current = _reported_firmware(self._coordinator)
-        if self._queried_firmware is None or current is None or current == self._queried_firmware:
+        if current is None or current == self._queried_firmware:
             return
         if time.time() - self._last_firmware_check < _RECHECK_SECONDS:
             return
@@ -275,14 +277,16 @@ class FirmwareObservations:
                 timeout=aiohttp.ClientTimeout(total=15),
                 allow_redirects=False,
             ) as response:
-                if response.status != 200:
-                    _LOGGER.debug(
-                        "IDM firmware catalog answered with HTTP %s; the last observation is kept",
-                        response.status,
-                    )
-                    return outcome
-                result = await response.json()
+                status = response.status
+                result = await response.json() if status == 200 else None
             if not self.enabled:
+                # Consent was withdrawn while the request was in flight.
+                return CHECK_WITHDRAWN
+            if status != 200:
+                _LOGGER.debug(
+                    "IDM firmware catalog answered with HTTP %s; the last observation is kept",
+                    status,
+                )
                 return outcome
             if (
                 not isinstance(result, dict)

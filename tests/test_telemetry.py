@@ -288,6 +288,31 @@ def test_the_entered_plant_model_fills_in_only_when_the_controller_reports_none(
     coordinator.web_supplement.heatpump_model = None
     entry.options[CONF_PLANT_MODEL] = "x" * 81
     assert telemetry.payload()["heatpump_model"] is None
+
+
+@pytest.mark.parametrize("model", [["SECRET", "TOKEN"], {"a": 1}, 42, "ALM \U0001f600 6-15", "ALM\x1b[0m"])
+def test_model_text_that_is_not_a_plain_label_is_left_out(model):
+    telemetry, entry, coordinator = make_telemetry()
+    entry.options[CONF_PLANT_MODEL] = model
+    coordinator.web_supplement = SimpleNamespace(heatpump_model=None)
+
+    # Only plain letters, digits and a few separators travel; never a rendered
+    # container, never control or picture characters.
+    assert telemetry.payload()["heatpump_model"] is None
+
+
+async def test_a_consent_that_lapses_under_a_running_collector_stops_collection_and_removes_the_store():
+    telemetry, entry, _ = make_telemetry()
+    with patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval"):
+        assert await telemetry.async_start() is True
+    delayed_saves = telemetry._store.async_delay_save.call_count
+    entry.options[CONF_TELEMETRY_POLICY] = "idm-telemetry-v2"
+
+    telemetry.observe()
+    assert telemetry._store.async_delay_save.call_count == delayed_saves
+    assert telemetry._serialize() == {}
+    await telemetry.async_stop()
+    telemetry._store.async_remove.assert_awaited_once()
     assert set(telemetry.payload()) == {
         "schema",
         "myidm_id",

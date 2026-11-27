@@ -1656,6 +1656,21 @@ async def test_firmware_check_response_names_a_failed_or_skipped_check(mock_hass
     assert await _handle_plant_cloud_action(mock_hass, call) == {"status": "observed", "check": outcome}
 
 
+async def test_manual_plant_report_without_a_valid_consent_answers_consent_required(mock_hass):
+    from custom_components.idm_heatpump.services import _handle_plant_cloud_action
+
+    coord = _make_coordinator_in_hass(mock_hass)
+    runtime = coord.config_entry.runtime_data
+    # The collector object still exists, but its notice or identity no longer
+    # holds; that is a missing consent, not a submission that sent nothing.
+    runtime.telemetry.consent_active = False
+    runtime.telemetry.async_send_now = AsyncMock()
+    call = MagicMock(service="send_telemetry", data={"entry_id": "entry-1"})
+
+    assert await _handle_plant_cloud_action(mock_hass, call) == {"accepted": False, "status": "consent_required"}
+    runtime.telemetry.async_send_now.assert_not_awaited()
+
+
 async def test_manual_plant_report_within_cooldown_raises_instead_of_failing_silently(mock_hass):
     from custom_components.idm_heatpump.services import _handle_plant_cloud_action
 

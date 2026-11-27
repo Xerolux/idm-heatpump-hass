@@ -14,7 +14,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "dc5e853428104f2322949db8bd7617a384e4ae3069eabf3f6ca38730b4eed2ff"
+      "reviewed_source_sha256": "602ff144987dc6b6df658f744d385c3f883b93a2b2d54a11aef8b97db902dee7"
     },
     {
       "feature": "Model and register semantics",
@@ -78,7 +78,7 @@
         "Entities.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "3280403345ed550c2fb63dc4bba755bae92100be5efb7501f465fd1a361bdcdf"
+      "reviewed_source_sha256": "6c92501819f76c77288744b3d55cceec8ed08ff52466eac01bea27608a5eba29"
     },
     {
       "feature": "Local Navigator supplement and controls",
@@ -227,7 +227,7 @@
         "Configuration.md",
         "Services.md"
       ],
-      "reviewed_source_sha256": "5db9653a1555c6f4358cd8fecc6d0ef95e91cebeb971ed8d7b15fbf4f466ec63"
+      "reviewed_source_sha256": "1f387693567310f63a98ec1012f94f6c3fdc05983ee2f5636c3c6c17ecad513a"
     },
     {
       "feature": "Actions and dashboard export",
@@ -240,7 +240,7 @@
         "Services.md",
         "Predictive-Advisor.md"
       ],
-      "reviewed_source_sha256": "8870b58004ea00eb50ade5f7423f0cad7fef5b29ab498add68aed3015bbd6d95"
+      "reviewed_source_sha256": "9dd6ab0c966558bab90a0ca5ba8c1e4e4560eca4e8780f11648f793a3ed48579"
     }
   ]
 }

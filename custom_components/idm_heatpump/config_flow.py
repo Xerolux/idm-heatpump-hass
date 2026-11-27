@@ -2313,9 +2313,21 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
         )
 
 
-def _plant_model_text(user_input: dict[str, Any]) -> str:
-    """Collapse the optional model text; an empty answer clears it."""
-    return " ".join(str(user_input.get(CONF_PLANT_MODEL) or "").split())
+def _plant_model_input(user_input: dict[str, Any], entry: Any) -> tuple[object, str]:
+    """Return the raw and the normalized optional model text of one consent form.
+
+    An omitted key keeps the stored model. The normalized text is ``""`` when
+    nothing was entered or when the text is not a plain model label.
+    """
+    from .telemetry import plant_model_text
+
+    raw = user_input.get(CONF_PLANT_MODEL, entry.options.get(CONF_PLANT_MODEL, ""))
+    return raw, plant_model_text(raw) or ""
+
+
+def _plant_model_unusable(raw: object, model: str) -> bool:
+    """Whether the user entered a model text the report schema cannot carry."""
+    return not model and str(raw or "").strip() != ""
 
 
 class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, domain=DOMAIN):
@@ -2568,7 +2580,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             CONF_TELEMETRY_MYIDM,
             CONF_TELEMETRY_POLICY,
         )
-        from .telemetry import TELEMETRY_POLICY, TELEMETRY_PRIVACY_URL, _label, valid_myidm
+        from .telemetry import TELEMETRY_POLICY, TELEMETRY_PRIVACY_URL, valid_myidm
 
         entry = self._get_reconfigure_entry()
         coordinator = getattr(getattr(entry, "runtime_data", None), "coordinator", None)
@@ -2578,17 +2590,31 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
         if user_input is not None:
             enabled = user_input.get(CONF_TELEMETRY) is True
             myidm = user_input.get(CONF_TELEMETRY_MYIDM, known_myidm)
-            model = _plant_model_text(user_input)
+            raw_model, model = _plant_model_input(user_input, entry)
+            # An unusable model must never keep a user from withdrawing consent;
+            # it is simply dropped. It only blocks while consent is being given.
             if enabled and not valid_myidm(myidm):
                 errors[CONF_TELEMETRY_MYIDM] = "telemetry_myidm_required"
-            elif model and _label(model) is None:
+            elif enabled and _plant_model_unusable(raw_model, model):
                 errors[CONF_PLANT_MODEL] = "plant_model_invalid"
             else:
+                # Resubmitting the same switch under the same notice is not a new
+                # consent: the collected window and the next slot stay as they are.
+                unchanged_consent = (
+                    enabled
+                    and entry.options.get(CONF_TELEMETRY) is True
+                    and entry.options.get(CONF_TELEMETRY_POLICY) == TELEMETRY_POLICY
+                    and bool(entry.options.get(CONF_TELEMETRY_CONSENT_AT))
+                )
                 options = dict(entry.options)
                 options[CONF_PLANT_MODEL] = model
                 options[CONF_TELEMETRY] = enabled
                 options[CONF_TELEMETRY_MYIDM] = myidm if enabled else ""
-                options[CONF_TELEMETRY_CONSENT_AT] = datetime.now(UTC).isoformat() if enabled else ""
+                options[CONF_TELEMETRY_CONSENT_AT] = (
+                    entry.options[CONF_TELEMETRY_CONSENT_AT]
+                    if unchanged_consent
+                    else (datetime.now(UTC).isoformat() if enabled else "")
+                )
                 options[CONF_TELEMETRY_POLICY] = TELEMETRY_POLICY if enabled else ""
                 return self.async_update_and_abort(entry, options=options)
         return self.async_show_form(
@@ -2614,14 +2640,14 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
 
         from .const import CONF_FIRMWARE_CHECK, CONF_FIRMWARE_CONSENT_AT, CONF_FIRMWARE_POLICY
         from .firmware_observations import FIRMWARE_POLICY
-        from .telemetry import TELEMETRY_PRIVACY_URL, _label
+        from .telemetry import TELEMETRY_PRIVACY_URL
 
         entry = self._get_reconfigure_entry()
         errors: dict[str, str] = {}
         if user_input is not None:
             enabled = user_input.get(CONF_FIRMWARE_CHECK) is True
-            model = _plant_model_text(user_input)
-            if model and _label(model) is None:
+            raw_model, model = _plant_model_input(user_input, entry)
+            if enabled and _plant_model_unusable(raw_model, model):
                 errors[CONF_PLANT_MODEL] = "plant_model_invalid"
             else:
                 options = dict(entry.options)

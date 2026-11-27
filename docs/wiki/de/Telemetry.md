@@ -8,6 +8,13 @@ Die Web-Anbindung liefert die myIDM-ID automatisch, soweit verfügbar. Keine Ano
 Beide Einwilligungsformulare bieten zusätzlich ein optionales Feld
 **Wärmepumpen-Modell** (zum Beispiel `AERO ALM 6-15`). Es füllt das ohnehin
 vorhandene Modellfeld nur, wenn der Regler selbst kein Modell meldet.
+Zugelassen sind Buchstaben beliebiger Schrift, Ziffern und die Trennzeichen
+Leerzeichen, Punkt, Plus, Schrägstrich, Bindestrich und Unterstrich; jedes
+andere Zeichen macht die Angabe beim Erteilen der Einwilligung unbrauchbar und
+bleibt aus einem Bericht heraus. Wer das Telemetrie-Formular mit unverändertem
+Schalter und unveränderter Hinweisfassung erneut speichert, behält den
+Einwilligungszeitpunkt; das seit dem letzten Bericht gesammelte Fenster und
+sein nächster Termin bleiben erhalten.
 
 Nur die angebundene IDM-Anlage, ihr Regler und ihre Anbindung über diese
 Integration gehören zum Umfang. Andere HA-Geräte, Entitäts- und Raumnamen,

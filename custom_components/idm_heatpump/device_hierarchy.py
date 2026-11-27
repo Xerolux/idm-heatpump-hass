@@ -134,6 +134,7 @@ _TELEMETRY_KEYS = frozenset(
     {
         "telemetry_latest_firmware",
         "firmware_update_observed",
+        "firmware_check_status",
         "telemetry_report_status",
     }
 )
@@ -494,7 +495,7 @@ def expected_subdevices(coordinator: IdmCoordinator) -> dict[tuple[str, str], Su
             and options.get(CONF_FIRMWARE_POLICY) == FIRMWARE_POLICY
             and options.get(CONF_FIRMWARE_CONSENT_AT)
         ):
-            entity_keys.update({"telemetry_latest_firmware", "firmware_update_observed"})
+            entity_keys.update({"telemetry_latest_firmware", "firmware_update_observed", "firmware_check_status"})
         if (
             options.get(CONF_TELEMETRY) is True
             and options.get(CONF_TELEMETRY_POLICY) == TELEMETRY_POLICY

@@ -987,7 +987,7 @@
       "invalid_subnet": "Kein gültiges IPv4-Subnetz oder zu groß (maximal /22). Verwende eine Schreibweise wie `192.168.1.0/24`.",
       "no_candidates": "Kein Gerät mit offenem Modbus-TCP-Port gefunden. Prüfe, ob die Wärmepumpe erreichbar ist und Modbus TCP aktiviert ist, und kontrolliere das Subnetz — oder gib die Adresse manuell ein.",
       "telemetry_myidm_required": "Bitte die myIDM-ID der IDM-Anlage angeben.",
-      "plant_model_invalid": "Bitte das Wärmepumpen-Modell mit höchstens 80 druckbaren Zeichen eingeben."
+      "plant_model_invalid": "Bitte das Wärmepumpen-Modell nur mit Buchstaben, Ziffern und einfachen Trennzeichen eingeben (höchstens 80 Zeichen)."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits konfiguriert.",
@@ -2672,7 +2672,12 @@
         "name": "Störung Druckschalter Wärmequellenkreis"
       },
       "firmware_check_status": {
-        "name": "Firmware-Prüfstatus"
+        "name": "Firmware-Prüfstatus",
+        "state": {
+          "not_checked": "Noch nicht geprüft",
+          "completed": "Abgeschlossen",
+          "unavailable": "Nicht verfügbar"
+        }
       },
       "firmware_version": {
         "name": "Firmware Version Navigator"

@@ -6,7 +6,12 @@ myIDM ID once; it is transmitted unchanged. The controller myIDM ID is used auto
 
 Both consent forms also offer an optional **Heat pump model** field (for
 example `AERO ALM 6-15`). It fills the model field the schemas already carry
-only when the controller reports no model of its own.
+only when the controller reports no model of its own. Letters in any script,
+digits and the separators space, dot, plus, slash, hyphen and underscore are
+accepted; any other character makes the entry unusable while consent is given
+and is left out of a report. Saving the telemetry form again with the switch
+and the notice unchanged keeps the consent time, so the window collected since
+the last report and its next slot stay as they are.
 
 Only the connected IDM plant, its controller and its connection through this
 integration are in scope. No other HA devices, entity IDs, room names, people,

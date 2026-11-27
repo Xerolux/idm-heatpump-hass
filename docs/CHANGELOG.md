@@ -34,6 +34,7 @@ Telemetry and the firmware comparison now report what really happened: services 
 - **`check_firmware` says whether it actually checked.** The response gains a `check` field: `completed`, `unavailable` or `in_progress`. Until now a failed request silently returned the previous result as if it were fresh.
 - **Consented data does not outlive its consent.** When telemetry or firmware consent no longer holds at startup — a changed notice, a missing consent time or an unusable myIDM ID — the stored aggregate, the stored answer and its Repairs notice are deleted instead of staying on disk.
 - **Failed firmware checks leave a trace.** A non-OK catalog answer or a network error writes one debug line with the HTTP status or the exception type only. An unconfirmed NAVIGATOR Pro answer keeps its status across a restart.
+- **Adding a model keeps the report schedule.** Saving the telemetry form again with the switch and the notice unchanged no longer re-dates the consent, so the window collected since the last report and its slot survive. An unusable model text never blocks switching consent off; it is simply dropped.
 
 ### 💼 Maintenance
 

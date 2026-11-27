@@ -114,13 +114,26 @@ def _label(value: object) -> str | None:
     return value if isinstance(value, str) and 0 < len(value) <= 80 and value.isprintable() else None
 
 
+#: A model label may carry letters (any script), digits, underscore, space and
+#: a few separators — never picture, control or formatting characters.
+_PLANT_MODEL = re.compile(r"[\w .+/-]{1,80}")
+
+
+def plant_model_text(value: object) -> str | None:
+    """Normalize the optional model text a user entered; None unless it is a plain label."""
+    if not isinstance(value, str):
+        return None
+    collapsed = " ".join(value.split())
+    return collapsed if collapsed and _PLANT_MODEL.fullmatch(collapsed) is not None else None
+
+
 def _plant_model(coordinator: IdmCoordinator, options: Mapping[str, Any]) -> str | None:
     """Prefer the controller's own model label; else use the model the user entered."""
     supplement = coordinator.web_supplement
     reported = _label(getattr(supplement, "heatpump_model", None)) if supplement else None
     if reported is not None:
         return reported
-    return _label(" ".join(str(options.get(CONF_PLANT_MODEL) or "").split()))
+    return plant_model_text(options.get(CONF_PLANT_MODEL))
 
 
 def _number(value: object) -> float | None:
@@ -168,6 +181,11 @@ class Telemetry:
     def enabled(self) -> bool:
         """Observations run while the explicit telemetry consent stands."""
         return not self._stopped and self._entry.options.get(CONF_TELEMETRY) is True
+
+    @property
+    def consent_active(self) -> bool:
+        """The complete consent gate for callers that act on the collector."""
+        return not self._stopped and self._consent_holds()
 
     @property
     def manual_cooldown(self) -> float:
@@ -261,7 +279,7 @@ class Telemetry:
 
     def observe(self) -> None:
         """Count observed alarm-code transitions without retaining raw history."""
-        if self._stopped or self._entry.options.get(CONF_TELEMETRY) is not True:
+        if not self._collecting():
             return
         self._schedule_save()
         alive = self._coordinator.web_alive
@@ -331,6 +349,10 @@ class Telemetry:
             and bool(options.get(CONF_TELEMETRY_CONSENT_AT))
             and valid_myidm(self.myidm_id)
         )
+
+    def _collecting(self) -> bool:
+        """Collection and persistence need the running collector and a consent that holds."""
+        return not self._stopped and self._consent_holds()
 
     async def async_start(self) -> bool:
         """Persist the daily slot before installing unload-managed callbacks."""
@@ -451,7 +473,7 @@ class Telemetry:
 
     def _serialize(self) -> dict[str, Any]:
         """One bounded aggregate and one frozen report, never a raw history."""
-        if self._stopped or self._entry.options.get(CONF_TELEMETRY) is not True:
+        if not self._collecting():
             return {}
         return {
             "consent_at": self._entry.options.get(CONF_TELEMETRY_CONSENT_AT),
@@ -483,9 +505,10 @@ class Telemetry:
                     await active
                 except asyncio.CancelledError:
                     pass
-        if state is not None:
+        if state:
             await self._store.async_save(state)
         else:
+            # Switched off, or the consent no longer holds: nothing may be kept.
             await self._store.async_remove()
 
     def stop(self) -> None:
