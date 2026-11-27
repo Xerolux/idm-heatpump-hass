@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.28.9 — 2026-11-27
+
+Navigator 10 cross-checks lifetime heating and hot-water energy against the daily reading around midnight. A web runtime of −1 h makes the sensor unavailable until the next valid reading. The fixes apply to new samples. [Release notes](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.28.9)
+
 ## v0.28.8 — 2026-11-27
 
 Navigator 10 plants gain six read-only web entities for hydraulic visualization: the differential-temperature control sensor (B84), its reference, the pump with its M88 signal, the HGL mixer signal (M71) and the heating/cooling valve (M61). They ride the requests every web poll already makes; the API pin moves to 2.18.0. [Hydraulic visualization](Entities#hydraulic-visualization-values-navigator-10-only).

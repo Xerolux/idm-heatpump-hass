@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.28.9 — 2026-11-27
+
+Beim Navigator 10 prüft die Integration die Gesamtwärmemenge für Heizung und Warmwasser um Mitternacht anhand des Tageswerts. Bei einer Web-Laufzeit von −1 h bleibt der Sensor bis zum nächsten gültigen Wert unverfügbar. Die Korrekturen gelten für neue Messwerte. [Versionshinweise](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.28.9)
+
 ## v0.28.8 — 2026-11-27
 
 Navigator-10-Anlagen erhalten sechs rein lesende Web-Entitäten für die Hydraulik-Visualisierung: den Fühler der Differenztemperaturregelung (B84), seine Referenz, die Pumpe mit ihrem M88-Signal, das HGL-Mischer-Signal (M71) und das Ventil Heizen/Kühlen (M61). Sie reiten auf den Abrufen, die jeder Web-Poll ohnehin ausführt; die API-Pin wechselt auf 2.18.0. [Hydraulik-Visualisierung](Entities#hydraulik-visualisierung-nur-navigator-10).

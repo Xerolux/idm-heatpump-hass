@@ -4,6 +4,10 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.28.9
+
+Regressionstests decken die gemeldete Mitternachtsspitze von 139,83 kWh und die Laufzeit von −1 h ab. Die Tests für Einrichtung, Neuladen und Entladen bestanden mit Home Assistant 2026.11.0 und 2026.12.0b2. Die Bestätigung am betroffenen Navigator 10 steht aus. [Prüfprotokoll](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.9.md)
+
 ## Release-Entscheidung zu 0.28.8
 
 Die sechs neuen Navigator-10-Entitäten zur Hydraulik-Visualisierung sind rein lesend, erscheinen nur, wo der Regler die Zeile liefert, und fügen keinen Controller-Abruf hinzu: Die Differenztemperaturwerte reiten auf dem Frame `system/overview`, M71/M88/M61 auf bereits laufenden Einstellungsabfragen. Verifiziert gegen den bereinigten Mitschnitt des Meldenden; die Feldbestätigung auf dieser Anlage und der Sieben-Tage-Soak stehen noch aus. [Prüfprotokoll](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.8.md)
@@ -705,7 +709,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.28.8` und `idm-heatpump-api` `2.18.0` bilden das aktuelle exakt
+Integration im Quellstand `0.28.9` und `idm-heatpump-api` `2.18.0` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
