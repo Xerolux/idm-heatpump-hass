@@ -236,10 +236,14 @@ def _normalize_web_data(data: Any, web_variant: str | None = None) -> IdmWebSupp
         if isinstance(raw_values, dict)
         else {str(name): _normalize_sensor_value(value) for name, value in values.items()}
     )
-    pump_key = "hotwater_station_pump_percentage"
-    if (pump := sensor_values.get(pump_key)) is not None and pump.native_value == -1:
-        sensor_values.pop(pump_key)
-        values.pop(pump_key, None)
+    # Analogue pump signals use -1 as the controller's "output off" marker
+    # (M73 station pump, M88 differential-temperature pump): drop the marker
+    # so the numeric sensor does not report a bogus negative percentage. The
+    # pump running state itself comes from the structured overview frames.
+    for pump_key in ("hotwater_station_pump_percentage", "diff_temp_pump_signal"):
+        if (pump := sensor_values.get(pump_key)) is not None and pump.native_value == -1:
+            sensor_values.pop(pump_key)
+            values.pop(pump_key, None)
 
     metadata_values = {
         "navigator_version": _read_str_attr(data, "navigator_version"),
@@ -680,8 +684,12 @@ async def _read_optional_system_overview(
 
     ``system/overview`` lists every configured heating circuit with its
     regulation type, so differential-temperature circuits are detected on a
-    plain PIN session. Strictly optional: a firmware that does not answer
-    leaves the supplement untouched.
+    plain PIN session. Since idm-heatpump-api 2.18.0 it also carries the
+    structured ``diffTempControl`` block: the B84 buffer sensor, the
+    reference side of the regulated delta and the pump state (issue #750).
+    Those values join ``sensor_values`` so the hydraulic-visualization
+    entities need no extra request. Strictly optional: a firmware that does
+    not answer leaves the supplement untouched.
     """
     if supplement.web_variant != "nav10":
         return supplement
@@ -694,7 +702,28 @@ async def _read_optional_system_overview(
     except Exception:
         _LOGGER.debug("IDM web system/overview read failed", exc_info=True)
         return supplement
-    return replace(supplement, system_overview=overview)
+    extra: dict[str, IdmWebSensorValue] = {}
+    buffer_temperature = getattr(overview, "diff_temp_buffer_temperature", None)
+    if isinstance(buffer_temperature, (int, float)) and not isinstance(buffer_temperature, bool):
+        extra["diff_temp_buffer_temp"] = IdmWebSensorValue(
+            value=str(buffer_temperature),
+            native_value=float(buffer_temperature),
+            unit="°C",
+        )
+    reference_temperature = getattr(overview, "diff_temp_reference_temperature", None)
+    if isinstance(reference_temperature, (int, float)) and not isinstance(reference_temperature, bool):
+        extra["diff_temp_reference_temp"] = IdmWebSensorValue(
+            value=str(reference_temperature),
+            native_value=float(reference_temperature),
+            unit="°C",
+        )
+    pump_active = getattr(overview, "diff_temp_pump_active", None)
+    if isinstance(pump_active, bool):
+        extra["diff_temp_pump_active"] = IdmWebSensorValue(
+            value="on" if pump_active else "off",
+            native_value=1.0 if pump_active else 0.0,
+        )
+    return _with_sensor_values(supplement, extra, system_overview=overview)
 
 
 def _is_authentication_error(err: Exception) -> bool:

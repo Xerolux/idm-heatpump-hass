@@ -157,6 +157,13 @@ _WEB_VALUE_NAMES: tuple[str, ...] = (
     "current_expected_power_hotwater",
     "dewpoint_humidity_alarm",
     "dhw_status_info",
+    # Navigator 10 hydraulic-visualization values (issue #750): the
+    # differential-temperature control block arrives structured through the
+    # system/overview frame, the M71/M88/M61 rows through the setting tables
+    # read_data() already fetches.
+    "diff_temp_buffer_temp",
+    "diff_temp_pump_signal",
+    "diff_temp_reference_temp",
     "evaporation_temperature",
     "evaporator_outlet_temperature",
     "ew_evu_lock_contact",
@@ -176,6 +183,7 @@ _WEB_VALUE_NAMES: tuple[str, ...] = (
     "heat_quantity_hotwater_today",
     "heat_quantity_hotwater_total",
     "heat_sink_intermediate_circuit_pump_signal",
+    "hgl_mixer_signal",
     # Dual-label sensors of plants with a separation heat exchanger: the web
     # interface reports B33/B113 and B34/B114 there, physical sensors next to
     # the Modbus flow/return registers — deliberately not part of
@@ -224,6 +232,7 @@ _WEB_VALUE_NAMES: tuple[str, ...] = (
     "software_version",
     "switch_cycles_second_heat_generator",
     "switch_cycles_stage_1",
+    "valve_heating_cooling",
     "valve_heating_hotwater",
     "ventilator_direction_1",
     "ventilator_voltage",
@@ -289,6 +298,9 @@ _WEB_VALUE_UNITS: dict[str, str] = {
     "current_expected_power_cooling": "kW",
     "current_expected_power_heating": "kW",
     "current_expected_power_hotwater": "kW",
+    "diff_temp_buffer_temp": "°C",
+    "diff_temp_pump_signal": "%",
+    "diff_temp_reference_temp": "°C",
     "evaporation_temperature": "°C",
     "evaporator_outlet_temperature": "°C",
     "flow_pump_percentage": "%",
@@ -297,6 +309,7 @@ _WEB_VALUE_UNITS: dict[str, str] = {
     **{f"room_temperature_HK_{letter}": "°C" for letter in HEATING_CIRCUIT_LETTERS},
     "flowmeter": "L/min",
     "heating_water_outlet_temperature": "°C",
+    "hgl_mixer_signal": "V",
     "intermediate_flow_temperature": "°C",
     "intermediate_return_temperature": "°C",
     "heat_quantity_heating_today": "kWh",

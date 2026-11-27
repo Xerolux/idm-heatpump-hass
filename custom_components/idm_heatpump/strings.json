@@ -1883,6 +1883,9 @@
       "web_dhw_circulation_active": {
         "name": "Hot water circulation (Web)"
       },
+      "web_diff_temp_pump_active": {
+        "name": "Differential temp. control pump (Web)"
+      },
       "web_ew_evu_lock_contact": {
         "name": "Utility lock contact (Web)"
       },
@@ -2960,6 +2963,18 @@
       "web_dhw_status_info": {
         "name": "Hot water status info (Web)"
       },
+      "web_diff_temp_buffer_temp": {
+        "name": "Differential temp. control sensor (B84, Web)"
+      },
+      "web_diff_temp_pump_active": {
+        "name": "Differential temp. control pump (Web)"
+      },
+      "web_diff_temp_pump_signal": {
+        "name": "Differential temp. control pump signal (M88, Web)"
+      },
+      "web_diff_temp_reference_temp": {
+        "name": "Differential temp. control reference (Web)"
+      },
       "web_energyflow_grid": {
         "name": "Grid power (Web)"
       },
@@ -3010,6 +3025,9 @@
       },
       "web_heatstore_temperature": {
         "name": "Heat storage temperature (Web)"
+      },
+      "web_hgl_mixer_signal": {
+        "name": "HGL mixer control signal (M71, Web)"
       },
       "web_hotgas_temperature": {
         "name": "Hot gas temperature (Web)"
@@ -3136,6 +3154,9 @@
       },
       "web_switch_cycles_stage_1": {
         "name": "Stage 1 switch cycles (Web)"
+      },
+      "web_valve_heating_cooling": {
+        "name": "Heating/cooling valve (Web)"
       },
       "web_valve_heating_hotwater": {
         "name": "Heating/hot water valve (Web)"

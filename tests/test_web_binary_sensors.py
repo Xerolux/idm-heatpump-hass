@@ -141,8 +141,8 @@ def test_web_binary_available_when_modbus_update_failed():
 
 
 def test_binary_keys_cover_every_heating_circuit_pump():
-    # 15 shared values plus one pump key per heating circuit A-G.
-    assert len(WEB_BINARY_VALUE_KEYS) == 22
+    # 16 shared values plus one pump key per heating circuit A-G.
+    assert len(WEB_BINARY_VALUE_KEYS) == 23
     assert {f"pump_heating_circuit{letter}" for letter in "ABCDEFG"} <= WEB_BINARY_VALUE_KEYS
 
 
@@ -295,6 +295,26 @@ def test_dhw_circulation_resolves_from_freshwater_values():
         sensor_values={"dhw_circulation_active": IdmWebSensorValue(value="off", native_value=0.0)}
     )
     assert circulation.is_on is False
+
+
+def test_diff_temp_pump_resolves_from_system_overview_values():
+    """The differential-temperature pump arrives as on/off (#750 capture)."""
+    coordinator = _coordinator(
+        {
+            "diff_temp_pump_active": IdmWebSensorValue(value="on", native_value=1.0),
+        }
+    )
+    entities = _entities_by_key(coordinator)
+    pump = entities["web_diff_temp_pump_active"]
+
+    assert pump.is_on is True
+    assert pump.available is True
+
+    coordinator.web_supplement = IdmWebSupplement(
+        sensor_values={"diff_temp_pump_active": IdmWebSensorValue(value="off", native_value=0.0)}
+    )
+    assert pump.is_on is False
+    assert pump.available is True
 
 
 def test_state_stays_unknown_once_the_supplement_disappears():

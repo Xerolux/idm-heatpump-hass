@@ -1883,6 +1883,9 @@
       "web_dhw_circulation_active": {
         "name": "Warmwasser-Zirkulation (Web)"
       },
+      "web_diff_temp_pump_active": {
+        "name": "Pumpe Differenztemperaturregelung (Web)"
+      },
       "web_ew_evu_lock_contact": {
         "name": "EVU-Sperrkontakt (Web)"
       },
@@ -2960,6 +2963,18 @@
       "web_dhw_status_info": {
         "name": "Warmwasser Statusinfo (Web)"
       },
+      "web_diff_temp_buffer_temp": {
+        "name": "Fühler Differenztemperaturregelung (B84, Web)"
+      },
+      "web_diff_temp_pump_active": {
+        "name": "Pumpe Differenztemperaturregelung (Web)"
+      },
+      "web_diff_temp_pump_signal": {
+        "name": "Pumpe Differenztemperaturregelung Signal (M88, Web)"
+      },
+      "web_diff_temp_reference_temp": {
+        "name": "Referenz Differenztemperaturregelung (Web)"
+      },
       "web_energyflow_grid": {
         "name": "Netzleistung (Web)"
       },
@@ -3010,6 +3025,9 @@
       },
       "web_heatstore_temperature": {
         "name": "Wärmespeichertemperatur (Web)"
+      },
+      "web_hgl_mixer_signal": {
+        "name": "HGL-Mischer Steuersignal (M71, Web)"
       },
       "web_hotgas_temperature": {
         "name": "Heißgastemperatur (Web)"
@@ -3136,6 +3154,9 @@
       },
       "web_switch_cycles_stage_1": {
         "name": "Schaltzyklen Stufe 1 (Web)"
+      },
+      "web_valve_heating_cooling": {
+        "name": "Ventil Heizen/Kühlen (Web)"
       },
       "web_valve_heating_hotwater": {
         "name": "Ventil Heizung/Warmwasser (Web)"

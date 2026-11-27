@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.28.8 — 2026-11-27
+
+Navigator-10-Anlagen erhalten sechs rein lesende Web-Entitäten für die Hydraulik-Visualisierung: den Fühler der Differenztemperaturregelung (B84), seine Referenz, die Pumpe mit ihrem M88-Signal, das HGL-Mischer-Signal (M71) und das Ventil Heizen/Kühlen (M61). Sie reiten auf den Abrufen, die jeder Web-Poll ohnehin ausführt; die API-Pin wechselt auf 2.18.0. [Hydraulik-Visualisierung](Entities#hydraulik-visualisierung-nur-navigator-10).
+
 ## v0.28.7 — 2026-11-24
 
 Beim manuellen Abbruch nimmt der Boost seine noch anstehende Einmalanforderung zurück, auch wenn der Schreibschutz die Rückstellung des Sollwerts verzögert. Eine zuvor aktive Anforderung bleibt erhalten. Die PV-Automatik hält ihre Sperrzeit auch nach einem abgewiesenen Start ein. [Boost abbrechen](Services#cancel-dhw-boost).

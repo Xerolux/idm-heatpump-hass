@@ -405,6 +405,21 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "web_controller_clock": ("Controller clock (Web)", "Regler-Uhrzeit (Web)"),
         "web_last_success": ("Last web update (Web)", "Letzte Web-Aktualisierung (Web)"),
         "web_dhw_status_info": ("Hot water status info (Web)", "Warmwasser Statusinfo (Web)"),
+        # Navigator 10 hydraulic visualization (issue #750).
+        "web_diff_temp_buffer_temp": (
+            "Differential temp. control sensor (B84, Web)",
+            "Fühler Differenztemperaturregelung (B84, Web)",
+        ),
+        "web_diff_temp_pump_signal": (
+            "Differential temp. control pump signal (M88, Web)",
+            "Pumpe Differenztemperaturregelung Signal (M88, Web)",
+        ),
+        "web_diff_temp_reference_temp": (
+            "Differential temp. control reference (Web)",
+            "Referenz Differenztemperaturregelung (Web)",
+        ),
+        "web_hgl_mixer_signal": ("HGL mixer control signal (M71, Web)", "HGL-Mischer Steuersignal (M71, Web)"),
+        "web_valve_heating_cooling": ("Heating/cooling valve (Web)", "Ventil Heizen/Kühlen (Web)"),
         "connection_mode": ("Connection mode", "Verbindungsmodus"),
         "web_energyflow_grid": ("Grid power (Web)", "Netzleistung (Web)"),
         "web_energyflow_pv": ("PV power (Web)", "PV-Leistung (Web)"),
@@ -607,6 +622,12 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "web_demand_reason_pv": ("PV demand reason (Web)", "PV-Anforderungsgrund (Web)"),
         # === Local Navigator web supplement ===
         "web_dhw_circulation_active": ("Hot water circulation (Web)", "Warmwasser-Zirkulation (Web)"),
+        # Navigator 10 hydraulic visualization (issue #750): the pump state
+        # comes structured from the system.diffTempControl block.
+        "web_diff_temp_pump_active": (
+            "Differential temp. control pump (Web)",
+            "Pumpe Differenztemperaturregelung (Web)",
+        ),
         "web_compressor_1": ("Compressor 1 (Web)", "Verdichter 1 (Web)"),
         "web_compressor_heating": ("Compressor heater (Web)", "Verdichterheizung (Web)"),
         "web_dewpoint_humidity_alarm": ("Dew point humidity alarm (Web)", "Taupunkt-Feuchtealarm (Web)"),

@@ -37,6 +37,14 @@ class WebBinarySensorDefinition:
 
 WEB_BINARY_SENSOR_DEFINITIONS: tuple[WebBinarySensorDefinition, ...] = (
     WebBinarySensorDefinition(
+        # Navigator 10 differential-temperature control pump, from the
+        # system.diffTempControl block of the system/overview frame (issue
+        # #750); the analogue control signal rides beside it as a sensor.
+        key="diff_temp_pump_active",
+        icon="mdi:pump",
+        device_class=BinarySensorDeviceClass.RUNNING,
+    ),
+    WebBinarySensorDefinition(
         key="compressor_1",
         icon="mdi:engine",
         device_class=BinarySensorDeviceClass.RUNNING,
