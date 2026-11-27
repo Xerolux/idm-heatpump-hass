@@ -5,6 +5,17 @@ gilt ein einziger Ja/Nein-Schalter für den gesamten festgelegten Umfang. Die
 myIDM-ID der Wärmepumpe wird einmal eingegeben und unverändert übertragen.
 Die Web-Anbindung liefert die myIDM-ID automatisch, soweit verfügbar. Keine Anonymisierung.
 
+Beide Einwilligungsformulare bieten zusätzlich ein optionales Feld
+**Wärmepumpen-Modell** (zum Beispiel `AERO ALM 6-15`). Es füllt das ohnehin
+vorhandene Modellfeld nur, wenn der Regler selbst kein Modell meldet.
+Zugelassen sind Buchstaben beliebiger Schrift, Ziffern und die Trennzeichen
+Leerzeichen, Punkt, Plus, Schrägstrich, Bindestrich und Unterstrich; jedes
+andere Zeichen macht die Angabe beim Erteilen der Einwilligung unbrauchbar und
+bleibt aus einem Bericht heraus. Wer das Telemetrie-Formular mit unverändertem
+Schalter und unveränderter Hinweisfassung erneut speichert, behält den
+Einwilligungszeitpunkt; das seit dem letzten Bericht gesammelte Fenster und
+sein nächster Termin bleiben erhalten.
+
 Nur die angebundene IDM-Anlage, ihr Regler und ihre Anbindung über diese
 Integration gehören zum Umfang. Andere HA-Geräte, Entitäts- und Raumnamen,
 Personen, Anwesenheit, Haushaltszähler, fremde Integrationen, Dateien, Zugangsdaten
@@ -60,7 +71,9 @@ Firmware-Beobachtung treibt die Minutenprüfungen: Bei beiden aktiven
 Einwilligungen wacht Home Assistant pro Minute einmal auf statt zweimal.
 
 Ausschalten stoppt die Sammlung, bricht laufende Aufgaben ab und löscht die lokale
-Sammlung. Bereits empfangene Daten können nicht zurückgeholt werden. Erneutes
+Sammlung. Eine Einwilligung, die nicht mehr trägt — geänderte Hinweisfassung,
+fehlender Einwilligungszeitpunkt oder unbrauchbare myIDM-ID — führt beim nächsten
+Start zur gleichen Löschung; nichts daraus bleibt auf der Platte liegen. Bereits empfangene Daten können nicht zurückgeholt werden. Erneutes
 Einschalten beginnt neu. Eine neue Hinweisfassung erfordert erneute Zustimmung.
 Fernsteuerung und eine nachträgliche Erweiterung der Datenfelder sind nicht erlaubt.
 
@@ -106,13 +119,15 @@ Berechtigung prüfen. Das öffentliche Formular gewährt keinen Lesezugriff.
 
 ## Unabhängige Firmware-Beobachtungen
 
-Unter **Neu konfigurieren → Firmware teilen und vergleichen** aktiviert ein eigener freiwilliger Schalter **Neueste gemeldete Firmware**. Standardmäßig aus, unabhängig von Telemetrie und ohne myIDM-ID nutzbar. Bestehende Zustimmungen mit `idm-firmware-v1` bleiben gültig; sie werden nicht zurückgesetzt, ausgeschaltete Funktionen nicht aktiviert. Ausschalten bricht weitere Anfragen ab und entfernt den Sensor sofort.
+Unter **Neu konfigurieren → Firmware teilen und vergleichen** aktiviert ein eigener freiwilliger Schalter **Neueste gemeldete Firmware**. Standardmäßig aus, unabhängig von Telemetrie und ohne myIDM-ID nutzbar. Bestehende Zustimmungen mit `idm-firmware-v1` bleiben gültig; sie werden nicht zurückgesetzt, ausgeschaltete Funktionen nicht aktiviert. Ausschalten bricht weitere Anfragen ab und entfernt die Sensoren sofort.
 
-Übertragen werden nur Navigator-Familie, Regler-/Anlagenmodell und installierte Firmware, nach bis zu 15 Minuten zufälliger Startverzögerung, danach alle sechs Stunden plus bis zu 30 Minuten zufälliger Verzögerung. Keine myIDM-ID, Seriennummer, Betriebswerte, Zugangsdaten oder anderen HA-Daten. Der Server speichert technische Sichtungen verschlüsselt, zusammengefasst je Vergleichsgruppe, Version und UTC-Tag ohne Anlagenkennung. Automatische Löschung nach zwölf Kalendermonaten. Keine dauerhafte Client-Warteschlange. Das letzte validierte Vergleichsergebnis bleibt lokal im Konfigurationseintrag gespeichert, damit die Firmware-Entitäten einen Neustart überstehen; es zeigt seine ursprüngliche Vergleichszeit, bis der nächste Check es ersetzt, und das Zurückziehen der Zustimmung löscht es. Recorder und Backups können Sensorzustände entsprechend deiner HA-Konfiguration behalten. Die Verbindungs-IP ist technisch sichtbar; verschlüsselte Ratenkennungen verfallen nach spätestens zwei Stunden beim stündlichen Bereinigungslauf. Der Datenschutzlink steht weiterhin vor dem Schalter. Ausschalten stoppt weitere Meldungen; vorhandene Sammelsichtungen bleiben bis zum Ablauf und enthalten keine Zuordnung zu einzelnen Einsendern.
+Übertragen werden nur Navigator-Familie, Regler-/Anlagenmodell und installierte Firmware, nach bis zu 15 Minuten zufälliger Startverzögerung, danach alle sechs Stunden plus bis zu 30 Minuten zufälliger Verzögerung. Eine geänderte installierte Firmware wird bei der nächsten Minutenprüfung verglichen statt nach sechs Stunden, aber nie öfter als alle 15 Minuten. Keine myIDM-ID, Seriennummer, Betriebswerte, Zugangsdaten oder anderen HA-Daten. Der Server speichert technische Sichtungen verschlüsselt, zusammengefasst je Vergleichsgruppe, Version und UTC-Tag ohne Anlagenkennung. Automatische Löschung nach zwölf Kalendermonaten. Keine dauerhafte Client-Warteschlange. Das letzte validierte Vergleichsergebnis bleibt lokal im Konfigurationseintrag gespeichert, damit die Firmware-Entitäten einen Neustart überstehen; es zeigt seine ursprüngliche Vergleichszeit, bis der nächste Check es ersetzt, und das Zurückziehen der Zustimmung löscht es. Recorder und Backups können Sensorzustände entsprechend deiner HA-Konfiguration behalten. Die Verbindungs-IP ist technisch sichtbar; verschlüsselte Ratenkennungen verfallen nach spätestens zwei Stunden beim stündlichen Bereinigungslauf. Der Datenschutzlink steht weiterhin vor dem Schalter. Ausschalten stoppt weitere Meldungen; vorhandene Sammelsichtungen bleiben bis zum Ablauf und enthalten keine Zuordnung zu einzelnen Einsendern.
+
+Mit aktiver Firmware-Einwilligung zeigt die Gerätegruppe **Telemetrie** der Anlage außerdem den **Firmware-Prüfstatus**: `not_checked` bis zur ersten Prüfung, danach `completed` oder `unavailable`. Die Attribute nennen den Antwortstatus des Katalogs, den letzten Versuch, den Zeitpunkt der letzten gültigen Antwort, den nächsten Termin und die zuletzt angefragte Firmware. Eine fehlgeschlagene Prüfung lässt die letzte Beobachtung stehen und wird nur mit HTTP-Status oder Ausnahmeart protokolliert, nie mit Antwortinhalt oder Ausnahmetext.
 
 Der Katalog kombiniert freigegebene Telemetrie, unabhängige Firmwaremeldungen und ausdrückliche Firmware-Metadaten privater Diagnose-ZIPs. Aus ZIPs abgeleitete Einträge bleiben an deren 90-Tage-Ablauf, Löschung und Testausschluss gebunden. Für Telemetrie gelten unverändert zwölf Monate und geprüfte Löschanfragen. Originalarchive werden nicht verändert. Die private Telemetrieübersicht zeigt Firmware, Vergleichsbereich und Quellen. Zahlen sind Quellensichtungen, keine Anzahl verschiedener Wärmepumpen; unabhängige Meldungen werden je Tag zusammengefasst.
 
-Navigator/Regler, bekanntes Anlagenmodell, Firmware-Präfix/Kanal und Hauptreihe bleiben getrennt. Fehlende Anlagenmodelle passen nur zu anderen fehlenden Typangaben derselben Reglerreihe. `NAV10_` und `T_NAV10_` werden nie vermischt. NAVIGATOR Pro bezeichnet die Einzelraumregelung und ist kein anderer Name für Navigator 10. Allgemeine alte Pro-Angaben bleiben `unconfirmed_component`: Die neueste gemeldete Version ist innerhalb dieser gemeldeten Gruppe sichtbar, aber `newer_observed` bleibt unbekannt und erzeugt keine Update-Reparatur der Wärmepumpe. Ausdrückliche Einzelraumregelungs-Metadaten bilden eine eigene Gruppe. Widersprüchliche Familie/Präfix-Angaben begründen keine Kompatibilität.
+Navigator/Regler, bekanntes Anlagenmodell, Firmware-Präfix/Kanal und Hauptreihe bleiben getrennt. Fehlende Anlagenmodelle passen nur zu anderen fehlenden Typangaben derselben Reglerreihe. Ein eingegebenes Modell ordnet die Anlage der modellspezifischen Gruppe zu; daher die Schreibweise vom Typenschild verwenden. `NAV10_` und `T_NAV10_` werden nie vermischt. NAVIGATOR Pro bezeichnet die Einzelraumregelung und ist kein anderer Name für Navigator 10. Allgemeine alte Pro-Angaben bleiben `unconfirmed_component`: Die neueste gemeldete Version ist innerhalb dieser gemeldeten Gruppe sichtbar, aber `newer_observed` bleibt unbekannt und erzeugt keine Update-Reparatur der Wärmepumpe. Ausdrückliche Einzelraumregelungs-Metadaten bilden eine eigene Gruppe. Widersprüchliche Familie/Präfix-Angaben begründen keine Kompatibilität.
 
 Navigator 1.0 und 1.7 nutzen dieselbe ältere Modbus-Registerkarte. Eine Firmwareangabe wie `n1.7z72` identifiziert die Katalogfamilie. Navigator 1.0, Navigator 1.7 und Navigator 10 werden getrennt verglichen. Auch unterschiedliche Buchstaben im alten Firmwareformat bleiben getrennt. Eine reine 1.x-Modbus-Erkennung oder eine alleinstehende Versionsnummer reicht zur Zuordnung im Katalog nicht aus.
 
@@ -162,7 +177,7 @@ private Schlüssel sind vom Hypervisor entfernt; neue Schlüssel liegen im Conta
 Der Container selbst darf nicht gemeinsam mit netcup auf einen veralteten Stand
 zurückgesetzt werden.
 
-Manueller Test: `idm_heatpump.send_telemetry` sendet mit bestehender Zustimmung einen Anlagenbericht (mindestens eine Minute Abstand) und plant den nächsten täglichen Versand neu. `idm_heatpump.check_firmware` fragt mit eigener Zustimmung den Firmware-Vergleich ab. Beide Aktionen verwenden `entry_id` und ändern keine Heizungsparameter.
+Manueller Test: `idm_heatpump.send_telemetry` sendet mit bestehender Zustimmung einen Anlagenbericht (mindestens eine Minute Abstand) und plant den nächsten täglichen Versand neu. `idm_heatpump.check_firmware` fragt mit eigener Zustimmung den Firmware-Vergleich ab. Die Antwort von `send_telemetry` nennt das echte Ergebnis dieses Versands — `accepted`, `rejected`, `unavailable` oder `not_sent`, wenn nichts gesendet wurde —, und `check_firmware` ergänzt ein Feld `check`: `completed`, `unavailable` oder `in_progress`. Beide Aktionen verwenden `entry_id` und ändern keine Heizungsparameter.
 
 ## Automatische Qualitätsprüfung
 
@@ -172,13 +187,13 @@ Nach einem Neuladen werden gespeicherte Zähler und Beobachtungszeit gemeinsam m
 
 ## Firmware-Orientierung
 
-Unter **Einstellungen → Geräte & Dienste → IDM Heatpump → Neu konfigurieren → Firmware-Abfrage (freiwillig)** die separate Zustimmung aktivieren. Die Gerätegruppe **Telemetrie** der Anlage zeigt dann **Neueste gemeldete Firmware** (Versionsnummer) und **Neuere Firmware gesichtet (unbestätigt)** (Ja/Nein; ohne passende Daten nicht verfügbar). Die Attribute zeigen installierte und gesichtete Version sowie den Zeitpunkt des Vergleichs. Unter **Entwicklerwerkzeuge → Aktionen → IDM Heatpump: Firmware jetzt prüfen** kann die Abfrage mit vorhandener Zustimmung manuell erfolgen.
+Unter **Einstellungen → Geräte & Dienste → IDM Heatpump → Neu konfigurieren → Firmware teilen und vergleichen** die separate Zustimmung aktivieren. Die Gerätegruppe **Telemetrie** der Anlage zeigt dann **Neueste gemeldete Firmware** (Versionsnummer), **Neuere Firmware gesichtet (unbestätigt)** (Ja/Nein; ohne passende Daten nicht verfügbar) und den **Firmware-Prüfstatus**. Die Attribute zeigen installierte und gesichtete Version sowie den Zeitpunkt des Vergleichs. Unter **Entwicklerwerkzeuge → Aktionen → IDM Heatpump: Firmware jetzt prüfen** kann die Abfrage mit vorhandener Zustimmung manuell erfolgen.
 
 Eine neuere passende Sichtung löst zusätzlich einen Hinweis unter **Einstellungen → System → Reparaturen** aus. Die Hinweiskarte selbst nennt beide Versionen — die installierte und die neueste passende Community-Beobachtung — und wiederholt, dass dies eine Orientierung ist, keine Verfügbarkeitszusage. Mit **Gesehen bestätigen** wird genau diese Version für das Gerät dauerhaft quittiert, auch über Neustarts hinweg. Erst eine andere neuere Version kann erneut gemeldet werden. Das bestätigt nur das Lesen des Hinweises und führt kein Update aus. Der Hinweis ist dauerhaft gespeichert und an seinen Konfigurationseintrag gebunden: Neustart oder Reload löschen ihn nicht und setzen auch ein Wegklicken nicht zurück; das Entfernen des Integrationseintrags entfernt ihn mit. Wird die Firmware-Zustimmung zurückgezogen, verschwinden der Hinweis und das lokal gespeicherte Vergleichsergebnis.
 
 Community-Meldungen sind keine Zusage, dass die Version für deine Wärmepumpe verfügbar oder geeignet ist. iDM oder der autorisierte Fachbetrieb muss das prüfen und ein Update durchführen. Nutzer können mit freiwillig geteilten Berichten die Vergleichsbasis verbessern; die Firmware-Abfrage ist dennoch unabhängig von Telemetrie einschaltbar. Beide Zustimmungen bleiben freiwillig und standardmäßig aus.
 
-Bei aktivierter Gerätehierarchie bilden die Cloud-Einwilligungs-Entitäten — **Neueste gemeldete Firmware**, **Neuere Firmware gesichtet (unbestätigt)** und **Telemetrie-Berichtsstatus** — ein eigenes Untergerät **Telemetrie** unter der Anlage. Die Entity-IDs bleiben beim Verschieben erhalten; die installierte Softwareversion bleibt in **Diagnose**. Ohne Gerätehierarchie liegen sie als Diagnose-Entitäten auf dem Hauptgerät.
+Bei aktivierter Gerätehierarchie bilden die Cloud-Einwilligungs-Entitäten — **Neueste gemeldete Firmware**, **Neuere Firmware gesichtet (unbestätigt)**, **Firmware-Prüfstatus** und **Telemetrie-Berichtsstatus** — ein eigenes Untergerät **Telemetrie** unter der Anlage. Die Entity-IDs bleiben beim Verschieben erhalten; die installierte Softwareversion bleibt in **Diagnose**. Ohne Gerätehierarchie liegen sie als Diagnose-Entitäten auf dem Hauptgerät.
 
 Die übermittelten Fähigkeitsmerkmale stammen aus API-Modellmetadaten; sie beweisen keine installierte Solar-, PV- oder ISC-Ausstattung. Fehlende physische Modellangaben bleiben unbekannt.
 

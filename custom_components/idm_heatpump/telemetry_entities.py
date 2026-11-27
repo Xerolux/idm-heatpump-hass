@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorEntityDescription
-from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
@@ -25,11 +25,12 @@ from .firmware_observations import FIRMWARE_POLICY, FirmwareObservations
 from .telemetry import TELEMETRY_POLICY, Telemetry
 
 KEY = "telemetry_latest_firmware"
+FIRMWARE_STATUS_KEY = "firmware_check_status"
 
 
 def firmware_sensor_entities(
     hass: HomeAssistant, entry: Any, coordinator: IdmCoordinator
-) -> list[IdmTelemetryFirmwareSensor]:
+) -> list[IdmTelemetryFirmwareSensor | IdmFirmwareStatusSensor]:
     """Remove registry remnants when consent is absent, including after restarts."""
     enabled = (
         entry.options.get(CONF_FIRMWARE_CHECK) is True
@@ -37,11 +38,12 @@ def firmware_sensor_entities(
         and bool(entry.options.get(CONF_FIRMWARE_CONSENT_AT))
     )
     if enabled:
-        return [IdmTelemetryFirmwareSensor(coordinator)]
+        return [IdmTelemetryFirmwareSensor(coordinator), IdmFirmwareStatusSensor(coordinator)]
     registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id("sensor", DOMAIN, build_entity_unique_id(entry.entry_id, KEY))
-    if isinstance(entity_id, str):
-        registry.async_remove(entity_id)
+    for key in (KEY, FIRMWARE_STATUS_KEY):
+        entity_id = registry.async_get_entity_id("sensor", DOMAIN, build_entity_unique_id(entry.entry_id, key))
+        if isinstance(entity_id, str):
+            registry.async_remove(entity_id)
     return []
 
 
@@ -110,6 +112,47 @@ class IdmTelemetryFirmwareSensor(_IdmFirmwareEntityBase, SensorEntity):
         telemetry = self._telemetry
         value = telemetry.firmware_result.get("latest_firmware") if telemetry is not None else None
         return value if isinstance(value, str) else None
+
+
+class IdmFirmwareStatusSensor(_IdmFirmwareEntityBase, SensorEntity):
+    """Local outcome of the last firmware catalog check; never transmitted."""
+
+    _attr_icon = "mdi:cloud-sync-outline"
+
+    def __init__(self, coordinator: IdmCoordinator) -> None:
+        super().__init__(coordinator, FIRMWARE_STATUS_KEY)
+        self.entity_description = SensorEntityDescription(
+            key=FIRMWARE_STATUS_KEY,
+            translation_key=FIRMWARE_STATUS_KEY,
+            device_class=SensorDeviceClass.ENUM,
+            options=["not_checked", "completed", "unavailable"],
+        )
+
+    @property
+    def available(self) -> bool:
+        telemetry = self._telemetry
+        return telemetry is not None and telemetry.enabled
+
+    @property
+    def native_value(self) -> str | None:
+        telemetry = self._telemetry
+        return telemetry.check_state if telemetry is not None else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        telemetry = self._telemetry
+        if telemetry is None:
+            return {"status": "not_ready"}
+        result = telemetry.firmware_result
+        return telemetry.check_status() | {
+            "firmware_status": result.get("status"),
+            "last_checked": result.get("last_checked"),
+            "latest_firmware": result.get("latest_firmware"),
+            "installed_firmware": result.get("installed_firmware"),
+            "newer_observed": result.get("newer_observed"),
+            "observations": result.get("observations"),
+            "availability_note": "Local status of the firmware catalog check; not part of the transmitted data.",
+        }
 
 
 BINARY_KEY = "firmware_update_observed"

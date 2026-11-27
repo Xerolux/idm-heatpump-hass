@@ -4,6 +4,10 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.29.0
+
+Der Telemetrie-Client wurde gegen die live laufende IDM-Tools-API geprüft: Der Server akzeptiert genau die bekannten Felder, darum fügt dieses Release keines hinzu und lässt beide Hinweisfassungen unverändert. Regressionstests decken die echten Service-Ergebnisse, die Löschung nach einem verweigerten Start, die gedrosselte erneute Firmware-Prüfung und den neuen Statussensor ab. Die Bestätigung an einer Anlage mit Firmware-Einwilligung und modellspezifischer Vergleichsgruppe steht aus. [Prüfprotokoll](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.29.0.md)
+
 ## Release-Entscheidung zu 0.28.10
 
 Eine Woche Verlauf eines Navigator 10 mit 47 Abtauungen ist der Feldnachweis: Jeder Abtaulauf wurde als Kurztakt gezählt. Ein Regressionstest bildet die aufgezeichnete Folge nach, und die Wiedergabe dieser Woche durch die neue Regel lässt einen echten Takt unter 15 Minuten übrig. Vor dieser Version erfasste Taktlaufzeiten werden einmal verworfen. Die Bestätigung an der meldenden Anlage steht aus. [Prüfprotokoll](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.10.md)
@@ -713,7 +717,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.28.10` und `idm-heatpump-api` `2.18.0` bilden das aktuelle exakt
+Integration im Quellstand `0.29.0` und `idm-heatpump-api` `2.18.0` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

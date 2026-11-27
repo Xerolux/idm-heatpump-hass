@@ -5,7 +5,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from test_firmware_observations import make_firmware
+from test_firmware_observations import _context, _session_with_answer, make_firmware
 
 from custom_components.idm_heatpump.const import (
     CONF_FIRMWARE_CHECK,
@@ -17,6 +17,7 @@ from custom_components.idm_heatpump.const import (
 from custom_components.idm_heatpump.firmware_observations import FIRMWARE_POLICY
 from custom_components.idm_heatpump.telemetry import TELEMETRY_POLICY
 from custom_components.idm_heatpump.telemetry_entities import (
+    IdmFirmwareStatusSensor,
     IdmTelemetryFirmwareSensor,
     IdmTelemetryStatusSensor,
     firmware_sensor_entities,
@@ -24,13 +25,16 @@ from custom_components.idm_heatpump.telemetry_entities import (
 )
 
 
-def test_sensor_is_absent_and_only_its_old_registry_entry_is_removed_without_consent():
+def test_sensors_are_absent_and_their_old_registry_entries_are_removed_without_consent():
     entry = MagicMock(entry_id="test-entry", options={})
     registry = MagicMock()
     registry.async_get_entity_id.return_value = "sensor.idm_latest_reported_firmware"
     with patch("custom_components.idm_heatpump.telemetry_entities.er.async_get", return_value=registry):
         assert firmware_sensor_entities(MagicMock(), entry, MagicMock()) == []
-    registry.async_remove.assert_called_once_with("sensor.idm_latest_reported_firmware")
+    # The latest-firmware sensor and the check-status sensor are both looked up.
+    assert registry.async_get_entity_id.call_count == 2
+    assert registry.async_remove.call_count == 2
+    assert all(call.args == ("sensor.idm_latest_reported_firmware",) for call in registry.async_remove.call_args_list)
 
 
 def test_telemetry_consent_alone_never_creates_firmware_sensor():
@@ -46,7 +50,10 @@ def test_enabled_sensor_uses_only_the_opt_in_telemetry_result():
     entry.runtime_data = SimpleNamespace(firmware=telemetry)
     entry.options[CONF_FIRMWARE_POLICY] = FIRMWARE_POLICY
     sensors = firmware_sensor_entities(MagicMock(), entry, coordinator)
-    assert len(sensors) == 1
+    assert [type(sensor).__name__ for sensor in sensors] == [
+        "IdmTelemetryFirmwareSensor",
+        "IdmFirmwareStatusSensor",
+    ]
     sensor = sensors[0]
     assert not sensor.available and sensor.native_value is None
     telemetry.firmware_result = {
@@ -151,3 +158,75 @@ async def test_status_sensor_subscribes_to_delivery_changes():
     telemetry._record_result("rejected")
     sensor.async_write_ha_state.assert_called_once()
     assert sensor.native_value == "rejected"
+
+
+def _make_firmware_status_setup():
+    telemetry, entry, coordinator = make_firmware()
+    coordinator.config_entry = entry
+    coordinator.firmware_version = "NAV10_20.24-9"
+    entry.runtime_data = SimpleNamespace(firmware=telemetry)
+    entry.options[CONF_FIRMWARE_POLICY] = FIRMWARE_POLICY
+    return telemetry, entry, coordinator
+
+
+def test_firmware_status_sensor_starts_unchecked_and_needs_the_running_observer():
+    _telemetry, entry, coordinator = _make_firmware_status_setup()
+    status = IdmFirmwareStatusSensor(coordinator)
+
+    assert status.available
+    assert status.native_value == "not_checked"
+    attributes = status.extra_state_attributes
+    assert attributes["last_check"] is None
+    assert attributes["last_checked"] is None
+    assert attributes["next_check"] is None
+    assert attributes["firmware_status"] is None
+    assert "not part of the transmitted data" in attributes["availability_note"]
+    entry.runtime_data.firmware = None
+    assert not status.available
+    assert status.extra_state_attributes == {"status": "not_ready"}
+
+
+async def test_firmware_status_sensor_follows_each_check():
+    telemetry, _, coordinator = _make_firmware_status_setup()
+    status = IdmFirmwareStatusSensor(coordinator)
+    status.async_write_ha_state = MagicMock()
+    status.hass = MagicMock()
+    await status.async_added_to_hass()
+    query = {
+        "navigator": "navigator_10",
+        "navigator_model": "Navigator 10",
+        "heatpump_model": "AERO ALM",
+        "firmware": "NAV10_20.24-9",
+    }
+    session = _session_with_answer(query, "NAV10_20.24-11", True)
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
+        assert await telemetry.async_refresh_firmware() == "completed"
+
+    assert status.native_value == "completed"
+    attributes = status.extra_state_attributes
+    assert attributes["firmware_status"] == "observed"
+    assert attributes["latest_firmware"] == "NAV10_20.24-11"
+    assert attributes["installed_firmware"] == "NAV10_20.24-9"
+    assert attributes["newer_observed"] is True
+    assert attributes["last_check"] == attributes["last_checked"]
+    assert attributes["next_check"] is not None
+
+    # A failed check shows as unavailable while the last valid observation stays visible.
+    session = MagicMock()
+    session.post.return_value = _context(503)
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
+        assert await telemetry.async_refresh_firmware() == "unavailable"
+    assert status.native_value == "unavailable"
+    assert status.extra_state_attributes["latest_firmware"] == "NAV10_20.24-11"
+    assert status.extra_state_attributes["firmware_status"] == "observed"
+
+
+async def test_disabling_firmware_consent_removes_the_status_entity():
+    _, entry, coordinator = _make_firmware_status_setup()
+    status = IdmFirmwareStatusSensor(coordinator)
+    status.entity_id = "sensor.idm_firmware_check_status"
+    registry = MagicMock(entities={status.entity_id: MagicMock()})
+    entry.options[CONF_FIRMWARE_CHECK] = False
+    with patch("custom_components.idm_heatpump.telemetry_entities.er.async_get", return_value=registry):
+        await status._async_options_updated(MagicMock(), entry)
+    registry.async_remove.assert_called_once_with(status.entity_id)

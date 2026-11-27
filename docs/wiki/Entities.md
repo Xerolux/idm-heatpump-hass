@@ -1048,16 +1048,19 @@ it still needs confirmation on the reporter's hardware.
 
 ## Independent firmware observations
 
-Under **Reconfigure → Firmware query**, a separate explicit switch enables
-**Latest reported firmware**. It is off by default and never inherits consent
+Under **Reconfigure → Share and compare firmware**, a separate explicit switch
+enables **Latest reported firmware**, **Newer firmware observed (unconfirmed)**
+and **Firmware check status**. It is off by default and never inherits consent
 from telemetry. Firmware-only operation works without a myIDM ID or telemetry.
 Disabling telemetry does not disable separately authorized firmware queries.
-Disabling firmware queries cancels the request and removes the sensor and its
-registry entry immediately. Without firmware consent there is no catalog contact.
+Disabling firmware queries cancels the request and removes the sensors and their
+registry entries immediately. Without firmware consent there is no catalog contact.
 
 The query sends only Navigator family, controller/plant model and installed
-firmware, after a random startup delay of up to 30 minutes, then every six hours
-plus up to 30 minutes of random delay. It sends no myIDM ID, operating counters,
+firmware, after a random startup delay of up to 15 minutes, then every six hours
+plus up to 30 minutes of random delay. A changed installed firmware is compared
+at the next per-minute check instead, but never more often than every 15 minutes.
+It sends no myIDM ID, operating counters,
 temperatures, credentials or other HA data. There is no persistent firmware queue;
 the integration keeps only the current result. HA may retain sensor states
 according to the local Recorder/backup configuration. The server uses metadata transiently and does not
@@ -1065,8 +1068,9 @@ save a plant report. The connection IP is technically visible; short-lived rate
 identifiers expire within two hours at the next hourly cleanup. Both features
 have a prominent link to the full privacy notice before their consent switch.
 
-The catalog uses community telemetry observations only, never old diagnostic
-ZIPs. Matching requires the same Navigator/controller and known plant model,
+The catalog combines consented telemetry observations, independent firmware
+sightings and explicit firmware metadata from private diagnostic ZIPs. Matching
+requires the same Navigator/controller and known plant model,
 firmware prefix/channel and major line. Missing plant types match only other
 missing-type reports in that same known controller/software series. Test and
 stable channels remain separate. Ordering includes numeric build numbers.
@@ -1081,10 +1085,15 @@ firmware queries. Only telemetry uploads carry their own identity and consent.
 
 [Privacy and delivery details](Telemetry).
 
-With device hierarchy enabled, **Latest reported firmware** and the unconfirmed
-newer-version indicator belong to the logical **Diagnostics** device alongside
-the installed software version. Without hierarchy they remain diagnostic
-entities on the plant device. Existing unique IDs and entity history are
+**Firmware check status** is a local diagnostic: `not_checked` until the first
+check, then `completed` or `unavailable`, with the catalog's answer status and
+the check times as attributes. A failed check keeps the previous observation
+and is logged with the HTTP status or the exception type only.
+
+With device hierarchy enabled, the firmware entities and **Telemetry report
+status** belong to the **Telemetry** subdevice beneath the plant; the installed
+software version stays in **Diagnostics**. Without hierarchy they remain
+diagnostic entities on the plant device. Existing unique IDs and entity history are
 preserved. A newer matching observation can create a Repairs notice;
 acknowledgement is persisted per device/version. See
 [activation and interpretation](Telemetry#firmware-orientation).
@@ -1098,6 +1107,7 @@ This index lists the name templates defined for integration-specific entities. `
 | --- | --- | --- |
 | `sensor` | `telemetry_latest_firmware` | Latest reported firmware |
 | `sensor` | `telemetry_report_status` | Telemetry report status |
+| `sensor` | `firmware_check_status` | Firmware check status |
 | `sensor` | `hc_storage_temp` | Storage temperature HC {circuit} |
 | `sensor` | `hc_reference_temp` | Reference temperature HC {circuit} |
 | `sensor` | `hc_temperature_difference` | Temperature difference HC {circuit} |

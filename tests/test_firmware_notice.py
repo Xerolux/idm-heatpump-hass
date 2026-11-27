@@ -143,5 +143,10 @@ def test_cloud_comparison_entities_share_the_telemetry_subdevice():
     # The installed controller software stays a controller diagnostic; the
     # consent-gated community entities form their own Telemetry subdevice.
     assert resolve_device_scope("software_version").kind == "diagnostics"
-    for key in ("telemetry_latest_firmware", "firmware_update_observed", "telemetry_report_status"):
+    for key in (
+        "telemetry_latest_firmware",
+        "firmware_update_observed",
+        "firmware_check_status",
+        "telemetry_report_status",
+    ):
         assert resolve_device_scope(key).kind == "telemetry"

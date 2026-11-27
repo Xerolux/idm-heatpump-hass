@@ -54,6 +54,7 @@ from .knx_catalog import (
     resolve_group_addresses,
 )
 from .predictive_advisor import ANOMALY_REASONS, PredictiveAdvisor
+from .telemetry import RESULT_ACCEPTED
 
 if TYPE_CHECKING:
     from homeassistant.helpers.typing import VolDictType
@@ -947,7 +948,7 @@ async def _handle_plant_cloud_action(hass: HomeAssistant, call: ServiceCall) -> 
         return {"accepted": False, "status": "entry_not_loaded"}
     runtime = entry.runtime_data
     if call.service == "send_telemetry":
-        if runtime.telemetry is None:
+        if runtime.telemetry is None or not runtime.telemetry.consent_active:
             return {"accepted": False, "status": "consent_required"}
         if (cooldown := runtime.telemetry.manual_cooldown) > 0:
             raise ServiceValidationError(
@@ -955,9 +956,11 @@ async def _handle_plant_cloud_action(hass: HomeAssistant, call: ServiceCall) -> 
                 translation_key="telemetry_cooldown_active",
                 translation_placeholders={"seconds": str(int(cooldown) + 1)},
             )
-        accepted = await runtime.telemetry.async_send_now()
-        return {"accepted": accepted, "status": "accepted" if accepted else "not_sent"}
+        # The outcome is the delivery result of this submission; a rejected
+        # report must never reach the caller as accepted.
+        outcome = await runtime.telemetry.async_send_now()
+        return {"accepted": outcome == RESULT_ACCEPTED, "status": outcome or "not_sent"}
     if runtime.firmware is None or not runtime.firmware.enabled:
         return {"accepted": False, "status": "consent_required"}
-    await runtime.firmware.async_refresh_firmware()
-    return {"status": str(runtime.firmware.firmware_result.get("status", "unavailable"))}
+    check = await runtime.firmware.async_refresh_firmware()
+    return {"status": str(runtime.firmware.firmware_result.get("status", "unavailable")), "check": check}

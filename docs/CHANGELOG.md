@@ -13,6 +13,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.29.0] - 2026-11-27
+
+Telemetry and the firmware comparison now report what really happened: services name the true outcome, consented data never outlives its consent, a changed firmware is compared within a minute, and you can tell the integration which heat-pump model you own.
+
+### ⚠️ Upgrade notes
+
+- **Nothing changes for existing consents.** No data field is added and the notice revisions `idm-telemetry-v3` and `idm-firmware-v1` stay, so no renewed confirmation is needed. Rolling back to 0.28.10 is safe.
+- **Heat pump model is optional.** Both consent forms gain a **Heat pump model** field. It is sent only with the matching consent and only when the controller reports no model; leave it empty to keep today's behaviour. Use the nameplate spelling, for example `AERO ALM 6-15`.
+
+### ✨ New
+
+- **Firmware check status shows what the catalog check achieved.** The new diagnostic sensor reports `not_checked`, `completed` or `unavailable` with the last attempt, the last valid answer, the next check and the firmware last asked about. It appears only with firmware consent and is removed with it.
+- **A changed firmware is compared within a minute.** After a controller update the comparison no longer waits up to six hours. It runs at the next per-minute check and at most every 15 minutes; the startup spread and the six-hour schedule stay as they are.
+- **Tell the integration your heat-pump model.** Navigator 10 controllers report no model, which left the model empty in every telemetry report so far. The optional field fills it for plant reports and firmware queries, which puts the plant into the model-specific comparison group.
+
+### 🐛 Bugfixes
+
+- **`send_telemetry` reports the real outcome.** A report that the server rejected with HTTP 4xx used to be answered as `accepted`. The action now returns `rejected` or `unavailable`, and `not_sent` when nothing was sent.
+- **`check_firmware` says whether it actually checked.** The response gains a `check` field: `completed`, `unavailable` or `in_progress`. Until now a failed request silently returned the previous result as if it were fresh.
+- **Consented data does not outlive its consent.** When telemetry or firmware consent no longer holds at startup — a changed notice, a missing consent time or an unusable myIDM ID — the stored aggregate, the stored answer and its Repairs notice are deleted instead of staying on disk.
+- **Failed firmware checks leave a trace.** A non-OK catalog answer or a network error writes one debug line with the HTTP status or the exception type only. An unconfirmed NAVIGATOR Pro answer keeps its status across a restart.
+- **Adding a model keeps the report schedule.** Saving the telemetry form again with the switch and the notice unchanged no longer re-dates the consent, so the window collected since the last report and its slot survive. An unusable model text never blocks switching consent off; it is simply dropped.
+
+### 💼 Maintenance
+
+- **Documentation caught up with the code.** The firmware startup delay of 15 minutes, the Telemetry device group of the firmware entities and the menu label of the consent step are stated correctly in English and German, and AGENTS.md lists both cloud features.
+
 ## [0.28.10] - 2026-11-27
 
 Defrost runs no longer show up as short compressor cycles. On Navigator 10 controllers a defrost briefly stops the compressor and runs it for about five minutes in reverse; the operating analysis counted that run as its own cycle and raised *Last compressor cycle too short* after nearly every defrost.

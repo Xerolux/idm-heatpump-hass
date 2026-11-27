@@ -17,7 +17,7 @@ from .cloud_scheduler import entry_cloud_scheduler
 from .const import CONF_FIRMWARE_CHECK, CONF_FIRMWARE_CONSENT_AT, CONF_FIRMWARE_POLICY
 from .coordinator import IdmCoordinator
 from .firmware_notice import clear_notices, ensure_notice
-from .telemetry import _firmware_identity, _firmware_series, _label, _number, _reported_firmware
+from .telemetry import _firmware_identity, _firmware_series, _label, _number, _plant_model, _reported_firmware
 
 FIRMWARE_URL = "https://idmtools.xerolux.de/api/telemetry/firmware"
 FIRMWARE_POLICY = "idm-firmware-v1"
@@ -43,7 +43,16 @@ _PERSISTED_RESULT_KEYS = (
 )
 _VALID_STATUS = frozenset({"observed", "insufficient_identity", "no_matching_observations"})
 _VALID_MODEL_SCOPES = frozenset({"controller_series_only", "controller_and_plant_model", "unconfirmed_component"})
-_VALID_COMPONENT_STATUS = frozenset({"reported_component", "unconfirmed_pro_product"})
+_VALID_COMPONENT_STATUS = frozenset({"reported_component", "unconfirmed_pro_component"})
+#: Outcome of one catalog check. Local bookkeeping for the service response and
+#: the diagnostic entity; never transmitted.
+CHECK_COMPLETED = "completed"
+CHECK_UNAVAILABLE = "unavailable"
+CHECK_IN_PROGRESS = "in_progress"
+CHECK_WITHDRAWN = "consent_required"
+#: A changed firmware is checked at the next tick instead of after six hours,
+#: but never more often than this, so a flickering source cannot hammer the catalog.
+_RECHECK_SECONDS = 900.0
 
 
 def _restorable_result(stored: Any) -> dict[str, Any] | None:
@@ -92,6 +101,9 @@ class FirmwareObservations:
         self._next_firmware_check = 0.0
         self._firmware_listeners: set[Callable[[], None]] = set()
         self.firmware_result: dict[str, Any] = {}
+        self._last_check_outcome: str | None = None
+        #: The firmware sent in the last query; a later different value is a change.
+        self._queried_firmware: str | None = None
 
     @property
     def enabled(self) -> bool:
@@ -105,9 +117,16 @@ class FirmwareObservations:
 
     async def async_start(self) -> bool:
         if not self.enabled:
+            # The stored answer and its notice belong to a consent that no
+            # longer holds; they must not outlive it until a later disable.
+            clear_notices(self._hass, self._entry.entry_id)
+            self._forget_stored_result()
             return False
         self._entry.async_on_unload(self.stop)
         self._entry.async_on_unload(self._entry.add_update_listener(self.async_options_updated))
+        self._entry.async_on_unload(self._coordinator.async_add_listener(self.observe_firmware))
+        # The firmware known at startup is not a change; only a later one is.
+        self._queried_firmware = _reported_firmware(self._coordinator)
         # Startup queries keep their load spreading, but within the first
         # 15 minutes (random) instead of 30: HA updates/reconnections often
         # happen together, and the restored last answer bridges the window.
@@ -164,6 +183,37 @@ class FirmwareObservations:
         if self.enabled and time.time() >= self._next_firmware_check:
             await self.async_refresh_firmware()
 
+    def observe_firmware(self) -> None:
+        """Check a changed firmware at the next tick instead of after six hours."""
+        # Before the first scheduled check nothing is a change: the random
+        # startup slot must survive a firmware that arrives late or at once.
+        if not self.enabled or self._firmware_task is not None or not self._last_firmware_check:
+            return
+        current = _reported_firmware(self._coordinator)
+        if current is None or current == self._queried_firmware:
+            return
+        if time.time() - self._last_firmware_check < _RECHECK_SECONDS:
+            return
+        self._next_firmware_check = 0.0
+
+    @property
+    def check_state(self) -> str:
+        """Local outcome of the last check since startup; never transmitted."""
+        return self._last_check_outcome or "not_checked"
+
+    def check_status(self) -> dict[str, Any]:
+        """Local check bookkeeping for the diagnostic entity; never transmitted."""
+        return {
+            "last_outcome": self._last_check_outcome or "not_checked",
+            "last_check": (
+                datetime.fromtimestamp(self._last_firmware_check, UTC).isoformat()
+                if self._last_firmware_check > 0
+                else None
+            ),
+            "next_check": self.firmware_result.get("next_check"),
+            "firmware_checked": self._queried_firmware,
+        }
+
     def stop(self) -> None:
         # The persistent repairs notice deliberately survives an ordinary
         # unload (restart, reload): Home Assistant keeps its dismissed state,
@@ -199,12 +249,12 @@ class FirmwareObservations:
         self._firmware_listeners.add(listener)
         return lambda: self._firmware_listeners.discard(listener)
 
-    async def async_refresh_firmware(self) -> None:
-        """Read only the catalog for this plant; never contact it after refusal."""
+    async def async_refresh_firmware(self) -> str:
+        """Read only the catalog for this plant; return what this check achieved."""
         if not self.enabled:
-            return
+            return CHECK_WITHDRAWN
         if self._firmware_task is not None:
-            return
+            return CHECK_IN_PROGRESS
         self._firmware_task = asyncio.current_task()
         self._last_firmware_check = time.time()
         self._next_firmware_check = self._last_firmware_check + 21600 + secrets.randbelow(1801)
@@ -214,9 +264,12 @@ class FirmwareObservations:
         query = {
             "navigator": family,
             "navigator_model": model,
-            "heatpump_model": _label(coordinator.web_supplement.heatpump_model) if coordinator.web_supplement else None,
+            "heatpump_model": _plant_model(coordinator, self._entry.options),
             "firmware": installed,
         }
+        # Whatever this check achieves, this is the firmware the catalog was asked about.
+        self._queried_firmware = installed
+        outcome = CHECK_UNAVAILABLE
         try:
             async with async_get_clientsession(self._hass).post(
                 FIRMWARE_URL,
@@ -224,17 +277,24 @@ class FirmwareObservations:
                 timeout=aiohttp.ClientTimeout(total=15),
                 allow_redirects=False,
             ) as response:
-                if response.status != 200:
-                    return
-                result = await response.json()
+                status = response.status
+                result = await response.json() if status == 200 else None
             if not self.enabled:
-                return
+                # Consent was withdrawn while the request was in flight.
+                return CHECK_WITHDRAWN
+            if status != 200:
+                _LOGGER.debug(
+                    "IDM firmware catalog answered with HTTP %s; the last observation is kept",
+                    status,
+                )
+                return outcome
             if (
                 not isinstance(result, dict)
                 or result.get("query") != query
                 or result.get("source") != "community_telemetry"
             ):
-                return
+                _LOGGER.debug("IDM firmware catalog answer does not belong to this query; the last observation is kept")
+                return outcome
             firmware = result.get("latest_firmware")
             if firmware is not None:
                 series = _firmware_series(query["firmware"])
@@ -244,22 +304,23 @@ class FirmwareObservations:
                     or _firmware_series(firmware) != series
                     or result.get("series") != series
                 ):
-                    return
-            if result.get("status") not in {"observed", "insufficient_identity", "no_matching_observations"}:
-                return
+                    _LOGGER.debug("IDM firmware catalog answer left the installed series; the last observation is kept")
+                    return outcome
+            if result.get("status") not in _VALID_STATUS:
+                _LOGGER.debug("IDM firmware catalog answer carries an unknown status; the last observation is kept")
+                return outcome
             self.firmware_result = {
                 "latest_firmware": firmware,
                 "installed_firmware": query["firmware"],
                 "matching_model": query["heatpump_model"],
                 "series": _label(result.get("series")),
                 "status": result["status"],
-                "model_scope": result.get("model_scope")
-                if result.get("model_scope")
-                in {"controller_series_only", "controller_and_plant_model", "unconfirmed_component"}
-                else None,
-                "component_status": result.get("component_status")
-                if result.get("component_status") in {"reported_component", "unconfirmed_pro_component"}
-                else None,
+                "model_scope": result.get("model_scope") if result.get("model_scope") in _VALID_MODEL_SCOPES else None,
+                "component_status": (
+                    result.get("component_status")
+                    if result.get("component_status") in _VALID_COMPONENT_STATUS
+                    else None
+                ),
                 "source": "community_telemetry",
                 "newer_observed": result.get("newer_observed")
                 if isinstance(result.get("newer_observed"), bool)
@@ -270,11 +331,18 @@ class FirmwareObservations:
             }
             ensure_notice(self._hass, self._entry, self.firmware_result)
             self._persist_result()
-        except (aiohttp.ClientError, TimeoutError, OSError, ValueError):
-            _LOGGER.debug("IDM firmware observations unavailable; local plant operation is unaffected")
+            outcome = CHECK_COMPLETED
+        except (aiohttp.ClientError, TimeoutError, OSError, ValueError) as error:
+            # Exception text can carry endpoint details, so only its type is logged.
+            _LOGGER.debug(
+                "IDM firmware observations unavailable (%s); local plant operation is unaffected",
+                type(error).__name__,
+            )
         finally:
             self._firmware_task = None
+            self._last_check_outcome = outcome
             if self.enabled:
                 self.firmware_result["next_check"] = datetime.fromtimestamp(self._next_firmware_check, UTC).isoformat()
                 for listener in tuple(self._firmware_listeners):
                     listener()
+        return outcome
