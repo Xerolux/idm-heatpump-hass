@@ -465,8 +465,11 @@ last five completed compressor cycles with fifteen earlier cycles on the same
 installation; it reports unusually short recent cycles only after twenty
 observed cycles. Defrost runs are not cycles
 ([#757](https://github.com/Xerolux/idm-heatpump-hass/issues/757)), see
-[Operating analysis](Entities#operating-analysis-smart-profile). This is a
-local anomaly hint, not a failure probability.
+[Operating analysis](Entities#operating-analysis-smart-profile). Durations
+recorded before 0.28.10 are discarded once on load, so after that update the
+check reports unknown until twenty new cycles exist and the installer report
+shows no cycle values until the first cycle completes. This is a local
+anomaly hint, not a failure probability.
 The downloaded diagnostics include the installed integration,
 `idm-heatpump-api`, `modbus-connection`, `tmodbus`, Home Assistant and Python
 versions. See [Troubleshooting](Troubleshooting#smart-features-and-beta-upgrades)

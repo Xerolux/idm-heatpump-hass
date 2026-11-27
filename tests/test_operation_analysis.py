@@ -360,6 +360,28 @@ async def test_stop_right_after_the_defrost_leaves_no_cycle(monkeypatch) -> None
 
 
 @pytest.mark.asyncio
+async def test_mode_flicker_back_into_defrost_does_not_start_a_cycle(monkeypatch) -> None:
+    """A mode reading that dips out of Defrost and back must not open the delay window."""
+    analysis, _store = _analysis(monkeypatch)
+    await analysis.async_load()
+    start = datetime(2026, 11, 27, 15, 37, tzinfo=UTC)
+    analysis.process_snapshot(_snapshot(mode=1), set(), now=start)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=8), set(), now=start + timedelta(seconds=10))
+
+    flicker = start + timedelta(minutes=6, seconds=10)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=1), set(), now=flicker)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=8), set(), now=flicker + timedelta(seconds=10))
+    left = flicker + timedelta(minutes=1, seconds=20)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=1), set(), now=left)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=1), set(), now=left + timedelta(seconds=30))
+    assert analysis.current_cycle_minutes(left + timedelta(seconds=30)) == 0.0
+    analysis.process_snapshot(_snapshot(mode=1), set(), now=left + timedelta(seconds=50))
+
+    assert analysis.completed_cycle_durations == []
+    assert analysis.last_cycle_duration is None
+
+
+@pytest.mark.asyncio
 async def test_cycle_running_into_a_restart_during_defrost_keeps_its_start(monkeypatch) -> None:
     """A tracked heating cycle survives a restart that lands inside a defrost."""
     started = datetime(2026, 11, 27, 15, 38, tzinfo=UTC)

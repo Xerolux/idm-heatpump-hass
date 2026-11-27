@@ -371,6 +371,7 @@ class OperationAnalysis:
                     elif not tracked_cycle:
                         self.current_cycle_started = observed_at
                 else:
+                    # A cycle that ended while Home Assistant was down leaves no duration.
                     self.current_cycle_started = None
                 self._compressor_on = compressor_on
                 self._compressor_reconciled = True
