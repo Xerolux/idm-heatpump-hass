@@ -640,14 +640,16 @@ Die optionalen Funktionspakete ergänzen die folgenden Entitäten. Die Tabellen 
 
 Abgeleitet aus beobachteten Verdichter-, Abtau- und Betriebsart-Übergängen. Restart-sicher: Die Zähler überleben Home-Assistant-Neustarts, und Kommunikationslücken werden nie als Betriebsereignisse gewertet.
 
+Eine Abtauung ist ein eigenes Ereignis, kein Verdichtertakt ([#757](https://github.com/Xerolux/idm-heatpump-hass/issues/757)). Der Regler stoppt den Verdichter für den Umschaltvorgang der Abtauung und lässt ihn für die Abtauung selbst wieder laufen; ein Verdichterlauf, der beginnt, während die Betriebsart *Abtauung* ist, ist weder ein Verdichterstart noch eine Taktlaufzeit. Der Takt vor der Abtauung endet, wenn der Verdichter stoppt, und der Neustart nach der Abtauung beginnt einen neuen Takt, weil der Motor wieder anläuft. Während eines Abtaulaufs ist die aktuelle Taktlaufzeit 0.
+
 | Entität | Beschreibung |
 |---------|--------------|
-| Wärmepumpentakte erfasst (`analysis_heat_pump_cycles_recorded`) | Insgesamt beobachtete Verdichtertakte seit Aktivierung des Profils |
+| Wärmepumpentakte erfasst (`analysis_heat_pump_cycles_recorded`) | Insgesamt beobachtete Verdichtertakte seit Aktivierung des Profils; Abtauläufe zählen nicht als Takt |
 | Wärmepumpentakte heute (`analysis_heat_pump_cycles_today`) | Verdichtertakte seit Mitternacht |
 | Wärmepumpentakte letzte 2 Stunden (`analysis_heat_pump_cycles_2h`) | Rollierende 2-Stunden-Taktzahl |
 | Wärmepumpentakte letzte 4 Stunden (`analysis_heat_pump_cycles_4h`) | Rollierende 4-Stunden-Taktzahl |
-| Aktuelle Taktlaufzeit (`analysis_current_cycle_duration`) | Laufzeit des laufenden Verdichtertakts |
-| Durchschnittliche Taktlaufzeit (`analysis_average_cycle_duration`) | Mittlere Laufzeit über die vorgehaltene Takt-Historie |
+| Aktuelle Taktlaufzeit (`analysis_current_cycle_duration`) | Laufzeit des laufenden Verdichtertakts; während eines Abtaulaufs 0 |
+| Durchschnittliche Taktlaufzeit (`analysis_average_cycle_duration`) | Mittlere Laufzeit über die vorgehaltene Takt-Historie, ohne Abtauläufe |
 | Letzter Verdichterstart (`analysis_last_compressor_start`) | Zeitstempel des zuletzt beobachteten Starts |
 | Letzte Taktlaufzeit (`analysis_last_cycle_duration`) | Laufzeit des letzten abgeschlossenen Takts |
 | Letzter Verdichtertakt zu kurz (`analysis_last_cycle_short`) | Binär: Der letzte Takt blieb unter der konfigurierten Kurzzyklus-Schwelle |

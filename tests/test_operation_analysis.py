@@ -267,6 +267,147 @@ async def test_defrost_false_to_true_edge_counts_once(monkeypatch) -> None:
 
 
 @pytest.mark.asyncio
+async def test_defrost_run_is_not_a_compressor_cycle(monkeypatch) -> None:
+    """Replay a Navigator 10 defrost as recorded in the field (#757).
+
+    The compressor status drops when the defrost starts, runs for about five
+    minutes in defrost and drops again before heating resumes. Only the two
+    heating runs are cycles; the defrost run belongs to the defrost counters.
+    """
+    analysis, _store = _analysis(monkeypatch)
+    await analysis.async_load()
+    start = datetime(2026, 11, 27, 15, 37, tzinfo=UTC)
+    defrost = start + timedelta(minutes=96)
+    analysis.process_snapshot(_snapshot(mode=1), set(), now=start)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=1), set(), now=start + timedelta(minutes=1))
+
+    # The defrost starts: the heating cycle ends, the compressor restarts in defrost.
+    analysis.process_snapshot(_snapshot(mode=8), set(), now=defrost)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=8), set(), now=defrost + timedelta(seconds=63))
+    assert analysis.total_compressor_starts == 1
+    assert analysis.current_cycle_minutes(defrost + timedelta(minutes=2, seconds=63)) == 0.0
+
+    # The defrost ends and heating resumes.
+    analysis.process_snapshot(_snapshot(mode=1), set(), now=defrost + timedelta(minutes=6, seconds=7))
+    analysis.process_snapshot(_snapshot(compressor=1, mode=1), set(), now=defrost + timedelta(minutes=9, seconds=21))
+
+    assert analysis.total_compressor_starts == 2
+    assert analysis.total_defrost_starts == 1
+    assert analysis.completed_cycle_durations == [95 * 60]
+    assert analysis.last_cycle_duration == 95 * 60
+    assert analysis.last_cycle_was_short is False
+    assert analysis.current_cycle_minutes(defrost + timedelta(minutes=19, seconds=21)) == 10.0
+
+
+@pytest.mark.asyncio
+async def test_restart_during_a_defrost_run_does_not_invent_a_cycle(monkeypatch) -> None:
+    """A defrost run in progress at startup is still no cycle when it ends."""
+    loaded = {
+        "compressor_on": True,
+        "defrost_on": True,
+        "compressor_start_events": [],
+        "defrost_start_events": [],
+        "cycle_accounting": 2,
+    }
+    analysis, _store = _analysis(monkeypatch, loaded=loaded)
+    await analysis.async_load()
+    now = datetime(2026, 11, 27, 15, 40, tzinfo=UTC)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=8), set(), now=now)
+    analysis.process_snapshot(_snapshot(mode=1), set(), now=now + timedelta(minutes=3))
+
+    assert analysis.total_compressor_starts == 0
+    assert analysis.completed_cycle_durations == []
+    assert analysis.last_cycle_duration is None
+    assert analysis.last_cycle_was_short is None
+
+
+@pytest.mark.asyncio
+async def test_run_continuing_from_defrost_becomes_a_cycle_without_a_start(monkeypatch) -> None:
+    """A unit that keeps the compressor running from the defrost into heating."""
+    analysis, _store = _analysis(monkeypatch)
+    await analysis.async_load()
+    start = datetime(2026, 11, 27, 15, 37, tzinfo=UTC)
+    analysis.process_snapshot(_snapshot(mode=1), set(), now=start)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=8), set(), now=start + timedelta(seconds=60))
+
+    heating = start + timedelta(minutes=6)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=1), set(), now=heating)
+    assert analysis.current_cycle_minutes(heating) == 0.0
+    analysis.process_snapshot(_snapshot(compressor=1, mode=1), set(), now=heating + timedelta(minutes=1))
+    assert analysis.current_cycle_minutes(heating + timedelta(minutes=1)) == 1.0
+    analysis.process_snapshot(_snapshot(mode=1), set(), now=heating + timedelta(minutes=40))
+
+    assert analysis.total_compressor_starts == 0
+    assert analysis.last_compressor_start is None
+    assert analysis.completed_cycle_durations == [40 * 60]
+    assert analysis.last_cycle_was_short is False
+
+
+@pytest.mark.asyncio
+async def test_stop_right_after_the_defrost_leaves_no_cycle(monkeypatch) -> None:
+    """The mode can leave Defrost one sample before the controller stops the compressor."""
+    analysis, _store = _analysis(monkeypatch)
+    await analysis.async_load()
+    start = datetime(2026, 11, 27, 15, 37, tzinfo=UTC)
+    analysis.process_snapshot(_snapshot(mode=1), set(), now=start)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=8), set(), now=start + timedelta(seconds=60))
+    left = start + timedelta(minutes=6)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=1), set(), now=left)
+    analysis.process_snapshot(_snapshot(mode=1), set(), now=left + timedelta(seconds=6))
+
+    assert analysis.completed_cycle_durations == []
+    assert analysis.last_cycle_duration is None
+
+
+@pytest.mark.asyncio
+async def test_cycle_running_into_a_restart_during_defrost_keeps_its_start(monkeypatch) -> None:
+    """A tracked heating cycle survives a restart that lands inside a defrost."""
+    started = datetime(2026, 11, 27, 15, 38, tzinfo=UTC)
+    loaded = {
+        "compressor_on": True,
+        "defrost_on": False,
+        "current_cycle_started": started.isoformat(),
+        "compressor_start_events": [],
+        "defrost_start_events": [],
+        "cycle_accounting": 2,
+    }
+    analysis, _store = _analysis(monkeypatch, loaded=loaded)
+    await analysis.async_load()
+    defrost = datetime(2026, 11, 27, 15, 50, tzinfo=UTC)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=8), set(), now=defrost)
+    analysis.process_snapshot(_snapshot(mode=1), set(), now=defrost + timedelta(minutes=5))
+
+    assert analysis.total_compressor_starts == 0
+    assert analysis.completed_cycle_durations == [17 * 60]
+
+
+@pytest.mark.asyncio
+async def test_legacy_cycle_history_is_discarded_once(monkeypatch) -> None:
+    """Durations recorded before #757 include defrost runs and cannot be told apart."""
+    loaded = {
+        "total_compressor_starts": 871,
+        "compressor_on": False,
+        "compressor_start_events": [],
+        "defrost_start_events": [],
+        "completed_cycle_durations": [300.0, 5400.0],
+        "last_cycle_duration": 306.0,
+        "last_cycle_ended": "2026-11-27T16:29:52+00:00",
+    }
+    analysis, store = _analysis(monkeypatch, loaded=loaded)
+    await analysis.async_load()
+
+    assert analysis.total_compressor_starts == 871
+    assert analysis.completed_cycle_durations == []
+    assert analysis.last_cycle_duration is None
+    assert analysis.last_cycle_ended is None
+    assert analysis.last_cycle_was_short is None
+
+    await analysis.async_save()
+    assert store.saved is not None
+    assert store.saved["cycle_accounting"] == 2
+
+
+@pytest.mark.asyncio
 async def test_long_communication_gap_is_not_assigned_to_previous_mode(monkeypatch) -> None:
     analysis, _store = _analysis(monkeypatch)
     await analysis.async_load()
@@ -373,6 +514,7 @@ async def test_persisted_values_are_validated(monkeypatch) -> None:
     """Restored state is untrusted: broken values must not corrupt the counters."""
     loaded = {
         "total_compressor_starts": True,  # a bool is not a counter
+        "cycle_accounting": 2,
         "completed_cycle_durations": [120.0, "nonsense", -5, float("inf"), 240.0],
         "mode_durations": {"heating": 600.0, "cooling": "nope", "unknown_mode": 10.0},
         "last_compressor_start": "not-a-timestamp",

@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.28.10 — 2026-11-27
+
+Ein Abtaulauf zählt nicht mehr als kurzer Verdichtertakt oder Verdichterstart. Der Takt vor der Abtauung endet, wenn der Verdichter stoppt; der Neustart danach beginnt einen neuen Takt. Vor dieser Version erfasste Taktlaufzeiten beginnen einmal neu. [Versionshinweise](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.28.10)
+
 ## v0.28.9 — 2026-11-27
 
 Beim Navigator 10 prüft die Integration die Gesamtwärmemenge für Heizung und Warmwasser um Mitternacht anhand des Tageswerts. Bei einer Web-Laufzeit von −1 h bleibt der Sensor bis zum nächsten gültigen Wert unverfügbar. Die Korrekturen gelten für neue Messwerte. [Versionshinweise](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.28.9)

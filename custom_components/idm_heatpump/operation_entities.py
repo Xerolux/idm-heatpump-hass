@@ -235,7 +235,7 @@ class IdmOperationSensor(IdmCoordinatorEntityBase, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         attributes: dict[str, Any] = {
             "recording_scope": "observed_since_feature_activation",
-            "compressor_counting_method": "aggregate_any_compressor_off_to_on",
+            "compressor_counting_method": "aggregate_any_compressor_off_to_on_except_defrost_runs",
         }
         if self._definition.key.startswith("analysis_compressor") or self._definition.key.startswith(
             "analysis_average_cycle"

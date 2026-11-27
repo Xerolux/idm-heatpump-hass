@@ -463,7 +463,10 @@ structured snapshot for an installer, not a replacement for a service report.
 It does not predict future failures. A conservative trend check compares the
 last five completed compressor cycles with fifteen earlier cycles on the same
 installation; it reports unusually short recent cycles only after twenty
-observed cycles. This is a local anomaly hint, not a failure probability.
+observed cycles. Defrost runs are not cycles
+([#757](https://github.com/Xerolux/idm-heatpump-hass/issues/757)), see
+[Operating analysis](Entities#operating-analysis-smart-profile). This is a
+local anomaly hint, not a failure probability.
 The downloaded diagnostics include the installed integration,
 `idm-heatpump-api`, `modbus-connection`, `tmodbus`, Home Assistant and Python
 versions. See [Troubleshooting](Troubleshooting#smart-features-and-beta-upgrades)
