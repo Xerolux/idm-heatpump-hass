@@ -4,6 +4,10 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.28.8 release decision
+
+The six new Navigator 10 hydraulic-visualization entities are read-only, appear only where the controller delivers the row, and add no controller request: the differential-temperature values ride the `system/overview` frame and M71/M88/M61 ride setting requests already issued. Verified against the reporter's sanitized capture; field confirmation on that plant and the seven-day soak remain open. [Release evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.8.md)
+
 ## 0.28.7 release decision
 
 Home Assistant's start and cancel services restored the saved setpoint and withdrew the boost's own demand on a simulated Navigator. On the reporting Navigator 10, confirmation that charging stays off when the controller returns from standby to automatic is pending. [Release evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.28.7.md)
