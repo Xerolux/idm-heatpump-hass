@@ -166,6 +166,12 @@ M88-Signal), das HGL-Mischer-Steuersignal (M71) und das Ventil Heizen/Kühlen
   Home-Assistant-Reparaturproblem und stoppt die Modbus-Updates nicht.
 - Fehlende Werte aus einem erfolgreichen Web-Schnappschuss bleiben unverfügbar;
   alte Werte werden nicht erfunden.
+- Web-Zähler für Betriebsstunden, Schaltzyklen und Energie benötigen einen
+  endlichen, nichtnegativen Messwert. Meldet die Heizlaufzeit `-1 h`, bleibt
+  dieser Sensor bis zum nächsten gültigen Wert unverfügbar. Null ist gültig.
+  Temperaturen dürfen negativ sein. Die [Wärmemengensensoren](Entities) des
+  Navigator 10 prüfen den Tageswechsel anhand der Regleruhr. Fehlt die Uhrzeit,
+  verwenden sie die in Home Assistant eingestellte Ortszeit.
 - Der zwischengespeicherte Client wird geschlossen, wenn der
   Konfigurationseintrag entladen wird oder seine Sitzung neu aufgebaut werden muss.
 
