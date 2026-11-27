@@ -266,6 +266,19 @@ Die Navigator-Regler legen über Modbus kein internes Statusregister für den PV
 Dies ist das vom Gerät gemeldete Gegenstück zur abgeleiteten Diagnose [`calculated_pv_surplus_operation`](#pv-uberschussbetrieb-abgeleitete-diagnose): Die Web-Entität bildet ab, was der Regler entschieden hat, die Modbus-Entität funktioniert ohne Web-PIN. Auf dem Navigator 2.0 (andere, PHP-basierte Weboberfläche) steht nur die abgeleitete Modbus-Entität zur Verfügung.
 
 Mit aktivierter **Gerätehierarchie** teilen sich alle PV-Entitäten — die PV-Register (`pv_surplus`, `pv_production`, `pv_target_value`), `smart_grid_status`, die abgeleitete Diagnose und die beiden Web-Entitäten — das dedizierte Untergerät **Photovoltaik** statt des Hauptgeräts.
+
+#### Hydraulik-Visualisierung (nur Navigator 10)
+
+Für ein hydraulisches Live-Schema stellen sechs rein lesende Web-Entitäten Ausgänge bereit, die die Modbus-Map nicht führt (Issue #750, verifiziert gegen einen Mitschnitt eines SLM 6-17 auf Firmware `NAV10_20.24-1124`):
+
+- **Fühler Differenztemperaturregelung (B84, Web)** (`web_diff_temp_buffer_temp`) und **Referenz Differenztemperaturregelung (Web)** (`web_diff_temp_reference_temp`): die beiden Seiten der geregelten Differenz, aus dem strukturierten `system.diffTempControl`-Block des Frames `system/overview` — ohne zusätzlichen Abruf.
+- **Pumpe Differenztemperaturregelung (Web)** (`web_diff_temp_pump_active`): Binärsensor für den Pumpenlaufzustand aus demselben Block.
+- **Pumpe Differenztemperaturregelung Signal (M88, Web)** (`web_diff_temp_pump_signal`): das analoge Steuersignal der Pumpe in %; der Regler meldet `-1`, während die Pumpe aus ist, und der Sensor bleibt dann nicht verfügbar.
+- **HGL-Mischer Steuersignal (M71, Web)** (`web_hgl_mixer_signal`): die Stellspannung des Mischerantriebs in V, aus der Einstellseite der analogen Ausgänge.
+- **Ventil Heizen/Kühlen (Web)** (`web_valve_heating_cooling`): die M61-Ventilstellung in der Wortwahl des Reglers (zum Beispiel *Heizen*), aus der Einstellseite der digitalen Ausgänge. Das Schwester-Ventil M63 existiert als *Ventil Heizung/Warmwasser (Web)*; auf Modbus-Anlagen sind beide Ventile zusätzlich als die registerbasierten Entitäten `valve_hc_heat_cool` und `valve_heat_dhw` verfügbar.
+
+Alle sechs Werte reiten auf den Web-Abrufen, die jeder Poll ohnehin ausführt. Die Entitäten erscheinen auf Navigator-10-Anlagen mit aktiviertem Web-Supplement und bleiben auf Anlagen, deren Regler die Zeile nicht liefert, dauerhaft nicht verfügbar.
+
 | Infosystem-Meldungen (Web) | Zusammenfassung aktiver Navigator-10-Infosystem-Meldungen |
 | Heißgastemperatur (Web) | Reine Web-Diagnosetemperatur, wenn verfügbar |
 | Verdampferdruck (Web) | Reiner Web-Wert des Kältemitteldrucks, wenn verfügbar |
@@ -953,6 +966,11 @@ Das Verzeichnis listet die Namensvorlagen der integrationsspezifischen Entitäte
 | `sensor` | `web_controller_clock` | Regler-Uhrzeit (Web) |
 | `sensor` | `web_last_success` | Letzte Web-Aktualisierung (Web) |
 | `sensor` | `web_dhw_status_info` | Warmwasser Statusinfo (Web) |
+| `sensor` | `web_diff_temp_buffer_temp` | Fühler Differenztemperaturregelung (B84, Web) |
+| `sensor` | `web_diff_temp_pump_signal` | Pumpe Differenztemperaturregelung Signal (M88, Web) |
+| `sensor` | `web_diff_temp_reference_temp` | Referenz Differenztemperaturregelung (Web) |
+| `sensor` | `web_hgl_mixer_signal` | HGL-Mischer Steuersignal (M71, Web) |
+| `sensor` | `web_valve_heating_cooling` | Ventil Heizen/Kühlen (Web) |
 | `sensor` | `connection_mode` | Verbindungsmodus |
 | `sensor` | `web_energyflow_grid` | Netzleistung (Web) |
 | `sensor` | `web_energyflow_pv` | PV-Leistung (Web) |
@@ -1045,6 +1063,7 @@ Das Verzeichnis listet die Namensvorlagen der integrationsspezifischen Entitäte
 | `binary_sensor` | `calculated_pv_surplus_operation` | PV-Überschussbetrieb |
 | `binary_sensor` | `web_demand_reason_pv` | PV-Anforderungsgrund (Web) |
 | `binary_sensor` | `web_dhw_circulation_active` | Warmwasser-Zirkulation (Web) |
+| `binary_sensor` | `web_diff_temp_pump_active` | Pumpe Differenztemperaturregelung (Web) |
 | `binary_sensor` | `web_compressor_1` | Verdichter 1 (Web) |
 | `binary_sensor` | `web_compressor_heating` | Verdichterheizung (Web) |
 | `binary_sensor` | `web_dewpoint_humidity_alarm` | Taupunkt-Feuchtealarm (Web) |

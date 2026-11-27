@@ -151,6 +151,13 @@ Firmware ignoriert. Optionale Navigator-10-Infosystem-Meldungen werden separat
 gelesen; schlägt diese optionale Abfrage fehl, verwirft sie den Rest eines
 gültigen Web-Schnappschusses nicht.
 
+Auf einem Navigator 10 führt das Web-Supplement zusätzlich eine kleine Reihe
+von Hydraulik-Visualisierungswerten, die die Modbus-Map nicht kennt — die
+Differenztemperaturregelung (B84-Fühler, Referenz, Pumpenzustand und
+M88-Signal), das HGL-Mischer-Steuersignal (M71) und das Ventil Heizen/Kühlen
+(M61). Sie reiten auf den Abrufen, die jeder Web-Poll ohnehin ausführt; siehe
+[Entitäten](Entities#hydraulik-visualisierung-nur-navigator-10).
+
 ## Abfrage- und Wiederherstellungsverhalten
 
 - Die Web-Abfrage hat ihr eigenes Intervall, standardmäßig 30 Sekunden.
@@ -183,12 +190,12 @@ Siehe [Fehlerbehebung](Troubleshooting) für kategorisierte Fehler und
 
 Die dauerhaft gespeicherte Protokollauswahl wurde in der Integrationsversion
 `0.8.1-beta.29` eingeführt. Der aktuelle Quellbaum verwendet die getesteten
-Web-Clients `idm-heatpump-api[web]==2.17.0`, die zusätzlich
+Web-Clients `idm-heatpump-api[web]==2.18.0`, die zusätzlich
 Navigator-10-Heizkreisdaten für die Kreise B–G bereitstellen.
 
 Für den unabhängigen Modbus-Pfad lautet die getestete Manifest-Reihenfolge
 `modbus-connection>=4.12.7`, `tmodbus[async-serial]>=1.1.0`
-und `idm-heatpump-api[web]==2.17.0`. Die ersten beiden besitzen den direkten
+und `idm-heatpump-api[web]==2.18.0`. Die ersten beiden besitzen den direkten
 Modbus-Socket; seit API 2.0.0 ist pymodbus gar nicht mehr installiert. Das ändert
 weder das Web-Protokoll noch macht es die Version `4.12.2` zu einem
 IDM-Integrations-Release.

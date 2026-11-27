@@ -13,6 +13,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.28.8] - 2026-11-27
+
+Navigator 10 plants gain six read-only web entities for hydraulic visualization: the differential-temperature control sensor (B84), its reference temperature, the control pump with its analogue signal, the HGL mixer control signal (M71) and the heating/cooling valve (M61).
+
+### ⚠️ Upgrade notes
+
+- **The pin moves to idm-heatpump-api 2.18.0.** The new entities read frames the web supplement already polls, so no extra controller traffic is added. Rollback to 0.28.7 is safe; it keeps its 2.17.0 pin.
+
+### ✨ New
+
+- **Differential-temperature control becomes visible.** The structured `system.diffTempControl` block arrives with the `system/overview` frame already polled: the B84 buffer sensor (verified 20.1 °C against the controller's own setting page), the reference side of the regulated delta, the pump state and the M88 analogue pump signal (`-1 %` reports as off). [#750](https://github.com/Xerolux/idm-heatpump-hass/issues/750)
+- **HGL mixer and heating/cooling valve join the web values.** M71 (V) and M61 (the controller's own wording, like the existing M63 valve) ride the `setting/detail` requests every web poll already makes.
+
 ## [0.28.7] - 2026-11-24
 
 Cancelling a hot water boost now also withdraws its outstanding one-time demand on supported Navigators. The controller still decides when an accepted charge ends.

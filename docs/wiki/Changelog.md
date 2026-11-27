@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.28.8 — 2026-11-27
+
+Navigator 10 plants gain six read-only web entities for hydraulic visualization: the differential-temperature control sensor (B84), its reference, the pump with its M88 signal, the HGL mixer signal (M71) and the heating/cooling valve (M61). They ride the requests every web poll already makes; the API pin moves to 2.18.0. [Hydraulic visualization](Entities#hydraulic-visualization-values-navigator-10-only).
+
 ## v0.28.7 — 2026-11-24
 
 Manually cancelling a boost withdraws its outstanding one-time demand, including while the controller delays setpoint restoration. The integration preserves pre-existing requests and the PV cooldown after a declined start. [Cancel a boost](Services#cancel-dhw-boost).

@@ -143,6 +143,13 @@ conflicting web model and firmware are ignored. Optional Navigator 10
 infosystem notifications are read separately; failure of that optional read
 does not discard the rest of a valid web snapshot.
 
+On a Navigator 10 the web supplement also carries a small set of
+hydraulic-visualization values the Modbus map lacks — the differential
+temperature control (B84 sensor, reference, pump state and M88 signal), the
+HGL mixer control signal (M71) and the heating/cooling valve (M61). They ride
+the requests every web poll already makes; see
+[Entities](Entities#hydraulic-visualization-values-navigator-10-only).
+
 ## Polling and recovery behavior
 
 - Web polling has its own interval, 30 seconds by default.
@@ -175,12 +182,12 @@ See [Troubleshooting](Troubleshooting) for categorized errors and
 
 The sticky protocol selection was introduced in integration version
 `0.8.1-beta.29`. The current source tree uses the tested
-`idm-heatpump-api[web]==2.17.0` web clients, which additionally expose
+`idm-heatpump-api[web]==2.18.0` web clients, which additionally expose
 Navigator 10 heating-circuit data for circuits B–G.
 
 For the independent Modbus path, the tested manifest order is
 `modbus-connection>=4.12.7`, `tmodbus[async-serial]>=1.1.0`,
-and `idm-heatpump-api[web]==2.17.0`. The first two own the direct Modbus socket;
+and `idm-heatpump-api[web]==2.18.0`. The first two own the direct Modbus socket;
 since API 2.0.0 pymodbus is no longer installed at all. This does not change
 the web protocol or make
 version `4.12.7` an IDM integration release.

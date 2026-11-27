@@ -893,6 +893,54 @@ class TestSensorAsyncSetupEntry:
 
         assert not any(isinstance(entity, IdmWebSensor) for entity in added_entities)
 
+    async def test_adds_hydraulic_visualization_web_sensors(self):
+        """The Navigator 10 hydraulic-visualization values reach entities (#750)."""
+        from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
+
+        coord = _make_coordinator()
+        coord.sensor_descriptions = []
+        coord.web_enabled = True
+        coord.model_name = "Navigator 10"
+        coord.firmware_version = "NAV10_20.24"
+        coord.active_registers = []
+        coord.web_supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="NAV10_20.24",
+            sensor_values={
+                "diff_temp_buffer_temp": IdmWebSensorValue("20.1°C", 20.1, "°C"),
+                "diff_temp_reference_temp": IdmWebSensorValue("40.3°C", 40.3, "°C"),
+                "diff_temp_pump_signal": IdmWebSensorValue("35.5%", 35.5, "%"),
+                "hgl_mixer_signal": IdmWebSensorValue("2.0V", 2.0, "V"),
+                "valve_heating_cooling": IdmWebSensorValue("Heizen", "Heizen"),
+            },
+        )
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {}
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+
+        await async_setup_entry(MagicMock(), entry, async_add)
+
+        web_entities = {
+            entity.entity_description.key: entity for entity in added_entities if isinstance(entity, IdmWebSensor)
+        }
+        buffer_sensor = web_entities["web_diff_temp_buffer_temp"]
+        assert buffer_sensor.native_value == 20.1
+        assert buffer_sensor.entity_description.native_unit_of_measurement == "°C"
+        reference = web_entities["web_diff_temp_reference_temp"]
+        assert reference.entity_description.native_unit_of_measurement == "°C"
+        pump_signal = web_entities["web_diff_temp_pump_signal"]
+        assert pump_signal.entity_description.native_unit_of_measurement == "%"
+        mixer = web_entities["web_hgl_mixer_signal"]
+        assert mixer.entity_description.native_unit_of_measurement == "V"
+        # The M61 valve passes the controller's own wording through as text.
+        valve = web_entities["web_valve_heating_cooling"]
+        assert valve.native_value == "Heizen"
+        assert valve.entity_description.native_unit_of_measurement is None
+
 
 class TestIdmBinarySensor:
     def test_is_on_true(self):

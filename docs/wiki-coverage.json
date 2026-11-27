@@ -14,7 +14,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "29feaedbd354e9446df238d11fd2526caa01db4889663553d58318bc4d152815"
+      "reviewed_source_sha256": "f4a25ac872b88003f351e78f7e258ab9b99c72abb47f4319bed6a23d44f1b07b"
     },
     {
       "feature": "Model and register semantics",
@@ -38,7 +38,7 @@
         "Supported-Devices.md",
         "Protocol-Capabilities.md"
       ],
-      "reviewed_source_sha256": "fbdab1d39e093e930dd26366ef68fdd30eb88cffd74ee66bec22f5b29f3a4601"
+      "reviewed_source_sha256": "d65a4b88504b1b05c33fa67c9b653c7bf4cc272205729a9c230d04ac4ba69b76"
     },
     {
       "feature": "Polling, transport and recovery",
@@ -78,7 +78,7 @@
         "Entities.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "01afd2be7c4980785344df6700d8d60fc5ed6b9865a188e2998c72f5be971d18"
+      "reviewed_source_sha256": "614605f0be4e10e7ca96400644a4a54c939f6e21273ceddf1f54f95265b10e71"
     },
     {
       "feature": "Local Navigator supplement and controls",
@@ -97,7 +97,7 @@
         "Navigator-Protocol-Analysis.md",
         "Protocol-Capabilities.md"
       ],
-      "reviewed_source_sha256": "a2066c595bc0b11fd215126a91b1dc627cd13252a76f2f9885a2df9f5af430b3"
+      "reviewed_source_sha256": "4cfd0127908bdd362333ae4d7a1e517c0cdcd98ec994bff97f34af0c32be66a0"
     },
     {
       "feature": "Energy and operating analysis",

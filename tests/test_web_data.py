@@ -1933,3 +1933,73 @@ def test_station_pump_percentage_ignores_only_the_negative_marker(raw: str, expe
         assert key not in supplement.sensor_values
     else:
         assert supplement.sensor_values[key].native_value == expected
+
+
+@pytest.mark.parametrize(("raw", "expected"), [("-1%", None), ("0%", 0.0), ("35.5%", 35.5)])
+def test_diff_temp_pump_signal_ignores_only_the_negative_marker(raw: str, expected: float | None) -> None:
+    """The M88 off sentinel is -1 %, exactly like the station pump (issue #750)."""
+    key = "diff_temp_pump_signal"
+    data = SimpleNamespace(simple_values={key: raw}, values={key: raw})
+    supplement = web_data._normalize_web_data(data, "nav10")
+    if expected is None:
+        assert key not in supplement.values
+        assert key not in supplement.sensor_values
+    else:
+        assert supplement.sensor_values[key].native_value == expected
+
+
+async def test_system_overview_reader_adds_differential_temperature_values() -> None:
+    """The structured diffTempControl block flows into the sensor_values pipeline.
+
+    Issue #750 capture: temperatures.buffer is the B84 sensor (20.1 matches
+    its setting-table row), reference the other side of the regulated delta
+    and pumpActive the M88 pump state.
+    """
+    overview = SimpleNamespace(
+        heating_circuits=(),
+        diff_temp_buffer_temperature=20.1,
+        diff_temp_reference_temperature=40.3,
+        diff_temp_pump_active=False,
+    )
+
+    result = await web_data._read_optional_system_overview(
+        _SystemOverviewStubClient(overview), IdmWebSupplement(web_variant="nav10")
+    )
+
+    assert result.system_overview is overview
+    assert result.sensor_values["diff_temp_buffer_temp"].native_value == 20.1
+    assert result.sensor_values["diff_temp_buffer_temp"].unit == "°C"
+    assert result.sensor_values["diff_temp_reference_temp"].native_value == 40.3
+    assert result.sensor_values["diff_temp_reference_temp"].unit == "°C"
+    assert result.sensor_values["diff_temp_pump_active"].value == "off"
+    assert result.sensor_values["diff_temp_pump_active"].native_value == 0.0
+
+
+async def test_system_overview_reader_pump_active_maps_to_on() -> None:
+    overview = SimpleNamespace(
+        heating_circuits=(),
+        diff_temp_buffer_temperature=None,
+        diff_temp_reference_temperature=None,
+        diff_temp_pump_active=True,
+    )
+
+    result = await web_data._read_optional_system_overview(
+        _SystemOverviewStubClient(overview), IdmWebSupplement(web_variant="nav10")
+    )
+
+    assert result.sensor_values["diff_temp_pump_active"].value == "on"
+    assert result.sensor_values["diff_temp_pump_active"].native_value == 1.0
+    assert "diff_temp_buffer_temp" not in result.sensor_values
+
+
+async def test_system_overview_reader_without_diff_temp_fields_adds_nothing() -> None:
+    """An overview object from an older API release injects no diff-temp values."""
+    overview = SimpleNamespace(heating_circuits=())
+
+    result = await web_data._read_optional_system_overview(
+        _SystemOverviewStubClient(overview), IdmWebSupplement(web_variant="nav10")
+    )
+
+    assert "diff_temp_buffer_temp" not in result.sensor_values
+    assert "diff_temp_reference_temp" not in result.sensor_values
+    assert "diff_temp_pump_active" not in result.sensor_values

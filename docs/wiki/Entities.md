@@ -358,6 +358,38 @@ With the **device hierarchy** enabled, all PV entities — the PV registers
 (`pv_surplus`, `pv_production`, `pv_target_value`), `smart_grid_status`, the
 derived diagnostic and the two web entities — share the dedicated
 **Photovoltaik** subdevice instead of the main device.
+
+#### Hydraulic visualization values (Navigator 10 only)
+
+For a live hydraulic scheme, six read-only web entities expose outputs the
+Modbus map does not carry (issue #750, verified against a capture of an
+SLM 6-17 on firmware `NAV10_20.24-1124`):
+
+- **Differential temp. control sensor (B84, Web)** (`web_diff_temp_buffer_temp`)
+  and **Differential temp. control reference (Web)**
+  (`web_diff_temp_reference_temp`): the two sides of the regulated delta,
+  read from the structured `system.diffTempControl` block of the
+  `system/overview` frame — no extra request.
+- **Differential temp. control pump (Web)** (`web_diff_temp_pump_active`):
+  binary running state from the same block.
+- **Differential temp. control pump signal (M88, Web)**
+  (`web_diff_temp_pump_signal`): the pump's analogue control signal in %;
+  the controller reports `-1` while the pump is off and the sensor then
+  stays unavailable.
+- **HGL mixer control signal (M71, Web)** (`web_hgl_mixer_signal`): the
+  mixer actuator's control voltage in V, from the analogue-outputs setting
+  page.
+- **Heating/cooling valve (Web)** (`web_valve_heating_cooling`): the M61
+  valve position as the controller words it (for example *Heizen*), from
+  the digital-outputs setting page. The sibling M63 valve exists as
+  *Heating/hot water valve (Web)*; on Modbus plants both valves are also
+  exposed as the register-backed `valve_hc_heat_cool` and `valve_heat_dhw`
+  entities.
+
+All six ride the web requests every poll already makes. Entities appear on
+Navigator 10 plants with the web supplement enabled and stay unavailable on
+plants where the controller does not deliver the row.
+
 | Info system notifications (Web) | Summary of active Navigator 10 infosystem notifications |
 | Hot gas temperature (Web) | Web-only diagnostic temperature when available |
 | Evaporator pressure (Web) | Web-only refrigerant pressure when available |
@@ -1111,6 +1143,11 @@ This index lists the name templates defined for integration-specific entities. `
 | `sensor` | `web_controller_clock` | Controller clock (Web) |
 | `sensor` | `web_last_success` | Last web update (Web) |
 | `sensor` | `web_dhw_status_info` | Hot water status info (Web) |
+| `sensor` | `web_diff_temp_buffer_temp` | Differential temp. control sensor (B84, Web) |
+| `sensor` | `web_diff_temp_pump_signal` | Differential temp. control pump signal (M88, Web) |
+| `sensor` | `web_diff_temp_reference_temp` | Differential temp. control reference (Web) |
+| `sensor` | `web_hgl_mixer_signal` | HGL mixer control signal (M71, Web) |
+| `sensor` | `web_valve_heating_cooling` | Heating/cooling valve (Web) |
 | `sensor` | `connection_mode` | Connection mode |
 | `sensor` | `web_energyflow_grid` | Grid power (Web) |
 | `sensor` | `web_energyflow_pv` | PV power (Web) |
@@ -1203,6 +1240,7 @@ This index lists the name templates defined for integration-specific entities. `
 | `binary_sensor` | `calculated_pv_surplus_operation` | PV surplus operation |
 | `binary_sensor` | `web_demand_reason_pv` | PV demand reason (Web) |
 | `binary_sensor` | `web_dhw_circulation_active` | Hot water circulation (Web) |
+| `binary_sensor` | `web_diff_temp_pump_active` | Differential temp. control pump (Web) |
 | `binary_sensor` | `web_compressor_1` | Compressor 1 (Web) |
 | `binary_sensor` | `web_compressor_heating` | Compressor heater (Web) |
 | `binary_sensor` | `web_dewpoint_humidity_alarm` | Dew point humidity alarm (Web) |
