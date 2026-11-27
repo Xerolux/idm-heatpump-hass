@@ -862,17 +862,20 @@ noch an der Anlage des Melders bestätigt werden.
 
 ## Unabhängige Firmware-Beobachtungen
 
-Unter **Neu konfigurieren → Firmware-Abfrage** aktiviert ein eigener freiwilliger
-Schalter den Sensor **Neueste gemeldete Firmware**. Er ist standardmäßig aus und
+Unter **Neu konfigurieren → Firmware teilen und vergleichen** aktiviert ein eigener freiwilliger
+Schalter den Sensor **Neueste gemeldete Firmware**, den Indikator **Neuere Firmware
+gesichtet (unbestätigt)** und den Sensor **Firmware-Prüfstatus**. Er ist standardmäßig aus und
 übernimmt keine Telemetrie-Einwilligung. Die Firmware-Abfrage funktioniert ohne
 myIDM-ID und ohne Telemetrie. Telemetrie auszuschalten beendet eine separat
 freigegebene Firmware-Abfrage nicht. Ausschalten der Firmware-Abfrage bricht
-laufende Anfragen ab und entfernt Sensor und Registry-Eintrag sofort. Ohne diese
+laufende Anfragen ab und entfernt die Sensoren samt Registry-Einträgen sofort. Ohne diese
 Einwilligung gibt es keinen Kontakt zum Firmware-Katalog.
 
 Übertragen werden ausschließlich Navigator-Familie, Regler-/Anlagenmodell und
-installierte Firmware, nach bis zu 30 Minuten zufälliger Startverzögerung, danach alle sechs
-Stunden zuzüglich bis zu 30 Minuten zufälliger Verzögerung. Keine myIDM-ID,
+installierte Firmware, nach bis zu 15 Minuten zufälliger Startverzögerung, danach alle sechs
+Stunden zuzüglich bis zu 30 Minuten zufälliger Verzögerung. Eine geänderte installierte
+Firmware wird stattdessen bei der nächsten Minutenprüfung verglichen, aber nie öfter als
+alle 15 Minuten. Keine myIDM-ID,
 Betriebszähler, Temperaturen, Zugangsdaten oder fremden HA-Daten. Es gibt keine
 dauerhafte Firmware-Warteschlange; die Integration hält nur das aktuelle Ergebnis.
 HA kann Sensorzustände gemäß deiner Recorder-/Backup-Konfiguration speichern. Der
@@ -882,8 +885,9 @@ nach spätestens zwei Stunden beim nächsten stündlichen Bereinigungslauf. Beid
 Funktionen verlinken vor ihrem Zustimmungsschalter deutlich auf die vollständigen
 Datenschutzhinweise.
 
-Der Katalog verwendet nur freigegebene Community-Telemetrie, keine alten
-Diagnose-ZIPs. Navigator/Regler, bekanntes Anlagenmodell, Firmware-Präfix/Kanal und
+Der Katalog kombiniert freigegebene Telemetrie-Beobachtungen, unabhängige
+Firmware-Sichtungen und ausdrückliche Firmware-Metadaten privater Diagnose-ZIPs.
+Navigator/Regler, bekanntes Anlagenmodell, Firmware-Präfix/Kanal und
 Hauptreihe müssen passen. Fehlende Anlagenmodelle werden nur mit anderen Meldungen
 ohne Typangabe innerhalb derselben bekannten Regler-/Firmware-Reihe verglichen.
 Test- und stabile Kanäle bleiben getrennt; Buildnummern werden numerisch verglichen.
@@ -898,9 +902,14 @@ lokal gespeichert und nicht bei der Firmware-Abfrage übertragen.
 
 [Datenschutz und Übertragung](Telemetry).
 
-Bei aktivierter Gerätehierarchie liegen **Zuletzt gemeldete Firmware** und der
-Indikator für eine unbestätigte neuere Version im logischen Gerät **Diagnose**
-neben der installierten Softwareversion. Ohne Hierarchie bleiben es
+**Firmware-Prüfstatus** ist eine lokale Diagnose: `not_checked` bis zur ersten
+Prüfung, danach `completed` oder `unavailable`, mit dem Antwortstatus des Katalogs
+und den Prüfzeiten als Attribute. Eine fehlgeschlagene Prüfung lässt die letzte
+Beobachtung stehen und wird nur mit HTTP-Status oder Ausnahmeart protokolliert.
+
+Bei aktivierter Gerätehierarchie liegen die Firmware-Entitäten und der
+**Telemetrie-Berichtsstatus** im Untergerät **Telemetrie** unter der Anlage; die
+installierte Softwareversion bleibt in **Diagnose**. Ohne Hierarchie bleiben es
 Diagnose-Entitäten am Anlagengerät. Unique-IDs und Entitätshistorie bleiben
 erhalten. Eine passende neuere Beobachtung kann einen Reparaturhinweis auslösen;
 die Bestätigung wird je Gerät/Version gespeichert.
@@ -915,6 +924,7 @@ Das Verzeichnis listet die Namensvorlagen der integrationsspezifischen Entitäte
 | --- | --- | --- |
 | `sensor` | `telemetry_latest_firmware` | Neueste gemeldete Firmware |
 | `sensor` | `telemetry_report_status` | Telemetrie-Berichtsstatus |
+| `sensor` | `firmware_check_status` | Firmware-Prüfstatus |
 | `sensor` | `hc_storage_temp` | Speichertemperatur HK {circuit} |
 | `sensor` | `hc_reference_temp` | Referenztemperatur HK {circuit} |
 | `sensor` | `hc_temperature_difference` | Temperaturdifferenz HK {circuit} |

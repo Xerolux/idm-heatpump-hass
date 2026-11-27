@@ -121,6 +121,7 @@ from .const import (
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
     CONF_MODEL_OVERRIDE,
+    CONF_PLANT_MODEL,
     CONF_POLLING_JITTER,
     CONF_PREDICTIVE_ADVISOR,
     CONF_ROOM_TEMP_FORWARDING,
@@ -2312,6 +2313,11 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
         )
 
 
+def _plant_model_text(user_input: dict[str, Any]) -> str:
+    """Collapse the optional model text; an empty answer clears it."""
+    return " ".join(str(user_input.get(CONF_PLANT_MODEL) or "").split())
+
+
 class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
     MINOR_VERSION = 3
@@ -2556,8 +2562,13 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
         """Save one explicit consent for identifiable telemetry with its myIDM ID."""
         from datetime import UTC, datetime
 
-        from .const import CONF_TELEMETRY, CONF_TELEMETRY_CONSENT_AT, CONF_TELEMETRY_MYIDM, CONF_TELEMETRY_POLICY
-        from .telemetry import TELEMETRY_POLICY, TELEMETRY_PRIVACY_URL, valid_myidm
+        from .const import (
+            CONF_TELEMETRY,
+            CONF_TELEMETRY_CONSENT_AT,
+            CONF_TELEMETRY_MYIDM,
+            CONF_TELEMETRY_POLICY,
+        )
+        from .telemetry import TELEMETRY_POLICY, TELEMETRY_PRIVACY_URL, _label, valid_myidm
 
         entry = self._get_reconfigure_entry()
         coordinator = getattr(getattr(entry, "runtime_data", None), "coordinator", None)
@@ -2567,10 +2578,14 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
         if user_input is not None:
             enabled = user_input.get(CONF_TELEMETRY) is True
             myidm = user_input.get(CONF_TELEMETRY_MYIDM, known_myidm)
+            model = _plant_model_text(user_input)
             if enabled and not valid_myidm(myidm):
                 errors[CONF_TELEMETRY_MYIDM] = "telemetry_myidm_required"
+            elif model and _label(model) is None:
+                errors[CONF_PLANT_MODEL] = "plant_model_invalid"
             else:
                 options = dict(entry.options)
+                options[CONF_PLANT_MODEL] = model
                 options[CONF_TELEMETRY] = enabled
                 options[CONF_TELEMETRY_MYIDM] = myidm if enabled else ""
                 options[CONF_TELEMETRY_CONSENT_AT] = datetime.now(UTC).isoformat() if enabled else ""
@@ -2587,6 +2602,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                         and entry.options.get(CONF_TELEMETRY_POLICY) == TELEMETRY_POLICY,
                     ): BooleanSelector(BooleanSelectorConfig()),
                     vol.Optional(CONF_TELEMETRY_MYIDM, default=known_myidm): str,
+                    vol.Optional(CONF_PLANT_MODEL, default=entry.options.get(CONF_PLANT_MODEL, "")): str,
                 }
             ),
             errors=errors,
@@ -2598,16 +2614,22 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
 
         from .const import CONF_FIRMWARE_CHECK, CONF_FIRMWARE_CONSENT_AT, CONF_FIRMWARE_POLICY
         from .firmware_observations import FIRMWARE_POLICY
-        from .telemetry import TELEMETRY_PRIVACY_URL
+        from .telemetry import TELEMETRY_PRIVACY_URL, _label
 
         entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
         if user_input is not None:
             enabled = user_input.get(CONF_FIRMWARE_CHECK) is True
-            options = dict(entry.options)
-            options[CONF_FIRMWARE_CHECK] = enabled
-            options[CONF_FIRMWARE_CONSENT_AT] = datetime.now(UTC).isoformat() if enabled else ""
-            options[CONF_FIRMWARE_POLICY] = FIRMWARE_POLICY if enabled else ""
-            return self.async_update_and_abort(entry, options=options)
+            model = _plant_model_text(user_input)
+            if model and _label(model) is None:
+                errors[CONF_PLANT_MODEL] = "plant_model_invalid"
+            else:
+                options = dict(entry.options)
+                options[CONF_PLANT_MODEL] = model
+                options[CONF_FIRMWARE_CHECK] = enabled
+                options[CONF_FIRMWARE_CONSENT_AT] = datetime.now(UTC).isoformat() if enabled else ""
+                options[CONF_FIRMWARE_POLICY] = FIRMWARE_POLICY if enabled else ""
+                return self.async_update_and_abort(entry, options=options)
         return self.async_show_form(
             step_id="firmware",
             description_placeholders={"privacy_url": TELEMETRY_PRIVACY_URL + "#firmware"},
@@ -2618,9 +2640,10 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                         default=entry.options.get(CONF_FIRMWARE_CHECK) is True
                         and entry.options.get(CONF_FIRMWARE_POLICY) == FIRMWARE_POLICY,
                     ): BooleanSelector(BooleanSelectorConfig()),
+                    vol.Optional(CONF_PLANT_MODEL, default=entry.options.get(CONF_PLANT_MODEL, "")): str,
                 }
             ),
-            errors={},
+            errors=errors,
         )
 
     async def async_step_features(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:

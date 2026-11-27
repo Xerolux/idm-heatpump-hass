@@ -85,6 +85,7 @@ from .predictive_advisor_entities import (
 )
 from .registers import entity_order_group, sort_entity_descriptions
 from .telemetry_entities import (
+    IdmFirmwareStatusSensor,
     IdmTelemetryFirmwareSensor,
     IdmTelemetryStatusSensor,
     firmware_sensor_entities,
@@ -530,6 +531,7 @@ async def async_setup_entry(
         | IdmAdvisorRecommendationSensor
         | AdvisorProducerEntity
         | IdmTelemetryFirmwareSensor
+        | IdmFirmwareStatusSensor
         | IdmTelemetryStatusSensor
     ] = []
     if entry.options.get(CONF_AI_ADVISOR, False) is True:

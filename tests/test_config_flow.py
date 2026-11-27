@@ -3633,6 +3633,38 @@ class TestTelemetryConsent:
         assert options["telemetry_myidm_id"] == ("TEST-Serial-123" if enabled else "")
         assert bool(options["telemetry_consent_at"]) is enabled
 
+    @pytest.mark.parametrize("step", ["telemetry", "firmware"])
+    async def test_entered_plant_model_is_normalized_and_offered_again(self, step):
+        flow = _make_flow()
+        entry = MagicMock(options={})
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "async_update_and_abort") as save,
+        ):
+            await getattr(flow, f"async_step_{step}")({"plant_model": "  AERO   ALM 6-15 "})
+        assert save.call_args.kwargs["options"]["plant_model"] == "AERO ALM 6-15"
+
+        entry = MagicMock(options={"plant_model": "AERO ALM 6-15"})
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "async_show_form") as form,
+        ):
+            await getattr(flow, f"async_step_{step}")()
+        assert _marker_defaults(form.call_args.kwargs["data_schema"])["plant_model"] == "AERO ALM 6-15"
+
+    @pytest.mark.parametrize("step", ["telemetry", "firmware"])
+    @pytest.mark.parametrize("model", ["x" * 81, "bad\x00char"])
+    async def test_plant_model_outside_the_schema_bounds_is_rejected_without_saving(self, step, model):
+        flow = _make_flow()
+        entry = MagicMock(options={})
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "async_update_and_abort") as save,
+        ):
+            result = await getattr(flow, f"async_step_{step}")({"plant_model": model})
+        save.assert_not_called()
+        assert result["errors"] == {"plant_model": "plant_model_invalid"}
+
 
 async def test_telemetry_detects_myidm_without_requesting_a_serial():
     flow = _make_flow()

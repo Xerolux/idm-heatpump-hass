@@ -1608,17 +1608,52 @@ async def test_manual_plant_report_and_firmware_response(mock_hass):
     coord = _make_coordinator_in_hass(mock_hass)
     runtime = coord.config_entry.runtime_data
     runtime.telemetry.manual_cooldown = 0.0
-    runtime.telemetry.async_send_now = AsyncMock(return_value=True)
+    runtime.telemetry.async_send_now = AsyncMock(return_value="accepted")
     runtime.firmware.enabled = True
-    runtime.firmware.async_refresh_firmware = AsyncMock()
+    runtime.firmware.async_refresh_firmware = AsyncMock(return_value="completed")
     runtime.firmware.firmware_result = {"status": "matching_observations"}
     call = MagicMock(service="send_telemetry", data={"entry_id": "entry-1"})
-    assert (await _handle_plant_cloud_action(mock_hass, call))["accepted"] is True
+    assert await _handle_plant_cloud_action(mock_hass, call) == {"accepted": True, "status": "accepted"}
     call.service = "check_firmware"
-    assert (await _handle_plant_cloud_action(mock_hass, call))["status"] == "matching_observations"
+    assert await _handle_plant_cloud_action(mock_hass, call) == {
+        "status": "matching_observations",
+        "check": "completed",
+    }
     runtime.firmware.async_refresh_firmware.assert_awaited_once()
     coord.config_entry = None
     assert (await _handle_plant_cloud_action(mock_hass, call))["status"] == "entry_not_loaded"
+
+
+@pytest.mark.parametrize("outcome", ["rejected", "unavailable", None])
+async def test_manual_plant_report_never_claims_acceptance_for_a_failed_submission(mock_hass, outcome):
+    from custom_components.idm_heatpump.services import _handle_plant_cloud_action
+
+    coord = _make_coordinator_in_hass(mock_hass)
+    runtime = coord.config_entry.runtime_data
+    runtime.telemetry.manual_cooldown = 0.0
+    runtime.telemetry.async_send_now = AsyncMock(return_value=outcome)
+    call = MagicMock(service="send_telemetry", data={"entry_id": "entry-1"})
+
+    assert await _handle_plant_cloud_action(mock_hass, call) == {
+        "accepted": False,
+        "status": outcome or "not_sent",
+    }
+
+
+@pytest.mark.parametrize("outcome", ["unavailable", "in_progress"])
+async def test_firmware_check_response_names_a_failed_or_skipped_check(mock_hass, outcome):
+    from custom_components.idm_heatpump.services import _handle_plant_cloud_action
+
+    coord = _make_coordinator_in_hass(mock_hass)
+    runtime = coord.config_entry.runtime_data
+    runtime.firmware.enabled = True
+    runtime.firmware.async_refresh_firmware = AsyncMock(return_value=outcome)
+    # The previous answer stays on the sensor, but the caller learns that this
+    # check did not produce it.
+    runtime.firmware.firmware_result = {"status": "observed"}
+    call = MagicMock(service="check_firmware", data={"entry_id": "entry-1"})
+
+    assert await _handle_plant_cloud_action(mock_hass, call) == {"status": "observed", "check": outcome}
 
 
 async def test_manual_plant_report_within_cooldown_raises_instead_of_failing_silently(mock_hass):

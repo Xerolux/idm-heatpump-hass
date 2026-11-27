@@ -466,7 +466,8 @@ collector retains persisted report-ID deduplication and a one-minute cooldown;
 sending again within that cooldown raises a validation error stating the
 remaining wait instead of silently returning `not_sent`. A manual report
 reserves the next randomized daily slot. The response reports
-`accepted` and `status` (`accepted` or `not_sent`); the local
+`accepted` and the real `status` of that submission: `accepted`, `rejected`,
+`unavailable`, or `not_sent` when nothing was sent. The local
 **Telemetry report status** diagnostic sensor shows delivery outcomes
 continuously. See [data scope and withdrawal](Telemetry).
 
@@ -484,7 +485,11 @@ response_variable: submission
 Requires `entry_id` and separate firmware-query consent. It works without
 telemetry or a myIDM ID. Without consent, returns `status: consent_required`
 without a catalog request. With consent, refreshes the observation result and
-returns its `status`. A match is an unconfirmed community observation, never
+returns its `status` together with `check`: `completed` when this call produced
+a validated answer, `unavailable` when the catalog could not be reached or its
+answer was not usable, and `in_progress` while another check is still running;
+in the last two cases the previous observation stays. A match is an unconfirmed
+community observation, never
 an official update offer; this action does not install firmware.
 See [firmware orientation](Telemetry#firmware-orientation).
 

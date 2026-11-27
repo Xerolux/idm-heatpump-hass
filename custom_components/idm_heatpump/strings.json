@@ -931,14 +931,22 @@
         "description": "**Help improve the IDM integration**\n\nYour plant reports help Xerolux identify faults and reliably support more IDM plants.\n\n**What is shared:**\n- Your **unchanged myIDM ID** to associate reports with your plant.\n- Technical plant data such as model, firmware, connection and faults.\n- Existing summaries of starts, operating times and energy use.\n\n**Only your IDM plant**, with no data from other HA devices. Reports are **not anonymous**.\n\nReports are sent roughly daily. Storage: **twelve months in the active system**; backup copies may remain for up to six additional months.\n\n**Optional and easy to turn off.** Disabling stops collection and transfer. Local control and the separate firmware query work without telemetry.\n\n[Privacy, operator and erasure requests]({privacy_url})",
         "data": {
           "telemetry": "Share plant reports",
-          "telemetry_myidm_id": "myIDM ID (automatically detected when available)"
+          "telemetry_myidm_id": "myIDM ID (automatically detected when available)",
+          "plant_model": "Heat pump model (optional)"
+        },
+        "data_description": {
+          "plant_model": "Sent only when the controller reports no model of its own, for example `AERO ALM 6-15`."
         }
       },
       "firmware": {
         "title": "Share and compare firmware",
         "description": "**Has newer firmware been observed on comparable plants?**\n\nThe Latest reported firmware sensor shows community observations from the same matching controller/firmware series.\n\n**Xerolux receives only controller type, plant model and installed firmware**, roughly every six hours. No myIDM ID, serial number or measurements; telemetry is not required. Version sightings are aggregated by version, cohort and day without a plant identifier, encrypted and automatically deleted after twelve months. Counts are sightings, not distinct plants. Existing consents remain valid; no renewed confirmation is required.\n\nNAVIGATOR Pro is individual room control. Ambiguous Pro reports are stored for review but do not supply a heat-pump firmware notice. NAV10_ and T_NAV10_ stay separate.\n\n**Optional, off by default and easy to disable.** Disabling stops future reports/queries and removes the sensor. Existing technical aggregates remain until expiry and contain no plant identifier. Local control continues.\n\n[Privacy, operator and rights]({privacy_url})\n\nOnly IDM or your installer can assess and install firmware. A newer matching community observation can be acknowledged once in Repairs; this never installs an update.",
         "data": {
-          "firmware_check": "Allow firmware metadata sharing and queries"
+          "firmware_check": "Allow firmware metadata sharing and queries",
+          "plant_model": "Heat pump model (optional)"
+        },
+        "data_description": {
+          "plant_model": "Sent only when the controller reports no model of its own, for example `AERO ALM 6-15`."
         }
       }
     },
@@ -978,7 +986,8 @@
       "ai_task_entity_required": "Select an existing ai_task entity that supports data generation.",
       "invalid_subnet": "Not a valid IPv4 subnet, or too large (at most /22). Use a notation like `192.168.1.0/24`.",
       "no_candidates": "No device with an open Modbus TCP port was found. Check that the heat pump is reachable and Modbus TCP is enabled, verify the subnet — or enter the address manually.",
-      "telemetry_myidm_required": "Enter the myIDM ID of the IDM plant."
+      "telemetry_myidm_required": "Enter the myIDM ID of the IDM plant.",
+      "plant_model_invalid": "Enter the heat pump model using up to 80 printable characters."
     },
     "abort": {
       "already_configured": "This heat pump is already configured.",
@@ -2661,6 +2670,9 @@
       },
       "fault_heat_source_pressure_switch": {
         "name": "Heat source pressure switch fault"
+      },
+      "firmware_check_status": {
+        "name": "Firmware check status"
       },
       "firmware_version": {
         "name": "Navigator firmware version"

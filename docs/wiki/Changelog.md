@@ -5,6 +5,10 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.29.0 — 2026-11-27
+
+Telemetry and the firmware comparison report what really happened: `send_telemetry` and `check_firmware` return the true outcome, data collected under a void consent is deleted, a changed firmware is compared within a minute, and the new **Firmware check status** sensor shows each check. An optional heat-pump model field closes the model gap in plant reports and firmware queries. [Release notes](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.29.0)
+
 ## v0.28.10 — 2026-11-27
 
 A defrost run is no longer counted as a short compressor cycle or a compressor start. The cycle before the defrost ends when the compressor stops; the restart after it begins a new cycle. Cycle durations recorded before this version start over once. [Release notes](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.28.10)

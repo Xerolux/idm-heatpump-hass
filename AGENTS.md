@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.28.10` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
+- **Current Version**: `0.29.0` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Platinum (self-assessed against Home Assistant's integration quality scale: every rule done or legitimately exempt, pinned by `tests/test_quality_scale.py`)
 - **License**: MIT
 - **Min HA Version**: 2026.11.0 (the 2026.8.1–2026.10 line stays on integration 0.24.x)
@@ -614,6 +614,8 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Smart Energy & Comfort | `energy_statistics.py`, `health_monitor.py`, `comfort_advisory.py`, `comfort_scheduler.py`, `energy_manager.py`, `external_power_forwarding.py` | Opt-in Smart-profile package: persistent energy/COP/CO₂ totals, read-only health checks, comfort advice and scheduling, fail-closed PV-surplus DHW boost (needs exclusive-controller confirmation), optional forwarding of HA PV/house/battery sensors to GLT registers |
 | Predictive advisor | `predictive_advisor.py`, `predictive_advisor_entities.py`, `advisor_analytics.py`, `advisor_engine.py`, `advisor_operation_reason.py` | Strictly read-only recommendation layer (`docs/dev/predictive-advisor-roadmap.md`): lifecycle/history/confidence/capabilities/data-quality, anomaly detection vs. own baselines, health and efficiency scores, COP map, building model, heating-curve recommendations, PV/price hot-water windows and the 24 h plan, `idm_advisor_recommendation` events. Smart profile; PV forecast sensor optionable (`advisor_pv_forecast_entity`). The advisor never writes to the heat pump |
 | AI plant adviser | `ai_advisor.py`, `ai_advisor_entities.py`, `ai_learning.py`, `ai_cloud.py` | Experimental, read-only, off by default. Deterministic measured-data reports; optional free-form explanations via local Ollama, an HA AI Task entity or explicitly consented cloud requests with fixed endpoints, masked keys, numeric allowlist and persisted daily reservations |
+| Plant telemetry | `telemetry.py`, `telemetry_entities.py`, `cloud_scheduler.py` | Opt-in, off by default. One plant-only report per day to the fixed IDM Tools endpoint with the unchanged myIDM ID. The server accepts exactly the seventeen known fields (`idm-telemetry-v3`): a new field needs a new notice revision, renewed consent and a server release first. `send_telemetry` returns the real outcome; a consent that no longer holds deletes the stored aggregate at the next start |
+| Firmware observations | `firmware_observations.py`, `firmware_notice.py`, `telemetry_entities.py` | Opt-in, independent of telemetry. Four-field query every six hours and again within a minute of a changed firmware (at most every 15 minutes); local **Firmware check status** sensor; persistent acknowledgement of a newer observation in Repairs. Never installs firmware |
 
 ---
 

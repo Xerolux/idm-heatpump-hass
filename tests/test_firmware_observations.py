@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import pytest
 from test_telemetry import make_telemetry
 
@@ -13,6 +15,7 @@ from custom_components.idm_heatpump.const import (
     CONF_FIRMWARE_CHECK,
     CONF_FIRMWARE_CONSENT_AT,
     CONF_FIRMWARE_POLICY,
+    CONF_PLANT_MODEL,
     CONF_TELEMETRY,
 )
 from custom_components.idm_heatpump.firmware_observations import (
@@ -396,3 +399,198 @@ async def test_startup_check_load_spreads_within_fifteen_minutes():
         assert {call.args[0] for call in spread.call_args_list} == {900}
         session.assert_not_called()
     client.stop()
+
+
+def _context(status):
+    response = MagicMock(status=status)
+    context = MagicMock()
+    context.__aenter__ = AsyncMock(return_value=response)
+    context.__aexit__ = AsyncMock(return_value=False)
+    return context
+
+
+async def test_a_refused_start_forgets_the_answer_of_a_consent_that_no_longer_holds():
+    firmware, entry, _ = make_firmware()
+    entry.data = {FIRMWARE_RESULT_DATA_KEY: dict(STORED_ANSWER), "host": "private-plant-endpoint"}
+    entry.options[CONF_FIRMWARE_POLICY] = "idm-firmware-v0"
+    with (
+        patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval") as timer,
+        patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession") as session,
+        patch("custom_components.idm_heatpump.firmware_observations.clear_notices") as clear,
+    ):
+        assert await firmware.async_start() is False
+    # The stored answer and its notice belong to the withdrawn notice revision.
+    assert FIRMWARE_RESULT_DATA_KEY not in entry.data
+    assert "host" in entry.data
+    clear.assert_called_once()
+    timer.assert_not_called()
+    session.assert_not_called()
+
+
+async def test_a_catalog_answer_is_reported_as_completed():
+    firmware, _, coordinator = make_firmware()
+    coordinator.firmware_version = "NAV10_20.24-9"
+    query = {
+        "navigator": "navigator_10",
+        "navigator_model": "Navigator 10",
+        "heatpump_model": "AERO ALM",
+        "firmware": "NAV10_20.24-9",
+    }
+    session = _session_with_answer(query, "NAV10_20.24-11", True)
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
+        assert await firmware.async_refresh_firmware() == "completed"
+    assert firmware.firmware_result["installed_firmware"] == "NAV10_20.24-9"
+    status = firmware.check_status()
+    assert status["last_outcome"] == "completed"
+    assert status["last_check"] == firmware.firmware_result["last_checked"]
+
+
+@pytest.mark.parametrize("status", [204, 302, 400, 429, 500, 503])
+async def test_a_catalog_without_an_ok_answer_is_reported_and_logged_without_content(status):
+    firmware, _, _ = make_firmware()
+    session = MagicMock()
+    session.post.return_value = _context(status)
+    with (
+        patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session),
+        patch("custom_components.idm_heatpump.firmware_observations._LOGGER") as logger,
+    ):
+        assert await firmware.async_refresh_firmware() == "unavailable"
+    assert firmware.firmware_result.get("status") is None
+    # The status code is a lazy logging argument; no answer content is logged.
+    assert logger.debug.call_args.args == (
+        "IDM firmware catalog answered with HTTP %s; the last observation is kept",
+        status,
+    )
+    assert firmware.check_status()["last_outcome"] == "unavailable"
+    # A failed check keeps its regular six-hour slot instead of retrying at once.
+    assert firmware._next_firmware_check > time.time() + 21500
+
+
+async def test_an_answer_that_does_not_belong_to_this_plant_is_reported_as_unavailable():
+    firmware, _, coordinator = make_firmware()
+    coordinator.firmware_version = "NAV10_20.24-9"
+    other_query = {
+        "navigator": "navigator_10",
+        "navigator_model": "Navigator 10",
+        "heatpump_model": "AERO ALM",
+        "firmware": "NAV10_20.24-99",
+    }
+    session = _session_with_answer(other_query, "NAV10_20.24-11", True)
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
+        assert await firmware.async_refresh_firmware() == "unavailable"
+    assert firmware.firmware_result.get("status") is None
+
+
+async def test_a_network_error_is_reported_as_unavailable_without_exception_text():
+    firmware, _, _ = make_firmware()
+    context = MagicMock()
+    context.__aenter__ = AsyncMock(side_effect=aiohttp.ClientConnectionError("private detail"))
+    context.__aexit__ = AsyncMock(return_value=False)
+    session = MagicMock()
+    session.post.return_value = context
+    with (
+        patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session),
+        patch("custom_components.idm_heatpump.firmware_observations._LOGGER") as logger,
+    ):
+        assert await firmware.async_refresh_firmware() == "unavailable"
+    assert firmware.check_status()["last_outcome"] == "unavailable"
+    # Only the exception type reaches the log, never its text.
+    assert logger.debug.call_args.args[1] == "ClientConnectionError"
+    assert "private detail" not in logger.debug.call_args.args[0]
+
+
+async def test_a_check_running_twice_reports_the_second_as_in_progress():
+    firmware, _, _ = make_firmware()
+    entered = asyncio.Event()
+    release = asyncio.Event()
+
+    async def enter():
+        entered.set()
+        await release.wait()
+        return MagicMock(status=503)
+
+    context = MagicMock()
+    context.__aenter__ = AsyncMock(side_effect=enter)
+    context.__aexit__ = AsyncMock(return_value=False)
+    session = MagicMock()
+    session.post.return_value = context
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
+        first = asyncio.create_task(firmware.async_refresh_firmware())
+        await entered.wait()
+        try:
+            assert await firmware.async_refresh_firmware() == "in_progress"
+        finally:
+            release.set()
+        assert await first == "unavailable"
+    assert session.post.call_count == 1
+
+
+async def test_a_changed_firmware_is_checked_at_the_next_tick_instead_of_hours_later():
+    firmware, _, coordinator = make_firmware()
+    coordinator.firmware_version = "NAV10_20.24-9"
+    session = MagicMock()
+    with (
+        patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval"),
+        patch("custom_components.idm_heatpump.firmware_observations.secrets.randbelow", return_value=600),
+        patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session),
+    ):
+        assert await firmware.async_start() is True
+        coordinator.async_add_listener.assert_called_once()
+        observe = coordinator.async_add_listener.call_args.args[0]
+        spread_slot = firmware._next_firmware_check
+        assert spread_slot > time.time() + 30
+
+        # The firmware known at startup is not a change and keeps the spread slot.
+        observe()
+        assert firmware._next_firmware_check == spread_slot
+        session.assert_not_called()
+
+        coordinator.firmware_version = "NAV10_20.24-12"
+        observe()
+        assert firmware._next_firmware_check == 0.0
+        query = {
+            "navigator": "navigator_10",
+            "navigator_model": "Navigator 10",
+            "heatpump_model": "AERO ALM",
+            "firmware": "NAV10_20.24-12",
+        }
+        session.post.return_value = _session_with_answer(query, "NAV10_20.24-14", True).post.return_value
+        await firmware.async_tick(datetime.now(UTC))
+        assert session.post.call_count == 1
+        assert session.post.call_args.kwargs["json"] == query
+        assert firmware.firmware_result["installed_firmware"] == "NAV10_20.24-12"
+        regular_slot = firmware._next_firmware_check
+        assert regular_slot > time.time() + 21500
+
+        # The same firmware again, or a second change right after a check, waits
+        # for the regular slot: the catalog must not see a retry storm.
+        observe()
+        assert firmware._next_firmware_check == regular_slot
+        coordinator.firmware_version = "NAV10_20.24-15"
+        observe()
+        assert firmware._next_firmware_check == regular_slot
+
+
+def test_an_unconfirmed_pro_component_answer_survives_a_restart():
+    restored = _restorable_result({**STORED_ANSWER, "component_status": "unconfirmed_pro_component"})
+
+    assert restored is not None
+    assert restored["component_status"] == "unconfirmed_pro_component"
+
+
+async def test_firmware_query_falls_back_to_the_entered_plant_model():
+    firmware, entry, coordinator = make_firmware()
+    entry.options[CONF_PLANT_MODEL] = "AERO ALM 6-15"
+    coordinator.web_supplement.heatpump_model = None
+    coordinator.firmware_version = "NAV10_20.24-9"
+    query = {
+        "navigator": "navigator_10",
+        "navigator_model": "Navigator 10",
+        "heatpump_model": "AERO ALM 6-15",
+        "firmware": "NAV10_20.24-9",
+    }
+    session = _session_with_answer(query, "NAV10_20.24-11", True)
+    with patch("custom_components.idm_heatpump.firmware_observations.async_get_clientsession", return_value=session):
+        await firmware.async_refresh_firmware()
+    assert session.post.call_args.kwargs["json"] == query
+    assert set(session.post.call_args.kwargs["json"]) == {"navigator", "navigator_model", "heatpump_model", "firmware"}

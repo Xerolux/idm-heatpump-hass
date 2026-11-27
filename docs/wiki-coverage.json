@@ -14,7 +14,7 @@
         "Installation-and-Setup.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "f4a25ac872b88003f351e78f7e258ab9b99c72abb47f4319bed6a23d44f1b07b"
+      "reviewed_source_sha256": "dc5e853428104f2322949db8bd7617a384e4ae3069eabf3f6ca38730b4eed2ff"
     },
     {
       "feature": "Model and register semantics",
@@ -38,7 +38,7 @@
         "Supported-Devices.md",
         "Protocol-Capabilities.md"
       ],
-      "reviewed_source_sha256": "d65a4b88504b1b05c33fa67c9b653c7bf4cc272205729a9c230d04ac4ba69b76"
+      "reviewed_source_sha256": "940ae22134b7dc7f675597e7d7a263ffbc15b3f02ae2f920e0e5e99f657e7be1"
     },
     {
       "feature": "Polling, transport and recovery",
@@ -78,7 +78,7 @@
         "Entities.md",
         "Configuration.md"
       ],
-      "reviewed_source_sha256": "614605f0be4e10e7ca96400644a4a54c939f6e21273ceddf1f54f95265b10e71"
+      "reviewed_source_sha256": "3280403345ed550c2fb63dc4bba755bae92100be5efb7501f465fd1a361bdcdf"
     },
     {
       "feature": "Local Navigator supplement and controls",
@@ -227,7 +227,7 @@
         "Configuration.md",
         "Services.md"
       ],
-      "reviewed_source_sha256": "07070befb0dff044a9a7bd33e74e2925be38c48df637698028d9fdc80603b9ad"
+      "reviewed_source_sha256": "5db9653a1555c6f4358cd8fecc6d0ef95e91cebeb971ed8d7b15fbf4f466ec63"
     },
     {
       "feature": "Actions and dashboard export",
@@ -240,7 +240,7 @@
         "Services.md",
         "Predictive-Advisor.md"
       ],
-      "reviewed_source_sha256": "7c95810f956ef4af800b6c2296b5a4233f8744c6f8e2dfb4a238b5ef94183690"
+      "reviewed_source_sha256": "8870b58004ea00eb50ade5f7423f0cad7fef5b29ab498add68aed3015bbd6d95"
     }
   ]
 }

@@ -931,14 +931,22 @@
         "description": "**Hilf mit, die IDM-Integration zu verbessern**\n\nDeine Anlagenmeldungen helfen Xerolux, Fehler zu erkennen und mehr IDM-Anlagen zuverlässig zu unterstützen.\n\n**Geteilt werden:**\n- Deine **unveränderte myIDM-ID** zur Zuordnung deiner Anlage.\n- Technische Anlagendaten wie Modell, Firmware, Verbindung und Störungen.\n- Vorhandene Zusammenfassungen zu Starts, Laufzeiten und Energieverbrauch.\n\n**Nur deine IDM-Anlage**, keine Daten anderer HA-Geräte. Die Berichte sind **nicht anonym**.\n\nVersand etwa einmal täglich. Speicherung: **zwölf Monate im aktiven System**; Sicherungskopien können bis zu sechs Monate länger bestehen.\n\n**Freiwillig und jederzeit abschaltbar.** Ausschalten beendet Erfassung und Versand. Lokale Steuerung und die separate Firmware-Abfrage funktionieren auch ohne Telemetrie.\n\n[Datenschutz, Anbieter und Datenlöschung]({privacy_url})",
         "data": {
           "telemetry": "Anlagenmeldungen teilen",
-          "telemetry_myidm_id": "myIDM-ID (automatisch erkannt, soweit verfügbar)"
+          "telemetry_myidm_id": "myIDM-ID (automatisch erkannt, soweit verfügbar)",
+          "plant_model": "Wärmepumpen-Modell (optional)"
+        },
+        "data_description": {
+          "plant_model": "Wird nur gesendet, wenn der Regler selbst kein Modell meldet, zum Beispiel `AERO ALM 6-15`."
         }
       },
       "firmware": {
         "title": "Firmware teilen und vergleichen",
         "description": "**Neuere Firmware bei vergleichbaren Anlagen gesichtet?**\n\nDer Sensor „Neueste gemeldete Firmware“ zeigt Community-Beobachtungen derselben passenden Regler-/Firmware-Reihe.\n\n**Xerolux erhält nur Reglertyp, Anlagenmodell und installierte Firmware**, etwa alle sechs Stunden. Keine myIDM-ID, Seriennummer oder Messwerte; Telemetrie ist nicht erforderlich. Die Versionsmeldungen werden ohne Anlagenkennung nach Version, Vergleichsgruppe und Tag zusammengefasst, verschlüsselt gespeichert und nach zwölf Monaten automatisch gelöscht. Mengen sind Sichtungen, keine Anzahl unterschiedlicher Anlagen. Bestehende Zustimmungen bleiben gültig; eine erneute Bestätigung ist nicht erforderlich.\n\nNAVIGATOR Pro ist die Einzelraumregelung. Unklare Pro-Meldungen werden gespeichert, aber nicht für einen Firmwarehinweis der Wärmepumpe verwendet. NAV10_ und T_NAV10_ bleiben getrennt.\n\n**Freiwillig, standardmäßig aus und jederzeit abschaltbar.** Ausschalten stoppt weitere Meldungen/Abfragen und entfernt den Sensor. Bereits gespeicherte technische Sammelmeldungen bleiben bis zum Ablauf; sie enthalten keine Anlagenkennung. Die lokale Steuerung läuft weiter.\n\n[Datenschutz, Anbieter und Rechte]({privacy_url})\n\nNur IDM oder der Fachbetrieb kann Eignung prüfen und Firmware installieren. Ein neuerer passender Community-Hinweis kann in Reparaturen einmalig als gesehen bestätigt werden; das installiert kein Update.",
         "data": {
-          "firmware_check": "Firmware-Metadaten teilen und Abfrage erlauben"
+          "firmware_check": "Firmware-Metadaten teilen und Abfrage erlauben",
+          "plant_model": "Wärmepumpen-Modell (optional)"
+        },
+        "data_description": {
+          "plant_model": "Wird nur gesendet, wenn der Regler selbst kein Modell meldet, zum Beispiel `AERO ALM 6-15`."
         }
       }
     },
@@ -978,7 +986,8 @@
       "ai_task_entity_required": "Eine vorhandene ai_task-Entität zur Datengenerierung auswählen.",
       "invalid_subnet": "Kein gültiges IPv4-Subnetz oder zu groß (maximal /22). Verwende eine Schreibweise wie `192.168.1.0/24`.",
       "no_candidates": "Kein Gerät mit offenem Modbus-TCP-Port gefunden. Prüfe, ob die Wärmepumpe erreichbar ist und Modbus TCP aktiviert ist, und kontrolliere das Subnetz — oder gib die Adresse manuell ein.",
-      "telemetry_myidm_required": "Bitte die myIDM-ID der IDM-Anlage angeben."
+      "telemetry_myidm_required": "Bitte die myIDM-ID der IDM-Anlage angeben.",
+      "plant_model_invalid": "Bitte das Wärmepumpen-Modell mit höchstens 80 druckbaren Zeichen eingeben."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits konfiguriert.",
@@ -2661,6 +2670,9 @@
       },
       "fault_heat_source_pressure_switch": {
         "name": "Störung Druckschalter Wärmequellenkreis"
+      },
+      "firmware_check_status": {
+        "name": "Firmware-Prüfstatus"
       },
       "firmware_version": {
         "name": "Firmware Version Navigator"

@@ -578,7 +578,8 @@ Doppelübertragung und eine Minute Sperrzeit erhalten; ein erneuter Aufruf
 innerhalb der Sperrzeit löst jetzt einen Validierungsfehler mit der
 verbleibenden Wartezeit aus, statt stillschweigend `not_sent` zu liefern. Ein
 manueller Bericht reserviert den nächsten zufällig verteilten Tagestermin. Die
-Antwort enthält `accepted` und `status` (`accepted` oder `not_sent`); der
+Antwort enthält `accepted` und den echten `status` dieses Versands: `accepted`,
+`rejected`, `unavailable` oder `not_sent`, wenn nichts gesendet wurde. Der
 lokale Diagnose-Sensor **Telemetrie-Berichtsstatus** zeigt Lieferergebnisse
 dauerhaft an. Siehe [Datenumfang und Widerruf](Telemetry).
 
@@ -596,7 +597,11 @@ response_variable: submission
 Benötigt `entry_id` und die separate Einwilligung zur Firmware-Abfrage.
 Funktioniert ohne Telemetrie und ohne myIDM-ID. Ohne Zustimmung wird
 `status: consent_required` ohne Kataloganfrage zurückgegeben. Mit Zustimmung
-wird die Beobachtung aktualisiert und deren `status` zurückgegeben. Ein Treffer
+wird die Beobachtung aktualisiert und deren `status` zusammen mit `check`
+zurückgegeben: `completed`, wenn dieser Aufruf eine validierte Antwort erhalten
+hat; `unavailable`, wenn der Katalog nicht erreichbar war oder seine Antwort
+nicht verwendbar war; `in_progress`, solange noch eine andere Prüfung läuft. In
+den letzten beiden Fällen bleibt die bisherige Beobachtung stehen. Ein Treffer
 ist eine unbestätigte Community-Beobachtung, kein offizielles Update-Angebot.
 Die Aktion installiert keine Firmware.
 Siehe [Firmware-Orientierung](Telemetry#firmware-orientierung).

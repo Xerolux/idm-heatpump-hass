@@ -13,6 +13,7 @@ import aiohttp
 import pytest
 
 from custom_components.idm_heatpump.const import (
+    CONF_PLANT_MODEL,
     CONF_TELEMETRY,
     CONF_TELEMETRY_CONSENT_AT,
     CONF_TELEMETRY_MYIDM,
@@ -63,6 +64,7 @@ async def test_no_means_no_collection_storage_timer_or_network():
         await telemetry.async_tick(datetime.now(UTC))
     telemetry._store.async_load.assert_not_called()
     telemetry._store.async_save.assert_not_called()
+    telemetry._store.async_remove.assert_not_called()
     entry.async_on_unload.assert_not_called()
     timer.assert_not_called()
     session.assert_not_called()
@@ -78,13 +80,36 @@ async def test_telemetry_alone_never_queries_firmware_catalog():
     assert not hasattr(telemetry, "firmware_result")
 
 
+@pytest.mark.parametrize(
+    ("policy", "consent"),
+    [("idm-telemetry-v2", "2026-11-05T10:00:00+00:00"), ("idm-telemetry-v3", "")],
+)
+async def test_a_refused_start_erases_data_collected_under_a_consent_that_no_longer_holds(policy, consent):
+    telemetry, entry, _ = make_telemetry()
+    entry.options[CONF_TELEMETRY_POLICY] = policy
+    entry.options[CONF_TELEMETRY_CONSENT_AT] = consent
+    with (
+        patch("custom_components.idm_heatpump.cloud_scheduler.async_track_time_interval") as timer,
+        patch("custom_components.idm_heatpump.telemetry.async_get_clientsession") as session,
+    ):
+        assert await telemetry.async_start() is False
+    # The stored aggregate and frozen report belong to a void notice; nothing
+    # may reuse them, so they must not stay on disk until a later disable.
+    telemetry._store.async_load.assert_not_called()
+    telemetry._store.async_remove.assert_awaited_once()
+    entry.async_on_unload.assert_not_called()
+    timer.assert_not_called()
+    session.assert_not_called()
+
+
 @pytest.mark.parametrize("myidm,consent", [("", "yes"), ("invalid@serial", "yes"), ("TEST-123", "")])
 async def test_missing_serial_or_consent_never_starts(myidm, consent):
     telemetry, entry, _ = make_telemetry()
     entry.options[CONF_TELEMETRY_MYIDM] = myidm
     entry.options[CONF_TELEMETRY_CONSENT_AT] = consent
-    await telemetry.async_start()
+    assert await telemetry.async_start() is False
     telemetry._store.async_load.assert_not_called()
+    telemetry._store.async_remove.assert_awaited_once()
 
 
 async def test_persisted_daily_reservation_and_unload_callbacks():
@@ -227,6 +252,60 @@ async def test_submission_reserves_slot_before_io_and_never_follows_redirects(st
     entry.options[CONF_TELEMETRY] = False
     await telemetry.async_options_updated(None, entry)
     assert telemetry._stopped
+
+
+@pytest.mark.parametrize("status", [201, 400, 503])
+async def test_manual_send_reports_the_real_outcome(status):
+    telemetry, _, _ = make_telemetry()
+    response = MagicMock(status=status)
+    context = MagicMock()
+    context.__aenter__ = AsyncMock(return_value=response)
+    context.__aexit__ = AsyncMock(return_value=False)
+    session = MagicMock()
+    session.post.return_value = context
+    with patch("custom_components.idm_heatpump.telemetry.async_get_clientsession", return_value=session):
+        # A permanent rejection used to answer like an accepted report.
+        assert await telemetry.async_send_now() == {201: "accepted", 400: "rejected", 503: "unavailable"}[status]
+
+
+async def test_manual_send_within_cooldown_reports_that_nothing_was_sent():
+    telemetry, _, _ = make_telemetry()
+    telemetry._last_attempt = time.time()
+    assert await telemetry.async_send_now() is None
+
+
+def test_the_entered_plant_model_fills_in_only_when_the_controller_reports_none():
+    telemetry, entry, coordinator = make_telemetry()
+    entry.options[CONF_PLANT_MODEL] = "  AERO   ALM 6-15 "
+    coordinator.web_supplement = SimpleNamespace(heatpump_model=None)
+    assert telemetry.payload()["heatpump_model"] == "AERO ALM 6-15"
+
+    # The controller's own label always wins.
+    coordinator.web_supplement.heatpump_model = "AERO ALM 8-16"
+    assert telemetry.payload()["heatpump_model"] == "AERO ALM 8-16"
+
+    # Text the report schema cannot carry is left out rather than shortened.
+    coordinator.web_supplement.heatpump_model = None
+    entry.options[CONF_PLANT_MODEL] = "x" * 81
+    assert telemetry.payload()["heatpump_model"] is None
+    assert set(telemetry.payload()) == {
+        "schema",
+        "myidm_id",
+        "consent_at",
+        "policy",
+        "integration_version",
+        "navigator",
+        "navigator_model",
+        "heatpump_model",
+        "firmware",
+        "connection_mode",
+        "web_variant",
+        "capabilities",
+        "register_count",
+        "observed_hours",
+        "counters",
+        "error_transitions",
+    }
 
 
 async def test_permanent_rejection_drops_the_frozen_report_and_prepares_a_fresh_one():

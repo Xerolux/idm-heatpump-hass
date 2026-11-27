@@ -14,7 +14,7 @@ import re
 import secrets
 import time
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from typing import Any
 
@@ -25,6 +25,7 @@ from homeassistant.helpers.storage import Store
 
 from .cloud_scheduler import entry_cloud_scheduler
 from .const import (
+    CONF_PLANT_MODEL,
     CONF_TELEMETRY,
     CONF_TELEMETRY_CONSENT_AT,
     CONF_TELEMETRY_MYIDM,
@@ -111,6 +112,15 @@ def _firmware_series(value: object) -> str | None:
 def _label(value: object) -> str | None:
     """Keep controller metadata unchanged within the declared schema bounds."""
     return value if isinstance(value, str) and 0 < len(value) <= 80 and value.isprintable() else None
+
+
+def _plant_model(coordinator: IdmCoordinator, options: Mapping[str, Any]) -> str | None:
+    """Prefer the controller's own model label; else use the model the user entered."""
+    supplement = coordinator.web_supplement
+    reported = _label(getattr(supplement, "heatpump_model", None)) if supplement else None
+    if reported is not None:
+        return reported
+    return _label(" ".join(str(options.get(CONF_PLANT_MODEL) or "").split()))
 
 
 def _number(value: object) -> float | None:
@@ -301,7 +311,7 @@ class Telemetry:
             "integration_version": self._version,
             "navigator": family,
             "navigator_model": model,
-            "heatpump_model": _label(coordinator.web_supplement.heatpump_model) if coordinator.web_supplement else None,
+            "heatpump_model": _plant_model(coordinator, self._entry.options),
             "firmware": firmware,
             "connection_mode": resolve_connection_mode(self._entry.options, self._entry.data),
             "web_variant": coordinator.web_variant if coordinator.web_variant in ("nav10", "nav20") else None,
@@ -312,14 +322,24 @@ class Telemetry:
             "error_transitions": dict(self._errors),
         }
 
+    def _consent_holds(self) -> bool:
+        """The complete gate: an outdated notice or identity never inherits consent."""
+        options = self._entry.options
+        return (
+            options.get(CONF_TELEMETRY) is True
+            and options.get(CONF_TELEMETRY_POLICY) == TELEMETRY_POLICY
+            and bool(options.get(CONF_TELEMETRY_CONSENT_AT))
+            and valid_myidm(self.myidm_id)
+        )
+
     async def async_start(self) -> bool:
         """Persist the daily slot before installing unload-managed callbacks."""
-        if (
-            self._entry.options.get(CONF_TELEMETRY) is not True
-            or not valid_myidm(self.myidm_id)
-            or not self._entry.options.get(CONF_TELEMETRY_CONSENT_AT)
-            or self._entry.options.get(CONF_TELEMETRY_POLICY) != TELEMETRY_POLICY
-        ):
+        if self._entry.options.get(CONF_TELEMETRY) is not True:
+            return False
+        if not self._consent_holds():
+            # Nothing may reuse an aggregate collected under a void consent, so
+            # it must not wait on disk for an explicit disable that may never come.
+            await self._store.async_remove()
             return False
         stored = await self._store.async_load() or {}
         now = time.time()
@@ -487,23 +507,16 @@ class Telemetry:
         if entry.options.get(CONF_TELEMETRY) is not True:
             await self.async_stop()
 
-    async def async_send_now(self) -> bool:
-        """Explicitly submit one report, retaining consent and a one-minute cooldown."""
-        before = self._last_attempt
+    async def async_send_now(self) -> str | None:
+        """Explicitly submit one report; return its outcome, or None when nothing was sent."""
+        before = self._last_result_at
         await self.async_tick(datetime.now().astimezone(), manual=True)
-        return self._last_attempt != before and self._outbox is None
+        return self._last_result if self._last_result_at != before else None
 
     async def async_tick(self, now: datetime, *, manual: bool = False) -> None:
         """Send in the reserved daily slot, or on an explicit manual request."""
         del now
-        if (
-            self._stopped
-            or self._entry.options.get(CONF_TELEMETRY) is not True
-            or self._entry.options.get(CONF_TELEMETRY_POLICY) != TELEMETRY_POLICY
-            or not self._entry.options.get(CONF_TELEMETRY_CONSENT_AT)
-            or not valid_myidm(self.myidm_id)
-            or self._lock.locked()
-        ):
+        if self._stopped or not self._consent_holds() or self._lock.locked():
             return
         async with self._lock:
             current = time.time()

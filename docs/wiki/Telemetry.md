@@ -4,6 +4,10 @@ Telemetry is **off by default**. Under **Reconfigure → Telemetry**, one explic
 switch consents to the complete plant-only schema. Enter the actual heat-pump
 myIDM ID once; it is transmitted unchanged. The controller myIDM ID is used automatically when available. No anonymization is claimed.
 
+Both consent forms also offer an optional **Heat pump model** field (for
+example `AERO ALM 6-15`). It fills the model field the schemas already carry
+only when the controller reports no model of its own.
+
 Only the connected IDM plant, its controller and its connection through this
 integration are in scope. No other HA devices, entity IDs, room names, people,
 presence, household meters, unrelated integrations, files, credentials or PINs
@@ -58,7 +62,9 @@ the per-minute checks, so enabling both consents wakes Home Assistant once
 per minute instead of twice.
 
 Disabling stops observations, cancels an in-flight task and deletes the local
-collection. Bytes already received cannot be recalled. Re-enabling starts fresh;
+collection. A consent that no longer holds — a changed notice revision, a
+missing consent time or an unusable myIDM ID — leads to the same deletion at
+the next start, so nothing collected under it waits on disk. Bytes already received cannot be recalled. Re-enabling starts fresh;
 a changed consent revision requires renewed explicit consent. Remote controls
 and an expanded data schema are not authorized by the telemetry switch.
 
@@ -67,8 +73,7 @@ and an expanded data schema are not authorized by the telemetry switch.
 Before the consent switch, the form links prominently to the complete privacy
 notice, operator contact, data rights and erasure process. Opening that link is
 not consent and does not enable collection. The summary and explicit switch
-are available in both English and German. Version b5 changes presentation only;
-the notice revision, purposes, data scope and existing daily slot remain unchanged.
+are available in both English and German. Presentation changes leave the notice revision, purposes, data scope and the existing daily slot unchanged.
 
 Reports are private, AES-GCM encrypted outside the web root and linked to the
 unchanged myIDM ID. They expire twelve calendar months after reception, with
@@ -110,13 +115,15 @@ verified-erasure action. Public requests never grant private read access.
 
 ## Independent firmware observations
 
-Under **Reconfigure → Share and compare firmware**, a separate explicit switch enables **Latest reported firmware**. It is off by default, independent of telemetry and works without a myIDM ID. Existing `idm-firmware-v1` consents remain valid; this release neither resets them nor enables a disabled feature. Disabling cancels future requests and removes the sensor immediately.
+Under **Reconfigure → Share and compare firmware**, a separate explicit switch enables **Latest reported firmware**. It is off by default, independent of telemetry and works without a myIDM ID. Existing `idm-firmware-v1` consents remain valid; this release neither resets them nor enables a disabled feature. Disabling cancels future requests and removes the sensors immediately.
 
-Only Navigator family, controller/plant model and installed firmware are sent, after up to 15 minutes of random startup delay and then every six hours plus up to 30 minutes of random delay. No myIDM ID, serial, operating values, credentials or other HA data are included. The server encrypts technical sightings aggregated per cohort, version and UTC day without a plant identifier. They expire automatically after twelve calendar months. There is no persistent client queue. The last validated comparison result is kept locally in the config entry so the firmware entities survive a restart; it shows its original comparison time until the next check replaces it, and removing the consent deletes it. Recorder/backups can retain sensor states according to your HA settings. The connection IP is technically visible; keyed rate counters expire within two hours at hourly cleanup. The privacy link remains before the switch. Disabling stops future contributions; existing aggregate sightings remain until expiry and cannot identify an individual contributor.
+Only Navigator family, controller/plant model and installed firmware are sent, after up to 15 minutes of random startup delay and then every six hours plus up to 30 minutes of random delay. A changed installed firmware is compared at the next per-minute check instead of after six hours, but never more often than every 15 minutes. No myIDM ID, serial, operating values, credentials or other HA data are included. The server encrypts technical sightings aggregated per cohort, version and UTC day without a plant identifier. They expire automatically after twelve calendar months. There is no persistent client queue. The last validated comparison result is kept locally in the config entry so the firmware entities survive a restart; it shows its original comparison time until the next check replaces it, and removing the consent deletes it. Recorder/backups can retain sensor states according to your HA settings. The connection IP is technically visible; keyed rate counters expire within two hours at hourly cleanup. The privacy link remains before the switch. Disabling stops future contributions; existing aggregate sightings remain until expiry and cannot identify an individual contributor.
+
+With firmware consent active, the plant's **Telemetry** device group also shows **Firmware check status**: `not_checked` until the first check, then `completed` or `unavailable`. Its attributes name the catalog's answer status, the last attempt, the time of the last valid answer, the next check and the firmware last asked about. A failed check keeps the previous observation and is logged with the HTTP status or the exception type only, never with answer content or exception text.
 
 The catalog combines authorized telemetry, independent firmware sightings and explicit firmware metadata in private diagnostic ZIPs. Diagnostic-derived records stay tied to the original ZIP's 90-day expiry, deletion and test-exclusion state; telemetry remains subject to its own twelve-month retention and verified erasure. Original archives are not rewritten. The private telemetry overview lists firmware, comparison scope and sources. Counts are source observations, not distinct heat pumps; independent submissions aggregate per day.
 
-Matching keeps Navigator/controller, known plant model, firmware prefix/channel and major line separate. Missing plant models match only other missing-type observations in the same controller series. `NAV10_` and `T_NAV10_` never cross-match. NAVIGATOR Pro is individual room control, not another name for Navigator 10. Generic legacy Pro metadata stays marked `unconfirmed_component`: its latest reported version remains visible within that declared group, but `newer_observed` stays unknown and no heat-pump update repair is created. Explicit room-control metadata has its own group. Contradictory family/prefix data does not establish compatibility.
+Matching keeps Navigator/controller, known plant model, firmware prefix/channel and major line separate. Missing plant models match only other missing-type observations in the same controller series. An entered model places the plant in the model-specific group, so use the nameplate spelling. `NAV10_` and `T_NAV10_` never cross-match. NAVIGATOR Pro is individual room control, not another name for Navigator 10. Generic legacy Pro metadata stays marked `unconfirmed_component`: its latest reported version remains visible within that declared group, but `newer_observed` stays unknown and no heat-pump update repair is created. Explicit room-control metadata has its own group. Contradictory family/prefix data does not establish compatibility.
 
 Navigator 1.0 and 1.7 share the legacy Modbus map. A legacy firmware string such as `n1.7z72` identifies the catalog family. Navigator 1.0, Navigator 1.7 and Navigator 10 are separate. Different legacy release letters are compared separately. A shared 1.x Modbus detection or a bare numeric version alone cannot choose a catalog family.
 
@@ -138,7 +145,7 @@ The initial direct-host installation was removed, including its user, files and
 private keys. New keys reside in the guest. Do not roll the journal container
 itself back to an obsolete history together with netcup.
 
-For a manual test, `idm_heatpump.send_telemetry` submits one report with existing consent, a one-minute cooldown and a newly reserved daily slot. `idm_heatpump.check_firmware` queries observations with its independent consent. Both actions take `entry_id` and never change plant settings.
+For a manual test, `idm_heatpump.send_telemetry` submits one report with existing consent, a one-minute cooldown and a newly reserved daily slot. `idm_heatpump.check_firmware` queries observations with its independent consent. The response of `send_telemetry` names the real outcome of that submission — `accepted`, `rejected`, `unavailable` or `not_sent` when nothing was sent — and `check_firmware` adds a `check` field: `completed`, `unavailable` or `in_progress`. Both actions take `entry_id` and never change plant settings.
 
 ## Automatic quality screening
 
@@ -148,13 +155,13 @@ After a reload, telemetry resumes saved counters and elapsed time together at cu
 
 ## Firmware orientation
 
-Under **Settings → Devices & services → IDM Heatpump → Reconfigure → Share and compare firmware**, enable the separate consent. The plant's **Telemetry** device group then shows **Latest reported firmware** (version number) and **Newer firmware observed (unconfirmed)** (on/off; unavailable without matching data). Attributes include installed/observed versions and the comparison time. Use **Developer tools → Actions → IDM Heatpump: Check firmware now** to request a manual comparison with existing consent.
+Under **Settings → Devices & services → IDM Heatpump → Reconfigure → Share and compare firmware**, enable the separate consent. The plant's **Telemetry** device group then shows **Latest reported firmware** (version number), **Newer firmware observed (unconfirmed)** (on/off; unavailable without matching data) and **Firmware check status**. Attributes include installed/observed versions and the comparison time. Use **Developer tools → Actions → IDM Heatpump: Check firmware now** to request a manual comparison with existing consent.
 
 A newer matching observation also raises a notice under **Settings → System → Repairs**. The notice card itself names both versions — the installed one and the newest matching community observation — and repeats that this is orientation, not availability. **Acknowledge seeing this notice** remembers that exact version for this device, including across restarts. Only a different newer version can trigger another notice. Acknowledging never performs an update. The notice is persistent and linked to its config entry: a restart or reload neither deletes it nor resets a dismissal, and removing the integration entry removes it with the entry. Withdrawing the firmware consent clears the notice and the locally kept comparison result.
 
 Community reports do not establish availability or compatibility for a particular plant. iDM or an authorized installer must verify and perform updates. Voluntarily sharing reports improves the community comparison basis; firmware queries remain independently available without telemetry. Both consent settings remain optional and off by default.
 
-With the optional device hierarchy enabled, the cloud-consent entities — **Latest reported firmware**, **Newer firmware observed (unconfirmed)** and **Telemetry report status** — share their own **Telemetry** subdevice beneath the plant. Moving them preserves their entity IDs; the installed software version stays in **Diagnostics**. Without the hierarchy, they remain diagnostic entities on the main device.
+With the optional device hierarchy enabled, the cloud-consent entities — **Latest reported firmware**, **Newer firmware observed (unconfirmed)**, **Firmware check status** and **Telemetry report status** — share their own **Telemetry** subdevice beneath the plant. Moving them preserves their entity IDs; the installed software version stays in **Diagnostics**. Without the hierarchy, they remain diagnostic entities on the main device.
 
 
 ## Review quality

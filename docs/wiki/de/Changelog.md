@@ -5,6 +5,10 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.29.0 — 2026-11-27
+
+Telemetrie und Firmware-Vergleich melden, was wirklich passiert ist: `send_telemetry` und `check_firmware` liefern das echte Ergebnis, unter einer nicht mehr gültigen Einwilligung gesammelte Daten werden gelöscht, eine geänderte Firmware wird innerhalb einer Minute verglichen, und der neue Sensor **Firmware-Prüfstatus** zeigt jede Prüfung. Ein optionales Feld für das Wärmepumpen-Modell schließt die Modelllücke in Anlagenberichten und Firmware-Abfragen. [Versionshinweise](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.29.0)
+
 ## v0.28.10 — 2026-11-27
 
 Ein Abtaulauf zählt nicht mehr als kurzer Verdichtertakt oder Verdichterstart. Der Takt vor der Abtauung endet, wenn der Verdichter stoppt; der Neustart danach beginnt einen neuen Takt. Vor dieser Version erfasste Taktlaufzeiten beginnen einmal neu. [Versionshinweise](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.28.10)
